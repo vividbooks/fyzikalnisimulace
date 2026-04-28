@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulace rovnováhy na páce</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      /* New palette: deep teal + violet accents */
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #0ea5e9;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --bad: #dc2626;
+
+      /* Canvas theme tokens */
+      --canvas-bg: #eef2ff;
+      --canvas-border: #c7d2fe;
+      --lever: #0f766e;
+      --pivot: #334155;
+      --pile: #1e293b;
+      --rope: #64748b;
+      --marker-fill: #ffffff;
+      --marker-stroke: #0f766e;
+      --label: #0f172a;
+      --weight-left: #f97316;
+      --weight-right: #8b5cf6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1220;
+        --panel: #0f172a;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --ok: #22c55e;
+        --warn: #f59e0b;
+        --bad: #fb7185;
+
+        --canvas-bg: #0b1020;
+        --canvas-border: #1f2a44;
+        --lever: #2dd4bf;
+        --pivot: #94a3b8;
+        --pile: #111827;
+        --rope: #94a3b8;
+        --marker-fill: #0f172a;
+        --marker-stroke: #2dd4bf;
+        --label: #e5e7eb;
+        --weight-left: #fb923c;
+        --weight-right: #a78bfa;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(900px, 100%);
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      display: grid;
+      gap: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(250px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+      flex-wrap: wrap;
+    }
+
+    .balanceText {
+      margin: -4px 0 0;
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      color: var(--muted);
+      min-height: 1.4em;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid color-mix(in oklab, var(--accent) 45%, var(--text) 10%);
+      background: color-mix(in oklab, var(--accent) 18%, var(--panel) 82%);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform 120ms ease, background-color 120ms ease, opacity 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: color-mix(in oklab, var(--accent) 24%, var(--panel) 76%);
+    }
+
+    button:active {
+      transform: translateY(0px);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+      transform: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .controls {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      background: var(--canvas-bg);
+      border: 1px solid var(--canvas-border);
+    }
+
+    .sceneWrap {
+      position: relative;
+    }
+
+    .pileBtn {
+      position: absolute;
+      z-index: 2;
+      padding: 8px 12px;
+      font-weight: 750;
+      font-size: 0.95rem;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+    }
+
+    .result {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      align-items: center;
+      font-weight: 600;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+
+    .ok { color: var(--ok); background: color-mix(in oklab, var(--ok) 22%, transparent); }
+    .warn { color: var(--warn); background: color-mix(in oklab, var(--warn) 22%, transparent); }
+    .bad { color: var(--bad); background: color-mix(in oklab, var(--bad) 22%, transparent); }
+
+    .modalOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      z-index: 50;
+    }
+
+    .modalCard {
+      width: min(860px, 100%);
+      max-height: min(80vh, 740px);
+      overflow: auto;
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 14px;
+      border: 1px solid color-mix(in oklab, var(--text) 12%, transparent);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+      padding: 16px 16px 14px;
+    }
+
+    .modalHeader {
+      display: flex;
+      gap: 12px;
+      align-items: start;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .modalTitle {
+      margin: 0;
+      font-size: 1.15rem;
+      line-height: 1.25;
+    }
+
+    .closeBtn {
+      border: 1px solid color-mix(in oklab, var(--text) 16%, transparent);
+      background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
+    }
+
+    .tasks {
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 1rem;
+    }
+
+    .tasks h3 {
+      margin: 12px 0 6px;
+      font-size: 1.02rem;
+    }
+
+    .tasks p {
+      margin: 0 0 10px;
+      color: color-mix(in oklab, var(--text) 88%, var(--muted) 12%);
+    }
+
+    .tasks .taskBody {
+      margin: 0 0 12px;
+      white-space: pre-line;
+      color: color-mix(in oklab, var(--text) 90%, var(--muted) 10%);
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Simulace rovnováhy na páce</h1>
+
+    <div class="toolbar">
+      <button id="verifyBtn" type="button">Ověřit</button>
+      <button id="backBtn" type="button" class="hidden">Zpět</button>
+      <button id="researchBtn" type="button">Badatelský úkol</button>
+    </div>
+
+    <div class="sceneWrap">
+      <canvas id="scene" width="860" height="360" aria-label="Vizualizace páky"></canvas>
+      <button id="resetBtn" class="pileBtn" type="button">Sundat závaží</button>
+    </div>
+    <p id="balanceText" class="balanceText hidden" aria-live="polite"></p>
+  </main>
+
+  <div id="taskModal" class="modalOverlay hidden" role="dialog" aria-modal="true" aria-labelledby="taskTitle">
+    <section class="modalCard" role="document">
+      <header class="modalHeader">
+        <h2 id="taskTitle" class="modalTitle">Badatelský úkol</h2>
+        <button id="closeTaskModalBtn" class="closeBtn" type="button" aria-label="Zavřít">Zavřít</button>
+      </header>
+      <div class="tasks">
+        <h3>Úkol 1</h3>
+        <div class="taskBody">Zadání:
+1) Na jednu stranu páky zavěs 4 závaží do vzdálenosti 3 dílky od osy otáčení.
+2) Na druhou stranu páky zavěs libovolný počet závaží tak, aby byla páka v rovnováze.
+
+Podmínka:
+- Všechna závaží na druhé straně zavěs na jedno místo (pod sebe do jednoho sloupce).
+- Nezavěšuj je na různá místa páky.
+
+Co zapsat:
+- Kolik závaží jsi zavěsil(a) a do jaké vzdálenosti.
+- Najdi co nejvíce různých řešení.</div>
+
+        <h3>Úkol 2</h3>
+        <div class="taskBody">Zadání:
+1) Na jednu stranu páky zavěs 2 závaží do vzdálenosti 5 dílků od osy otáčení.
+2) Na druhou stranu páky zavěs libovolný počet závaží tak, aby byla páka v rovnováze.
+
+Podmínka:
+- Všechna závaží na druhé straně zavěs na jedno místo (pod sebe do jednoho sloupce).
+- Nezavěšuj je na různá místa páky.
+
+Co zapsat:
+- Kolik závaží jsi zavěsil(a) a do jaké vzdálenosti.
+- Najdi co nejvíce různých řešení.</div>
+
+        <h3>Úkol 3</h3>
+        <div class="taskBody">Zadání:
+- Na jedné straně páky visí 2 závaží ve vzdálenosti 4 dílky od osy otáčení.
+
+Otázka:
+- Kam (do jaké vzdálenosti) musíme na druhou stranu páky zavěsit 1 závaží, aby byla páka v rovnováze?
+
+Postup:
+1) Nejprve úkol vyřeš teoreticky.
+2) Poté své řešení ověř v simulaci.</div>
+
+        <h3>Úkol 4</h3>
+        <div class="taskBody">Otázka:
+- Co musí platit pro počty závaží a jejich vzdálenosti od osy otáčení na obou stranách páky, aby byla páka v rovnováze?
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const g = 9.81;
+    const maxDistance = 10;
+    const weightMass = 1;
+    const positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    const labels = {
+      ML: document.getElementById("ML"),
+      MR: document.getElementById("MR"),
+      pileCount: document.getElementById("pileCount"),
+      state: document.getElementById("state")
+    };
+
+    const state = {
+      leftCounts: Array(positions.length).fill(0),
+      rightCounts: Array(positions.length).fill(0),
+      pileCount: 40,
+      verified: false,
+      dragging: false,
+      dragX: 0,
+      dragY: 0,
+      dropTargets: [],
+      pileRect: { x: 36, y: 270, w: 84, h: 74 }
+    };
+
+    const canvas = document.getElementById("scene");
+    const ctx = canvas.getContext("2d");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const backBtn = document.getElementById("backBtn");
+    const balanceText = document.getElementById("balanceText");
+    const resetBtn = document.getElementById("resetBtn");
+    const researchBtn = document.getElementById("researchBtn");
+    const taskModal = document.getElementById("taskModal");
+    const closeTaskModalBtn = document.getElementById("closeTaskModalBtn");
+    let lastFocusEl = null;
+
+    function isTaskModalOpen() {
+      return Boolean(taskModal) && !taskModal.classList.contains("hidden");
+    }
+
+    function openTaskModal() {
+      if (!taskModal) return;
+      lastFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      taskModal.classList.remove("hidden");
+      closeTaskModalBtn?.focus?.();
+    }
+
+    function closeTaskModal() {
+      if (!taskModal) return;
+      taskModal.classList.add("hidden");
+      const toFocus = lastFocusEl || researchBtn;
+      toFocus?.focus?.();
+      lastFocusEl = null;
+    }
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function isVerified() {
+      return Boolean(state.verified);
+    }
+
+    function updateResetButtonPosition() {
+      if (!resetBtn) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = rect.width / canvas.width;
+      const scaleY = rect.height / canvas.height;
+      const p = state.pileRect;
+      const left = p.x * scaleX + 8;
+      const top = (p.y + p.h) * scaleY + 8;
+      resetBtn.style.left = `${left}px`;
+      resetBtn.style.top = `${top}px`;
+    }
+
+    function setControlsEnabled() {
+      if (resetBtn) resetBtn.disabled = false;
+    }
+
+    function roundRectPath(context, x, y, w, h, r) {
+      const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+      if (typeof context.roundRect === "function") {
+        context.roundRect(x, y, w, h, radius);
+        return;
+      }
+      context.moveTo(x + radius, y);
+      context.arcTo(x + w, y, x + w, y + h, radius);
+      context.arcTo(x + w, y + h, x, y + h, radius);
+      context.arcTo(x, y + h, x, y, radius);
+      context.arcTo(x, y, x + w, y, radius);
+      context.closePath();
+    }
+
+    function formatNumber(value, decimals) {
+      return value.toLocaleString("cs-CZ", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function drawWeight(x, y, side) {
+      const width = 28;
+      const height = 12;
+      ctx.fillStyle = side === "left"
+        ? cssVar("--weight-left", "#f97316")
+        : cssVar("--weight-right", "#8b5cf6");
+      ctx.beginPath();
+      roundRectPath(ctx, x - width / 2, y - height, width, height, 3);
+      ctx.fill();
+    }
+
+    function drawLever(tilt, xPivot, yPivot, halfLength) {
+      const dx = halfLength * Math.cos(tilt);
+      const dy = halfLength * Math.sin(tilt);
+      const x1 = xPivot - dx;
+      const y1 = yPivot - dy;
+      const x2 = xPivot + dx;
+      const y2 = yPivot + dy;
+
+      ctx.strokeStyle = isVerified()
+        ? cssVar("--lever", "#0f766e")
+        : cssVar("--lever-gray", "#9aa3b2");
+      ctx.lineWidth = 12;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      return { x1, y1, x2, y2 };
+    }
+
+    function drawPivot(x, y) {
+      ctx.fillStyle = isVerified()
+        ? cssVar("--pivot", "#334155")
+        : cssVar("--pivot-gray", "#6b7280");
+      ctx.beginPath();
+      ctx.moveTo(x, y + 6);
+      ctx.lineTo(x - 30, y + 56);
+      ctx.lineTo(x + 30, y + 56);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function sumMoment(counts) {
+      return counts.reduce((acc, count, index) => {
+        const distance = positions[index];
+        return acc + (count * weightMass * g * distance);
+      }, 0);
+    }
+
+    function drawPile() {
+      const { x, y, w, h } = state.pileRect;
+      ctx.fillStyle = cssVar("--pile", "#1e293b");
+      ctx.fillRect(x, y, w, h);
+      const shown = Math.min(state.pileCount, 8);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      for (let i = 0; i < shown; i += 1) {
+        drawWeight(x + w / 2, y + h - 6 - i * 14, "left");
+      }
+      ctx.restore();
+    }
+
+    function drawDropPoints(pivotX, pivotY, lever) {
+      state.dropTargets = [];
+      positions.forEach((distance, index) => {
+        const t = distance / maxDistance;
+        const leftX = pivotX + (lever.x1 - pivotX) * t;
+        const leftY = pivotY + (lever.y1 - pivotY) * t;
+        const rightX = pivotX + (lever.x2 - pivotX) * t;
+        const rightY = pivotY + (lever.y2 - pivotY) * t;
+
+        ctx.fillStyle = isVerified()
+          ? cssVar("--marker-fill", "#ffffff")
+          : cssVar("--marker-fill-gray", "#e5e7eb");
+        ctx.strokeStyle = isVerified()
+          ? cssVar("--marker-stroke", "#0f766e")
+          : cssVar("--marker-stroke-gray", "#9ca3af");
+        ctx.lineWidth = 2;
+        const r = 7;
+        const yOff = 7;
+        ctx.beginPath();
+        ctx.arc(leftX, leftY + yOff, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(rightX, rightY + yOff, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Číslování vzdáleností od středu (1) ke kraji (10).
+        ctx.fillStyle = isVerified()
+          ? cssVar("--label", "#0f172a")
+          : cssVar("--label-gray", "#6b7280");
+        ctx.font = "800 9px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(distance), leftX, leftY + yOff + 0.5);
+        ctx.fillText(String(distance), rightX, rightY + yOff + 0.5);
+
+        state.dropTargets.push({ side: "left", index, x: leftX, y: leftY + yOff });
+        state.dropTargets.push({ side: "right", index, x: rightX, y: rightY + yOff });
+      });
+    }
+
+    function drawHangingWeights(side, counts, pivotX, pivotY, lever) {
+      counts.forEach((count, index) => {
+        if (count <= 0) {
+          return;
+        }
+
+        const distance = positions[index];
+        const t = distance / maxDistance;
+        const x = side === "left"
+          ? pivotX + (lever.x1 - pivotX) * t
+          : pivotX + (lever.x2 - pivotX) * t;
+        const y = side === "left"
+          ? pivotY + (lever.y1 - pivotY) * t
+          : pivotY + (lever.y2 - pivotY) * t;
+
+        const ropeTopY = y + 8;
+        const ropeBottomY = y + 22 + (count * 14);
+
+        ctx.strokeStyle = cssVar("--rope", "#64748b");
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, ropeTopY);
+        ctx.lineTo(x, ropeBottomY);
+        ctx.stroke();
+
+        for (let i = 0; i < count; i += 1) {
+          drawWeight(x, ropeBottomY - (count - 1 - i) * 14, side);
+        }
+
+        ctx.fillStyle = cssVar("--label", "#0f172a");
+        ctx.font = "bold 12px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(String(count), x, ropeBottomY + 16);
+      });
+    }
+
+    function isInsidePile(x, y) {
+      const p = state.pileRect;
+      return x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h;
+    }
+
+    function nearestTarget(x, y) {
+      let best = null;
+      let bestDist = Number.POSITIVE_INFINITY;
+      state.dropTargets.forEach((target) => {
+        const dx = Math.abs(x - target.x);
+        const dy = y - target.y;
+
+        // Umozni pustit zavazi i na jiz visici sloupec pod bodem.
+        if (dx <= 24 && dy >= -20 && dy <= 180) {
+          const score = dx + Math.max(0, dy * 0.1);
+          if (score < bestDist) {
+            bestDist = score;
+            best = target;
+          }
+          return;
+        }
+
+        const dist = Math.hypot(x - target.x, y - target.y);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = target;
+        }
+      });
+      return bestDist <= 32 ? best : null;
+    }
+
+    function canvasPos(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const point = ("clientX" in event && "clientY" in event)
+        ? { clientX: event.clientX, clientY: event.clientY }
+        : ("touches" in event && event.touches && event.touches[0])
+          ? { clientX: event.touches[0].clientX, clientY: event.touches[0].clientY }
+          : { clientX: 0, clientY: 0 };
+      return {
+        x: (point.clientX - rect.left) * scaleX,
+        y: (point.clientY - rect.top) * scaleY
+      };
+    }
+
+    function setupDragAndDrop() {
+      canvas.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "touch") {
+          event.preventDefault();
+        }
+        const p = canvasPos(event);
+
+        // Odebrání: klik na bod se zavěšeným sloupcem odebere 1 závaží zpět do hromady.
+        if (!isInsidePile(p.x, p.y)) {
+          const target = nearestTarget(p.x, p.y);
+          if (target) {
+            const counts = target.side === "left" ? state.leftCounts : state.rightCounts;
+            if (counts[target.index] > 0) {
+              counts[target.index] -= 1;
+              state.pileCount += 1;
+              update();
+            }
+          }
+          return;
+        }
+
+        // Přidání: tažením z hromady přidáš nové závaží.
+        if (state.pileCount <= 0) {
+          return;
+        }
+        canvas.setPointerCapture?.(event.pointerId);
+        state.dragging = true;
+        state.dragX = p.x;
+        state.dragY = p.y;
+        update();
+      });
+
+      canvas.addEventListener("pointermove", (event) => {
+        if (!state.dragging) {
+          return;
+        }
+        if (event.pointerType === "touch") {
+          event.preventDefault();
+        }
+        const p = canvasPos(event);
+        state.dragX = p.x;
+        state.dragY = p.y;
+        update();
+      });
+
+      canvas.addEventListener("pointerup", (event) => {
+        if (!state.dragging) {
+          return;
+        }
+        if (event.pointerType === "touch") {
+          event.preventDefault();
+        }
+        const p = canvasPos(event);
+        const target = nearestTarget(p.x, p.y);
+        if (target) {
+          if (target.side === "left") {
+            state.leftCounts[target.index] += 1;
+          } else {
+            state.rightCounts[target.index] += 1;
+          }
+          state.pileCount = Math.max(0, state.pileCount - 1);
+        }
+        state.dragging = false;
+        update();
+      });
+
+      canvas.addEventListener("pointercancel", () => {
+        if (!state.dragging) {
+          return;
+        }
+        state.dragging = false;
+        update();
+      });
+    }
+
+    function update() {
+      const ML = sumMoment(state.leftCounts);
+      const MR = sumMoment(state.rightCounts);
+      const diff = ML - MR;
+
+      if (labels.ML) labels.ML.textContent = formatNumber(ML, 1);
+      if (labels.MR) labels.MR.textContent = formatNumber(MR, 1);
+      if (labels.pileCount) labels.pileCount.textContent = String(state.pileCount);
+
+      const tolerance = 1.5;
+      if (Math.abs(diff) <= tolerance) {
+        if (labels.state) {
+          labels.state.textContent = "Rovnováha";
+          labels.state.className = "badge ok";
+        }
+      } else if (diff > 0) {
+        if (labels.state) {
+          labels.state.textContent = "Převáží vlevo";
+          labels.state.className = "badge bad";
+        }
+      } else {
+        if (labels.state) {
+          labels.state.textContent = "Převáží vpravo";
+          labels.state.className = "badge warn";
+        }
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const pivotX = canvas.width / 2;
+      const pivotY = 170;
+      const halfLength = 320;
+      const maxTilt = Math.PI / 7.2;
+      let tilt = 0;
+      if (isVerified()) {
+        const totalMoment = ML + MR;
+        const imbalance = totalMoment > 0 ? diff / totalMoment : 0;
+        const normalized = Math.max(-1, Math.min(1, imbalance));
+        tilt = -normalized * maxTilt;
+      }
+
+      drawPivot(pivotX, pivotY);
+      const lever = drawLever(tilt, pivotX, pivotY, halfLength);
+      drawDropPoints(pivotX, pivotY, lever);
+      drawHangingWeights("left", state.leftCounts, pivotX, pivotY, lever);
+      drawHangingWeights("right", state.rightCounts, pivotX, pivotY, lever);
+      drawPile();
+
+      if (state.dragging) {
+        drawWeight(state.dragX, state.dragY, "right");
+      }
+
+      if (balanceText) {
+        if (!isVerified()) {
+          balanceText.classList.add("hidden");
+          balanceText.textContent = "";
+        } else {
+          balanceText.classList.remove("hidden");
+          const tolerance = 1.5;
+          balanceText.textContent = Math.abs(diff) <= tolerance
+            ? "Páka je v rovnováze"
+            : "Páka není v rovnováze";
+        }
+      }
+
+      setControlsEnabled();
+      updateResetButtonPosition();
+    }
+
+    setupDragAndDrop();
+    if (researchBtn) {
+      researchBtn.addEventListener("click", () => {
+        if (isTaskModalOpen()) {
+          closeTaskModal();
+        } else {
+          openTaskModal();
+        }
+      });
+    }
+    if (closeTaskModalBtn) {
+      closeTaskModalBtn.addEventListener("click", closeTaskModal);
+    }
+    if (taskModal) {
+      taskModal.addEventListener("pointerdown", (event) => {
+        if (event.target === taskModal) {
+          closeTaskModal();
+        }
+      });
+    }
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && isTaskModalOpen()) {
+        event.preventDefault();
+        closeTaskModal();
+      }
+    });
+    if (verifyBtn) {
+      verifyBtn.addEventListener("click", () => {
+        state.verified = true;
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = "Ověřeno";
+        if (backBtn) backBtn.classList.remove("hidden");
+        update();
+      });
+    }
+    if (backBtn) {
+      backBtn.addEventListener("click", () => {
+        state.verified = false;
+        state.dragging = false;
+        if (verifyBtn) {
+          verifyBtn.disabled = false;
+          verifyBtn.textContent = "Ověřit";
+        }
+        backBtn.classList.add("hidden");
+        update();
+      });
+    }
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        const totalOnLever =
+          state.leftCounts.reduce((a, b) => a + b, 0) +
+          state.rightCounts.reduce((a, b) => a + b, 0);
+        state.leftCounts = Array(positions.length).fill(0);
+        state.rightCounts = Array(positions.length).fill(0);
+        state.pileCount += totalOnLever;
+        update();
+      });
+    }
+    window.addEventListener("resize", updateResetButtonPosition);
+    update();
+  </script>
+</body>
+</html>
