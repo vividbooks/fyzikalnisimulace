@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  static-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required files exist
+        run: |
+          test -f index.html
+          test -f README.md
+          test -f LICENSE
+
+      - name: Basic HTML sanity check
+        run: |
+          node -e "const fs=require('fs'); const html=fs.readFileSync('index.html','utf8'); if(!/<canvas\\s+id=['\\\"]scene['\\\"]/i.test(html)) { throw new Error('Missing canvas#scene'); } console.log('OK');"
