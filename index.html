@@ -3,832 +3,986 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulace rovnováhy na páce</title>
+  <title>Simulace rovnovážné páky</title>
   <style>
-    :root {
-      color-scheme: light dark;
-      /* New palette: deep teal + violet accents */
-      --bg: #f6f8fb;
-      --panel: #ffffff;
-      --text: #0f172a;
-      --muted: #475569;
-      --accent: #0ea5e9;
-      --ok: #16a34a;
-      --warn: #d97706;
-      --bad: #dc2626;
-
-      /* Canvas theme tokens */
-      --canvas-bg: #eef2ff;
-      --canvas-border: #c7d2fe;
-      --lever: #0f766e;
-      --pivot: #334155;
-      --pile: #1e293b;
-      --rope: #64748b;
-      --marker-fill: #ffffff;
-      --marker-stroke: #0f766e;
-      --label: #0f172a;
-      --weight-left: #f97316;
-      --weight-right: #8b5cf6;
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
     }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0b1220;
-        --panel: #0f172a;
-        --text: #e5e7eb;
-        --muted: #94a3b8;
-        --accent: #38bdf8;
-        --ok: #22c55e;
-        --warn: #f59e0b;
-        --bad: #fb7185;
-
-        --canvas-bg: #0b1020;
-        --canvas-border: #1f2a44;
-        --lever: #2dd4bf;
-        --pivot: #94a3b8;
-        --pile: #111827;
-        --rope: #94a3b8;
-        --marker-fill: #0f172a;
-        --marker-stroke: #2dd4bf;
-        --label: #e5e7eb;
-        --weight-left: #fb923c;
-        --weight-right: #a78bfa;
-      }
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
-
     body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .app {
-      width: min(900px, 100%);
-      background: var(--panel);
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-      display: grid;
-      gap: 18px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 1.35rem;
-    }
-
-    .hint {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(250px, 1fr));
-      gap: 14px;
-    }
-
-    .card {
-      background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .toolbar {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #ffffff;
+      color: #2a2226;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      margin-top: 2px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      min-height: 100vh;
     }
-
-    .balanceText {
-      margin: -4px 0 0;
-      text-align: center;
-      font-weight: 800;
-      letter-spacing: 0.2px;
-      color: var(--muted);
-      min-height: 1.4em;
-    }
-
-    button {
-      appearance: none;
-      border: 1px solid color-mix(in oklab, var(--accent) 45%, var(--text) 10%);
-      background: color-mix(in oklab, var(--accent) 18%, var(--panel) 82%);
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: 999px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-      cursor: pointer;
-      transition: transform 120ms ease, background-color 120ms ease, opacity 120ms ease;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      background: color-mix(in oklab, var(--accent) 24%, var(--panel) 76%);
-    }
-
-    button:active {
-      transform: translateY(0px);
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: default;
-      transform: none;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .controls {
-      font-size: 0.95rem;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-
-    canvas {
+    #root {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
       width: 100%;
-      height: auto;
-      border-radius: 10px;
-      background: var(--canvas-bg);
-      border: 1px solid var(--canvas-border);
     }
-
-    .sceneWrap {
+    .app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      width: 100%;
+    }
+    .stage {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      background: #ffffff;
+      padding: 0;
       position: relative;
     }
-
-    .pileBtn {
+    .stage-svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      user-select: none;
+      touch-action: none;
+    }
+    .clear-weights-btn {
       position: absolute;
-      z-index: 2;
-      padding: 8px 12px;
-      font-weight: 750;
-      font-size: 0.95rem;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      z-index: 3;
+      border: 1px solid color-mix(in oklab, #5c1f2e 42%, transparent);
+      background: #fff;
+      color: #2a2226;
+      padding: 10px 20px;
       border-radius: 999px;
-      backdrop-filter: blur(8px);
-    }
-
-    .result {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 18px;
-      align-items: center;
-      font-weight: 600;
-    }
-
-    .badge {
-      padding: 4px 10px;
-      border-radius: 999px;
+      font-weight: 700;
       font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(42, 34, 38, 0.12);
     }
-
-    .ok { color: var(--ok); background: color-mix(in oklab, var(--ok) 22%, transparent); }
-    .warn { color: var(--warn); background: color-mix(in oklab, var(--warn) 22%, transparent); }
-    .bad { color: var(--bad); background: color-mix(in oklab, var(--bad) 22%, transparent); }
-
-    .modalOverlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-      display: grid;
-      place-items: center;
-      padding: 18px;
-      z-index: 50;
+    .clear-weights-btn:active {
+      transform: translateX(-50%) translateY(1px);
     }
-
-    .modalCard {
-      width: min(860px, 100%);
-      max-height: min(80vh, 740px);
-      overflow: auto;
-      background: var(--panel);
-      color: var(--text);
-      border-radius: 14px;
-      border: 1px solid color-mix(in oklab, var(--text) 12%, transparent);
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
-      padding: 16px 16px 14px;
-    }
-
-    .modalHeader {
-      display: flex;
-      gap: 12px;
-      align-items: start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .modalTitle {
+    .stage-hint {
+      position: absolute;
+      left: 50%;
+      top: calc(170px + max(14px, env(safe-area-inset-top, 0px)));
+      transform: translateX(-50%);
+      z-index: 3;
       margin: 0;
-      font-size: 1.15rem;
-      line-height: 1.25;
-    }
-
-    .closeBtn {
-      border: 1px solid color-mix(in oklab, var(--text) 16%, transparent);
-      background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
-    }
-
-    .tasks {
-      color: var(--text);
-      line-height: 1.55;
-      font-size: 1rem;
-    }
-
-    .tasks h3 {
-      margin: 12px 0 6px;
-      font-size: 1.02rem;
-    }
-
-    .tasks p {
-      margin: 0 0 10px;
-      color: color-mix(in oklab, var(--text) 88%, var(--muted) 12%);
-    }
-
-    .tasks .taskBody {
-      margin: 0 0 12px;
-      white-space: pre-line;
-      color: color-mix(in oklab, var(--text) 90%, var(--muted) 10%);
+      max-width: min(92vw, 40rem);
+      padding: 0 18px;
+      text-align: center;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #5f6b76;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <main class="app">
-    <h1>Simulace rovnováhy na páce</h1>
+  <div id="root" role="presentation" aria-label="Interaktivní simulace rovnovážné páky"></div>
 
-    <div class="toolbar">
-      <button id="verifyBtn" type="button">Ověřit</button>
-      <button id="backBtn" type="button" class="hidden">Zpět</button>
-      <button id="researchBtn" type="button">Badatelský úkol</button>
-    </div>
+  <script type="module">
+    import React, { useCallback, useEffect, useMemo, useRef, useState } from "https://esm.sh/react@18.3.1";
+    import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
+    import htm from "https://esm.sh/htm@3.1.1?deps=react@18.3.1";
 
-    <div class="sceneWrap">
-      <canvas id="scene" width="860" height="360" aria-label="Vizualizace páky"></canvas>
-      <button id="resetBtn" class="pileBtn" type="button">Sundat závaží</button>
-    </div>
-    <p id="balanceText" class="balanceText hidden" aria-live="polite"></p>
-  </main>
+    const html = htm.bind(React.createElement);
 
-  <div id="taskModal" class="modalOverlay hidden" role="dialog" aria-modal="true" aria-labelledby="taskTitle">
-    <section class="modalCard" role="document">
-      <header class="modalHeader">
-        <h2 id="taskTitle" class="modalTitle">Badatelský úkol</h2>
-        <button id="closeTaskModalBtn" class="closeBtn" type="button" aria-label="Zavřít">Zavřít</button>
-      </header>
-      <div class="tasks">
-        <h3>Úkol 1</h3>
-        <div class="taskBody">Zadání:
-1) Na jednu stranu páky zavěs 4 závaží do vzdálenosti 3 dílky od osy otáčení.
-2) Na druhou stranu páky zavěs libovolný počet závaží tak, aby byla páka v rovnováze.
+    const VIEW = { W: 960, H: 510 };
 
-Podmínka:
-- Všechna závaží na druhé straně zavěs na jedno místo (pod sebe do jednoho sloupce).
-- Nezavěšuj je na různá místa páky.
-
-Co zapsat:
-- Kolik závaží jsi zavěsil(a) a do jaké vzdálenosti.
-- Najdi co nejvíce různých řešení.</div>
-
-        <h3>Úkol 2</h3>
-        <div class="taskBody">Zadání:
-1) Na jednu stranu páky zavěs 2 závaží do vzdálenosti 5 dílků od osy otáčení.
-2) Na druhou stranu páky zavěs libovolný počet závaží tak, aby byla páka v rovnováze.
-
-Podmínka:
-- Všechna závaží na druhé straně zavěs na jedno místo (pod sebe do jednoho sloupce).
-- Nezavěšuj je na různá místa páky.
-
-Co zapsat:
-- Kolik závaží jsi zavěsil(a) a do jaké vzdálenosti.
-- Najdi co nejvíce různých řešení.</div>
-
-        <h3>Úkol 3</h3>
-        <div class="taskBody">Zadání:
-- Na jedné straně páky visí 2 závaží ve vzdálenosti 4 dílky od osy otáčení.
-
-Otázka:
-- Kam (do jaké vzdálenosti) musíme na druhou stranu páky zavěsit 1 závaží, aby byla páka v rovnováze?
-
-Postup:
-1) Nejprve úkol vyřeš teoreticky.
-2) Poté své řešení ověř v simulaci.</div>
-
-        <h3>Úkol 4</h3>
-        <div class="taskBody">Otázka:
-- Co musí platit pro počty závaží a jejich vzdálenosti od osy otáčení na obou stranách páky, aby byla páka v rovnováze?
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <script>
-    const g = 9.81;
-    const maxDistance = 10;
-    const weightMass = 1;
-    const positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-    const labels = {
-      ML: document.getElementById("ML"),
-      MR: document.getElementById("MR"),
-      pileCount: document.getElementById("pileCount"),
-      state: document.getElementById("state")
+    const COLORS = {
+      bg: "#FFFFFF",
+      beam: "#E63946",
+      pivot: "#5C1F2E",
+      pivotNeedle: "#813B50",
+      beamCradle: "#D3D3D3",
+      rope: "#5C1F2E",
+      baseOuter: "#E0E0E0",
+      baseInner: "#C0C0C0",
+      hole: "#FFFFFF",
+      /** Díra se závažím — tmavší rudá než tyč (#E63946). */
+      holeOccupied: "#9E1B30",
+      /** Neaktivní číslo háčku — šedá vs. vybrané (pivot). */
+      holeLabelMuted: "#a7aeb8",
+      /** Závaží — tmavě modrošedá (odlišná od červené tyče). */
+      weight: "#3d4d5c",
     };
 
-    const state = {
-      leftCounts: Array(positions.length).fill(0),
-      rightCounts: Array(positions.length).fill(0),
-      pileCount: 40,
-      verified: false,
-      dragging: false,
-      dragX: 0,
-      dragY: 0,
-      dropTargets: [],
-      pileRect: { x: 36, y: 270, w: 84, h: 74 }
-    };
+    const SLOTS = 9;
+    const IDX = [...Array(SLOTS).keys()];
 
-    const canvas = document.getElementById("scene");
-    const ctx = canvas.getContext("2d");
-    const verifyBtn = document.getElementById("verifyBtn");
-    const backBtn = document.getElementById("backBtn");
-    const balanceText = document.getElementById("balanceText");
-    const resetBtn = document.getElementById("resetBtn");
-    const researchBtn = document.getElementById("researchBtn");
-    const taskModal = document.getElementById("taskModal");
-    const closeTaskModalBtn = document.getElementById("closeTaskModalBtn");
-    let lastFocusEl = null;
+    const BEAM_HALF = 296 * 0.7 * 1.5 * 1.3;
+    const BEAM_TH = 75;
+    const HOLE_R = 9;
+    const HOLE_DROP_HINT_DR = 8;
+    /** Čísla nad dírou na tyči (stejná výška bez ohledu na závaží pod ní). */
+    const HOLE_LABEL_GAP_ABOVE = 54;
+    /** Když puštění je jen malý pohyb od sebrání → kliknutí (×), ne vrácení na háček. */
+    const BEAM_DRAG_TAP_MAX_PX = 14;
+    const HOLE_LABEL_FONT = 20;
+    /** Maximum u vybrané díry (kurzor u tečky). */
+    const HOLE_LABEL_NUM_PEAK = 50;
+    /** Sousedé vlevo/vpravo od nejvýraznější díry — menší než plynulý „kopulec“. */
+    const HOLE_LABEL_NEIGHBOR_DAMP = 0.38;
+    /** Užší jádro → sousedé zůstanou menší, vybrané číslo výraznější. */
+    const HOLE_LABEL_FOCUS_SIGMA = 54;
+    /** Ikona přidat/odebrat u kurzoru — kruh + symbol (~50 % menší než původní). */
+    const HOVER_BADGE_R = 11;
+    /** Tmavý kruh pod + (cca 3× bílé kolečko) — výraznější nad dírou. */
+    const HOVER_BADGE_ADD_HALO_R = HOVER_BADGE_R * 3;
+    const HOVER_BADGE_STROKE_W = 1.2;
+    const HOVER_BADGE_ICON_SW = 1.55;
+    const HOVER_BADGE_PLUS_ARM = 4.75;
+    const HOVER_BADGE_X_EXTENT = 4.1;
+    const PIVOT = { x: VIEW.W / 2, y: 168 };
+    const MAX_TILT = (60 * Math.PI) / 180;
 
-    function isTaskModalOpen() {
-      return Boolean(taskModal) && !taskModal.classList.contains("hidden");
+    /** Závaží 2× oproti původní velikosti; provázky prodloužené, aby visela níž. */
+    const WEIGHT_W = 100;
+    const WEIGHT_H = 44;
+    /** Zakulacení rohů závaží (menší než polovina výšky → ne celá pilulka). */
+    const WEIGHT_CORNER_R = 8;
+    const ROPE_FROM_HOLE = 42;
+    /** Mezera „provázku“ mezi závažími ve sloupci (svisle). */
+    const ROPE_BETWEEN = 10;
+    /** Odsazení pod blokem závaží před dalším kusem — menší = těsnější sloupec. */
+    const STACK_AFTER_WEIGHT = 5;
+    const ROPE_STROKE_W = 5.25;
+
+    function holeX(side, i) {
+      const margin = BEAM_HALF * 0.07;
+      const inner = BEAM_HALF * 0.12;
+      const t = i / Math.max(1, SLOTS - 1);
+      const span = BEAM_HALF - margin - inner;
+      const d = inner + t * span;
+      return side === "left" ? -d : d;
     }
 
-    function openTaskModal() {
-      if (!taskModal) return;
-      lastFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      taskModal.classList.remove("hidden");
-      closeTaskModalBtn?.focus?.();
+    /** Střed díry v souřadnicích tyče — provázek vychází odsud (srovnat s <circle cy=0>). */
+    function holeHangLocal(side, i) {
+      return { lx: holeX(side, i), ly: 0 };
     }
 
-    function closeTaskModal() {
-      if (!taskModal) return;
-      taskModal.classList.add("hidden");
-      const toFocus = lastFocusEl || researchBtn;
-      toFocus?.focus?.();
-      lastFocusEl = null;
-    }
-
-    function cssVar(name, fallback) {
-      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      return v || fallback;
-    }
-
-    function isVerified() {
-      return Boolean(state.verified);
-    }
-
-    function updateResetButtonPosition() {
-      if (!resetBtn) return;
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = rect.width / canvas.width;
-      const scaleY = rect.height / canvas.height;
-      const p = state.pileRect;
-      const left = p.x * scaleX + 8;
-      const top = (p.y + p.h) * scaleY + 8;
-      resetBtn.style.left = `${left}px`;
-      resetBtn.style.top = `${top}px`;
-    }
-
-    function setControlsEnabled() {
-      if (resetBtn) resetBtn.disabled = false;
-    }
-
-    function roundRectPath(context, x, y, w, h, r) {
-      const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
-      if (typeof context.roundRect === "function") {
-        context.roundRect(x, y, w, h, radius);
-        return;
+    /** Středy závaží ve světových souřadnicích (visí svisle pod dírou). */
+    function plumbStackCenters(side, i, n, theta) {
+      const { lx, ly } = holeHangLocal(side, i);
+      const anchor = toWorld(lx, ly, theta);
+      const wx = anchor.x;
+      let y = anchor.y;
+      const out = [];
+      for (let k = 0; k < n; k += 1) {
+        const ropeLen = k === 0 ? ROPE_FROM_HOLE : ROPE_BETWEEN;
+        y += ropeLen;
+        const cy = y + WEIGHT_H / 2;
+        out.push({ cx: wx, cy, top: y, bot: y + WEIGHT_H });
+        y += WEIGHT_H + STACK_AFTER_WEIGHT;
       }
-      context.moveTo(x + radius, y);
-      context.arcTo(x + w, y, x + w, y + h, radius);
-      context.arcTo(x + w, y + h, x, y + h, radius);
-      context.arcTo(x, y + h, x, y, radius);
-      context.arcTo(x, y, x + w, y, radius);
-      context.closePath();
+      return out;
     }
 
-    function formatNumber(value, decimals) {
-      return value.toLocaleString("cs-CZ", {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-      });
-    }
-
-    function drawWeight(x, y, side) {
-      const width = 28;
-      const height = 12;
-      ctx.fillStyle = side === "left"
-        ? cssVar("--weight-left", "#f97316")
-        : cssVar("--weight-right", "#8b5cf6");
-      ctx.beginPath();
-      roundRectPath(ctx, x - width / 2, y - height, width, height, 3);
-      ctx.fill();
-    }
-
-    function drawLever(tilt, xPivot, yPivot, halfLength) {
-      const dx = halfLength * Math.cos(tilt);
-      const dy = halfLength * Math.sin(tilt);
-      const x1 = xPivot - dx;
-      const y1 = yPivot - dy;
-      const x2 = xPivot + dx;
-      const y2 = yPivot + dy;
-
-      ctx.strokeStyle = isVerified()
-        ? cssVar("--lever", "#0f766e")
-        : cssVar("--lever-gray", "#9aa3b2");
-      ctx.lineWidth = 12;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-
-      return { x1, y1, x2, y2 };
-    }
-
-    function drawPivot(x, y) {
-      ctx.fillStyle = isVerified()
-        ? cssVar("--pivot", "#334155")
-        : cssVar("--pivot-gray", "#6b7280");
-      ctx.beginPath();
-      ctx.moveTo(x, y + 6);
-      ctx.lineTo(x - 30, y + 56);
-      ctx.lineTo(x + 30, y + 56);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function sumMoment(counts) {
-      return counts.reduce((acc, count, index) => {
-        const distance = positions[index];
-        return acc + (count * weightMass * g * distance);
-      }, 0);
-    }
-
-    function drawPile() {
-      const { x, y, w, h } = state.pileRect;
-      ctx.fillStyle = cssVar("--pile", "#1e293b");
-      ctx.fillRect(x, y, w, h);
-      const shown = Math.min(state.pileCount, 8);
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(x, y, w, h);
-      ctx.clip();
-      for (let i = 0; i < shown; i += 1) {
-        drawWeight(x + w / 2, y + h - 6 - i * 14, "left");
-      }
-      ctx.restore();
-    }
-
-    function drawDropPoints(pivotX, pivotY, lever) {
-      state.dropTargets = [];
-      positions.forEach((distance, index) => {
-        const t = distance / maxDistance;
-        const leftX = pivotX + (lever.x1 - pivotX) * t;
-        const leftY = pivotY + (lever.y1 - pivotY) * t;
-        const rightX = pivotX + (lever.x2 - pivotX) * t;
-        const rightY = pivotY + (lever.y2 - pivotY) * t;
-
-        ctx.fillStyle = isVerified()
-          ? cssVar("--marker-fill", "#ffffff")
-          : cssVar("--marker-fill-gray", "#e5e7eb");
-        ctx.strokeStyle = isVerified()
-          ? cssVar("--marker-stroke", "#0f766e")
-          : cssVar("--marker-stroke-gray", "#9ca3af");
-        ctx.lineWidth = 2;
-        const r = 7;
-        const yOff = 7;
-        ctx.beginPath();
-        ctx.arc(leftX, leftY + yOff, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(rightX, rightY + yOff, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // Číslování vzdáleností od středu (1) ke kraji (10).
-        ctx.fillStyle = isVerified()
-          ? cssVar("--label", "#0f172a")
-          : cssVar("--label-gray", "#6b7280");
-        ctx.font = "800 9px system-ui";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(String(distance), leftX, leftY + yOff + 0.5);
-        ctx.fillText(String(distance), rightX, rightY + yOff + 0.5);
-
-        state.dropTargets.push({ side: "left", index, x: leftX, y: leftY + yOff });
-        state.dropTargets.push({ side: "right", index, x: rightX, y: rightY + yOff });
-      });
-    }
-
-    function drawHangingWeights(side, counts, pivotX, pivotY, lever) {
-      counts.forEach((count, index) => {
-        if (count <= 0) {
-          return;
-        }
-
-        const distance = positions[index];
-        const t = distance / maxDistance;
-        const x = side === "left"
-          ? pivotX + (lever.x1 - pivotX) * t
-          : pivotX + (lever.x2 - pivotX) * t;
-        const y = side === "left"
-          ? pivotY + (lever.y1 - pivotY) * t
-          : pivotY + (lever.y2 - pivotY) * t;
-
-        const ropeTopY = y + 8;
-        const ropeBottomY = y + 22 + (count * 14);
-
-        ctx.strokeStyle = cssVar("--rope", "#64748b");
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, ropeTopY);
-        ctx.lineTo(x, ropeBottomY);
-        ctx.stroke();
-
-        for (let i = 0; i < count; i += 1) {
-          drawWeight(x, ropeBottomY - (count - 1 - i) * 14, side);
-        }
-
-        ctx.fillStyle = cssVar("--label", "#0f172a");
-        ctx.font = "bold 12px system-ui";
-        ctx.textAlign = "center";
-        ctx.fillText(String(count), x, ropeBottomY + 16);
-      });
-    }
-
-    function isInsidePile(x, y) {
-      const p = state.pileRect;
-      return x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h;
-    }
-
-    function nearestTarget(x, y) {
-      let best = null;
-      let bestDist = Number.POSITIVE_INFINITY;
-      state.dropTargets.forEach((target) => {
-        const dx = Math.abs(x - target.x);
-        const dy = y - target.y;
-
-        // Umozni pustit zavazi i na jiz visici sloupec pod bodem.
-        if (dx <= 24 && dy >= -20 && dy <= 180) {
-          const score = dx + Math.max(0, dy * 0.1);
-          if (score < bestDist) {
-            bestDist = score;
-            best = target;
-          }
-          return;
-        }
-
-        const dist = Math.hypot(x - target.x, y - target.y);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = target;
-        }
-      });
-      return bestDist <= 32 ? best : null;
-    }
-
-    function canvasPos(event) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const point = ("clientX" in event && "clientY" in event)
-        ? { clientX: event.clientX, clientY: event.clientY }
-        : ("touches" in event && event.touches && event.touches[0])
-          ? { clientX: event.touches[0].clientX, clientY: event.touches[0].clientY }
-          : { clientX: 0, clientY: 0 };
+    function toWorld(lx, ly, theta) {
+      const c = Math.cos(theta);
+      const s = Math.sin(theta);
+      /* Stejné otáčení jako <g transform="translate(P) rotate(deg)"> + y dolů v SVG. */
       return {
-        x: (point.clientX - rect.left) * scaleX,
-        y: (point.clientY - rect.top) * scaleY
+        x: PIVOT.x + lx * c - ly * s,
+        y: PIVOT.y + lx * s + ly * c,
       };
     }
 
-    function setupDragAndDrop() {
-      canvas.addEventListener("pointerdown", (event) => {
-        if (event.pointerType === "touch") {
-          event.preventDefault();
-        }
-        const p = canvasPos(event);
+    /** Kurzor u tečky (střed díry na tyči ve scéně) → 0…1 — fisheye jen pro díry, ne pro čísla nahoře. */
+    function hoverFocusAtHole(sx, sy, side, slotIdx, theta, sigma) {
+      if (sx == null || sy == null) return 0;
+      const hw = toWorld(holeX(side, slotIdx), 0, theta);
+      const d = Math.hypot(hw.x - sx, hw.y - sy);
+      let w = Math.exp(-(d * d) / (2 * sigma * sigma));
+      return w * w * (3 - 2 * w);
+    }
 
-        // Odebrání: klik na bod se zavěšeným sloupcem odebere 1 závaží zpět do hromady.
-        if (!isInsidePile(p.x, p.y)) {
-          const target = nearestTarget(p.x, p.y);
-          if (target) {
-            const counts = target.side === "left" ? state.leftCounts : state.rightCounts;
-            if (counts[target.index] > 0) {
-              counts[target.index] -= 1;
-              state.pileCount += 1;
-              update();
+    function torque(L, R) {
+      let a = 0;
+      let b = 0;
+      for (let i = 0; i < SLOTS; i += 1) {
+        a += Number(L[i] || 0) * Math.abs(holeX("left", i));
+        b += Number(R[i] || 0) * Math.abs(holeX("right", i));
+      }
+      return { a, b, diff: a - b };
+    }
+
+    /** Levý moment vyšší → levá ramena jdou níž ⇒ záporný úhel θ v soustavě náhledové tyče. */
+    function targetTheta(L, R) {
+      const { diff } = torque(L, R);
+      const mass = IDX.reduce((s, i) => s + Number(L[i] || 0) + Number(R[i] || 0), 0);
+      if (mass === 0) return 0;
+      const denom = mass * BEAM_HALF * 0.92;
+      const u = Math.max(-1, Math.min(1, denom ? diff / denom : 0));
+      return -u * MAX_TILT;
+    }
+
+    function zeros() {
+      return Array.from({ length: SLOTS }, () => 0);
+    }
+
+    /** Špička u osy; měřítko 1,5× — spodek základny jde hlouběji a u spodního okraje plátna se ořízne. */
+    const STAND_ASSET = {
+      vbW: 48,
+      vbH: 107,
+      anchor: { x: 23.6105, y: 1.55 },
+      scale: 3.04 * 1.5,
+    };
+
+    function PivotStand() {
+      const { anchor, scale } = STAND_ASSET;
+      const ty = PIVOT.y + BEAM_TH / 2 + 0.5;
+      const t = `translate(${PIVOT.x},${ty}) scale(${scale}) translate(${-anchor.x},${-anchor.y})`;
+      return html`
+        <g transform=${t} style=${{ pointerEvents: "none" }}>
+          <path
+            fill="#E6E6E6"
+            d="M23.6105 106.307C36.6502 106.307 47.221 95.7365 47.221 82.6968C47.221 69.6571 36.6502 59.0863 23.6105 59.0863C10.5708 59.0863 0 69.6571 0 82.6968C0 95.7365 10.5708 106.307 23.6105 106.307Z"
+          />
+          <path
+            fill="#B2B2B2"
+            d="M23.6117 100.406C33.3923 100.406 41.3211 92.4773 41.3211 82.6967C41.3211 72.9161 33.3923 64.9873 23.6117 64.9873C13.8311 64.9873 5.90234 72.9161 5.90234 82.6967C5.90234 92.4773 13.8311 100.406 23.6117 100.406Z"
+          />
+          <path
+            fill="#813B50"
+            d="M34.8826 92.9576C29.042 98.7982 19.5797 98.7982 13.7451 92.9576C10.341 89.5536 8.78112 84.7105 9.56713 79.9582L22.4879 1.55086C22.8265 -0.516952 25.8073 -0.516952 26.1459 1.55086L39.0666 79.9582C39.8526 84.7105 38.2927 89.5536 34.8887 92.9576H34.8826Z"
+          />
+          <path
+            fill="#F03B50"
+            d="M12.9257 80.8344C12.9257 80.8344 12.8712 80.8344 12.8471 80.8284C12.5568 80.786 12.3513 80.5139 12.3996 80.2177L21.7834 17.8993C21.8257 17.6091 22.1038 17.4035 22.394 17.4519C22.6843 17.4942 22.8898 17.7663 22.8415 18.0626L13.4577 80.3809C13.4154 80.647 13.1917 80.8344 12.9257 80.8344V80.8344Z"
+          />
+        </g>`;
+    }
+
+    /** Půlkruh pod čepem — v soustavě tyče (otáčí se s ní). */
+    const CRADLE_R = 68;
+    const NEEDLE_USER_TIP_X = 2.40835;
+    const NEEDLE_USER_TIP_Y = 0.707408;
+    const NEEDLE_SCALE = 4.7;
+    /** Posun ručičky v pixelech (záporné = nahoru v soustavě tyče). */
+    const NEEDLE_OFFSET_Y = -8;
+
+    function Beam({ theta, left, right, dropTargetHole, hoverPointer }) {
+      const deg = (theta * 180) / Math.PI;
+      const cyEdge = BEAM_TH / 2;
+      const cradleD = `M ${-CRADLE_R} ${cyEdge} A ${CRADLE_R} ${CRADLE_R} 0 0 0 ${CRADLE_R} ${cyEdge} Z`;
+      const holeFill = (n) =>
+        Number(n || 0) > 0 ? COLORS.holeOccupied : COLORS.hole;
+      const hintR = HOLE_R + HOLE_DROP_HINT_DR;
+      const sx = hoverPointer?.sx;
+      const sy = hoverPointer?.sy;
+      const dropHalo =
+        dropTargetHole &&
+        html`<circle key="drop-hint-1"
+          cx=${holeX(dropTargetHole.side, dropTargetHole.idx)} cy=${0} r=${hintR}
+          fill="rgba(255,255,255,0.42)" stroke=${COLORS.pivot} strokeWidth=${2.75}
+          style=${{ pointerEvents: "none" }}
+        />`;
+      return html`
+        <g key="beam-assembly">
+          <g transform=${`translate(${PIVOT.x},${PIVOT.y}) rotate(${deg})`}>
+            <rect x=${-BEAM_HALF} y=${-BEAM_TH / 2}
+              width=${BEAM_HALF * 2} height=${BEAM_TH}
+              rx=${BEAM_TH / 2} ry=${BEAM_TH / 2}
+              fill=${COLORS.beam} />
+            ${dropHalo}
+            ${IDX.map((i) => {
+              const wL = hoverFocusAtHole(
+                sx,
+                sy,
+                "left",
+                i,
+                theta,
+                HOLE_LABEL_FOCUS_SIGMA,
+              );
+              const wR = hoverFocusAtHole(
+                sx,
+                sy,
+                "right",
+                i,
+                theta,
+                HOLE_LABEL_FOCUS_SIGMA,
+              );
+              const eL = Math.min(1, wL ** 1.08);
+              const eR = Math.min(1, wR ** 1.08);
+              const rL = HOLE_R * (1 + 0.52 * eL);
+              const rR = HOLE_R * (1 + 0.52 * eR);
+              return html`
+                <g key=${`dh-${i}`}>
+                  <circle
+                    key=${`lh-${i}`}
+                    cx=${holeX("left", i)}
+                    cy=${0}
+                    r=${rL}
+                    fill=${holeFill(left[i])}
+                    stroke=${eL > 0.07 ? COLORS.pivot : "none"}
+                    strokeWidth=${1.3 + 2.8 * eL}
+                    style=${{ pointerEvents: "none" }}
+                  />
+                  <circle
+                    key=${`rh-${i}`}
+                    cx=${holeX("right", i)}
+                    cy=${0}
+                    r=${rR}
+                    fill=${holeFill(right[i])}
+                    stroke=${eR > 0.07 ? COLORS.pivot : "none"}
+                    strokeWidth=${1.3 + 2.8 * eR}
+                    style=${{ pointerEvents: "none" }}
+                  />
+                </g>
+              `;
+            })}
+            <path d=${cradleD} fill=${COLORS.beamCradle} style=${{ pointerEvents: "none" }} />
+            <g
+              transform=${`translate(0,${NEEDLE_OFFSET_Y}) scale(${NEEDLE_SCALE}) translate(${-NEEDLE_USER_TIP_X},${-NEEDLE_USER_TIP_Y})`}
+              style=${{ pointerEvents: "none" }}>
+              <path
+                fill=${COLORS.pivotNeedle}
+                d="M0.703315 0.707408C1.64652 -0.235803 3.17016 -0.235803 4.11337 0.707408C4.66358 1.25761 4.91148 2.03758 4.78451 2.80544L2.70461 15.442C2.6502 15.7746 2.17254 15.7746 2.11208 15.442L0.0321748 2.80544C-0.0947958 2.03758 0.159155 1.25761 0.703315 0.707408Z"
+              />
+            </g>
+          </g>
+        </g>`;
+    }
+
+    /** Čísla háčků — zvýraznění podle vzdálenosti od tečky; sousedé ±1 na stejné straně jsou záměrně menší. */
+    function HoleSlotLabels({ theta, showHoleLabels, hoverHint }) {
+      if (!showHoleLabels) return null;
+      const ff = "system-ui, -apple-system, Segoe UI, sans-serif";
+      const texts = [];
+      const sx = hoverHint?.sx;
+      const sy = hoverHint?.sy;
+
+      const raw = { left: [], right: [] };
+      for (const side of ["left", "right"]) {
+        for (let i = 0; i < SLOTS; i += 1) {
+          let w = 0;
+          if (sx != null && sy != null) {
+            w = hoverFocusAtHole(sx, sy, side, i, theta, HOLE_LABEL_FOCUS_SIGMA);
+          }
+          raw[side].push(w);
+        }
+      }
+
+      let bestS = "left";
+      let bestI = 0;
+      let bestW = -1;
+      for (const side of ["left", "right"]) {
+        for (let i = 0; i < SLOTS; i += 1) {
+          const v = raw[side][i];
+          if (v > bestW) {
+            bestW = v;
+            bestS = side;
+            bestI = i;
+          }
+        }
+      }
+
+      for (const side of ["left", "right"]) {
+        for (let i = 0; i < SLOTS; i += 1) {
+          const a = toWorld(holeX(side, i), 0, theta);
+          const lx = a.x;
+          let ly = a.y - HOLE_LABEL_GAP_ABOVE;
+
+          let w = raw[side][i];
+          let wForSize = w;
+          if (
+            bestW > 1e-6 &&
+            side === bestS &&
+            Math.abs(i - bestI) === 1
+          ) {
+            wForSize = w * HOLE_LABEL_NEIGHBOR_DAMP;
+          }
+          const wSharp = Math.min(1, wForSize ** 1.35);
+          const dSize = HOLE_LABEL_NUM_PEAK - HOLE_LABEL_FONT;
+          ly -= dSize * 0.11 * wSharp;
+          const fs = HOLE_LABEL_FONT + dSize * wSharp;
+          const fw = 520 + Math.round((860 - 520) * wSharp);
+          const sw = 2 + 5.5 * wSharp;
+          const paintOrder = wSharp > 0.06 ? "stroke fill" : undefined;
+          const fillPct = Math.round(w * 100);
+          const fill = `color-mix(in oklab, ${COLORS.pivot} ${fillPct}%, ${COLORS.holeLabelMuted})`;
+
+          texts.push(html`
+            <text
+              key=${`${side}-hl-${i}`}
+              x=${lx}
+              y=${ly}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill=${fill}
+              stroke=${wSharp > 0.06 ? COLORS.bg : "none"}
+              strokeWidth=${sw}
+              paintOrder=${paintOrder}
+              fontSize=${fs}
+              fontWeight=${fw}
+              fontFamily=${ff}
+              style=${{ pointerEvents: "none" }}
+            >
+              ${i + 1}
+            </text>
+          `);
+        }
+      }
+
+      return html`<g key="hole-slot-labels" style=${{ pointerEvents: "none" }}>${texts}</g>`;
+    }
+
+    /** Přidat (+ v kroužku) / odebrat (× v kroužku) — u kurzoru nad dírou / závažím. */
+    function HoverActionBadge({ x, y, kind, rootKey = "hover-badge" }) {
+      const isAdd = kind === "add";
+      const iconColor = isAdd ? COLORS.pivot : COLORS.holeOccupied;
+      const a = HOVER_BADGE_PLUS_ARM;
+      const d = HOVER_BADGE_X_EXTENT;
+      return html`
+        <g
+          key=${rootKey}
+          transform=${`translate(${x},${y})`}
+          style=${{ pointerEvents: "none" }}>
+          ${
+            isAdd
+              ? html`<circle
+                  r=${HOVER_BADGE_ADD_HALO_R}
+                  fill=${COLORS.pivot}
+                  fillOpacity=${0.92}
+                  style=${{ pointerEvents: "none" }}
+                />`
+              : null
+          }
+          <circle
+            r=${HOVER_BADGE_R + 0.65}
+            fill="rgba(42, 34, 38, 0.12)"
+            cx=${0.45}
+            cy=${0.6}
+            style=${{ pointerEvents: "none" }}
+          />
+          <circle
+            r=${HOVER_BADGE_R}
+            fill="rgba(255,255,255,0.98)"
+            stroke=${COLORS.pivot}
+            strokeWidth=${HOVER_BADGE_STROKE_W}
+            style=${{ pointerEvents: "none" }}
+          />
+          ${
+            isAdd
+              ? html`<g
+                  stroke=${iconColor}
+                  strokeWidth=${HOVER_BADGE_ICON_SW}
+                  strokeLinecap="round"
+                  fill="none"
+                  style=${{ pointerEvents: "none" }}>
+                  <line x1=${-a} y1=${0} x2=${a} y2=${0} />
+                  <line x1=${0} y1=${-a} x2=${0} y2=${a} />
+                </g>`
+              : html`<g
+                  stroke=${iconColor}
+                  strokeWidth=${HOVER_BADGE_ICON_SW}
+                  strokeLinecap="round"
+                  fill="none"
+                  style=${{ pointerEvents: "none" }}>
+                  <line x1=${-d} y1=${-d} x2=${d} y2=${d} />
+                  <line x1=${d} y1=${-d} x2=${-d} y2=${d} />
+                </g>`
+          }
+        </g>
+      `;
+    }
+
+    function Stacks({ theta, counts, side }) {
+      const groups = IDX.map((i) => {
+        const n = Number(counts[i] || 0);
+        if (n <= 0) return null;
+
+        const { lx, ly } = holeHangLocal(side, i);
+        const anchor = toWorld(lx, ly, theta);
+        const wx = anchor.x;
+        let y = anchor.y;
+        let yBottomLast = anchor.y;
+        const yTops = [];
+        for (let k = 0; k < n; k += 1) {
+          const ropeLen = k === 0 ? ROPE_FROM_HOLE : ROPE_BETWEEN;
+          const yTopWeight = y + ropeLen;
+          yTops.push(yTopWeight);
+          yBottomLast = yTopWeight + WEIGHT_H;
+          y = yTopWeight + WEIGHT_H + STACK_AFTER_WEIGHT;
+        }
+        const pieces = [
+          html`<line key=${`rv-${side}-${i}`}
+            x1=${wx} y1=${anchor.y} x2=${wx} y2=${yBottomLast}
+            stroke=${COLORS.rope}
+            strokeWidth=${ROPE_STROKE_W}
+            strokeLinecap="round"
+            style=${{ pointerEvents: "none" }}
+          />`,
+        ];
+        for (let k = 0; k < n; k += 1) {
+          const yTopWeight = yTops[k];
+            pieces.push(html`
+            <rect key=${`bk-${side}-${i}-${k}`}
+              x=${wx - WEIGHT_W / 2}
+              y=${yTopWeight}
+              width=${WEIGHT_W}
+              height=${WEIGHT_H}
+              rx=${WEIGHT_CORNER_R}
+              ry=${WEIGHT_CORNER_R}
+              fill=${COLORS.weight}
+            />`);
+        }
+        return html`<g key=${`stk-${side}-${i}`}>${pieces}</g>`;
+      });
+      return html`<g>${groups.filter(Boolean)}</g>`;
+    }
+
+    function clientToLocalSvg(clientX, clientY, svg) {
+      if (!svg) return null;
+      const pt = svg.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const m = svg.getScreenCTM();
+      if (!m) return null;
+      return pt.matrixTransform(m.inverse());
+    }
+
+    function App() {
+      const [left, setLeft] = useState(() => zeros());
+      const [right, setRight] = useState(() => zeros());
+      const [dragPx, setDragPx] = useState(null);
+      const [theta, setTheta] = useState(0);
+      /** Kurzor: + u díry (add), × na závaží (remove). Při sloupci obojí. */
+      const [hoverHint, setHoverHint] = useState(null);
+
+      const thetaRef = useRef(0);
+      thetaRef.current = theta;
+
+      const snapRef = useRef({ L: left, R: right });
+      snapRef.current = { L: left, R: right };
+
+      const dragRef = useRef(null);
+      const balanceSvgRef = useRef(null);
+      /** Místo pointerdown při tažení závaží z tyče — pro rozlišení kliku vs. přesunu. */
+      const beamPickupClientRef = useRef(null);
+
+      useEffect(() => {
+        let id;
+        const loop = () => {
+          const tgt = targetTheta(snapRef.current.L, snapRef.current.R);
+          setTheta((prev) => {
+            let n = prev + (tgt - prev) * 0.165;
+            if (Math.abs(n - tgt) < 1e-6) n = tgt;
+            return n;
+          });
+          id = requestAnimationFrame(loop);
+        };
+        id = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(id);
+      }, []);
+
+      const holesMeta = useMemo(() => {
+        const list = [];
+        const lyHole = 0;
+        for (let i = 0; i < SLOTS; i += 1) {
+          list.push({
+            side: "left",
+            idx: i,
+            lx: holeX("left", i),
+            ly: lyHole,
+            r: HOLE_R + 44,
+          });
+          list.push({
+            side: "right",
+            idx: i,
+            lx: holeX("right", i),
+            ly: lyHole,
+            r: HOLE_R + 44,
+          });
+        }
+        return list;
+      }, []);
+
+      const clientToBalance = useCallback((clientX, clientY) => {
+        return clientToLocalSvg(clientX, clientY, balanceSvgRef.current);
+      }, []);
+
+      const holeAt = useCallback(
+        (x, y) => {
+          const th = thetaRef.current;
+          let best = null;
+          let bestDist = Infinity;
+          for (let q = 0; q < holesMeta.length; q += 1) {
+            const h = holesMeta[q];
+            const w = toWorld(h.lx, h.ly, th);
+            const dist = Math.hypot(x - w.x, y - w.y);
+            if (dist <= h.r && dist < bestDist) {
+              bestDist = dist;
+              best = { side: h.side, idx: h.idx };
             }
           }
-          return;
-        }
+          return best;
+        },
+        [holesMeta],
+      );
 
-        // Přidání: tažením z hromady přidáš nové závaží.
-        if (state.pileCount <= 0) {
-          return;
-        }
-        canvas.setPointerCapture?.(event.pointerId);
-        state.dragging = true;
-        state.dragX = p.x;
-        state.dragY = p.y;
-        update();
-      });
-
-      canvas.addEventListener("pointermove", (event) => {
-        if (!state.dragging) {
-          return;
-        }
-        if (event.pointerType === "touch") {
-          event.preventDefault();
-        }
-        const p = canvasPos(event);
-        state.dragX = p.x;
-        state.dragY = p.y;
-        update();
-      });
-
-      canvas.addEventListener("pointerup", (event) => {
-        if (!state.dragging) {
-          return;
-        }
-        if (event.pointerType === "touch") {
-          event.preventDefault();
-        }
-        const p = canvasPos(event);
-        const target = nearestTarget(p.x, p.y);
-        if (target) {
-          if (target.side === "left") {
-            state.leftCounts[target.index] += 1;
-          } else {
-            state.rightCounts[target.index] += 1;
+      const columnAt = useCallback((x, y, L, R) => {
+        const th = thetaRef.current;
+        const hitR = Math.max(78, WEIGHT_W * 0.85);
+        let best = null;
+        let bestDist = Infinity;
+        for (let i = SLOTS - 1; i >= 0; i -= 1) {
+          for (const side of ["left", "right"]) {
+            const cnt = Number((side === "left" ? L[i] : R[i]) || 0);
+            if (!cnt) continue;
+            const centers = plumbStackCenters(side, i, cnt, th);
+            for (let k = centers.length - 1; k >= 0; k -= 1) {
+              const { cx, cy } = centers[k];
+              const dist = Math.hypot(x - cx, y - cy);
+              if (dist < hitR && dist < bestDist) {
+                bestDist = dist;
+                best = { side, idx: i, cx, cy };
+              }
+            }
           }
-          state.pileCount = Math.max(0, state.pileCount - 1);
         }
-        state.dragging = false;
-        update();
-      });
+        return best;
+      }, []);
 
-      canvas.addEventListener("pointercancel", () => {
-        if (!state.dragging) {
+      const refreshHoverHint = useCallback((clientX, clientY) => {
+        const p = clientToLocalSvg(clientX, clientY, balanceSvgRef.current);
+        if (!p) {
+          setHoverHint(null);
           return;
         }
-        state.dragging = false;
-        update();
-      });
-    }
-
-    function update() {
-      const ML = sumMoment(state.leftCounts);
-      const MR = sumMoment(state.rightCounts);
-      const diff = ML - MR;
-
-      if (labels.ML) labels.ML.textContent = formatNumber(ML, 1);
-      if (labels.MR) labels.MR.textContent = formatNumber(MR, 1);
-      if (labels.pileCount) labels.pileCount.textContent = String(state.pileCount);
-
-      const tolerance = 1.5;
-      if (Math.abs(diff) <= tolerance) {
-        if (labels.state) {
-          labels.state.textContent = "Rovnováha";
-          labels.state.className = "badge ok";
+        if (dragRef.current) {
+          setHoverHint(null);
+          return;
         }
-      } else if (diff > 0) {
-        if (labels.state) {
-          labels.state.textContent = "Převáží vlevo";
-          labels.state.className = "badge bad";
+        const { L, R } = snapRef.current;
+        const w = columnAt(p.x, p.y, L, R);
+        const h = holeAt(p.x, p.y);
+        const th = thetaRef.current;
+
+        let add = null;
+        let remove = null;
+
+        if (h) {
+          const hw = toWorld(holeX(h.side, h.idx), 0, th);
+          add = {
+            x: hw.x,
+            y: hw.y,
+            side: h.side,
+            idx: h.idx,
+          };
+          /* Nad dírou („tečkou“) chceme +; × jen když je kurzor blíž tělu závaží než středu díry. */
+          if (
+            w &&
+            w.side === h.side &&
+            w.idx === h.idx &&
+            Math.hypot(p.x - w.cx, p.y - w.cy) < Math.hypot(p.x - hw.x, p.y - hw.y)
+          ) {
+            remove = {
+              x: w.cx,
+              y: w.cy,
+              side: w.side,
+              idx: w.idx,
+            };
+          }
+        } else if (w) {
+          remove = {
+            x: w.cx,
+            y: w.cy,
+            side: w.side,
+            idx: w.idx,
+          };
+          const wp = toWorld(holeX(w.side, w.idx), 0, th);
+          add = {
+            x: wp.x,
+            y: wp.y,
+            side: w.side,
+            idx: w.idx,
+          };
         }
-      } else {
-        if (labels.state) {
-          labels.state.textContent = "Převáží vpravo";
-          labels.state.className = "badge warn";
+
+        if (!add && !remove) {
+          setHoverHint(null);
+          return;
         }
+        setHoverHint({ add, remove, sx: p.x, sy: p.y });
+      }, [columnAt, holeAt]);
+
+      function commitDrop(clientX, clientY) {
+        const d = dragRef.current;
+        const pickup = beamPickupClientRef.current;
+        beamPickupClientRef.current = null;
+        dragRef.current = null;
+        setDragPx(null);
+        if (!d) return;
+
+        const movedMuch =
+          !pickup ||
+          Math.hypot(clientX - pickup.x, clientY - pickup.y) >= BEAM_DRAG_TAP_MAX_PX;
+
+        const pBal = clientToBalance(clientX, clientY);
+        const x = pBal ? pBal.x : -1;
+        const y = pBal ? pBal.y : -1;
+
+        const h = pBal ? holeAt(x, y) : null;
+        if (h) {
+          const sameSlot = h.side === d.side && h.idx === d.idx;
+          if (sameSlot && !movedMuch) {
+            return;
+          }
+          const set = h.side === "left" ? setLeft : setRight;
+          set((prev) => {
+            const a = [...prev];
+            a[h.idx] += 1;
+            return a;
+          });
+          return;
+        }
+
+        /* Klik na × nad závažím: puštění je mimo kruh díry → holeAt null, jinak se závaží zbytečně vrátilo. */
+        if (!movedMuch) {
+          return;
+        }
+
+        const set = d.side === "left" ? setLeft : setRight;
+        set((prev) => {
+          const a = [...prev];
+          a[d.idx] += 1;
+          return a;
+        });
       }
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const pivotX = canvas.width / 2;
-      const pivotY = 170;
-      const halfLength = 320;
-      const maxTilt = Math.PI / 7.2;
-      let tilt = 0;
-      if (isVerified()) {
-        const totalMoment = ML + MR;
-        const imbalance = totalMoment > 0 ? diff / totalMoment : 0;
-        const normalized = Math.max(-1, Math.min(1, imbalance));
-        tilt = -normalized * maxTilt;
+      function clearAllWeights() {
+        dragRef.current = null;
+        beamPickupClientRef.current = null;
+        setDragPx(null);
+        setHoverHint(null);
+        thetaRef.current = 0;
+        setTheta(0);
+        setLeft(zeros());
+        setRight(zeros());
       }
 
-      drawPivot(pivotX, pivotY);
-      const lever = drawLever(tilt, pivotX, pivotY, halfLength);
-      drawDropPoints(pivotX, pivotY, lever);
-      drawHangingWeights("left", state.leftCounts, pivotX, pivotY, lever);
-      drawHangingWeights("right", state.rightCounts, pivotX, pivotY, lever);
-      drawPile();
-
-      if (state.dragging) {
-        drawWeight(state.dragX, state.dragY, "right");
+      function onBalancePointerMove(e) {
+        refreshHoverHint(e.clientX, e.clientY);
+        if (!dragRef.current) return;
+        const p = clientToBalance(e.clientX, e.clientY);
+        if (!p) return;
+        setDragPx({ x: p.x, y: p.y });
       }
 
-      if (balanceText) {
-        if (!isVerified()) {
-          balanceText.classList.add("hidden");
-          balanceText.textContent = "";
-        } else {
-          balanceText.classList.remove("hidden");
-          const tolerance = 1.5;
-          balanceText.textContent = Math.abs(diff) <= tolerance
-            ? "Páka je v rovnováze"
-            : "Páka není v rovnováze";
+      function onBalancePointerUp(e) {
+        if (dragRef.current) {
+          commitDrop(e.clientX, e.clientY);
         }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => refreshHoverHint(e.clientX, e.clientY));
+        });
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch (_) { /* nop */ }
       }
 
-      setControlsEnabled();
-      updateResetButtonPosition();
+      function onBalancePointerCancel(e) {
+        const d = dragRef.current;
+        beamPickupClientRef.current = null;
+        if (d) {
+          dragRef.current = null;
+          setDragPx(null);
+          const set = d.side === "left" ? setLeft : setRight;
+          set((prev) => {
+            const a = [...prev];
+            a[d.idx] += 1;
+            return a;
+          });
+        }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => refreshHoverHint(e.clientX, e.clientY));
+        });
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch (_) { /* nop */ }
+      }
+
+      const showDropHints =
+        dragPx != null && dragRef.current != null;
+      const showHoleSlotNumbers = showDropHints || hoverHint != null;
+      const dropTargetHole =
+        showDropHints && dragPx ? holeAt(dragPx.x, dragPx.y) : null;
+
+      const balanceGhost =
+        dragPx &&
+        dragRef.current &&
+        html`<rect
+          x=${dragPx.x - WEIGHT_W / 2}
+          y=${dragPx.y - WEIGHT_H / 2}
+          width=${WEIGHT_W}
+          height=${WEIGHT_H}
+          rx=${WEIGHT_CORNER_R}
+          ry=${WEIGHT_CORNER_R}
+          fill=${COLORS.weight}
+          style=${{ pointerEvents: "none" }}
+        />`;
+
+      const hoverHud =
+        hoverHint &&
+        html`<g key="hover-hud-root" style=${{ pointerEvents: "none" }}>
+          ${hoverHint.add &&
+            html`<${HoverActionBadge}
+              rootKey="hover-badge-add"
+              x=${hoverHint.add.x}
+              y=${hoverHint.add.y}
+              kind="add"
+            />`}
+          ${hoverHint.remove &&
+            html`<${HoverActionBadge}
+              rootKey="hover-badge-remove"
+              x=${hoverHint.remove.x}
+              y=${hoverHint.remove.y}
+              kind="remove"
+            />`}
+        </g>`;
+
+      const totalWeights = useMemo(
+        () =>
+          IDX.reduce(
+            (s, i) => s + Number(left[i] || 0) + Number(right[i] || 0),
+            0,
+          ),
+        [left, right],
+      );
+
+      return html`
+        <div class="app">
+          <main class="stage">
+            ${totalWeights === 0 &&
+              html`<p class="stage-hint" aria-live="polite">
+                Umístěte závaží kliknutím na bílé tečky na tyči.
+              </p>`}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stage-svg"
+              viewBox=${`0 0 ${VIEW.W} ${VIEW.H}`}
+              preserveAspectRatio="xMidYMid meet"
+              ref=${(el) => {
+                balanceSvgRef.current = el;
+              }}
+              onPointerDown=${(e) => {
+                const p = clientToLocalSvg(e.clientX, e.clientY, balanceSvgRef.current);
+                if (!p) return;
+                const th = thetaRef.current;
+                const c = columnAt(p.x, p.y, left, right);
+                const h = holeAt(p.x, p.y);
+
+                if (h) {
+                  let addAtHole = true;
+                  if (c) {
+                    const hw = toWorld(holeX(h.side, h.idx), 0, th);
+                    const dHole = Math.hypot(p.x - hw.x, p.y - hw.y);
+                    const dWeight = Math.hypot(p.x - c.cx, p.y - c.cy);
+                    if (c.side === h.side && c.idx === h.idx) {
+                      addAtHole = dHole <= dWeight;
+                    } else {
+                      addAtHole = dHole < dWeight;
+                    }
+                  }
+                  if (addAtHole) {
+                    const set = h.side === "left" ? setLeft : setRight;
+                    set((prev) => {
+                      const a = [...prev];
+                      a[h.idx] += 1;
+                      return a;
+                    });
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() =>
+                        refreshHoverHint(e.clientX, e.clientY),
+                      );
+                    });
+                    return;
+                  }
+                }
+
+                if (c) {
+                  beamPickupClientRef.current = {
+                    x: e.clientX,
+                    y: e.clientY,
+                  };
+                  dragRef.current = { side: c.side, idx: c.idx };
+                  if (c.side === "left") {
+                    setLeft((prev) => {
+                      const a = [...prev];
+                      a[c.idx] = Math.max(0, a[c.idx] - 1);
+                      return a;
+                    });
+                  } else {
+                    setRight((prev) => {
+                      const a = [...prev];
+                      a[c.idx] = Math.max(0, a[c.idx] - 1);
+                      return a;
+                    });
+                  }
+                  setDragPx({ x: p.x, y: p.y });
+                  refreshHoverHint(e.clientX, e.clientY);
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch (_) { /* nop */ }
+                  return;
+                }
+              }}
+              onPointerMove=${onBalancePointerMove}
+              onPointerUp=${onBalancePointerUp}
+              onPointerCancel=${onBalancePointerCancel}
+              onPointerLeave=${() => setHoverHint(null)}>
+              <rect width=${VIEW.W} height=${VIEW.H} fill=${COLORS.bg} />
+              <${PivotStand} />
+              <${Beam}
+                theta=${theta}
+                left=${left}
+                right=${right}
+                dropTargetHole=${dropTargetHole}
+                hoverPointer=${
+                  hoverHint?.sx != null && hoverHint?.sy != null
+                    ? { sx: hoverHint.sx, sy: hoverHint.sy }
+                    : null
+                }
+              />
+              <${Stacks} theta=${theta} counts=${left} side="left" />
+              <${Stacks} theta=${theta} counts=${right} side="right" />
+              <${HoleSlotLabels}
+                theta=${theta}
+                showHoleLabels=${showHoleSlotNumbers}
+                hoverHint=${hoverHint}
+              />
+              ${balanceGhost}
+              ${hoverHud}
+            </svg>
+            ${totalWeights > 0 &&
+              html`<button
+                type="button"
+                class="clear-weights-btn"
+                onClick=${clearAllWeights}
+              >
+                Sundat závaží
+              </button>`}
+          </main>
+        </div>`;
     }
 
-    setupDragAndDrop();
-    if (researchBtn) {
-      researchBtn.addEventListener("click", () => {
-        if (isTaskModalOpen()) {
-          closeTaskModal();
-        } else {
-          openTaskModal();
-        }
-      });
-    }
-    if (closeTaskModalBtn) {
-      closeTaskModalBtn.addEventListener("click", closeTaskModal);
-    }
-    if (taskModal) {
-      taskModal.addEventListener("pointerdown", (event) => {
-        if (event.target === taskModal) {
-          closeTaskModal();
-        }
-      });
-    }
-    window.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && isTaskModalOpen()) {
-        event.preventDefault();
-        closeTaskModal();
-      }
-    });
-    if (verifyBtn) {
-      verifyBtn.addEventListener("click", () => {
-        state.verified = true;
-        verifyBtn.disabled = true;
-        verifyBtn.textContent = "Ověřeno";
-        if (backBtn) backBtn.classList.remove("hidden");
-        update();
-      });
-    }
-    if (backBtn) {
-      backBtn.addEventListener("click", () => {
-        state.verified = false;
-        state.dragging = false;
-        if (verifyBtn) {
-          verifyBtn.disabled = false;
-          verifyBtn.textContent = "Ověřit";
-        }
-        backBtn.classList.add("hidden");
-        update();
-      });
-    }
-    if (resetBtn) {
-      resetBtn.addEventListener("click", () => {
-        const totalOnLever =
-          state.leftCounts.reduce((a, b) => a + b, 0) +
-          state.rightCounts.reduce((a, b) => a + b, 0);
-        state.leftCounts = Array(positions.length).fill(0);
-        state.rightCounts = Array(positions.length).fill(0);
-        state.pileCount += totalOnLever;
-        update();
-      });
-    }
-    window.addEventListener("resize", updateResetButtonPosition);
-    update();
+    createRoot(document.getElementById("root")).render(html`<${App} />`);
   </script>
 </body>
 </html>
