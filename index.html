@@ -868,7 +868,7 @@
               const dist = Math.hypot(x - cx, y - cy);
               if (dist < hitR && dist < bestDist) {
                 bestDist = dist;
-                best = { side, idx: i, cx, cy };
+                best = { side, idx: i, cx, cy, k };
               }
             }
           }
@@ -895,48 +895,27 @@
         let remove = null;
 
         if (h) {
+          add = { side: h.side, idx: h.idx };
           const hw = toWorld(holeX(h.side, h.idx), 0, th);
-          add = {
-            x: hw.x,
-            y: hw.y,
-            side: h.side,
-            idx: h.idx,
-          };
-          /* Nad dírou („tečkou“) chceme +; × jen když je kurzor blíž tělu závaží než středu díry. */
+          /* Nad dírou = +; × jen když je prst blíž závaží než středu díry. */
           if (
             w &&
             w.side === h.side &&
             w.idx === h.idx &&
             Math.hypot(p.x - w.cx, p.y - w.cy) < Math.hypot(p.x - hw.x, p.y - hw.y)
           ) {
-            remove = {
-              x: w.cx,
-              y: w.cy,
-              side: w.side,
-              idx: w.idx,
-            };
+            remove = { side: w.side, idx: w.idx, k: w.k };
           }
         } else if (w) {
-          remove = {
-            x: w.cx,
-            y: w.cy,
-            side: w.side,
-            idx: w.idx,
-          };
-          const wp = toWorld(holeX(w.side, w.idx), 0, th);
-          add = {
-            x: wp.x,
-            y: wp.y,
-            side: w.side,
-            idx: w.idx,
-          };
+          remove = { side: w.side, idx: w.idx, k: w.k };
+          add = { side: w.side, idx: w.idx };
         }
 
         if (!add && !remove) {
           setHoverHint(null);
           return;
         }
-        setHoverHint({ add, remove, sx: p.x, sy: p.y });
+        setHoverHint({ add, remove, clientX, clientY });
       }, [columnAt, holeAt]);
 
       function commitDrop(clientX, clientY) {
@@ -1055,21 +1034,56 @@
           style=${{ pointerEvents: "none" }}
         />`;
 
+      let hoverPointerLive = null;
+      let hoverAddPos = null;
+      let hoverRemovePos = null;
+      if (hoverHint) {
+        const p = clientToLocalSvg(
+          hoverHint.clientX,
+          hoverHint.clientY,
+          balanceSvgRef.current,
+        );
+        if (p) {
+          hoverPointerLive = { sx: p.x, sy: p.y };
+          if (hoverHint.add) {
+            const hw = toWorld(
+              holeX(hoverHint.add.side, hoverHint.add.idx),
+              0,
+              theta,
+            );
+            hoverAddPos = { x: hw.x, y: hw.y };
+          }
+          if (hoverHint.remove) {
+            const { side, idx, k } = hoverHint.remove;
+            const cnt = Number(
+              (side === "left" ? left[idx] : right[idx]) || 0,
+            );
+            if (cnt > 0 && k >= 0 && k < cnt) {
+              const centers = plumbStackCenters(side, idx, cnt, theta);
+              const c = centers[k];
+              if (c) hoverRemovePos = { x: c.cx, y: c.cy };
+            }
+          }
+        }
+      }
+
       const hoverHud =
         hoverHint &&
+        hoverPointerLive &&
+        (hoverAddPos || hoverRemovePos) &&
         html`<g key="hover-hud-root" style=${{ pointerEvents: "none" }}>
-          ${hoverHint.add &&
+          ${hoverAddPos &&
             html`<${HoverActionBadge}
               rootKey="hover-badge-add"
-              x=${hoverHint.add.x}
-              y=${hoverHint.add.y}
+              x=${hoverAddPos.x}
+              y=${hoverAddPos.y}
               kind="add"
             />`}
-          ${hoverHint.remove &&
+          ${hoverRemovePos &&
             html`<${HoverActionBadge}
               rootKey="hover-badge-remove"
-              x=${hoverHint.remove.x}
-              y=${hoverHint.remove.y}
+              x=${hoverRemovePos.x}
+              y=${hoverRemovePos.y}
               kind="remove"
             />`}
         </g>`;
@@ -1232,8 +1246,8 @@
                 right=${right}
                 dropTargetHole=${dropTargetHole}
                 hoverPointer=${
-                  hoverHint?.sx != null && hoverHint?.sy != null
-                    ? { sx: hoverHint.sx, sy: hoverHint.sy }
+                  hoverPointerLive
+                    ? { sx: hoverPointerLive.sx, sy: hoverPointerLive.sy }
                     : null
                 }
               />
@@ -1242,7 +1256,11 @@
               <${HoleSlotLabels}
                 theta=${theta}
                 showHoleLabels=${showHoleSlotNumbers}
-                hoverHint=${hoverHint}
+                hoverHint=${
+                  hoverPointerLive
+                    ? { sx: hoverPointerLive.sx, sy: hoverPointerLive.sy }
+                    : null
+                }
               />
               ${showBalancedLabel &&
                 html`<text
