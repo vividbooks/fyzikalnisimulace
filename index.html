@@ -25,6 +25,7 @@
       display: flex;
       flex-direction: column;
       width: 100%;
+      overflow: visible;
     }
     .app {
       flex: 1;
@@ -32,6 +33,7 @@
       flex-direction: column;
       min-height: 0;
       width: 100%;
+      overflow: visible;
     }
     .stage {
       flex: 1;
@@ -42,6 +44,7 @@
       background: #ffffff;
       padding: 0;
       position: relative;
+      overflow: visible;
     }
     .stage-svg {
       display: block;
@@ -50,6 +53,7 @@
       min-height: 0;
       user-select: none;
       touch-action: none;
+      overflow: visible;
     }
     .clear-weights-btn {
       position: absolute;
@@ -100,6 +104,10 @@
 
     const html = htm.bind(React.createElement);
 
+    /**
+     * Logická šířka scény pro souřadnice osového bodu — viewBox se dopočítá tak,
+     * aby byla páka v celém rozsahu náklonu vždy vidět (včetně čísel háčků a podstavce).
+     */
     const VIEW = { W: 960, H: 510 };
 
     const COLORS = {
@@ -120,10 +128,11 @@
       weight: "#3d4d5c",
     };
 
-    const SLOTS = 9;
+    const SLOTS = 10;
     const IDX = [...Array(SLOTS).keys()];
 
-    const BEAM_HALF = 296 * 0.7 * 1.5 * 1.3;
+    /** Celková délka tyče +100 % oproti původní hodnotě (`* 2`). */
+    const BEAM_HALF = 296 * 0.7 * 1.5 * 1.3 * 2;
     const BEAM_TH = 75;
     const HOLE_R = 9;
     const HOLE_DROP_HINT_DR = 8;
@@ -150,7 +159,7 @@
     const MAX_TILT = (60 * Math.PI) / 180;
 
     /** Závaží 2× oproti původní velikosti; provázky prodloužené, aby visela níž. */
-    const WEIGHT_W = 100;
+    const WEIGHT_W = 70;
     const WEIGHT_H = 44;
     /** Zakulacení rohů závaží (menší než polovina výšky → ne celá pilulka). */
     const WEIGHT_CORNER_R = 8;
@@ -161,12 +170,14 @@
     const STACK_AFTER_WEIGHT = 5;
     const ROPE_STROKE_W = 5.25;
 
+    /**
+     * Jednotka ramene háčku od čepu. Háček č. k (label {k}) má rameno k×jednotka — pak
+     * např. 4 závaží na háčku 1 a 1 na háčku 4 dává stejný moment (4·1 = 1·4).
+     */
+    const HOOK_ARM_UNIT = (BEAM_HALF * 0.92) / SLOTS;
+
     function holeX(side, i) {
-      const margin = BEAM_HALF * 0.07;
-      const inner = BEAM_HALF * 0.12;
-      const t = i / Math.max(1, SLOTS - 1);
-      const span = BEAM_HALF - margin - inner;
-      const d = inner + t * span;
+      const d = HOOK_ARM_UNIT * (i + 1);
       return side === "left" ? -d : d;
     }
 
@@ -195,7 +206,7 @@
     function toWorld(lx, ly, theta) {
       const c = Math.cos(theta);
       const s = Math.sin(theta);
-      /* Stejné otáčení jako <g transform="translate(P) rotate(deg)"> + y dolů v SVG. */
+      /* Stejná lineární část jako matice v <Beam>: matrix(cos,sin,-sin,cos,Px,Py). */
       return {
         x: PIVOT.x + lx * c - ly * s,
         y: PIVOT.y + lx * s + ly * c,
@@ -211,31 +222,44 @@
       return w * w * (3 - 2 * w);
     }
 
-    function torque(L, R) {
-      let a = 0;
-      let b = 0;
+    /** Moment od tíhy díky rameni (× jednotková tíha v díře), kolem čepu: Σ n_i·x_i; vlevo x < 0. */
+    function netMomentAboutPivot(L, R) {
+      let tau = 0;
       for (let i = 0; i < SLOTS; i += 1) {
-        a += Number(L[i] || 0) * Math.abs(holeX("left", i));
-        b += Number(R[i] || 0) * Math.abs(holeX("right", i));
+        tau += Number(L[i] || 0) * holeX("left", i);
+        tau += Number(R[i] || 0) * holeX("right", i);
       }
-      return { a, b, diff: a - b };
-    }
-
-    /** Levý moment vyšší → levá ramena jdou níž ⇒ záporný úhel θ v soustavě náhledové tyče. */
-    function targetTheta(L, R) {
-      const { diff } = torque(L, R);
-      const mass = IDX.reduce((s, i) => s + Number(L[i] || 0) + Number(R[i] || 0), 0);
-      if (mass === 0) return 0;
-      const denom = mass * BEAM_HALF * 0.92;
-      const u = Math.max(-1, Math.min(1, denom ? diff / denom : 0));
-      return -u * MAX_TILT;
+      return tau;
     }
 
     function zeros() {
       return Array.from({ length: SLOTS }, () => 0);
     }
 
-    /** Špička u osy; měřítko 1,5× — spodek základny jde hlouběji a u spodního okraje plátna se ořízne. */
+    /**
+     * Referenční |τ|: po jednom jednotkovém závaží v každé díře na jedné straně (druhá strana prázdná).
+     * Úhel škálujeme oproti tomu — ne proti celkové hmotnosti (ta by přidávání závaží na stejné straně uměle zmenšovalo sklon).
+     */
+    const TAU_REF_ONE_SIDE_UNITS = (() => {
+      const L = zeros();
+      const R = zeros();
+      for (let i = 0; i < SLOTS; i += 1) R[i] = 1;
+      const t = Math.abs(netMomentAboutPivot(L, R));
+      return t > 1e-6 ? t : 1;
+    })();
+
+    /** τ = Σ n·x (x záporné vlevo): τ > 0 ⇒ převažuje pravá strana v souřadnicích tyče. */
+    function targetTheta(L, R) {
+      const tau = netMomentAboutPivot(L, R);
+      if (Math.abs(tau) < 1e-9) return 0;
+      const u = Math.max(
+        -1,
+        Math.min(1, tau / TAU_REF_ONE_SIDE_UNITS),
+      );
+      return u * MAX_TILT;
+    }
+
+    /** Špička u osy; měřítko 1,5× — výška podstavce je zahrnutá ve výpočtu viewBox (`SCENE_VIEW`). */
     const STAND_ASSET = {
       vbW: 48,
       vbH: 107,
@@ -243,9 +267,16 @@
       scale: 3.04 * 1.5,
     };
 
+    const PIVOT_STAND_GROUP_TY = PIVOT.y + BEAM_TH / 2 + 0.5;
+    const STAND_FOOT_BOTTOM_Y =
+      PIVOT_STAND_GROUP_TY +
+      STAND_ASSET.scale * (STAND_ASSET.vbH - STAND_ASSET.anchor.y);
+    /** Text „páka je v rovnováze“ — těsně pod spodkem podstavce. */
+    const BALANCE_LABEL_Y = STAND_FOOT_BOTTOM_Y + 22;
+
     function PivotStand() {
       const { anchor, scale } = STAND_ASSET;
-      const ty = PIVOT.y + BEAM_TH / 2 + 0.5;
+      const ty = PIVOT_STAND_GROUP_TY;
       const t = `translate(${PIVOT.x},${ty}) scale(${scale}) translate(${-anchor.x},${-anchor.y})`;
       return html`
         <g transform=${t} style=${{ pointerEvents: "none" }}>
@@ -276,8 +307,146 @@
     /** Posun ručičky v pixelech (záporné = nahoru v soustavě tyče). */
     const NEEDLE_OFFSET_Y = -8;
 
+    /** Zámeček nad osou: zamknuto ⇒ tyč setrvá v rovnováze (θ = 0) bez ohledu na závaží. */
+    const BEAM_LOCK_CX = PIVOT.x;
+    const BEAM_LOCK_CY = PIVOT.y - BEAM_TH / 2 - 56;
+    const BEAM_LOCK_HIT_W = 78;
+    const BEAM_LOCK_HIT_H = 94;
+
+    /** Ohraničení viditelné scény: páka v ±MAX_TILT, štítky, podstavec; spodek navíc pro závaží. */
+    const SCENE_PAD = 26;
+    /** Odhad výšky štítu čísla nad dírou (dominantBaseline middle, max. font ~ HOLE_LABEL_NUM_PEAK). */
+    const HOLE_LABEL_TOP_EXTENT = HOLE_LABEL_GAP_ABOVE + HOLE_LABEL_NUM_PEAK * 0.52;
+    /** Volný prostor pod nejnižším prvkem (podstavec) pro visící závaží. */
+    const SCENE_WEIGHT_MARGIN_BELOW = 300;
+
+    const SCENE_VIEW = (() => {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      const add = (wx, wy) => {
+        minX = Math.min(minX, wx);
+        maxX = Math.max(maxX, wx);
+        minY = Math.min(minY, wy);
+        maxY = Math.max(maxY, wy);
+      };
+      const standTy = PIVOT_STAND_GROUP_TY;
+      const { anchor, scale: sc, vbW, vbH } = STAND_ASSET;
+      const standCorners = [
+        [0, 0],
+        [vbW, 0],
+        [0, vbH],
+        [vbW, vbH],
+      ];
+      const thetas = [MAX_TILT, -MAX_TILT, 0];
+      const hw = BEAM_TH / 2;
+      for (const th of thetas) {
+        for (const [lx, ly] of [
+          [-BEAM_HALF, -hw],
+          [BEAM_HALF, -hw],
+          [BEAM_HALF, hw],
+          [-BEAM_HALF, hw],
+        ]) {
+          const p = toWorld(lx, ly, th);
+          add(p.x, p.y);
+        }
+        for (const lx of [-CRADLE_R, CRADLE_R, 0]) {
+          for (const ly of [hw, hw + CRADLE_R]) {
+            const p = toWorld(lx, ly, th);
+            add(p.x, p.y);
+          }
+        }
+        for (const side of ["left", "right"]) {
+          for (let i = 0; i < SLOTS; i++) {
+            const hx = holeX(side, i);
+            const h = toWorld(hx, 0, th);
+            add(h.x, h.y);
+            add(h.x, h.y - HOLE_LABEL_TOP_EXTENT);
+          }
+        }
+      }
+      for (const [lx, ly] of standCorners) {
+        const wx = PIVOT.x + sc * (lx - anchor.x);
+        const wy = standTy + sc * (ly - anchor.y);
+        add(wx, wy);
+      }
+      add(BEAM_LOCK_CX - BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY - BEAM_LOCK_HIT_H / 2);
+      add(BEAM_LOCK_CX + BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY + BEAM_LOCK_HIT_H / 2);
+      add(PIVOT.x - 280, BALANCE_LABEL_Y);
+      add(PIVOT.x + 280, BALANCE_LABEL_Y + 44);
+      maxY += SCENE_WEIGHT_MARGIN_BELOW;
+      const px = SCENE_PAD;
+      return {
+        minX: minX - px,
+        minY: minY - px,
+        w: maxX - minX + 2 * px,
+        h: maxY - minY + 2 * px,
+      };
+    })();
+
+    /**
+     * Zvětšení na obrazovce oproti logickým souřadnicím. Jen násobit konstanty nestačí —
+     * viewBox se stejně dopočítá na celou scénu a SVG s `meet` výsledek na displeji zmenší.
+     */
+    const STAGE_SVG_SCALE = 1.2;
+    const STAGE_SVG_TRANSFORM_ORIGIN = `${((PIVOT.x - SCENE_VIEW.minX) / SCENE_VIEW.w) * 100}% ${((PIVOT.y - SCENE_VIEW.minY) / SCENE_VIEW.h) * 100}%`;
+
+    function hitBeamLock(px, py) {
+      return (
+        Math.abs(px - BEAM_LOCK_CX) <= BEAM_LOCK_HIT_W / 2 &&
+        Math.abs(py - BEAM_LOCK_CY) <= BEAM_LOCK_HIT_H / 2
+      );
+    }
+
+    /** Ikona zámečku nad páčkou (SVG, vyplněná a v barvě osy). */
+    function BeamLockIcon({ locked }) {
+      const b = COLORS.pivot;
+      const shackle = locked
+        ? html`<path
+            key="lock-shackle-shut"
+            d="M -16 4 L -16 -12 A 16 16 0 0 1 16 -12 L 16 4"
+            fill="none"
+            stroke=${b}
+            strokeWidth=${4.3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />`
+        : html`<path
+            key="lock-shackle-open"
+            d="M -16 4 L -16 -12 A 16 16 0 0 1 6 -22"
+            fill="none"
+            stroke=${b}
+            strokeWidth=${4.3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />`;
+      return html`
+        <g
+          key="beam-lock-icon-root"
+          transform=${`translate(${BEAM_LOCK_CX},${BEAM_LOCK_CY})`}
+          style=${{ pointerEvents: "none" }}
+        >
+          <title>
+            ${
+              locked
+                ? "Osa zamčena v rovnováze. Kliknutím odemknout."
+                : "Osa odemčena — páka reaguje na závaží. Kliknutím zamknout rovnováhu."
+            }
+          </title>
+          ${shackle}
+          <rect x="-19" y="4" width="38" height="30" rx="6" fill=${b} />
+          <circle cx=${0} cy=${19} r=${3.2} fill="rgba(255,255,255,0.34)" />
+          <rect x=${-1.2} y=${19} width=${2.4} height=${8} rx=${1} fill="rgba(255,255,255,0.34)" />
+        </g>
+      `;
+    }
+
     function Beam({ theta, left, right, dropTargetHole, hoverPointer }) {
-      const deg = (theta * 180) / Math.PI;
+      const c = Math.cos(theta);
+      const s = Math.sin(theta);
+      /** Stejná lineární část jako `toWorld` — jedna matrice místo translate+rotate(stupně). */
+      const beamMat = `matrix(${c}, ${s}, ${-s}, ${c}, ${PIVOT.x}, ${PIVOT.y})`;
       const cyEdge = BEAM_TH / 2;
       const cradleD = `M ${-CRADLE_R} ${cyEdge} A ${CRADLE_R} ${CRADLE_R} 0 0 0 ${CRADLE_R} ${cyEdge} Z`;
       const holeFill = (n) =>
@@ -294,7 +463,7 @@
         />`;
       return html`
         <g key="beam-assembly">
-          <g transform=${`translate(${PIVOT.x},${PIVOT.y}) rotate(${deg})`}>
+          <g transform=${beamMat}>
             <rect x=${-BEAM_HALF} y=${-BEAM_TH / 2}
               width=${BEAM_HALF * 2} height=${BEAM_TH}
               rx=${BEAM_TH / 2} ry=${BEAM_TH / 2}
@@ -564,6 +733,8 @@
       const [theta, setTheta] = useState(0);
       /** Kurzor: + u díry (add), × na závaží (remove). Při sloupci obojí. */
       const [hoverHint, setHoverHint] = useState(null);
+      /** Zamknutá osa — tyč zůstane vodorovně (nezávisle na závažích). */
+      const [beamLocked, setBeamLocked] = useState(true);
 
       const thetaRef = useRef(0);
       thetaRef.current = theta;
@@ -579,7 +750,9 @@
       useEffect(() => {
         let id;
         const loop = () => {
-          const tgt = targetTheta(snapRef.current.L, snapRef.current.R);
+          const tgt = beamLocked
+            ? 0
+            : targetTheta(snapRef.current.L, snapRef.current.R);
           setTheta((prev) => {
             let n = prev + (tgt - prev) * 0.165;
             if (Math.abs(n - tgt) < 1e-6) n = tgt;
@@ -589,7 +762,7 @@
         };
         id = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(id);
-      }, []);
+      }, [beamLocked]);
 
       const holesMeta = useMemo(() => {
         const list = [];
@@ -866,6 +1039,17 @@
         [left, right],
       );
 
+      const showBalancedLabel = useMemo(() => {
+        if (beamLocked) return false;
+        if (totalWeights === 0) return false;
+        const tau = netMomentAboutPivot(left, right);
+        const tauOk =
+          Math.abs(tau) <
+          Math.max(1.5, TAU_REF_ONE_SIDE_UNITS * 5e-5);
+        const angleOk = Math.abs(theta) < 0.055;
+        return tauOk && angleOk;
+      }, [beamLocked, totalWeights, left, right, theta]);
+
       return html`
         <div class="app">
           <main class="stage">
@@ -876,14 +1060,22 @@
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="stage-svg"
-              viewBox=${`0 0 ${VIEW.W} ${VIEW.H}`}
+              viewBox=${`${SCENE_VIEW.minX} ${SCENE_VIEW.minY} ${SCENE_VIEW.w} ${SCENE_VIEW.h}`}
               preserveAspectRatio="xMidYMid meet"
+              style=${{
+                transform: `scale(${STAGE_SVG_SCALE})`,
+                transformOrigin: STAGE_SVG_TRANSFORM_ORIGIN,
+              }}
               ref=${(el) => {
                 balanceSvgRef.current = el;
               }}
               onPointerDown=${(e) => {
                 const p = clientToLocalSvg(e.clientX, e.clientY, balanceSvgRef.current);
                 if (!p) return;
+                if (hitBeamLock(p.x, p.y)) {
+                  setBeamLocked((v) => !v);
+                  return;
+                }
                 const th = thetaRef.current;
                 const c = columnAt(p.x, p.y, left, right);
                 const h = holeAt(p.x, p.y);
@@ -947,8 +1139,35 @@
               onPointerUp=${onBalancePointerUp}
               onPointerCancel=${onBalancePointerCancel}
               onPointerLeave=${() => setHoverHint(null)}>
-              <rect width=${VIEW.W} height=${VIEW.H} fill=${COLORS.bg} />
+              <rect
+                x=${SCENE_VIEW.minX}
+                y=${SCENE_VIEW.minY}
+                width=${SCENE_VIEW.w}
+                height=${SCENE_VIEW.h}
+                fill=${COLORS.bg}
+              />
               <${PivotStand} />
+              ${showBalancedLabel &&
+                html`<text
+                  key="balance-status"
+                  x=${PIVOT.x}
+                  y=${BALANCE_LABEL_Y}
+                  textAnchor="middle"
+                  dominantBaseline="hanging"
+                  fill=${COLORS.pivot}
+                  stroke=${COLORS.bg}
+                  strokeWidth=${6}
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
+                  fontSize=${32}
+                  fontWeight=${800}
+                  letterSpacing="-0.03em"
+                  fontFamily="system-ui, -apple-system, Segoe UI, sans-serif"
+                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 3px 10px rgba(42, 34, 38, 0.35))" }}
+                  aria-live="polite"
+                >
+                  páka je v rovnováze
+                </text>`}
               <${Beam}
                 theta=${theta}
                 left=${left}
@@ -967,6 +1186,7 @@
                 showHoleLabels=${showHoleSlotNumbers}
                 hoverHint=${hoverHint}
               />
+              <${BeamLockIcon} locked=${beamLocked} />
               ${balanceGhost}
               ${hoverHud}
             </svg>
