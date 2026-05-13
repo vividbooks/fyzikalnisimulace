@@ -976,6 +976,14 @@
       function onBalancePointerMove(e) {
         refreshHoverHint(e.clientX, e.clientY);
         if (!dragRef.current) return;
+        const pickup = beamPickupClientRef.current;
+        if (
+          pickup &&
+          Math.hypot(e.clientX - pickup.x, e.clientY - pickup.y) <
+            BEAM_DRAG_TAP_MAX_PX
+        ) {
+          return;
+        }
         const p = clientToBalance(e.clientX, e.clientY);
         if (!p) return;
         setDragPx({ x: p.x, y: p.y });
@@ -1220,7 +1228,6 @@
                       return a;
                     });
                   }
-                  setDragPx({ x: p.x, y: p.y });
                   refreshHoverHint(e.clientX, e.clientY);
                   try {
                     e.currentTarget.setPointerCapture(e.pointerId);
