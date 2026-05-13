@@ -389,12 +389,6 @@
       };
     })();
 
-    /**
-     * Zvětšení na obrazovce oproti logickým souřadnicím. Jen násobit konstanty nestačí —
-     * viewBox se stejně dopočítá na celou scénu a SVG s `meet` výsledek na displeji zmenší.
-     */
-    const STAGE_SVG_SCALE = 1.2;
-    const STAGE_SVG_TRANSFORM_ORIGIN = `${((PIVOT.x - SCENE_VIEW.minX) / SCENE_VIEW.w) * 100}% ${((PIVOT.y - SCENE_VIEW.minY) / SCENE_VIEW.h) * 100}%`;
     /** Mezera tlačítka „Sundat závaží“ pod spodek podstavce (obrazovka px). */
     const CLEAR_WEIGHTS_BELOW_FOOT_PX = 8;
 
@@ -724,12 +718,38 @@
 
     function clientToLocalSvg(clientX, clientY, svg) {
       if (!svg) return null;
-      const pt = svg.createSVGPoint();
-      pt.x = clientX;
-      pt.y = clientY;
-      const m = svg.getScreenCTM();
-      if (!m) return null;
-      return pt.matrixTransform(m.inverse());
+      const vb = svg.viewBox?.baseVal;
+      if (!vb || vb.width <= 0 || vb.height <= 0) return null;
+      const rect = svg.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      /** Stejné chování jako `preserveAspectRatio="xMidYMid meet"` (rovnoměrné měřítko, vycentrování). */
+      const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
+      const dispW = vb.width * scale;
+      const dispH = vb.height * scale;
+      const tx = rect.left + (rect.width - dispW) / 2;
+      const ty = rect.top + (rect.height - dispH) / 2;
+      return {
+        x: vb.x + (clientX - tx) / scale,
+        y: vb.y + (clientY - ty) / scale,
+      };
+    }
+
+    /** Opak `clientToLocalSvg` — bod ve viewBox → viewport (client) px. */
+    function userToClientXY(ux, uy, svg) {
+      if (!svg) return null;
+      const vb = svg.viewBox?.baseVal;
+      if (!vb || vb.width <= 0 || vb.height <= 0) return null;
+      const rect = svg.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
+      const dispW = vb.width * scale;
+      const dispH = vb.height * scale;
+      const tx = rect.left + (rect.width - dispW) / 2;
+      const ty = rect.top + (rect.height - dispH) / 2;
+      return {
+        x: tx + (ux - vb.x) * scale,
+        y: ty + (uy - vb.y) * scale,
+      };
     }
 
     function App() {
@@ -1057,15 +1077,8 @@
           const svg = balanceSvgRef.current;
           const main = stageRef.current;
           if (!svg || !main) return;
-          const ctm = svg.getScreenCTM();
-          if (!ctm) {
-            requestAnimationFrame(update);
-            return;
-          }
-          const pt = svg.createSVGPoint();
-          pt.x = PIVOT.x;
-          pt.y = STAND_FOOT_BOTTOM_Y;
-          const sp = pt.matrixTransform(ctm);
+          const sp = userToClientXY(PIVOT.x, STAND_FOOT_BOTTOM_Y, svg);
+          if (!sp) return;
           const mr = main.getBoundingClientRect();
           setClearWeightsBtnPos({
             left: sp.x - mr.left,
@@ -1110,10 +1123,6 @@
               class="stage-svg"
               viewBox=${`${SCENE_VIEW.minX} ${SCENE_VIEW.minY} ${SCENE_VIEW.w} ${SCENE_VIEW.h}`}
               preserveAspectRatio="xMidYMid meet"
-              style=${{
-                transform: `scale(${STAGE_SVG_SCALE})`,
-                transformOrigin: STAGE_SVG_TRANSFORM_ORIGIN,
-              }}
               ref=${(el) => {
                 balanceSvgRef.current = el;
               }}
