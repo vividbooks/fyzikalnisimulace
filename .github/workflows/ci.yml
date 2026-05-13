@@ -19,4 +19,17 @@ jobs:
 
       - name: Basic HTML sanity check
         run: |
-          node -e "const fs=require('fs'); const html=fs.readFileSync('index.html','utf8'); if(!/<canvas\\s+id=['\\\"]scene['\\\"]/i.test(html)) { throw new Error('Missing canvas#scene'); } console.log('OK');"
+          node <<'NODE'
+          const fs = require("fs");
+          const html = fs.readFileSync("index.html", "utf8");
+          const checks = [
+            [/id=["']root["']/, "Missing React mount (#root)"],
+            [/class=["'][^"']*stage-svg/, "Missing main SVG (.stage-svg)"],
+            [/createRoot\s*\(/, "Missing React DOM bootstrap (createRoot)"],
+            [/Simulace rovnovážné páky/, "Missing expected page title text"],
+          ];
+          for (const [re, msg] of checks) {
+            if (!re.test(html)) throw new Error(msg);
+          }
+          console.log("OK");
+          NODE
