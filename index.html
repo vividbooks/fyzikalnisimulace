@@ -46,6 +46,14 @@
       position: relative;
       overflow: visible;
     }
+    .stage-svg-scale-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      width: 100%;
+      overflow: visible;
+    }
     .stage-svg {
       display: block;
       width: 100%;
@@ -275,8 +283,8 @@
     const STAND_FOOT_BOTTOM_Y =
       PIVOT_STAND_GROUP_TY +
       STAND_ASSET.scale * (STAND_ASSET.vbH - STAND_ASSET.anchor.y);
-    /** Text „páka je v rovnováze“ — těsně pod spodkem podstavce. */
-    const BALANCE_LABEL_Y = STAND_FOOT_BOTTOM_Y + 22;
+    /** „Páka je v rovnováze“ — nad tyčí (`dominantBaseline: bottom` u horního okraje tyče). */
+    const BALANCE_LABEL_ABOVE_Y = PIVOT.y - BEAM_TH / 2 - 114;
 
     function PivotStand() {
       const { anchor, scale } = STAND_ASSET;
@@ -377,8 +385,8 @@
       }
       add(BEAM_LOCK_CX - BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY - BEAM_LOCK_HIT_H / 2);
       add(BEAM_LOCK_CX + BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY + BEAM_LOCK_HIT_H / 2);
-      add(PIVOT.x - 280, BALANCE_LABEL_Y);
-      add(PIVOT.x + 280, BALANCE_LABEL_Y + 44);
+      add(PIVOT.x - 280, BALANCE_LABEL_ABOVE_Y - 38);
+      add(PIVOT.x + 280, BALANCE_LABEL_ABOVE_Y + 2);
       maxY += SCENE_WEIGHT_MARGIN_BELOW;
       const px = SCENE_PAD;
       return {
@@ -388,6 +396,10 @@
         h: maxY - minY + 2 * px,
       };
     })();
+
+    /** +20 % vizuálně; `transform` je na obalu — na `<svg>` kazí `getScreenCTM` (např. Safari/tablet). */
+    const STAGE_SVG_SCALE = 1.2;
+    const STAGE_SVG_TRANSFORM_ORIGIN = `${((PIVOT.x - SCENE_VIEW.minX) / SCENE_VIEW.w) * 100}% ${((PIVOT.y - SCENE_VIEW.minY) / SCENE_VIEW.h) * 100}%`;
 
     /** Mezera tlačítka „Sundat závaží“ pod spodek podstavce (obrazovka px). */
     const CLEAR_WEIGHTS_BELOW_FOOT_PX = 8;
@@ -718,38 +730,33 @@
 
     function clientToLocalSvg(clientX, clientY, svg) {
       if (!svg) return null;
-      const vb = svg.viewBox?.baseVal;
-      if (!vb || vb.width <= 0 || vb.height <= 0) return null;
-      const rect = svg.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return null;
-      /** Stejné chování jako `preserveAspectRatio="xMidYMid meet"` (rovnoměrné měřítko, vycentrování). */
-      const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
-      const dispW = vb.width * scale;
-      const dispH = vb.height * scale;
-      const tx = rect.left + (rect.width - dispW) / 2;
-      const ty = rect.top + (rect.height - dispH) / 2;
-      return {
-        x: vb.x + (clientX - tx) / scale,
-        y: vb.y + (clientY - ty) / scale,
-      };
+      const pt = svg.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const m = svg.getScreenCTM();
+      if (!m) return null;
+      try {
+        const loc = pt.matrixTransform(m.inverse());
+        return { x: loc.x, y: loc.y };
+      } catch (_) {
+        return null;
+      }
     }
 
-    /** Opak `clientToLocalSvg` — bod ve viewBox → viewport (client) px. */
+    /** Bod ve viewBox / user prostoru SVG → client px (řetězec až k obrazovce vč. CSS na předcích). */
     function userToClientXY(ux, uy, svg) {
       if (!svg) return null;
-      const vb = svg.viewBox?.baseVal;
-      if (!vb || vb.width <= 0 || vb.height <= 0) return null;
-      const rect = svg.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return null;
-      const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
-      const dispW = vb.width * scale;
-      const dispH = vb.height * scale;
-      const tx = rect.left + (rect.width - dispW) / 2;
-      const ty = rect.top + (rect.height - dispH) / 2;
-      return {
-        x: tx + (ux - vb.x) * scale,
-        y: ty + (uy - vb.y) * scale,
-      };
+      const pt = svg.createSVGPoint();
+      pt.x = ux;
+      pt.y = uy;
+      const m = svg.getScreenCTM();
+      if (!m) return null;
+      try {
+        const loc = pt.matrixTransform(m);
+        return { x: loc.x, y: loc.y };
+      } catch (_) {
+        return null;
+      }
     }
 
     function App() {
@@ -1118,6 +1125,13 @@
               html`<p class="stage-hint" aria-live="polite">
                 Umístěte závaží kliknutím na bílé tečky na tyči.
               </p>`}
+            <div
+              class="stage-svg-scale-wrap"
+              style=${{
+                transform: `scale(${STAGE_SVG_SCALE})`,
+                transformOrigin: STAGE_SVG_TRANSFORM_ORIGIN,
+              }}
+            >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="stage-svg"
@@ -1204,27 +1218,6 @@
                 fill=${COLORS.bg}
               />
               <${PivotStand} />
-              ${showBalancedLabel &&
-                html`<text
-                  key="balance-status"
-                  x=${PIVOT.x}
-                  y=${BALANCE_LABEL_Y}
-                  textAnchor="middle"
-                  dominantBaseline="hanging"
-                  fill=${COLORS.pivot}
-                  stroke=${COLORS.bg}
-                  strokeWidth=${6}
-                  strokeLinejoin="round"
-                  paintOrder="stroke fill"
-                  fontSize=${32}
-                  fontWeight=${800}
-                  letterSpacing="-0.03em"
-                  fontFamily="system-ui, -apple-system, Segoe UI, sans-serif"
-                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 3px 10px rgba(42, 34, 38, 0.35))" }}
-                  aria-live="polite"
-                >
-                  páka je v rovnováze
-                </text>`}
               <${Beam}
                 theta=${theta}
                 left=${left}
@@ -1243,10 +1236,32 @@
                 showHoleLabels=${showHoleSlotNumbers}
                 hoverHint=${hoverHint}
               />
+              ${showBalancedLabel &&
+                html`<text
+                  key="balance-status"
+                  x=${PIVOT.x}
+                  y=${BALANCE_LABEL_ABOVE_Y}
+                  textAnchor="middle"
+                  dominantBaseline="bottom"
+                  fill=${COLORS.pivot}
+                  stroke=${COLORS.bg}
+                  strokeWidth=${6}
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
+                  fontSize=${32}
+                  fontWeight=${800}
+                  letterSpacing="-0.03em"
+                  fontFamily="system-ui, -apple-system, Segoe UI, sans-serif"
+                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 3px 10px rgba(42, 34, 38, 0.35))" }}
+                  aria-live="polite"
+                >
+                  páka je v rovnováze
+                </text>`}
               <${BeamLockIcon} locked=${beamLocked} />
               ${balanceGhost}
               ${hoverHud}
             </svg>
+            </div>
             ${totalWeights > 0 &&
               clearWeightsBtnPos &&
               html`<div
