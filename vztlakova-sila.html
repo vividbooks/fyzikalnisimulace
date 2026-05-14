@@ -248,9 +248,10 @@
             <div class="row">
               <label for="material">Materiál závaží</label>
               <select id="material">
-                <option value="al">Hliník (2 700 kg/m³)</option>
-                <option value="fe" selected>Železo/ocel (7 850 kg/m³)</option>
+                <option value="beton" selected>Beton (2 000 kg/m³)</option>
+                <option value="fe">Železo/ocel (7 850 kg/m³)</option>
                 <option value="cu">Měď (8 960 kg/m³)</option>
+                <option value="ag">Stříbro (10 000 kg/m³)</option>
                 <option value="au">Zlato (19 300 kg/m³)</option>
               </select>
             </div>
@@ -288,9 +289,10 @@
               <div class="row">
                 <label for="material2">Materiál 2. závaží</label>
                 <select id="material2">
-                  <option value="al">Hliník (2 700 kg/m³)</option>
-                  <option value="fe" selected>Železo/ocel (7 850 kg/m³)</option>
+                  <option value="beton" selected>Beton (2 000 kg/m³)</option>
+                  <option value="fe">Železo/ocel (7 850 kg/m³)</option>
                   <option value="cu">Měď (8 960 kg/m³)</option>
+                  <option value="ag">Stříbro (10 000 kg/m³)</option>
                   <option value="au">Zlato (19 300 kg/m³)</option>
                 </select>
               </div>
@@ -314,9 +316,10 @@
         const TANK_BOTTOM_CLEARANCE_CM = 2.0;
 
         const MATERIALS = {
-          al: { name: "Hliník", rho: 2700 },
+          beton: { name: "Beton", rho: 2000 },
           fe: { name: "Železo/ocel", rho: 7850 },
           cu: { name: "Měď", rho: 8960 },
+          ag: { name: "Stříbro", rho: 10000 },
           au: { name: "Zlato", rho: 19300 },
         };
 
@@ -473,7 +476,7 @@
         }
 
         function weightFromInputs(materialKey, Vcm3, rhoW, xBottom, waterH, forceFullImmersion) {
-          const material = MATERIALS[materialKey] || MATERIALS.fe;
+          const material = MATERIALS[materialKey] || MATERIALS.beton;
           const rhoObj = Math.max(1, material.rho);
           const V = Math.max(1, Vcm3) * 1e-6; // m3
 
@@ -575,7 +578,7 @@
           if (enable2) immersionLockedW2 = updateImmersionLock(immersionLockedW2, xBottom2, s2, waterH);
 
           const w1 = weightFromInputs(
-            String(els.material.value || "fe"),
+            String(els.material.value || "beton"),
             V1,
             rhoW,
             xBottom1,
@@ -584,7 +587,7 @@
           );
           const w2 = enable2
             ? weightFromInputs(
-                String(els.material2.value || "fe"),
+                String(els.material2.value || "beton"),
                 V2,
                 rhoW,
                 xBottom2,
@@ -623,12 +626,13 @@
 
         function materialFlat(materialKey) {
           const map = {
-            al: "#9ca7b8",
+            beton: "#8a8f94",
             fe: "#5c6575",
             cu: "#c2410c",
+            ag: "#c8d0da",
             au: "#D4AF37",
           };
-          return map[materialKey] || map.fe;
+          return map[materialKey] || map.beton;
         }
 
         function stepWaterMotion(targetRiseCm, now, dVsubM3) {
@@ -1046,6 +1050,7 @@
             const on = els.enable2.checked;
             if (on && !prevEnable2 && els.bottomDepth2) {
               els.bottomDepth2.value = els.bottomDepth.value;
+              if (els.vol2 && els.vol) els.vol2.value = els.vol.value;
             }
             prevEnable2 = on;
             els.w2Wrap.style.display = on ? "grid" : "none";
