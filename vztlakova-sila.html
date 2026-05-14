@@ -142,6 +142,7 @@
         background: transparent;
         max-width: 100%;
         flex-shrink: 0;
+        touch-action: none;
       }
 
       input[type="range"] {
@@ -229,7 +230,7 @@
           id="cv"
           width="1200"
           height="1320"
-          aria-label="Vizualizace ponoření závaží"
+          aria-label="Vizualizace ponoření — závaží táhni myší nebo prstem za tečky"
         ></canvas>
       </div>
 
@@ -263,8 +264,10 @@
             </div>
 
             <div class="row">
-              <label for="bottomDepth">Ponoření</label>
-              <input id="bottomDepth" type="range" min="0" max="45" step="0.1" value="0" />
+              <label>Ponoření</label>
+              <p class="sub">Chyť <strong>závaží za tečky</strong> na kostce a táhni nahoru nebo dolů.</p>
+              <!-- Hodnotu udržuje skript při tažení (dříve posuvník). -->
+              <input id="bottomDepth" type="hidden" value="0" />
             </div>
 
             <div class="row">
@@ -298,6 +301,8 @@
     <script>
       (function () {
         const g = 10;
+        /** Manipulační ponechá závaží u hladiny (cm). */
+        const SUBMERSION_AIR_GAP_CM = 2.0;
 
         const MATERIALS = {
           al: { name: "Hliník", rho: 2700 },
@@ -338,6 +343,18 @@
           lastTargetCm: 0,
           lastTime: performance.now(),
         };
+
+        /** Poslední obdélníky závaží v designových px (pro úchop). */
+        let lastWeightBoxes = { w1: null, w2: null };
+        /** Poslední geometrie pro převod táhnutí → hloubka. */
+        let lastDragGeom = null;
+
+        const dragWeight = {
+          pointerId: null,
+          grabOffsetY: 0,
+        };
+
+        let canvasPointerDesign = null;
 
         /** @returns {number} */
         function num(el, fallback) {
@@ -407,10 +424,9 @@
 
           // Uživatelský posuv: 0 znamená, že závaží je kousek NAD hladinou.
           // (aby bylo v klidu vidět "ve vzduchu", bez vztlaku)
-          const airGapCm = 2.0;
-          // Maximum posuvníku odpovídá "dno nádoby" (dno je waterH pod hladinou) + mezera nad hladinou.
+          const airGapCm = SUBMERSION_AIR_GAP_CM;
+          // Maximum odpovídá "dno nádoby" (dno je waterH pod hladinou) + mezera nad hladinou.
           const maxX = Math.max(0, waterH + airGapCm);
-          if (Number(els.bottomDepth.max) !== maxX) els.bottomDepth.max = String(maxX);
 
           const xUser = clamp(num(els.bottomDepth, 0), 0, maxX); // cm
           const bottomDepthRaw = xUser - airGapCm; // cm (může být i záporné)
@@ -534,6 +550,36 @@
           els.cv.height = Math.max(1, Math.round(DESIGN_H * canvasDpr * canvasLayoutScale));
         }
 
+        function designFromClient(clientX, clientY) {
+          const r = els.cv.getBoundingClientRect();
+          if (r.width <= 0 || r.height <= 0) return null;
+          return {
+            x: ((clientX - r.left) / r.width) * DESIGN_W,
+            y: ((clientY - r.top) / r.height) * DESIGN_H,
+          };
+        }
+
+        function hitWeightBox(px, py, pad) {
+          const p = pad == null ? 20 : pad;
+          const cand = [lastWeightBoxes.w2, lastWeightBoxes.w1].filter(Boolean);
+          for (const b of cand) {
+            if (px >= b.x - p && px <= b.x + b.w + p && py >= b.y - p && py <= b.y + b.h + p) {
+              return b;
+            }
+          }
+          return null;
+        }
+
+        function applyDragToSubmersion(pointerYDesign) {
+          if (!lastDragGeom) return;
+          const g = lastDragGeom;
+          const newBottomY = pointerYDesign - dragWeight.grabOffsetY;
+          let xBottom = (newBottomY - g.baseYWater) / g.pxPerCm;
+          xBottom = clamp(xBottom, -g.airGapCm, g.waterH);
+          const xUser = clamp(xBottom + g.airGapCm, 0, g.maxUserCm);
+          els.bottomDepth.value = String(xUser);
+        }
+
         function draw(s) {
           const ctx = els.cv.getContext("2d");
           ctx.setTransform(canvasDpr * canvasLayoutScale, 0, 0, canvasDpr * canvasLayoutScale, 0, 0);
@@ -602,6 +648,7 @@
           }
 
           const liq = liquidStyle(s.liquidKey);
+          const tankBottomR = Math.min(18 * Z, tankW * 0.06, tankHpx * 0.05);
           function waveY(x) {
             const t = (x - tankX) / tankW;
             const env = Math.sin(t * Math.PI);
@@ -615,41 +662,58 @@
           }
 
           ctx.save();
+          const inset = 2 * Z;
+          const il = tankX + inset;
+          const ir = tankX + tankW - inset;
+          const it = tankY + inset;
+          const ib = yBottom - inset;
+          const innerBR = Math.max(4 * Z, Math.min(tankBottomR, (ir - il) / 2 - 2 * Z, (ib - it) / 4));
           ctx.beginPath();
-          ctx.rect(tankX + 2 * Z, tankY + 2 * Z, tankW - 4 * Z, tankHpx - 4 * Z);
+          ctx.moveTo(il, it);
+          ctx.lineTo(il, ib - innerBR);
+          ctx.arcTo(il, ib, il + innerBR, ib, innerBR);
+          ctx.lineTo(ir - innerBR, ib);
+          ctx.arcTo(ir, ib, ir, ib - innerBR, innerBR);
+          ctx.lineTo(ir, it);
+          ctx.closePath();
           ctx.clip();
           ctx.fillStyle = liq.fill;
           ctx.beginPath();
-          ctx.moveTo(tankX + 2 * Z, yBottom);
-          ctx.lineTo(tankX + 2 * Z, waveY(tankX + 2 * Z));
+          ctx.moveTo(il, waveY(il));
           for (let i = 0; i <= 72; i++) {
-            const x = tankX + 2 * Z + ((tankW - 4 * Z) * i) / 72;
-            ctx.lineTo(x, waveY(x));
+            const wx = il + ((ir - il) * i) / 72;
+            ctx.lineTo(wx, waveY(wx));
           }
-          ctx.lineTo(tankX + tankW - 2 * Z, yBottom);
+          ctx.lineTo(ir, waveY(ir));
+          ctx.lineTo(ir, ib - innerBR);
+          ctx.arcTo(ir, ib, ir - innerBR, ib, innerBR);
+          ctx.lineTo(il + innerBR, ib);
+          ctx.arcTo(il, ib, il, ib - innerBR, innerBR);
           ctx.closePath();
           ctx.fill();
           ctx.strokeStyle = liq.line;
           ctx.lineWidth = Math.max(1.5, 0.9 * Z);
           ctx.lineCap = "butt";
           ctx.beginPath();
-          ctx.moveTo(tankX + 8 * Z, waveY(tankX + 8 * Z));
+          ctx.moveTo(il + 6 * Z, waveY(il + 6 * Z));
           for (let i = 1; i <= 72; i++) {
-            const x = tankX + 8 * Z + ((tankW - 16 * Z) * i) / 72;
+            const x = il + 6 * Z + ((ir - il - 12 * Z) * i) / 72;
             ctx.lineTo(x, waveY(x));
           }
           ctx.stroke();
           ctx.restore();
 
-          // Akvárium je nahoře otevřené, proto kreslíme jen boky a dno.
+          // Akvárium je nahoře otevřené, proto kreslíme jen boky a dno se zakulacenými spodními rohy.
           ctx.strokeStyle = "#b6c0cf";
           ctx.lineWidth = 4 * Z;
           ctx.lineCap = "round";
           ctx.lineJoin = "round";
           ctx.beginPath();
           ctx.moveTo(tankX, tankY);
-          ctx.lineTo(tankX, yBottom);
-          ctx.lineTo(tankX + tankW, yBottom);
+          ctx.lineTo(tankX, yBottom - tankBottomR);
+          ctx.arcTo(tankX, yBottom, tankX + tankBottomR, yBottom, tankBottomR);
+          ctx.lineTo(tankX + tankW - tankBottomR, yBottom);
+          ctx.arcTo(tankX + tankW, yBottom, tankX + tankW, yBottom - tankBottomR, tankBottomR);
           ctx.lineTo(tankX + tankW, tankY);
           ctx.stroke();
 
@@ -684,6 +748,9 @@
             ctx.lineTo(x + sizePx / 2, y - 8 * Z);
             ctx.stroke();
 
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+
             const acc =
               getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() ||
               "#3d5a9a";
@@ -697,7 +764,24 @@
               "rgba(23, 25, 35, 0.14)";
             ctx.lineWidth = Math.max(1.5, 1.5 * Z);
             roundRect(ctx, x, y, sizePx, sizePx, 10 * Z, false, true);
-            return { x, w: sizePx };
+
+            const dotR = Math.max(1.6, 1.85 * Z);
+            const midX = x + sizePx / 2;
+            const midY = y + sizePx / 2;
+            const step = Math.max(8 * Z, sizePx * 0.14);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
+            ctx.lineWidth = Math.max(1, 0.45 * Z);
+            for (let row = -1; row <= 1; row++) {
+              for (let col = -1; col <= 1; col++) {
+                const dcx = midX + col * step;
+                const dcy = midY + row * step;
+                fillCircle(ctx, dcx, dcy, dotR);
+                strokeCircle(ctx, dcx, dcy, dotR);
+              }
+            }
+            ctx.restore();
+            return { x, y, w: sizePx, h: sizePx };
           }
 
           const w1Box = drawWeightUnder(hook1, s1px, w1.materialKey);
@@ -707,6 +791,26 @@
             ctx.fillStyle = "rgba(217, 119, 6, 0.35)";
             ctx.fillRect(w1Box.x - 10 * Z, yBottom - 8 * Z, w1Box.w + 20 * Z, 8 * Z);
             if (w2Box) ctx.fillRect(w2Box.x - 10 * Z, yBottom - 8 * Z, w2Box.w + 20 * Z, 8 * Z);
+          }
+
+          lastWeightBoxes = {
+            w1: { x: w1Box.x, y: w1Box.y, w: w1Box.w, h: w1Box.h },
+            w2: w2Box ? { x: w2Box.x, y: w2Box.y, w: w2Box.w, h: w2Box.h } : null,
+          };
+          lastDragGeom = {
+            pxPerCm,
+            baseYWater,
+            waterH: s.waterH,
+            airGapCm: SUBMERSION_AIR_GAP_CM,
+            maxUserCm: s.waterH + SUBMERSION_AIR_GAP_CM,
+          };
+
+          if (dragWeight.pointerId != null) {
+            els.cv.style.cursor = "grabbing";
+          } else if (canvasPointerDesign && hitWeightBox(canvasPointerDesign.x, canvasPointerDesign.y, 24)) {
+            els.cv.style.cursor = "grab";
+          } else {
+            els.cv.style.cursor = "";
           }
         }
 
@@ -779,7 +883,48 @@
           updateLiquidUI();
           render();
         });
-        els.bottomDepth.addEventListener("input", onAnyChange);
+
+        function endWeightDrag(e) {
+          if (dragWeight.pointerId != null && e.pointerId === dragWeight.pointerId) {
+            try {
+              els.cv.releasePointerCapture(e.pointerId);
+            } catch (_) {
+              /* ignore */
+            }
+            dragWeight.pointerId = null;
+          }
+        }
+
+        els.cv.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          const d = designFromClient(e.clientX, e.clientY);
+          if (!d) return;
+          const box = hitWeightBox(d.x, d.y, 24);
+          if (!box) return;
+          dragWeight.pointerId = e.pointerId;
+          dragWeight.grabOffsetY = d.y - (box.y + box.h);
+          els.cv.setPointerCapture(e.pointerId);
+          e.preventDefault();
+        });
+
+        els.cv.addEventListener("pointermove", (e) => {
+          const d = designFromClient(e.clientX, e.clientY);
+          if (dragWeight.pointerId == null) {
+            canvasPointerDesign = d;
+          }
+          if (dragWeight.pointerId != null && e.pointerId === dragWeight.pointerId && d) {
+            applyDragToSubmersion(d.y);
+            e.preventDefault();
+          }
+        });
+
+        els.cv.addEventListener("pointerup", endWeightDrag);
+        els.cv.addEventListener("pointercancel", endWeightDrag);
+        els.cv.addEventListener("pointerleave", () => {
+          if (dragWeight.pointerId == null) {
+            canvasPointerDesign = null;
+          }
+        });
 
         // init
         updateMaterialUI();
