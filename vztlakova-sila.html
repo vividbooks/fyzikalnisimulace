@@ -957,6 +957,28 @@
                 strokeCircle(ctx, dcx, dcy, dotR);
               }
             }
+
+            const surfY = waveY(midX);
+            const yBot = y + sizePx;
+            const subTop = Math.max(y, surfY);
+            if (subTop < yBot - 0.5) {
+              ctx.save();
+              ctx.globalAlpha = 1;
+              const rCorner = 10 * Z;
+              const cr = Math.min(rCorner, sizePx / 2);
+              ctx.beginPath();
+              ctx.moveTo(x + cr, y);
+              ctx.arcTo(x + sizePx, y, x + sizePx, y + sizePx, cr);
+              ctx.arcTo(x + sizePx, y + sizePx, x, y + sizePx, cr);
+              ctx.arcTo(x, y + sizePx, x, y, cr);
+              ctx.arcTo(x, y, x + sizePx, y, cr);
+              ctx.closePath();
+              ctx.clip();
+              ctx.fillStyle = liq.fill;
+              ctx.fillRect(x - 3, subTop - 3, sizePx + 6, yBot - subTop + 6);
+              ctx.restore();
+            }
+
             ctx.restore();
             return { x, y, w: sizePx, h: sizePx };
           }
