@@ -17,6 +17,7 @@ jobs:
       - name: Validate required files exist
         run: |
           test -f index.html
+          test -f vztlakova-sila.html
           test -f README.md
           test -f LICENSE
 
@@ -28,7 +29,7 @@ jobs:
           const checks = [
             [/id=["']root["']/, "Missing React mount (#root)"],
             [/class=["'][^"']*stage-svg/, "Missing main SVG (.stage-svg)"],
-            [/createRoot\s*\(/, "Missing React DOM bootstrap (createRoot)"],
+            [/VztlakovaSimApp/, "Missing embedded vztlaková sim wrapper"],
             [/Fyzikální simulace/, "Missing expected page title text"],
           ];
           for (const [re, msg] of checks) {

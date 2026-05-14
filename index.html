@@ -283,6 +283,28 @@
       font-weight: 700;
       color: #4e5871;
     }
+
+    .app--embed {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-iframe-wrap {
+      flex: 1;
+      min-height: 0;
+      padding: 0 clamp(14px, 3vw, 24px) clamp(14px, 3vw, 24px);
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-iframe {
+      flex: 1;
+      width: 100%;
+      min-height: min(88vh, 960px);
+      border: 0;
+      border-radius: 16px;
+      background: #f6f8fb;
+      box-shadow: inset 0 0 0 1px #e5e7eb;
+    }
   </style>
 </head>
 <body>
@@ -967,7 +989,14 @@
       {
         id: "kapaliny",
         title: "Kapaliny a plyny",
-        tiles: [],
+        tiles: [
+          {
+            id: "vztlakova",
+            title: "Vztlaková síla",
+            hash: "#/sim/vztlakova",
+            previewColor: "#d4f0fc",
+          },
+        ],
       },
       {
         id: "optika",
@@ -1002,6 +1031,42 @@
         />
         <circle cx="32" cy="50" r="5" fill="#fff" stroke="#5C1F2E" stroke-width="1.5" />
         <circle cx="98" cy="44" r="5" fill="#fff" stroke="#5C1F2E" stroke-width="1.5" />
+      </svg>`;
+    }
+
+    function VztlakovaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <rect
+          x="10"
+          y="46"
+          width="112"
+          height="34"
+          rx="8"
+          fill="#7dd3fc"
+          opacity="0.45"
+        />
+        <path
+          d="M 10 46 L 122 46"
+          fill="none"
+          stroke="#0ea5e9"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        />
+        <path
+          d="M 66 46 L 66 28 M 52 28 L 80 28"
+          fill="none"
+          stroke="#64748b"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+        <rect x="56" y="14" width="20" height="14" rx="3" fill="#111827" />
+        <rect x="54" y="40" width="24" height="22" rx="5" fill="#334155" />
       </svg>`;
     }
 
@@ -1066,7 +1131,13 @@
                               class="sim-card-preview"
                               style=${{ backgroundColor: t.previewColor }}
                             >
-                              ${t.id === "paka" ? html`<${LeverCardIllustration} />` : null}
+                              ${
+                                t.id === "paka"
+                                  ? html`<${LeverCardIllustration} />`
+                                  : t.id === "vztlakova"
+                                    ? html`<${VztlakovaCardIllustration} />`
+                                    : null
+                              }
                             </div>
                             <div
                               class="sim-card-footer"
@@ -1100,6 +1171,13 @@
         return () => window.removeEventListener("hashchange", onHash);
       }, []);
 
+      if (simId === "vztlakova") {
+        return html`<${VztlakovaSimApp}
+          onBack=${() => {
+            location.hash = "";
+          }}
+        />`;
+      }
       if (simId === "paka") {
         return html`<${LeverSimApp}
           onBack=${() => {
@@ -1108,6 +1186,34 @@
         />`;
       }
       return html`<${PhysicsHub} />`;
+    }
+
+    function VztlakovaSimApp({ onBack }) {
+      const src = useMemo(() => {
+        try {
+          return new URL("vztlakova-sila.html", window.location.href).href;
+        } catch (_) {
+          return "vztlakova-sila.html";
+        }
+      }, []);
+      return html`
+        <div class="app app--embed">
+          <header class="sim-subheader">
+            <button
+              type="button"
+              class="sim-back-btn"
+              onClick=${onBack}
+              aria-label="Zpět na přehled simulací"
+            >
+              ← Přehled
+            </button>
+            <h1 class="sim-subheader-title">Vztlaková síla</h1>
+          </header>
+          <div class="sim-iframe-wrap">
+            <iframe class="sim-iframe" title="Vztlaková síla" src=${src} loading="lazy" />
+          </div>
+        </div>
+      `;
     }
 
     function LeverSimApp({ onBack }) {
