@@ -113,6 +113,10 @@
         gap: 8px;
       }
 
+      .row.row-immersion {
+        gap: 5px;
+      }
+
       label {
         font-weight: 650;
         font-size: 0.8125rem;
@@ -132,9 +136,14 @@
         cursor: pointer;
       }
 
+      label.check-label.check-label--immersion-gap {
+        margin-top: 30px;
+      }
+
       .sub {
         color: var(--muted);
         font-size: 0.9rem;
+        margin: 0;
       }
 
       canvas {
@@ -230,7 +239,7 @@
           id="cv"
           width="1200"
           height="1320"
-          aria-label="Vizualizace ponoření — závaží táhni myší nebo prstem za tečky"
+          aria-label="Vizualizace ponoření — chyť závaží a táhni myší nebo prstem nahoru nebo dolů"
         ></canvas>
       </div>
 
@@ -239,10 +248,10 @@
             <div class="row">
               <label for="material">Materiál závaží</label>
               <select id="material">
-                <option value="al">Hliník (2700 kg/m³)</option>
-                <option value="fe" selected>Železo/ocel (7850 kg/m³)</option>
-                <option value="cu">Měď (8960 kg/m³)</option>
-                <option value="au">Zlato (19300 kg/m³)</option>
+                <option value="al">Hliník (2 700 kg/m³)</option>
+                <option value="fe" selected>Železo/ocel (7 850 kg/m³)</option>
+                <option value="cu">Měď (8 960 kg/m³)</option>
+                <option value="au">Zlato (19 300 kg/m³)</option>
               </select>
             </div>
 
@@ -255,23 +264,20 @@
             <div class="row">
               <label for="liquid">Kapalina</label>
               <select id="liquid">
-                <option value="water" selected>Voda (1000 kg/m³)</option>
-                <option value="sea">Mořská voda (1025 kg/m³)</option>
+                <option value="water" selected>Voda (1 000 kg/m³)</option>
+                <option value="sea">Mořská voda (1 025 kg/m³)</option>
                 <option value="oil">Rostlinný olej (920 kg/m³)</option>
                 <option value="ethanol">Etanol (789 kg/m³)</option>
-                <option value="glycerin">Glycerin (1260 kg/m³)</option>
+                <option value="glycerin">Glycerin (1 260 kg/m³)</option>
               </select>
             </div>
 
-            <div class="row">
+            <div class="row row-immersion">
               <label>Ponoření</label>
-              <p class="sub">Chyť <strong>závaží za tečky</strong> na kostce a táhni nahoru nebo dolů.</p>
+              <p class="sub">Chyť závaží a táhni nahoru nebo dolů.</p>
               <!-- Hodnotu udržuje skript při tažení (dříve posuvník). -->
               <input id="bottomDepth" type="hidden" value="0" />
-            </div>
-
-            <div class="row">
-            <label class="check-label" for="enable2">
+              <label class="check-label check-label--immersion-gap" for="enable2">
                 <input id="enable2" type="checkbox" />
                 Druhé závaží
               </label>
@@ -281,10 +287,10 @@
               <div class="row">
                 <label for="material2">Materiál 2. závaží</label>
                 <select id="material2">
-                  <option value="al">Hliník (2700 kg/m³)</option>
-                  <option value="fe" selected>Železo/ocel (7850 kg/m³)</option>
-                  <option value="cu">Měď (8960 kg/m³)</option>
-                  <option value="au">Zlato (19300 kg/m³)</option>
+                  <option value="al">Hliník (2 700 kg/m³)</option>
+                  <option value="fe" selected>Železo/ocel (7 850 kg/m³)</option>
+                  <option value="cu">Měď (8 960 kg/m³)</option>
+                  <option value="au">Zlato (19 300 kg/m³)</option>
                 </select>
               </div>
 
@@ -303,6 +309,8 @@
         const g = 10;
         /** Manipulační ponechá závaží u hladiny (cm). */
         const SUBMERSION_AIR_GAP_CM = 2.0;
+        /** Min. vzdálenost dna závaží od dna nádrže (cm) — nedosáhne úplně na dno. */
+        const TANK_BOTTOM_CLEARANCE_CM = 2.0;
 
         const MATERIALS = {
           al: { name: "Hliník", rho: 2700 },
@@ -344,6 +352,19 @@
           lastTime: performance.now(),
         };
 
+        let lastTotalVsubM3 = -1;
+        /** Vyhlazená rychlost změny Vsub (m³/s) — bez toho kvant hloubky + impuls každý snímek „restartují“ vlnu. */
+        let submergeRateSmoothed = 0;
+
+        /** Změna objemu pod hladinou od min. snímku (+ ponoření, − vynoření) — zvlnění v obou směrech. */
+        function consumeSubmersionDeltaM3(s) {
+          const t = s.w1.Vsub + (s.w2 ? s.w2.Vsub : 0);
+          let d = 0;
+          if (lastTotalVsubM3 >= 0) d = t - lastTotalVsubM3;
+          lastTotalVsubM3 = t;
+          return d;
+        }
+
         /** Poslední obdélníky závaží v designových px (pro úchop). */
         let lastWeightBoxes = { w1: null, w2: null };
         /** Poslední geometrie pro převod táhnutí → hloubka. */
@@ -356,6 +377,12 @@
 
         let canvasPointerDesign = null;
 
+        /** Hystereze plného ponoření — u hladiny jinak kolísá zlomek objemu a siloměr. */
+        let immersionLockedW1 = false;
+        let immersionLockedW2 = false;
+        let lastV1ForImmersion = null;
+        let lastV2ForImmersion = null;
+
         /** @returns {number} */
         function num(el, fallback) {
           const v = Number(el.value);
@@ -366,16 +393,55 @@
           return Math.min(b, Math.max(a, x));
         }
 
+        /** Snížení šumu z pointeru / převodu px→cm (jinak kolísá siloměr u hladiny). */
+        function quantizeDepthCm(cm) {
+          return Math.round(cm * 20) / 20;
+        }
+
+        /** Skupiny po 3 číslicích (řád tisíců / stovek …) — česká mezera. */
+        function formatIntCs(n) {
+          const x = Math.round(Number(n));
+          if (!Number.isFinite(x)) return String(n);
+          const neg = x < 0;
+          const s = String(Math.abs(x));
+          const parts = [];
+          for (let i = s.length; i > 0; i -= 3) {
+            parts.unshift(s.slice(Math.max(0, i - 3), i));
+          }
+          return (neg ? "-" : "") + parts.join(" ");
+        }
+
+        /** Desetinná čárka + skupiny v celé části. */
+        function formatDecimalCs(x, fracDigits) {
+          if (!Number.isFinite(x)) return String(x);
+          const neg = x < 0;
+          const ax = Math.abs(x);
+          const fixed = ax.toFixed(fracDigits);
+          const dot = fixed.indexOf(".");
+          const intRaw = dot === -1 ? fixed : fixed.slice(0, dot);
+          const dec = dot === -1 ? "" : fixed.slice(dot + 1);
+          const intFmt = formatIntCs(Number(intRaw));
+          if (fracDigits === 0 || dec === "") return (neg ? "-" : "") + intFmt;
+          return (neg ? "-" : "") + intFmt + "," + dec;
+        }
+
         function fmtN(x) {
-          return x.toFixed(2).replace(".", ",") + " N";
+          return formatDecimalCs(x, 2) + " N";
+        }
+
+        /** Stejné zaokrouhlení jako digitální siloměr (krok 0,005 N). */
+        function tensionDisplayedN(valueN) {
+          const x = Number(valueN);
+          if (!Number.isFinite(x) || Math.abs(x) < 1e-9) return 0;
+          return Math.round(x * 200) / 200;
         }
 
         function fmtG(x) {
-          return (x * 1000).toFixed(0) + " g";
+          return formatIntCs(x * 1000) + " g";
         }
 
         function fmtCm(x) {
-          return x.toFixed(1).replace(".", ",") + " cm";
+          return formatDecimalCs(x, 1) + " cm";
         }
 
         function updateMaterialUI() {
@@ -386,7 +452,21 @@
           // už jen předdefinované kapaliny (bez vlastní hustoty)
         }
 
-        function weightFromInputs(materialKey, Vcm3, rhoW, xBottom, waterH) {
+        /** Zobrazená hrana krychle (cm), shodně jako ve weightFromInputs. */
+        function cubeDisplaySideCm(Vcm3) {
+          return Math.cbrt(Math.max(1, Vcm3)) * 2.0;
+        }
+
+        /** Zámek drží plné Vsub až do výrazně menší hloubky (exit > enter). */
+        function updateImmersionLock(wasLocked, bottomDepth, sideDispCm, waterH) {
+          if (sideDispCm <= 0 || bottomDepth > waterH + 1e-9) return false;
+          const enter = Math.max(0.48, sideDispCm * 0.058);
+          const exit = Math.max(0.82, sideDispCm * 0.102);
+          if (wasLocked) return bottomDepth >= sideDispCm - exit;
+          return bottomDepth + enter >= sideDispCm;
+        }
+
+        function weightFromInputs(materialKey, Vcm3, rhoW, xBottom, waterH, forceFullImmersion) {
           const material = MATERIALS[materialKey] || MATERIALS.fe;
           const rhoObj = Math.max(1, material.rho);
           const V = Math.max(1, Vcm3) * 1e-6; // m3
@@ -399,8 +479,22 @@
 
           const bottom = xBottom; // cm (dno tělesa pod hladinou)
           const top = bottom - sideDispCm; // cm (vršek tělesa pod hladinou)
-          const submergedCm = Math.max(0, Math.min(bottom, waterH) - Math.max(top, 0)); // cm
-          const frac = sideDispCm > 0 ? clamp(submergedCm / sideDispCm, 0, 1) : 0;
+
+          let submergedCm = Math.max(0, Math.min(bottom, waterH) - Math.max(top, 0)); // cm
+          submergedCm = clamp(submergedCm, 0, sideDispCm);
+
+          let frac;
+          const fitsInWaterColumn = bottom <= waterH + 1e-9;
+          if (forceFullImmersion && fitsInWaterColumn) {
+            frac = 1;
+            submergedCm = sideDispCm;
+          } else {
+            frac = sideDispCm > 0 ? submergedCm / sideDispCm : 0;
+            frac = clamp(frac, 0, 1);
+            if (frac > 1 - 1e-6) frac = 1;
+            if (frac < 1e-6) frac = 0;
+          }
+
           const Vsub = frac * V;
           const W = rhoObj * g * V;
           const B = rhoW * g * Vsub;
@@ -414,7 +508,6 @@
           // Nádoba a hladina jsou pevně dané (v UI se nezobrazují).
           const tankHFixed = 40; // cm
           const waterHFixed = 30; // cm
-          const tankAreaCm2 = 55; // zjednodušený průřez nádoby pro výpočet zvýšení hladiny
 
           const liquidKey = String(els.liquid.value || "water");
           const liquid = LIQUIDS[liquidKey] || LIQUIDS.water;
@@ -425,26 +518,49 @@
           // Uživatelský posuv: 0 znamená, že závaží je kousek NAD hladinou.
           // (aby bylo v klidu vidět "ve vzduchu", bez vztlaku)
           const airGapCm = SUBMERSION_AIR_GAP_CM;
-          // Maximum odpovídá "dno nádoby" (dno je waterH pod hladinou) + mezera nad hladinou.
-          const maxX = Math.max(0, waterH + airGapCm);
+          const maxBottomDepth = quantizeDepthCm(
+            Math.max(-airGapCm, waterH - TANK_BOTTOM_CLEARANCE_CM),
+          );
+          // Maximum posuvu: nejhlubší dno závaží + mezera nad hladinou.
+          const maxX = Math.max(0, maxBottomDepth + airGapCm);
 
-          const xUser = clamp(num(els.bottomDepth, 0), 0, maxX); // cm
-          const bottomDepthRaw = xUser - airGapCm; // cm (může být i záporné)
-          const xBottom = bottomDepthRaw > waterH ? waterH : bottomDepthRaw; // pokud dál než dno nádoby, "naráží" na dno
+          const rawUser = num(els.bottomDepth, 0);
+          let xUser = quantizeDepthCm(clamp(rawUser, 0, maxX)); // cm
+          let bottomDepthRaw = clamp(quantizeDepthCm(xUser - airGapCm), -airGapCm, maxBottomDepth);
+          xUser = bottomDepthRaw + airGapCm;
+          if (Math.abs(rawUser - xUser) > 1e-9) els.bottomDepth.value = String(xUser);
+          const xBottom = bottomDepthRaw;
 
-          const w1 = weightFromInputs(String(els.material.value || "fe"), Math.max(1, num(els.vol, 50)), rhoW, xBottom, waterH);
           const enable2 = !!(els.enable2 && els.enable2.checked);
+          const V1 = Math.max(1, num(els.vol, 50));
+          const V2 = Math.max(1, num(els.vol2, 50));
+
+          if (lastV1ForImmersion !== V1) {
+            immersionLockedW1 = false;
+            lastV1ForImmersion = V1;
+          }
+          if (lastV2ForImmersion !== V2) {
+            immersionLockedW2 = false;
+            lastV2ForImmersion = V2;
+          }
+          if (!enable2) immersionLockedW2 = false;
+
+          const s1 = cubeDisplaySideCm(V1);
+          const s2 = cubeDisplaySideCm(V2);
+          immersionLockedW1 = updateImmersionLock(immersionLockedW1, xBottom, s1, waterH);
+          if (enable2) immersionLockedW2 = updateImmersionLock(immersionLockedW2, xBottom, s2, waterH);
+
+          const w1 = weightFromInputs(String(els.material.value || "fe"), V1, rhoW, xBottom, waterH, immersionLockedW1);
           const w2 = enable2
-            ? weightFromInputs(String(els.material2.value || "fe"), Math.max(1, num(els.vol2, 50)), rhoW, xBottom, waterH)
+            ? weightFromInputs(String(els.material2.value || "fe"), V2, rhoW, xBottom, waterH, immersionLockedW2)
             : null;
 
-          // Kontakt se dnem (společné pro oba): posuvník je "za dnem" a těleso by tlačilo dolů.
-          const wouldHitBottom = bottomDepthRaw > waterH + 1e-9;
+          // Kontakt s „virtuálním“ dnem (nejhlubší poloha nad skutečným dnem).
+          const wouldHitBottom = xBottom >= maxBottomDepth - 1e-4;
           const T1 = wouldHitBottom && w1.Tfree > 0 ? Math.max(0, w1.Tfree) : w1.Tfree;
           const T2 = w2 ? (wouldHitBottom && w2.Tfree > 0 ? Math.max(0, w2.Tfree) : w2.Tfree) : null;
           const netDownIfFree = w1.Tfree + (w2 ? w2.Tfree : 0);
-          const displacedCm3 = w1.Vsub * 1e6 + (w2 ? w2.Vsub * 1e6 : 0);
-          const waterRiseCm = clamp(displacedCm3 / tankAreaCm2, 0, tankH - waterH);
+          const waterRiseCm = 0; // zdvih hladiny od vytlačeného objemu vypnutý
 
           return {
             rhoW,
@@ -460,6 +576,8 @@
             w2,
             wouldHitBottom,
             netDownIfFree,
+            maxBottomDepth,
+            maxUserCm: maxX,
           };
         }
 
@@ -468,30 +586,44 @@
             al: "#9ca7b8",
             fe: "#5c6575",
             cu: "#c2410c",
-            au: "#b45309",
+            au: "#D4AF37",
           };
           return map[materialKey] || map.fe;
         }
 
-        function stepWaterMotion(targetRiseCm, now) {
+        function stepWaterMotion(targetRiseCm, now, dVsubM3) {
           const dt = clamp((now - waterMotion.lastTime) / 1000 || 0.016, 0.001, 0.04);
           waterMotion.lastTime = now;
 
           const targetDelta = targetRiseCm - waterMotion.lastTargetCm;
           if (Math.abs(targetDelta) > 0.001) {
-            waterMotion.levelVelocityCm += targetDelta * 11;
-            waterMotion.waveVelocityCm += targetDelta * 20;
+            waterMotion.levelVelocityCm += targetDelta * 5.5;
+            waterMotion.waveVelocityCm += targetDelta * 9;
             waterMotion.lastTargetCm = targetRiseCm;
           }
 
-          const levelAcceleration = (targetRiseCm - waterMotion.levelCm) * 48 - waterMotion.levelVelocityCm * 9;
-          waterMotion.levelVelocityCm += levelAcceleration * dt;
-          waterMotion.levelCm += waterMotion.levelVelocityCm * dt;
+          /* Rychlé dorovnání výšky hladiny (bez skákání); vlny zůstávají jen jemné. */
+          const levelSettled =
+            Math.abs(targetRiseCm - waterMotion.levelCm) < 0.002 &&
+            Math.abs(waterMotion.levelVelocityCm) < 0.008;
+          if (levelSettled) {
+            waterMotion.levelCm = targetRiseCm;
+            waterMotion.levelVelocityCm = 0;
+          } else {
+            const levelAcceleration = (targetRiseCm - waterMotion.levelCm) * 38 - waterMotion.levelVelocityCm * 12;
+            waterMotion.levelVelocityCm += levelAcceleration * dt;
+            waterMotion.levelCm += waterMotion.levelVelocityCm * dt;
+          }
 
-          const waveAcceleration = -waterMotion.waveCm * 26 - waterMotion.waveVelocityCm * 3.1;
+          const rawRate = dVsubM3 / dt;
+          submergeRateSmoothed = submergeRateSmoothed * 0.84 + rawRate * 0.16;
+          const drive = clamp(submergeRateSmoothed * 3.8e6, -88, 88);
+
+          const waveAcceleration =
+            -waterMotion.waveCm * 38 - waterMotion.waveVelocityCm * 7 + drive;
           waterMotion.waveVelocityCm += waveAcceleration * dt;
           waterMotion.waveCm += waterMotion.waveVelocityCm * dt;
-          waterMotion.phase += dt * (4.8 + Math.min(14, Math.abs(waterMotion.waveCm) * 6));
+          waterMotion.phase += dt * (1.55 + Math.min(5.5, Math.abs(waterMotion.waveCm) * 3.2));
         }
 
         function fillCircle(ctx, cx, cy, r) {
@@ -515,7 +647,7 @@
             return { fill: "rgba(56, 189, 248, 0.22)", line: "rgba(14, 165, 233, 0.82)" };
           }
           if (liquidKey === "glycerin") {
-            return { fill: "rgba(16, 185, 129, 0.34)", line: "rgba(5, 150, 105, 0.88)" };
+            return { fill: "rgba(52, 155, 195, 0.36)", line: "rgba(22, 118, 168, 0.9)" };
           }
           if (liquidKey === "sea") {
             return { fill: "rgba(0, 191, 255, 0.38)", line: "rgba(0, 119, 200, 0.95)" };
@@ -575,7 +707,7 @@
           const g = lastDragGeom;
           const newBottomY = pointerYDesign - dragWeight.grabOffsetY;
           let xBottom = (newBottomY - g.baseYWater) / g.pxPerCm;
-          xBottom = clamp(xBottom, -g.airGapCm, g.waterH);
+          xBottom = quantizeDepthCm(clamp(xBottom, -g.airGapCm, g.maxBottomDepth));
           const xUser = clamp(xBottom + g.airGapCm, 0, g.maxUserCm);
           els.bottomDepth.value = String(xUser);
         }
@@ -601,7 +733,13 @@
           const visualWaterH = clamp(s.waterH + waterMotion.levelCm, 0, s.tankH);
           const yWater = tankY + (s.tankH - visualWaterH) * pxPerCm;
           const yBottom = tankY + tankHpx;
-          const waveAmp = clamp(Math.abs(waterMotion.waveCm) * pxPerCm, 0, 13 * Z);
+          const waveAmp = clamp(Math.abs(waterMotion.waveCm) * pxPerCm, 0, 9.5 * Z);
+
+          /** Hák siloměru bez vykreslení těla (závěs se kreslí dřív, siloměr navrch). */
+          function scaleHook(centerX) {
+            const scaleH = 102 * Z;
+            return { hookX: centerX, hookBottomY: topY + scaleH };
+          }
 
           function drawScaleAt(centerX, valueN) {
             const scaleW = 188 * Z;
@@ -642,7 +780,8 @@
             ctx.font = `600 ${26 * Z}px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            const txt = (Math.abs(valueN) < 1e-9 ? 0 : valueN).toFixed(2).replace(".", ",") + " N";
+            const tDisp = tensionDisplayedN(valueN);
+            const txt = formatDecimalCs(tDisp, 2) + " N";
             ctx.fillText(txt, dispX + dispW / 2, dispY + dispH / 2);
             return { hookX, hookBottomY };
           }
@@ -654,10 +793,10 @@
             const env = Math.sin(t * Math.PI);
             const p = waterMotion.phase;
             const surf =
-              Math.sin(t * Math.PI * 2.6 + p) * 0.62 +
-              Math.sin(t * Math.PI * 5.1 + p * 1.18) * 0.36 +
-              Math.sin(t * Math.PI * 8.2 + p * 0.75) * 0.18;
-            const micro = 0.85 * Z * Math.sin(t * Math.PI * 4 + p * 2.45);
+              Math.sin(t * Math.PI * 2.6 + p) * 0.4 +
+              Math.sin(t * Math.PI * 5.1 + p * 1.18) * 0.24 +
+              Math.sin(t * Math.PI * 8.2 + p * 0.75) * 0.13;
+            const micro = 0.48 * Z * Math.sin(t * Math.PI * 4 + p * 2.45);
             return yWater + waveAmp * env * surf + micro * env;
           }
 
@@ -691,16 +830,6 @@
           ctx.arcTo(il, ib, il, ib - innerBR, innerBR);
           ctx.closePath();
           ctx.fill();
-          ctx.strokeStyle = liq.line;
-          ctx.lineWidth = Math.max(1.5, 0.9 * Z);
-          ctx.lineCap = "butt";
-          ctx.beginPath();
-          ctx.moveTo(il + 6 * Z, waveY(il + 6 * Z));
-          for (let i = 1; i <= 72; i++) {
-            const x = il + 6 * Z + ((ir - il - 12 * Z) * i) / 72;
-            ctx.lineTo(x, waveY(x));
-          }
-          ctx.stroke();
           ctx.restore();
 
           // Akvárium je nahoře otevřené, proto kreslíme jen boky a dno se zakulacenými spodními rohy.
@@ -730,22 +859,26 @@
             ? [scaleCenterX - 170 * Z, scaleCenterX + 170 * Z]
             : [scaleCenterX];
 
-          const hook1 = drawScaleAt(scales[0], s.T1);
-          const hook2 = w2 ? drawScaleAt(scales[1], s.T2) : null;
+          const hook1 = scaleHook(scales[0]);
+          const hook2 = w2 ? scaleHook(scales[1]) : null;
 
           function drawWeightUnder(hook, sizePx, materialKey) {
             const x = clamp(hook.hookX - sizePx / 2, tankX + 8 * Z, tankX + tankW - sizePx - 8 * Z);
             const y = yBottomWeight - sizePx;
+            const attachX = x + sizePx / 2;
+            const attachY = y - 8 * Z;
 
             const rope =
               getComputedStyle(document.documentElement).getPropertyValue("--rope").trim() ||
               "#9ca3af";
+            const hx = hook.hookX;
+            const hy = hook.hookBottomY;
             ctx.strokeStyle = rope;
-            ctx.lineWidth = Math.max(2, 2.5 * Z);
+            ctx.lineWidth = Math.max(2, 2.3 * Z);
             ctx.lineCap = "round";
             ctx.beginPath();
-            ctx.moveTo(hook.hookX, hook.hookBottomY + 18 * Z);
-            ctx.lineTo(x + sizePx / 2, y - 8 * Z);
+            ctx.moveTo(hx, hy);
+            ctx.lineTo(attachX, attachY);
             ctx.stroke();
 
             ctx.save();
@@ -755,7 +888,7 @@
               getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() ||
               "#3d5a9a";
             ctx.fillStyle = acc;
-            fillCircle(ctx, x + sizePx / 2, y - 6 * Z, 4 * Z);
+            fillCircle(ctx, attachX, attachY, 4 * Z);
 
             ctx.fillStyle = materialFlat(materialKey);
             roundRect(ctx, x, y, sizePx, sizePx, 10 * Z, true, false);
@@ -787,11 +920,8 @@
           const w1Box = drawWeightUnder(hook1, s1px, w1.materialKey);
           const w2Box = w2 && hook2 ? drawWeightUnder(hook2, s2px, w2.materialKey) : null;
 
-          if (s.wouldHitBottom) {
-            ctx.fillStyle = "rgba(217, 119, 6, 0.35)";
-            ctx.fillRect(w1Box.x - 10 * Z, yBottom - 8 * Z, w1Box.w + 20 * Z, 8 * Z);
-            if (w2Box) ctx.fillRect(w2Box.x - 10 * Z, yBottom - 8 * Z, w2Box.w + 20 * Z, 8 * Z);
-          }
+          drawScaleAt(scales[0], s.T1);
+          if (w2) drawScaleAt(scales[1], s.T2);
 
           lastWeightBoxes = {
             w1: { x: w1Box.x, y: w1Box.y, w: w1Box.w, h: w1Box.h },
@@ -802,7 +932,8 @@
             baseYWater,
             waterH: s.waterH,
             airGapCm: SUBMERSION_AIR_GAP_CM,
-            maxUserCm: s.waterH + SUBMERSION_AIR_GAP_CM,
+            maxBottomDepth: s.maxBottomDepth,
+            maxUserCm: s.maxUserCm,
           };
 
           if (dragWeight.pointerId != null) {
@@ -832,17 +963,17 @@
           updateLiquidUI();
           const s = compute();
 
-          if (els.outV && els.vol) els.outV.textContent = String(Math.round(num(els.vol, 50))) + " cm³";
-          if (els.outV2 && els.vol2) els.outV2.textContent = String(Math.round(num(els.vol2, 50))) + " cm³";
-          stepWaterMotion(s.waterRiseCm, performance.now());
+          if (els.outV && els.vol) els.outV.textContent = formatIntCs(Math.round(num(els.vol, 50))) + " cm³";
+          if (els.outV2 && els.vol2) els.outV2.textContent = formatIntCs(Math.round(num(els.vol2, 50))) + " cm³";
+          stepWaterMotion(s.waterRiseCm, performance.now(), consumeSubmersionDeltaM3(s));
           draw(s);
         }
 
         function animate(now) {
           const s = compute();
-          if (els.outV && els.vol) els.outV.textContent = String(Math.round(num(els.vol, 50))) + " cm³";
-          if (els.outV2 && els.vol2) els.outV2.textContent = String(Math.round(num(els.vol2, 50))) + " cm³";
-          stepWaterMotion(s.waterRiseCm, now);
+          if (els.outV && els.vol) els.outV.textContent = formatIntCs(Math.round(num(els.vol, 50))) + " cm³";
+          if (els.outV2 && els.vol2) els.outV2.textContent = formatIntCs(Math.round(num(els.vol2, 50))) + " cm³";
+          stepWaterMotion(s.waterRiseCm, now, consumeSubmersionDeltaM3(s));
           draw(s);
           requestAnimationFrame(animate);
         }

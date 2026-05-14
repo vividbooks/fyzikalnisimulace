@@ -254,6 +254,8 @@
       min-height: 100vh;
     }
     .sim-subheader {
+      position: relative;
+      z-index: 5;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -311,7 +313,7 @@
   <div id="root" role="presentation" aria-label="Fyzikální simulace"></div>
 
   <script type="module">
-    import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "https://esm.sh/react@18.3.1";
+    import React, { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "https://esm.sh/react@18.3.1";
     import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
     import htm from "https://esm.sh/htm@3.1.1?deps=react@18.3.1";
 
@@ -1005,6 +1007,32 @@
       },
     ];
 
+    /** Kategorie přehledu odpovídající simulaci — Přehled vrátí na stejný panel (např. Vztlaková síla → Kapaliny a plyny). */
+    const SIM_TO_HUB_CATEGORY = {
+      paka: "sily",
+      vztlakova: "kapaliny",
+    };
+
+    const HUB_CATEGORY_STORAGE_KEY = "physicsHubCategory";
+
+    function persistHubCategory(id) {
+      try {
+        sessionStorage.setItem(HUB_CATEGORY_STORAGE_KEY, id);
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
+    function readHubCategoryInitial() {
+      try {
+        const v = sessionStorage.getItem(HUB_CATEGORY_STORAGE_KEY);
+        if (v && PHYSICS_CATEGORIES.some((c) => c.id === v)) return v;
+      } catch (_) {
+        /* ignore */
+      }
+      return "sily";
+    }
+
     function LeverCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1071,7 +1099,7 @@
     }
 
     function PhysicsHub() {
-      const [activeId, setActiveId] = useState("sily");
+      const [activeId, setActiveId] = useState(readHubCategoryInitial);
 
       const activeCat = useMemo(
         () => PHYSICS_CATEGORIES.find((c) => c.id === activeId) ?? PHYSICS_CATEGORIES[0],
@@ -1089,7 +1117,10 @@
                     key=${c.id}
                     type="button"
                     class=${activeId === c.id ? "is-active" : ""}
-                    onClick=${() => setActiveId(c.id)}
+                    onClick=${() => {
+                      setActiveId(c.id);
+                      persistHubCategory(c.id);
+                    }}
                   >
                     ${c.title}
                   </button>
@@ -1114,16 +1145,24 @@
                             role="button"
                             tabindex="0"
                             onClick=${() => {
+                              persistHubCategory(activeId);
                               location.hash = t.hash.startsWith("#")
                                 ? t.hash
                                 : `#/${t.hash}`;
+                              queueMicrotask(() =>
+                                window.dispatchEvent(new Event("hashchange")),
+                              );
                             }}
                             onKeyDown=${(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
+                                persistHubCategory(activeId);
                                 location.hash = t.hash.startsWith("#")
                                   ? t.hash
                                   : `#/${t.hash}`;
+                                queueMicrotask(() =>
+                                  window.dispatchEvent(new Event("hashchange")),
+                                );
                               }
                             }}
                           >
@@ -1164,26 +1203,48 @@
     }
 
     function RootApp() {
-      const [simId, setSimId] = useState(parseSimFromHash);
+      /** Jen kvůli přerenderu po replaceState / popstate — React nečte URL sám. */
+      const [, routeTick] = useReducer((n) => n + 1, 0);
       useEffect(() => {
-        const onHash = () => setSimId(parseSimFromHash());
-        window.addEventListener("hashchange", onHash);
-        return () => window.removeEventListener("hashchange", onHash);
+        const sync = () => routeTick();
+        window.addEventListener("hashchange", sync);
+        window.addEventListener("popstate", sync);
+        return () => {
+          window.removeEventListener("hashchange", sync);
+          window.removeEventListener("popstate", sync);
+        };
+      }, []);
+
+      const simId = parseSimFromHash();
+
+      const goToHub = useCallback(() => {
+        const sid = parseSimFromHash();
+        const cat = SIM_TO_HUB_CATEGORY[sid] || readHubCategoryInitial();
+        persistHubCategory(cat);
+
+        const path = `${location.pathname}${location.search}`;
+        try {
+          history.replaceState(null, "", path);
+        } catch (_) {
+          try {
+            location.hash = "";
+          } catch (_) {
+            /* např. přísný file:// */
+          }
+        }
+        if (/^#\/?sim\//.test(location.hash || "")) {
+          try {
+            location.hash = "";
+          } catch (_) { /* nop */ }
+        }
+        routeTick();
       }, []);
 
       if (simId === "vztlakova") {
-        return html`<${VztlakovaSimApp}
-          onBack=${() => {
-            location.hash = "";
-          }}
-        />`;
+        return html`<${VztlakovaSimApp} onBack=${goToHub} />`;
       }
       if (simId === "paka") {
-        return html`<${LeverSimApp}
-          onBack=${() => {
-            location.hash = "";
-          }}
-        />`;
+        return html`<${LeverSimApp} onBack=${goToHub} />`;
       }
       return html`<${PhysicsHub} />`;
     }
