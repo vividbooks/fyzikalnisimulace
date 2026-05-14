@@ -3,16 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulace rovnovážné páky</title>
+  <title>Fyzikální simulace</title>
   <style>
-    :root { color-scheme: light; }
+    :root {
+      color-scheme: light;
+      --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+    }
+    /* Fenomen Sans Book — stejný zdroj jako geometry-app */
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
       height: 100%;
     }
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: var(--font-app);
       background: #ffffff;
       color: #2a2226;
       display: flex;
@@ -62,6 +73,7 @@
       user-select: none;
       touch-action: none;
       overflow: visible;
+      font-family: var(--font-app);
     }
     .clear-weights-btn-wrap {
       position: absolute;
@@ -104,10 +116,177 @@
       letter-spacing: -0.02em;
       pointer-events: none;
     }
+
+    /* —— Přehled simulací (layout podobný geometry-app) —— */
+    .physics-hub {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      color: #4e5871;
+    }
+    .hub-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px 24px;
+      padding: 20px clamp(18px, 4vw, 40px) 8px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .hub-brand {
+      margin: 0;
+      font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+      font-weight: 700;
+      color: #4e5871;
+      letter-spacing: -0.02em;
+    }
+    .hub-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .hub-nav button {
+      font-family: inherit;
+      padding: 11px 22px;
+      border-radius: 9999px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 200ms, color 200ms, box-shadow 200ms, border-color 200ms;
+      border: 2px solid #4e5871;
+      background: #fff;
+      color: #4e5871;
+    }
+    .hub-nav button.is-active {
+      border-color: transparent;
+      background: #4d49f3;
+      color: #fff;
+      box-shadow: 0 10px 15px 0 #e0e7ff, 0 4px 6px 0 #e0e7ff;
+    }
+    .hub-nav button:hover:not(.is-active) {
+      background: #f8fafc;
+    }
+    .hub-main {
+      flex: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 16px clamp(18px, 4vw, 40px) 48px;
+    }
+    .hub-page-title {
+      margin: 8px 0 22px;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 700;
+      color: #4e5871;
+    }
+    .hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .sim-card {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      border-radius: 24px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 200ms, box-shadow 200ms;
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
+    }
+    .sim-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    }
+    .sim-card:active {
+      transform: scale(0.98);
+    }
+    .sim-card-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+      padding: 16px;
+    }
+    .sim-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+    }
+    .sim-card-footer h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+      color: #4e5871;
+    }
+    .sim-card-arrow {
+      color: #4d49f3;
+      font-size: 18px;
+      font-weight: 600;
+      opacity: 0.55;
+      transition: opacity 200ms, transform 200ms;
+      flex-shrink: 0;
+    }
+    .sim-card:hover .sim-card-arrow {
+      opacity: 1;
+      transform: translateX(4px);
+    }
+    .hub-empty {
+      margin: 0;
+      padding: 28px 20px;
+      text-align: center;
+      color: #8b93a6;
+      font-size: 1.05rem;
+      background: #f8fafc;
+      border-radius: 20px;
+      border: 1px dashed #e2e8f0;
+    }
+
+    .app--lever {
+      min-height: 100vh;
+    }
+    .sim-subheader {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 18px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .sim-back-btn {
+      border: 2px solid #4e5871;
+      background: #fff;
+      color: #4e5871;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      transition: background 150ms;
+    }
+    .sim-back-btn:hover {
+      background: #f8fafc;
+    }
+    .sim-subheader-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #4e5871;
+    }
   </style>
 </head>
 <body>
-  <div id="root" role="presentation" aria-label="Interaktivní simulace rovnovážné páky"></div>
+  <div id="root" role="presentation" aria-label="Fyzikální simulace"></div>
 
   <script type="module">
     import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "https://esm.sh/react@18.3.1";
@@ -115,6 +294,10 @@
     import htm from "https://esm.sh/htm@3.1.1?deps=react@18.3.1";
 
     const html = htm.bind(React.createElement);
+
+    /** Stejný font stack jako geometry-app (Fenomen Sans z Supabase). */
+    const FONT_STACK =
+      "'Fenomen Sans', ui-sans-serif, system-ui, sans-serif";
 
     /**
      * Logická šířka scény pro souřadnice osového bodu — viewBox se dopočítá tak,
@@ -543,7 +726,7 @@
     /** Čísla háčků — zvýraznění podle vzdálenosti od tečky; sousedé ±1 na stejné straně jsou záměrně menší. */
     function HoleSlotLabels({ theta, showHoleLabels, hoverHint }) {
       if (!showHoleLabels) return null;
-      const ff = "system-ui, -apple-system, Segoe UI, sans-serif";
+      const ff = FONT_STACK;
       const texts = [];
       const sx = hoverHint?.sx;
       const sy = hoverHint?.sy;
@@ -767,7 +950,167 @@
       };
     }
 
-    function App() {
+    /** Kategorie a dlaždice — první simulace: páka v „Síly“. */
+    const PHYSICS_CATEGORIES = [
+      {
+        id: "sily",
+        title: "Síly",
+        tiles: [
+          {
+            id: "paka",
+            title: "Páka",
+            hash: "#/sim/paka",
+            previewColor: "#dcf3ff",
+          },
+        ],
+      },
+      {
+        id: "kapaliny",
+        title: "Kapaliny a plyny",
+        tiles: [],
+      },
+      {
+        id: "optika",
+        title: "Optika",
+        tiles: [],
+      },
+    ];
+
+    function LeverCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <path
+          d="M 18 52 L 114 40"
+          fill="none"
+          stroke="#E63946"
+          stroke-width="6"
+          stroke-linecap="round"
+        />
+        <circle cx="66" cy="47" r="9" fill="#813B50" />
+        <rect
+          x="58"
+          y="56"
+          width="16"
+          height="22"
+          rx="3"
+          fill="#3d4d5c"
+        />
+        <circle cx="32" cy="50" r="5" fill="#fff" stroke="#5C1F2E" stroke-width="1.5" />
+        <circle cx="98" cy="44" r="5" fill="#fff" stroke="#5C1F2E" stroke-width="1.5" />
+      </svg>`;
+    }
+
+    function PhysicsHub() {
+      const [activeId, setActiveId] = useState("sily");
+
+      const activeCat = useMemo(
+        () => PHYSICS_CATEGORIES.find((c) => c.id === activeId) ?? PHYSICS_CATEGORIES[0],
+        [activeId],
+      );
+
+      return html`
+        <div class="physics-hub">
+          <header class="hub-top">
+            <h1 class="hub-brand">Fyzikální simulace</h1>
+            <nav class="hub-nav" aria-label="Kategorie">
+              ${PHYSICS_CATEGORIES.map(
+                (c) => html`
+                  <button
+                    key=${c.id}
+                    type="button"
+                    class=${activeId === c.id ? "is-active" : ""}
+                    onClick=${() => setActiveId(c.id)}
+                  >
+                    ${c.title}
+                  </button>
+                `,
+              )}
+            </nav>
+          </header>
+          <div class="hub-main">
+            <h2 class="hub-page-title">${activeCat.title}</h2>
+            ${
+              activeCat.tiles.length === 0
+                ? html`<p class="hub-empty">
+                    V této kategorii zatím nic není — další simulace přidáme později.
+                  </p>`
+                : html`
+                    <div class="hub-grid">
+                      ${activeCat.tiles.map(
+                        (t) => html`
+                          <article
+                            key=${t.id}
+                            class="sim-card"
+                            role="button"
+                            tabindex="0"
+                            onClick=${() => {
+                              location.hash = t.hash.startsWith("#")
+                                ? t.hash
+                                : `#/${t.hash}`;
+                            }}
+                            onKeyDown=${(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                location.hash = t.hash.startsWith("#")
+                                  ? t.hash
+                                  : `#/${t.hash}`;
+                              }
+                            }}
+                          >
+                            <div
+                              class="sim-card-preview"
+                              style=${{ backgroundColor: t.previewColor }}
+                            >
+                              ${t.id === "paka" ? html`<${LeverCardIllustration} />` : null}
+                            </div>
+                            <div
+                              class="sim-card-footer"
+                              style=${{ backgroundColor: t.previewColor }}
+                            >
+                              <h3>${t.title}</h3>
+                              <span class="sim-card-arrow" aria-hidden="true">→</span>
+                            </div>
+                          </article>
+                        `,
+                      )}
+                    </div>
+                  `
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    function parseSimFromHash() {
+      const h = (location.hash || "").replace(/^#\/?/, "");
+      const m = h.match(/^sim\/(\w+)/);
+      return m ? m[1] : null;
+    }
+
+    function RootApp() {
+      const [simId, setSimId] = useState(parseSimFromHash);
+      useEffect(() => {
+        const onHash = () => setSimId(parseSimFromHash());
+        window.addEventListener("hashchange", onHash);
+        return () => window.removeEventListener("hashchange", onHash);
+      }, []);
+
+      if (simId === "paka") {
+        return html`<${LeverSimApp}
+          onBack=${() => {
+            location.hash = "";
+          }}
+        />`;
+      }
+      return html`<${PhysicsHub} />`;
+    }
+
+    function LeverSimApp({ onBack }) {
       const [left, setLeft] = useState(() => zeros());
       const [right, setRight] = useState(() => zeros());
       const [dragPx, setDragPx] = useState(null);
@@ -1144,7 +1487,20 @@
       }, [beamLocked, totalWeights, left, right, theta]);
 
       return html`
-        <div class="app">
+        <div class="app app--lever">
+          ${onBack
+            ? html`<header class="sim-subheader">
+                <button
+                  type="button"
+                  class="sim-back-btn"
+                  onClick=${onBack}
+                  aria-label="Zpět na přehled simulací"
+                >
+                  ← Přehled
+                </button>
+                <h1 class="sim-subheader-title">Páka</h1>
+              </header>`
+            : null}
           <main
             class="stage"
             ref=${(el) => {
@@ -1284,7 +1640,7 @@
                   fontSize=${32}
                   fontWeight=${800}
                   letterSpacing="-0.03em"
-                  fontFamily="system-ui, -apple-system, Segoe UI, sans-serif"
+                  fontFamily=${FONT_STACK}
                   style=${{ pointerEvents: "none", filter: "drop-shadow(0 3px 10px rgba(42, 34, 38, 0.35))" }}
                   aria-live="polite"
                 >
@@ -1316,7 +1672,7 @@
         </div>`;
     }
 
-    createRoot(document.getElementById("root")).render(html`<${App} />`);
+    createRoot(document.getElementById("root")).render(html`<${RootApp} />`);
   </script>
 </body>
 </html>

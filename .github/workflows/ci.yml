@@ -29,7 +29,7 @@ jobs:
             [/id=["']root["']/, "Missing React mount (#root)"],
             [/class=["'][^"']*stage-svg/, "Missing main SVG (.stage-svg)"],
             [/createRoot\s*\(/, "Missing React DOM bootstrap (createRoot)"],
-            [/Simulace rovnovážné páky/, "Missing expected page title text"],
+            [/Fyzikální simulace/, "Missing expected page title text"],
           ];
           for (const [re, msg] of checks) {
             if (!re.test(html)) throw new Error(msg);
