@@ -1,0 +1,10 @@
+{
+  "name": "fyzikalni-simulace",
+  "private": true,
+  "scripts": {
+    "dev": "live-server . --port=8765 --open=/ --wait=300"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

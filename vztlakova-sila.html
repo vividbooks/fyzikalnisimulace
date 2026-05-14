@@ -15,50 +15,40 @@
       }
 
       :root {
-        color-scheme: light dark;
-        --bg: #f6f8fb;
-        --panel: #ffffff;
-        --text: #0f172a;
-        --muted: #475569;
-        --accent: #0ea5e9;
-        --ok: #16a34a;
-        --warn: #d97706;
-        --bad: #dc2626;
-        --canvas-bg: #eef2ff;
-        --canvas-border: #c7d2fe;
-        --water: rgba(14, 165, 233, 0.25);
-        --water-line: rgba(14, 165, 233, 0.55);
-        --glass: rgba(2, 6, 23, 0.06);
-        --rope: #64748b;
-        --weight: #334155;
-        --scale: #111827;
-        --digits: #34d399;
-        --digits-dim: rgba(52, 211, 153, 0.25);
-        --radius: 14px;
-        --shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        color-scheme: light;
+        --bg: #ffffff;
+        --text: #171923;
+        --muted: #6b7280;
+        --accent: #3d5a9a;
+        --accent-hover: #334b81;
+        --canvas-border: #e5e7eb;
+        --border: #e8eaef;
+        --focus: #3d5a9a;
+        --area-muted: #f3f4f6;
+        --rope: #9ca3af;
+        --weight-stroke: rgba(23, 25, 35, 0.14);
+        --scale-body: #ffffff;
+        --scale-border: #e2e5eb;
+        --readout-bg: #f4f5f8;
+        --readout-text: #171923;
       }
 
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #0b1220;
-          --panel: #0f172a;
-          --text: #e5e7eb;
-          --muted: #94a3b8;
-          --accent: #38bdf8;
-          --ok: #22c55e;
-          --warn: #f59e0b;
-          --bad: #fb7185;
-          --canvas-bg: #0b1020;
-          --canvas-border: #1f2a44;
-          --water: rgba(56, 189, 248, 0.22);
-          --water-line: rgba(56, 189, 248, 0.55);
-          --glass: rgba(255, 255, 255, 0.06);
-          --rope: #94a3b8;
-          --weight: #cbd5e1;
-          --scale: #0b1220;
-          --digits: #34d399;
-          --digits-dim: rgba(52, 211, 153, 0.22);
-          --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+          --bg: #0f1115;
+          --text: #f3f4f6;
+          --muted: #9ca3af;
+          --accent: #60a5fa;
+          --accent-hover: #93c5fd;
+          --canvas-border: #2d3344;
+          --border: #2d3344;
+          --area-muted: #1a1d24;
+          --rope: #9ca3af;
+          --weight-stroke: rgba(255, 255, 255, 0.12);
+          --scale-body: #1e222d;
+          --scale-border: #353b4a;
+          --readout-bg: #262a36;
+          --readout-text: #f3f4f6;
         }
       }
 
@@ -71,9 +61,6 @@
         min-height: 100vh;
         background: var(--bg);
         color: var(--text);
-        display: grid;
-        place-items: center;
-        padding: 20px;
         font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       }
 
@@ -85,82 +72,64 @@
       }
 
       .app {
-        width: min(1300px, 100%);
-        background: var(--panel);
-        border-radius: var(--radius);
-        padding: 18px;
-        box-shadow: var(--shadow);
-        display: grid;
-        gap: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: clamp(16px, 3vw, 32px);
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: clamp(12px, 2vw, 24px);
+        min-height: 100dvh;
+        box-sizing: border-box;
       }
 
-      header {
-        display: grid;
-        gap: 6px;
+      .viz-column {
+        flex: 1 1 360px;
+        min-width: 260px;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
 
-      h1 {
-        margin: 0;
-        font-size: 1.35rem;
-        letter-spacing: -0.01em;
-      }
-
-      .hint {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.98rem;
-        line-height: 1.35;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: 1.35fr 0.65fr;
-        gap: 14px;
-        align-items: start;
-      }
-
-      @media (max-width: 900px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .card {
-        background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
-        border-radius: 12px;
-        padding: 12px;
-        border: 1px solid color-mix(in oklab, var(--panel) 82%, var(--text) 18%);
-      }
-
-      canvas {
-        width: 100%;
-        height: auto;
-        display: block;
-        background: var(--canvas-bg);
-        border: 1px solid var(--canvas-border);
-        border-radius: 12px;
-      }
-
-      /* Když je ovládání delší než výška obrázku, umožni scroll */
-      aside.card[aria-label="Ovládání"] {
-        max-height: 680px;
+      .setup-panel {
+        flex: 0 0 min(340px, 100%);
+        max-height: min(calc(100dvh - 24px), 920px);
         overflow: auto;
-        scrollbar-gutter: stable both-edges;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--bg);
+        scrollbar-gutter: stable;
       }
 
       .controls {
         display: grid;
-        gap: 10px;
+        gap: 20px;
       }
 
       .row {
         display: grid;
-        gap: 6px;
+        gap: 8px;
       }
 
       label {
-        font-weight: 750;
-        letter-spacing: 0.2px;
+        font-weight: 650;
+        font-size: 0.8125rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      label.check-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-transform: none;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
       }
 
       .sub {
@@ -168,201 +137,103 @@
         font-size: 0.9rem;
       }
 
+      canvas {
+        display: block;
+        background: transparent;
+        max-width: 100%;
+        flex-shrink: 0;
+      }
+
       input[type="range"] {
         width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 999px;
+        background: var(--area-muted);
+        outline: none;
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--area-muted);
+      }
+
+      input[type="range"]::-moz-range-progress {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 2px solid var(--accent);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 2px solid var(--accent);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
       }
 
       input[type="number"],
       select {
         width: 100%;
         border-radius: 10px;
-        padding: 10px 10px;
-        border: 1px solid color-mix(in oklab, var(--panel) 78%, var(--text) 22%);
-        background: color-mix(in oklab, var(--panel) 94%, var(--text) 6%);
+        padding: 11px 12px;
+        border: 1px solid var(--border);
+        background: var(--bg);
         color: var(--text);
         outline: none;
+        font-size: 0.95rem;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      input[type="number"]:focus,
+      select:focus {
+        border-color: var(--focus);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 22%, transparent);
+      }
+
+      input[type="checkbox"] {
+        width: 1.05rem;
+        height: 1.05rem;
+        accent-color: var(--accent);
       }
 
       .val {
         font-variant-numeric: tabular-nums;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-weight: 800;
-        color: color-mix(in oklab, var(--accent) 80%, var(--text) 20%);
-      }
-
-      .kv {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 10px;
-        align-items: baseline;
-        padding: 10px 10px;
-        border-radius: 12px;
-        border: 1px solid color-mix(in oklab, var(--panel) 78%, var(--text) 22%);
-        background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
-      }
-
-      .kv .k {
-        color: var(--muted);
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
         font-weight: 700;
-      }
-
-      .kv .v {
-        font-variant-numeric: tabular-nums;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-weight: 900;
-      }
-
-      .pill {
-        display: inline-flex;
-        gap: 8px;
-        align-items: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid color-mix(in oklab, var(--panel) 76%, var(--text) 24%);
-        background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
-        color: var(--muted);
-        font-size: 0.9rem;
-        font-weight: 700;
-      }
-
-      .pill b {
-        color: var(--text);
-      }
-
-      .status {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 6px;
-      }
-
-      .warn {
-        color: var(--warn);
-      }
-
-      .ok {
-        color: var(--ok);
-      }
-
-      .bad {
-        color: var(--bad);
-      }
-
-      .buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
-      button {
-        appearance: none;
-        border: none;
-        border-radius: 12px;
-        padding: 10px 12px;
-        font-weight: 850;
-        cursor: pointer;
-        color: var(--text);
-        background: color-mix(in oklab, var(--panel) 86%, var(--text) 14%);
-        border: 1px solid color-mix(in oklab, var(--panel) 72%, var(--text) 28%);
-        transition: transform 0.12s ease, filter 0.15s ease;
-      }
-
-      button:hover {
-        filter: brightness(1.03);
-      }
-
-      button:active {
-        transform: translateY(1px);
-      }
-
-      button.primary {
-        background: linear-gradient(135deg, color-mix(in oklab, var(--accent) 85%, white 15%), color-mix(in oklab, var(--accent) 65%, black 35%));
-        border-color: color-mix(in oklab, var(--accent) 70%, var(--text) 30%);
-        color: color-mix(in oklab, var(--panel) 10%, var(--text) 90%);
-      }
-
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 18px;
-        z-index: 50;
-      }
-
-      .modal-backdrop.open {
-        display: flex;
-      }
-
-      .modal {
-        width: min(820px, 100%);
-        max-height: min(82vh, 900px);
-        overflow: auto;
-        background: var(--panel);
-        border-radius: 16px;
-        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
-        border: 1px solid color-mix(in oklab, var(--panel) 78%, var(--text) 22%);
-      }
-
-      .modal .hd {
-        padding: 14px 14px 10px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        border-bottom: 1px solid color-mix(in oklab, var(--panel) 78%, var(--text) 22%);
-        position: sticky;
-        top: 0;
-        background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
-        backdrop-filter: blur(8px);
-      }
-
-      .modal .hd h2 {
-        margin: 0;
-        font-size: 1.1rem;
-        letter-spacing: -0.01em;
-      }
-
-      .modal .bd {
-        padding: 14px;
-        line-height: 1.45;
-        color: var(--text);
-      }
-
-      .modal .bd h3 {
-        margin: 14px 0 8px;
-        font-size: 1rem;
-      }
-
-      .modal .bd p {
-        margin: 8px 0;
-        color: color-mix(in oklab, var(--text) 92%, var(--muted) 8%);
-      }
-
-      .modal .bd .opt {
-        margin: 6px 0;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid color-mix(in oklab, var(--panel) 76%, var(--text) 24%);
-        background: color-mix(in oklab, var(--panel) 92%, var(--text) 8%);
-        font-weight: 650;
+        font-size: 1.05rem;
+        color: var(--accent);
       }
     </style>
   </head>
   <body>
     <div class="app">
-      <header>
-        <h1>Vztlaková síla</h1>
-      </header>
+      <div class="viz-column">
+        <canvas
+          id="cv"
+          width="1200"
+          height="1320"
+          aria-label="Vizualizace ponoření závaží"
+        ></canvas>
+      </div>
 
-      <div class="grid">
-        <section class="card" aria-label="Vizualizace">
-          <canvas id="cv" width="1200" height="680"></canvas>
-        </section>
-
-        <aside class="card" aria-label="Ovládání">
+      <aside class="setup-panel" aria-label="Ovládání">
           <div class="controls">
             <div class="row">
               <label for="material">Materiál závaží</label>
@@ -397,7 +268,7 @@
             </div>
 
             <div class="row">
-              <label style="display: flex; align-items: center; gap: 10px; font-weight: 850">
+            <label class="check-label" for="enable2">
                 <input id="enable2" type="checkbox" />
                 Druhé závaží
               </label>
@@ -420,23 +291,8 @@
                 <input id="vol2" type="range" min="1" max="100" step="1" value="50" />
               </div>
             </div>
-
-            <div class="row">
-              <button id="btnTask" type="button" class="primary">Badatelský úkol</button>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-
-    <div class="modal-backdrop" id="taskModal" role="dialog" aria-modal="true" aria-label="Badatelský úkol" tabindex="-1">
-      <div class="modal">
-        <div class="hd">
-          <h2>Badatelský úkol</h2>
-          <button id="btnTaskClose" type="button">Zavřít</button>
         </div>
-        <div class="bd" id="taskBody"></div>
-      </div>
+      </aside>
     </div>
 
     <script>
@@ -459,6 +315,7 @@
         };
 
         const els = {
+          vizColumn: document.querySelector(".viz-column"),
           cv: document.getElementById("cv"),
           material: document.getElementById("material"),
           vol: document.getElementById("vol"),
@@ -470,10 +327,16 @@
           outV2: document.getElementById("outV2"),
           liquid: document.getElementById("liquid"),
           bottomDepth: document.getElementById("bottomDepth"),
-          btnTask: document.getElementById("btnTask"),
-          taskModal: document.getElementById("taskModal"),
-          btnTaskClose: document.getElementById("btnTaskClose"),
-          taskBody: document.getElementById("taskBody"),
+        };
+
+        const waterMotion = {
+          levelCm: 0,
+          levelVelocityCm: 0,
+          waveCm: 0,
+          waveVelocityCm: 0,
+          phase: 0,
+          lastTargetCm: 0,
+          lastTime: performance.now(),
         };
 
         /** @returns {number} */
@@ -534,6 +397,7 @@
           // Nádoba a hladina jsou pevně dané (v UI se nezobrazují).
           const tankHFixed = 40; // cm
           const waterHFixed = 30; // cm
+          const tankAreaCm2 = 55; // zjednodušený průřez nádoby pro výpočet zvýšení hladiny
 
           const liquidKey = String(els.liquid.value || "water");
           const liquid = LIQUIDS[liquidKey] || LIQUIDS.water;
@@ -563,12 +427,15 @@
           const T1 = wouldHitBottom && w1.Tfree > 0 ? Math.max(0, w1.Tfree) : w1.Tfree;
           const T2 = w2 ? (wouldHitBottom && w2.Tfree > 0 ? Math.max(0, w2.Tfree) : w2.Tfree) : null;
           const netDownIfFree = w1.Tfree + (w2 ? w2.Tfree : 0);
+          const displacedCm3 = w1.Vsub * 1e6 + (w2 ? w2.Vsub * 1e6 : 0);
+          const waterRiseCm = clamp(displacedCm3 / tankAreaCm2, 0, tankH - waterH);
 
           return {
             rhoW,
             liquidKey,
             tankH,
             waterH,
+            waterRiseCm,
             xUser,
             xBottom,
             T1,
@@ -580,58 +447,35 @@
           };
         }
 
-        function materialGradient(ctx, materialKey, x, y, w, h) {
-          const g = ctx.createLinearGradient(x, y, x + w, y + h);
-          if (materialKey === "al") {
-            g.addColorStop(0.0, "#f8fafc");
-            g.addColorStop(0.45, "#cbd5e1");
-            g.addColorStop(1.0, "#94a3b8");
-          } else if (materialKey === "fe") {
-            g.addColorStop(0.0, "#e2e8f0");
-            g.addColorStop(0.45, "#64748b");
-            g.addColorStop(1.0, "#334155");
-          } else if (materialKey === "cu") {
-            g.addColorStop(0.0, "#ffe0cf");
-            g.addColorStop(0.45, "#d97706");
-            g.addColorStop(1.0, "#9a3412");
-          } else if (materialKey === "au") {
-            g.addColorStop(0.0, "#fff7cc");
-            g.addColorStop(0.45, "#fbbf24");
-            g.addColorStop(1.0, "#b45309");
-          } else {
-            g.addColorStop(0.0, "#e2e8f0");
-            g.addColorStop(1.0, "#334155");
-          }
-          return g;
+        function materialFlat(materialKey) {
+          const map = {
+            al: "#9ca7b8",
+            fe: "#5c6575",
+            cu: "#c2410c",
+            au: "#b45309",
+          };
+          return map[materialKey] || map.fe;
         }
 
-        function materialSphereFill(ctx, materialKey, cx, cy, r) {
-          const grad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.15, cx, cy, r);
-          if (materialKey === "al") {
-            grad.addColorStop(0.0, "#ffffff");
-            grad.addColorStop(0.35, "#e2e8f0");
-            grad.addColorStop(0.75, "#94a3b8");
-            grad.addColorStop(1.0, "#64748b");
-          } else if (materialKey === "fe") {
-            grad.addColorStop(0.0, "#f1f5f9");
-            grad.addColorStop(0.35, "#cbd5e1");
-            grad.addColorStop(0.78, "#475569");
-            grad.addColorStop(1.0, "#1f2937");
-          } else if (materialKey === "cu") {
-            grad.addColorStop(0.0, "#ffe7db");
-            grad.addColorStop(0.35, "#fdba74");
-            grad.addColorStop(0.78, "#c2410c");
-            grad.addColorStop(1.0, "#7c2d12");
-          } else if (materialKey === "au") {
-            grad.addColorStop(0.0, "#fff7cc");
-            grad.addColorStop(0.35, "#fde68a");
-            grad.addColorStop(0.78, "#f59e0b");
-            grad.addColorStop(1.0, "#92400e");
-          } else {
-            grad.addColorStop(0.0, "#e2e8f0");
-            grad.addColorStop(1.0, "#334155");
+        function stepWaterMotion(targetRiseCm, now) {
+          const dt = clamp((now - waterMotion.lastTime) / 1000 || 0.016, 0.001, 0.04);
+          waterMotion.lastTime = now;
+
+          const targetDelta = targetRiseCm - waterMotion.lastTargetCm;
+          if (Math.abs(targetDelta) > 0.001) {
+            waterMotion.levelVelocityCm += targetDelta * 11;
+            waterMotion.waveVelocityCm += targetDelta * 20;
+            waterMotion.lastTargetCm = targetRiseCm;
           }
-          return grad;
+
+          const levelAcceleration = (targetRiseCm - waterMotion.levelCm) * 48 - waterMotion.levelVelocityCm * 9;
+          waterMotion.levelVelocityCm += levelAcceleration * dt;
+          waterMotion.levelCm += waterMotion.levelVelocityCm * dt;
+
+          const waveAcceleration = -waterMotion.waveCm * 26 - waterMotion.waveVelocityCm * 3.1;
+          waterMotion.waveVelocityCm += waveAcceleration * dt;
+          waterMotion.waveCm += waterMotion.waveVelocityCm * dt;
+          waterMotion.phase += dt * (4.8 + Math.min(14, Math.abs(waterMotion.waveCm) * 6));
         }
 
         function fillCircle(ctx, cx, cy, r) {
@@ -647,66 +491,109 @@
         }
 
         function liquidStyle(liquidKey) {
-          // barvy schválně jednoduše, aby byly "učebnicově" rozeznatelné
+          // Živější, sytější barvy (pořád průhledná výplň + výrazná hladina)
           if (liquidKey === "oil") {
-            return { fill: "rgba(234, 179, 8, 0.22)", line: "rgba(234, 179, 8, 0.55)" };
+            return { fill: "rgba(245, 158, 11, 0.42)", line: "rgba(217, 119, 6, 0.92)" };
           }
           if (liquidKey === "ethanol") {
-            return { fill: "rgba(148, 197, 255, 0.10)", line: "rgba(148, 197, 255, 0.35)" };
+            return { fill: "rgba(56, 189, 248, 0.22)", line: "rgba(14, 165, 233, 0.82)" };
           }
           if (liquidKey === "glycerin") {
-            return { fill: "rgba(52, 211, 153, 0.14)", line: "rgba(52, 211, 153, 0.45)" };
+            return { fill: "rgba(16, 185, 129, 0.34)", line: "rgba(5, 150, 105, 0.88)" };
           }
           if (liquidKey === "sea") {
-            return { fill: "rgba(2, 132, 199, 0.26)", line: "rgba(2, 132, 199, 0.60)" };
+            return { fill: "rgba(0, 191, 255, 0.38)", line: "rgba(0, 119, 200, 0.95)" };
           }
           // water (default)
-          return { fill: "rgba(14, 165, 233, 0.25)", line: "rgba(14, 165, 233, 0.55)" };
+          return { fill: "rgba(59, 130, 246, 0.38)", line: "rgba(29, 78, 216, 0.92)" };
+        }
+
+        const DESIGN_W = 1200;
+        const DESIGN_H = 1320;
+
+        /** Aktuální měřítko mezi designovým plátnem (1200×1320) a CSS velikostí canvasu. */
+        let canvasLayoutScale = 1;
+        /** devicePixelRatio, omezené kvůli výkonu. */
+        let canvasDpr = 1;
+
+        function syncCanvasSize() {
+          if (!els.vizColumn || !els.cv) return;
+          const col = els.vizColumn.getBoundingClientRect();
+          const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+          const margin = 12;
+          const maxH = Math.max(220, vh - col.top - margin);
+          const maxW = Math.max(200, col.width);
+          canvasLayoutScale = Math.min(maxW / DESIGN_W, maxH / DESIGN_H, 2.75);
+          canvasDpr = Math.min(2, window.devicePixelRatio || 1);
+
+          const cssW = DESIGN_W * canvasLayoutScale;
+          const cssH = DESIGN_H * canvasLayoutScale;
+          els.cv.style.width = cssW + "px";
+          els.cv.style.height = cssH + "px";
+          els.cv.width = Math.max(1, Math.round(DESIGN_W * canvasDpr * canvasLayoutScale));
+          els.cv.height = Math.max(1, Math.round(DESIGN_H * canvasDpr * canvasLayoutScale));
         }
 
         function draw(s) {
           const ctx = els.cv.getContext("2d");
-          const W = els.cv.width;
-          const H = els.cv.height;
-          ctx.clearRect(0, 0, W, H);
+          ctx.setTransform(canvasDpr * canvasLayoutScale, 0, 0, canvasDpr * canvasLayoutScale, 0, 0);
+          ctx.clearRect(0, 0, DESIGN_W, DESIGN_H);
 
-          // layout
-          const pad = 28;
+          /** Měřítko zobrazení (2× větší nádoba, siloměry, závaží). */
+          const Z = 2;
+
+          const pad = 28 * Z;
           const topY = pad;
-          const tankW = 480;
-          const tankHpx = 460;
-          const tankX = Math.round(pad + (W - 2 * pad - tankW) / 2);
-          const tankY = pad + 150;
+          const tankW = 480 * Z;
+          const tankHpx = 460 * Z;
+          const tankX = Math.round(pad + (DESIGN_W - 2 * pad - tankW) / 2);
+          const tankY = pad + 150 * Z;
           const scaleCenterX = tankX + tankW / 2;
 
-          // map cm -> px (podle výšky nádoby)
           const pxPerCm = tankHpx / Math.max(1, s.tankH);
-          const yWater = tankY + (s.tankH - s.waterH) * pxPerCm;
+          const baseYWater = tankY + (s.tankH - s.waterH) * pxPerCm;
+          const visualWaterH = clamp(s.waterH + waterMotion.levelCm, 0, s.tankH);
+          const yWater = tankY + (s.tankH - visualWaterH) * pxPerCm;
           const yBottom = tankY + tankHpx;
-
-          // background hints
-          ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--glass").trim() || "rgba(0,0,0,0.06)";
-          ctx.fillRect(pad, pad, W - 2 * pad, H - 2 * pad);
+          const waveAmp = clamp(Math.abs(waterMotion.waveCm) * pxPerCm, 0, 13 * Z);
 
           function drawScaleAt(centerX, valueN) {
-            const scaleW = 200;
-            const scaleH = 118;
+            const scaleW = 188 * Z;
+            const scaleH = 102 * Z;
             const scaleX = Math.round(centerX - scaleW / 2);
             const scaleY = topY;
             const hookX = centerX;
             const hookBottomY = scaleY + scaleH;
 
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--scale").trim() || "#111827";
-            roundRect(ctx, scaleX, scaleY, scaleW, scaleH, 16, true, false);
+            const bodyFill =
+              getComputedStyle(document.documentElement).getPropertyValue("--scale-body").trim() ||
+              "#ffffff";
+            const bodyBorder =
+              getComputedStyle(document.documentElement).getPropertyValue("--scale-border").trim() ||
+              "#e2e5eb";
+            ctx.fillStyle = bodyFill;
+            ctx.strokeStyle = bodyBorder;
+            ctx.lineWidth = Math.max(2, 1.5 * Z);
+            roundRect(ctx, scaleX, scaleY, scaleW, scaleH, 14 * Z, true, true);
 
-            const dispX = scaleX + 16;
-            const dispY = scaleY + 22;
-            const dispW = scaleW - 32;
-            const dispH = 64;
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--digits-dim").trim() || "rgba(52,211,153,0.22)";
-            roundRect(ctx, dispX, dispY, dispW, dispH, 12, true, false);
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--digits").trim() || "#34d399";
-            ctx.font = "900 34px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+            const dispX = scaleX + 14 * Z;
+            const dispY = scaleY + 18 * Z;
+            const dispW = scaleW - 28 * Z;
+            const dispH = 54 * Z;
+            const readBg =
+              getComputedStyle(document.documentElement).getPropertyValue("--readout-bg").trim() ||
+              "#f4f5f8";
+            ctx.fillStyle = readBg;
+            roundRect(ctx, dispX, dispY, dispW, dispH, 10 * Z, true, false);
+            ctx.strokeStyle = bodyBorder;
+            ctx.lineWidth = Math.max(1, Z);
+            roundRect(ctx, dispX, dispY, dispW, dispH, 10 * Z, false, true);
+
+            const readTx =
+              getComputedStyle(document.documentElement).getPropertyValue("--readout-text").trim() ||
+              "#171923";
+            ctx.fillStyle = readTx;
+            ctx.font = `600 ${26 * Z}px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             const txt = (Math.abs(valueN) < 1e-9 ? 0 : valueN).toFixed(2).replace(".", ",") + " N";
@@ -714,79 +601,113 @@
             return { hookX, hookBottomY };
           }
 
-          // (bez popisku pod siloměrem)
-
-          // tank outline
-          ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--canvas-border").trim() || "#c7d2fe";
-          ctx.lineWidth = 2;
-          roundRect(ctx, tankX, tankY, tankW, tankHpx, 14, false, true);
-
-          // water fill
           const liq = liquidStyle(s.liquidKey);
-          ctx.fillStyle = liq.fill;
-          ctx.fillRect(tankX + 2, yWater, tankW - 4, yBottom - yWater - 2);
-          ctx.strokeStyle = liq.line;
-          ctx.lineWidth = 2;
+          function waveY(x) {
+            const t = (x - tankX) / tankW;
+            const env = Math.sin(t * Math.PI);
+            const p = waterMotion.phase;
+            const surf =
+              Math.sin(t * Math.PI * 2.6 + p) * 0.62 +
+              Math.sin(t * Math.PI * 5.1 + p * 1.18) * 0.36 +
+              Math.sin(t * Math.PI * 8.2 + p * 0.75) * 0.18;
+            const micro = 0.85 * Z * Math.sin(t * Math.PI * 4 + p * 2.45);
+            return yWater + waveAmp * env * surf + micro * env;
+          }
+
+          ctx.save();
           ctx.beginPath();
-          ctx.moveTo(tankX + 8, yWater);
-          ctx.lineTo(tankX + tankW - 8, yWater);
+          ctx.rect(tankX + 2 * Z, tankY + 2 * Z, tankW - 4 * Z, tankHpx - 4 * Z);
+          ctx.clip();
+          ctx.fillStyle = liq.fill;
+          ctx.beginPath();
+          ctx.moveTo(tankX + 2 * Z, yBottom);
+          ctx.lineTo(tankX + 2 * Z, waveY(tankX + 2 * Z));
+          for (let i = 0; i <= 72; i++) {
+            const x = tankX + 2 * Z + ((tankW - 4 * Z) * i) / 72;
+            ctx.lineTo(x, waveY(x));
+          }
+          ctx.lineTo(tankX + tankW - 2 * Z, yBottom);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = liq.line;
+          ctx.lineWidth = Math.max(1.5, 0.9 * Z);
+          ctx.lineCap = "butt";
+          ctx.beginPath();
+          ctx.moveTo(tankX + 8 * Z, waveY(tankX + 8 * Z));
+          for (let i = 1; i <= 72; i++) {
+            const x = tankX + 8 * Z + ((tankW - 16 * Z) * i) / 72;
+            ctx.lineTo(x, waveY(x));
+          }
+          ctx.stroke();
+          ctx.restore();
+
+          // Akvárium je nahoře otevřené, proto kreslíme jen boky a dno.
+          ctx.strokeStyle = "#b6c0cf";
+          ctx.lineWidth = 4 * Z;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.moveTo(tankX, tankY);
+          ctx.lineTo(tankX, yBottom);
+          ctx.lineTo(tankX + tankW, yBottom);
+          ctx.lineTo(tankX + tankW, tankY);
           ctx.stroke();
 
-          // --- weights (1 or 2) ---
           const bottomCm = s.xBottom;
-          const yBottomWeight = yWater + bottomCm * pxPerCm;
+          const yBottomWeight = baseYWater + bottomCm * pxPerCm;
 
           const w1 = s.w1;
           const w2 = s.w2;
 
-          const s1px = clamp(w1.sideDispCm * pxPerCm, 56, 240);
-          const s2px = w2 ? clamp(w2.sideDispCm * pxPerCm, 56, 240) : 0;
+          const s1px = clamp(w1.sideDispCm * pxPerCm, 56 * Z, 240 * Z);
+          const s2px = w2 ? clamp(w2.sideDispCm * pxPerCm, 56 * Z, 240 * Z) : 0;
 
           const scales = w2
-            ? [scaleCenterX - 170, scaleCenterX + 170]
+            ? [scaleCenterX - 170 * Z, scaleCenterX + 170 * Z]
             : [scaleCenterX];
 
           const hook1 = drawScaleAt(scales[0], s.T1);
           const hook2 = w2 ? drawScaleAt(scales[1], s.T2) : null;
 
           function drawWeightUnder(hook, sizePx, materialKey) {
-            const x = clamp(hook.hookX - sizePx / 2, tankX + 8, tankX + tankW - sizePx - 8);
+            const x = clamp(hook.hookX - sizePx / 2, tankX + 8 * Z, tankX + tankW - sizePx - 8 * Z);
             const y = yBottomWeight - sizePx;
 
-            ctx.strokeStyle = "rgba(15, 23, 42, 0.75)";
-            ctx.lineWidth = 5;
+            const rope =
+              getComputedStyle(document.documentElement).getPropertyValue("--rope").trim() ||
+              "#9ca3af";
+            ctx.strokeStyle = rope;
+            ctx.lineWidth = Math.max(2, 2.5 * Z);
             ctx.lineCap = "round";
             ctx.beginPath();
-            ctx.moveTo(hook.hookX, hook.hookBottomY + 22);
-            ctx.lineTo(x + sizePx / 2, y - 8);
+            ctx.moveTo(hook.hookX, hook.hookBottomY + 18 * Z);
+            ctx.lineTo(x + sizePx / 2, y - 8 * Z);
             ctx.stroke();
 
-            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-            fillCircle(ctx, x + sizePx / 2, y - 6, 5);
+            const acc =
+              getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() ||
+              "#3d5a9a";
+            ctx.fillStyle = acc;
+            fillCircle(ctx, x + sizePx / 2, y - 6 * Z, 4 * Z);
 
-            ctx.fillStyle = materialGradient(ctx, materialKey, x, y, sizePx, sizePx);
-            roundRect(ctx, x, y, sizePx, sizePx, 12, true, false);
-
-            ctx.fillStyle = "rgba(255,255,255,0.14)";
-            roundRect(ctx, x + sizePx * 0.12, y + sizePx * 0.10, sizePx * 0.18, sizePx * 0.80, 10, true, false);
+            ctx.fillStyle = materialFlat(materialKey);
+            roundRect(ctx, x, y, sizePx, sizePx, 10 * Z, true, false);
+            ctx.strokeStyle =
+              getComputedStyle(document.documentElement).getPropertyValue("--weight-stroke").trim() ||
+              "rgba(23, 25, 35, 0.14)";
+            ctx.lineWidth = Math.max(1.5, 1.5 * Z);
+            roundRect(ctx, x, y, sizePx, sizePx, 10 * Z, false, true);
             return { x, w: sizePx };
           }
 
           const w1Box = drawWeightUnder(hook1, s1px, w1.materialKey);
           const w2Box = w2 && hook2 ? drawWeightUnder(hook2, s2px, w2.materialKey) : null;
 
-          // (bez popisků na závaží)
-
-          // bottom contact marker
           if (s.wouldHitBottom) {
             ctx.fillStyle = "rgba(217, 119, 6, 0.35)";
-            ctx.fillRect(w1Box.x - 10, yBottom - 8, w1Box.w + 20, 8);
-            if (w2Box) ctx.fillRect(w2Box.x - 10, yBottom - 8, w2Box.w + 20, 8);
+            ctx.fillRect(w1Box.x - 10 * Z, yBottom - 8 * Z, w1Box.w + 20 * Z, 8 * Z);
+            if (w2Box) ctx.fillRect(w2Box.x - 10 * Z, yBottom - 8 * Z, w2Box.w + 20 * Z, 8 * Z);
           }
-
-          // (bez popisků "Hladina" / "Dno")
-
-          // (bez popisku hloubky x)
         }
 
         function roundRect(ctx, x, y, w, h, r, fill, stroke) {
@@ -809,66 +730,29 @@
 
           if (els.outV && els.vol) els.outV.textContent = String(Math.round(num(els.vol, 50))) + " cm³";
           if (els.outV2 && els.vol2) els.outV2.textContent = String(Math.round(num(els.vol2, 50))) + " cm³";
+          stepWaterMotion(s.waterRiseCm, performance.now());
           draw(s);
         }
 
-        function taskHtml() {
-          return (
-            "<p><b>Cíl:</b> prozkoumat, na čem závisí vztlaková síla.</p>" +
-            "<h3>Úkol 1 – Vztlak na zcela ponořeném tělese</h3>" +
-            "<ol>" +
-            "<li>Zvol jako kapalinu <b>vodu</b>.</li>" +
-            "<li>Vyber libovolné závaží.</li>" +
-            "<li>Zapiš sílu, kterou ukazuje siloměr.</li>" +
-            "<li>Ponoř závaží <b>zcela pod hladinu</b> a znovu zapiš sílu.</li>" +
-            "<li><b>Vypočítej vztlakovou sílu</b>, kterou voda působí na zcela ponořené závaží.</li>" +
-            "</ol>" +
-            "<h3>Úkol 2 – Vliv hloubky (těleso je zcela ponořené)</h3>" +
-            "<ol>" +
-            "<li><b>Odhad:</b> bude voda nadlehčovat závaží více těsně pod hladinou, nebo u dna?</li>" +
-            "<li>Ověř odhad pomocí simulace (zcela ponořené závaží v malé a velké hloubce).</li>" +
-            "<li><b>Otázka:</b> Jaký vliv má hloubka ponoření na velikost vztlakové síly?</li>" +
-            "</ol>" +
-            "<h3>Úkol 3 – Vliv materiálu</h3>" +
-            "<ol>" +
-            "<li><b>Odhad:</b> bude voda nadlehčovat více hliníkové, nebo zlaté závaží?</li>" +
-            "<li>Ověř odhad pomocí simulace.</li>" +
-            "<li><b>Otázka:</b> Jaký vliv má materiál tělesa na velikost vztlakové síly?</li>" +
-            "</ol>" +
-            "<h3>Úkol 4 – Vliv hmotnosti (stejný objem)</h3>" +
-            "<ol>" +
-            "<li>Vyber dvě závaží se <b>stejným objemem</b>, ale rozdílnou hmotností.</li>" +
-            "<li><b>Odhad:</b> které z nich bude voda nadlehčovat více?</li>" +
-            "<li>Ověř odhad pomocí simulace.</li>" +
-            "<li><b>Otázka:</b> Jaký vliv má hmotnost tělesa na velikost vztlakové síly?</li>" +
-            "</ol>" +
-            "<h3>Úkol 5 – Vliv objemu (stejný materiál)</h3>" +
-            "<ol>" +
-            "<li>Vyber dvě závaží ze <b>stejného materiálu</b>, ale s různým objemem.</li>" +
-            "<li><b>Odhad:</b> které z nich bude voda nadlehčovat více?</li>" +
-            "<li>Ověř odhad pomocí simulace.</li>" +
-            "<li><b>Otázka:</b> Jaký vliv má objem tělesa na velikost vztlakové síly?</li>" +
-            "</ol>" +
-            "<h3>Úkol 6 – Vliv hustoty kapaliny</h3>" +
-            "<ol>" +
-            "<li>Vyber libovolné závaží.</li>" +
-            "<li><b>Odhad:</b> bude více nadlehčováno ve vodě, nebo v oleji?</li>" +
-            "<li>Ověř odhad pomocí simulace.</li>" +
-            "<li><b>Otázka:</b> Jaký vliv má hustota kapaliny na velikost vztlakové síly?</li>" +
-            "</ol>"
-          );
+        function animate(now) {
+          const s = compute();
+          if (els.outV && els.vol) els.outV.textContent = String(Math.round(num(els.vol, 50))) + " cm³";
+          if (els.outV2 && els.vol2) els.outV2.textContent = String(Math.round(num(els.vol2, 50))) + " cm³";
+          stepWaterMotion(s.waterRiseCm, now);
+          draw(s);
+          requestAnimationFrame(animate);
         }
 
-        function openTask() {
-          if (!els.taskModal || !els.taskBody) return;
-          els.taskBody.innerHTML = taskHtml();
-          els.taskModal.classList.add("open");
-          els.taskModal.focus();
+        function onResizeCanvas() {
+          syncCanvasSize();
         }
 
-        function closeTask() {
-          if (!els.taskModal) return;
-          els.taskModal.classList.remove("open");
+        window.addEventListener("resize", onResizeCanvas);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", onResizeCanvas);
+        }
+        if (els.vizColumn && typeof ResizeObserver !== "undefined") {
+          new ResizeObserver(onResizeCanvas).observe(els.vizColumn);
         }
 
         function onAnyChange() {
@@ -897,25 +781,15 @@
         });
         els.bottomDepth.addEventListener("input", onAnyChange);
 
-        if (els.btnTask) els.btnTask.addEventListener("click", openTask);
-        if (els.btnTaskClose) els.btnTaskClose.addEventListener("click", closeTask);
-        if (els.taskModal) {
-          els.taskModal.addEventListener("click", (e) => {
-            if (e.target === els.taskModal) closeTask();
-          });
-          window.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") closeTask();
-          });
-        }
-
         // init
         updateMaterialUI();
-        render();
+        syncCanvasSize();
+        requestAnimationFrame(animate);
       })();
     </script>
 
     <noscript>
-      <p style="padding: 1rem; text-align: center; color: #f0f4e8">Zapni JavaScript — bez něj simulace nefunguje.</p>
+      <p style="padding: 1rem; text-align: center; color: #6b7280">Zapni JavaScript — bez něj simulace nefunguje.</p>
     </noscript>
   </body>
 </html>

@@ -1316,7 +1316,7 @@
               const { cx, cy } = centers[k];
               const dist = Math.hypot(x - cx, y - cy);
               if (dist < hitR && dist < bestDist) {
-                bestDist = dist;
+          bestDist = dist;
                 best = { side, idx: i, cx, cy, k };
               }
             }
@@ -1387,8 +1387,8 @@
         if (h) {
           const sameSlot = h.side === d.side && h.idx === d.idx;
           if (sameSlot && !movedMuch) {
-            return;
-          }
+          return;
+        }
           const set = h.side === "left" ? setLeft : setRight;
           set((prev) => {
             const a = [...prev];
@@ -1651,7 +1651,7 @@
                     const dWeight = Math.hypot(p.x - c.cx, p.y - c.cy);
                     if (c.side === h.side && c.idx === h.idx) {
                       addAtHole = dHole <= dWeight;
-                    } else {
+        } else {
                       addAtHole = dHole < dWeight;
                     }
                   }
