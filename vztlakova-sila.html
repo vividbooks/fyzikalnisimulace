@@ -277,6 +277,7 @@
               <p class="sub">Chyť závaží a táhni nahoru nebo dolů.</p>
               <!-- Hodnotu udržuje skript při tažení (dříve posuvník). -->
               <input id="bottomDepth" type="hidden" value="0" />
+              <input id="bottomDepth2" type="hidden" value="0" />
               <label class="check-label check-label--immersion-gap" for="enable2">
                 <input id="enable2" type="checkbox" />
                 Druhé závaží
@@ -340,6 +341,7 @@
           outV2: document.getElementById("outV2"),
           liquid: document.getElementById("liquid"),
           bottomDepth: document.getElementById("bottomDepth"),
+          bottomDepth2: document.getElementById("bottomDepth2"),
         };
 
         const waterMotion = {
@@ -373,7 +375,11 @@
         const dragWeight = {
           pointerId: null,
           grabOffsetY: 0,
+          which: null,
         };
+
+        /** Při zapnutí druhého závaží zkopíruj hloubku z prvního (společný start). */
+        let prevEnable2 = false;
 
         let canvasPointerDesign = null;
 
@@ -504,6 +510,16 @@
           return { materialKey, rhoObj, Vcm3, V, sideDispCm, frac, Vsub, W, B, Tfree, m };
         }
 
+        /** Čte a normalizuje skryté pole hloubky (uživatelský index + cm dna pod hladinou). */
+        function readBottomDepthField(el, maxX, airGapCm, maxBottomDepth) {
+          const rawUser = num(el, 0);
+          let xUser = quantizeDepthCm(clamp(rawUser, 0, maxX));
+          let depthRaw = clamp(quantizeDepthCm(xUser - airGapCm), -airGapCm, maxBottomDepth);
+          xUser = depthRaw + airGapCm;
+          if (Math.abs(rawUser - xUser) > 1e-9) el.value = String(xUser);
+          return { xUser, xBottom: depthRaw };
+        }
+
         function compute() {
           // Nádoba a hladina jsou pevně dané (v UI se nezobrazují).
           const tankHFixed = 40; // cm
@@ -524,14 +540,22 @@
           // Maximum posuvu: nejhlubší dno závaží + mezera nad hladinou.
           const maxX = Math.max(0, maxBottomDepth + airGapCm);
 
-          const rawUser = num(els.bottomDepth, 0);
-          let xUser = quantizeDepthCm(clamp(rawUser, 0, maxX)); // cm
-          let bottomDepthRaw = clamp(quantizeDepthCm(xUser - airGapCm), -airGapCm, maxBottomDepth);
-          xUser = bottomDepthRaw + airGapCm;
-          if (Math.abs(rawUser - xUser) > 1e-9) els.bottomDepth.value = String(xUser);
-          const xBottom = bottomDepthRaw;
-
           const enable2 = !!(els.enable2 && els.enable2.checked);
+
+          const { xUser, xBottom: xBottom1 } = readBottomDepthField(
+            els.bottomDepth,
+            maxX,
+            airGapCm,
+            maxBottomDepth,
+          );
+          let xBottom2 = xBottom1;
+          let xUser2 = xUser;
+          if (enable2 && els.bottomDepth2) {
+            const r2 = readBottomDepthField(els.bottomDepth2, maxX, airGapCm, maxBottomDepth);
+            xUser2 = r2.xUser;
+            xBottom2 = r2.xBottom;
+          }
+
           const V1 = Math.max(1, num(els.vol, 50));
           const V2 = Math.max(1, num(els.vol2, 50));
 
@@ -547,18 +571,32 @@
 
           const s1 = cubeDisplaySideCm(V1);
           const s2 = cubeDisplaySideCm(V2);
-          immersionLockedW1 = updateImmersionLock(immersionLockedW1, xBottom, s1, waterH);
-          if (enable2) immersionLockedW2 = updateImmersionLock(immersionLockedW2, xBottom, s2, waterH);
+          immersionLockedW1 = updateImmersionLock(immersionLockedW1, xBottom1, s1, waterH);
+          if (enable2) immersionLockedW2 = updateImmersionLock(immersionLockedW2, xBottom2, s2, waterH);
 
-          const w1 = weightFromInputs(String(els.material.value || "fe"), V1, rhoW, xBottom, waterH, immersionLockedW1);
+          const w1 = weightFromInputs(
+            String(els.material.value || "fe"),
+            V1,
+            rhoW,
+            xBottom1,
+            waterH,
+            immersionLockedW1,
+          );
           const w2 = enable2
-            ? weightFromInputs(String(els.material2.value || "fe"), V2, rhoW, xBottom, waterH, immersionLockedW2)
+            ? weightFromInputs(
+                String(els.material2.value || "fe"),
+                V2,
+                rhoW,
+                xBottom2,
+                waterH,
+                immersionLockedW2,
+              )
             : null;
 
-          // Kontakt s „virtuálním“ dnem (nejhlubší poloha nad skutečným dnem).
-          const wouldHitBottom = xBottom >= maxBottomDepth - 1e-4;
-          const T1 = wouldHitBottom && w1.Tfree > 0 ? Math.max(0, w1.Tfree) : w1.Tfree;
-          const T2 = w2 ? (wouldHitBottom && w2.Tfree > 0 ? Math.max(0, w2.Tfree) : w2.Tfree) : null;
+          const wouldHitBottom1 = xBottom1 >= maxBottomDepth - 1e-4;
+          const wouldHitBottom2 = xBottom2 >= maxBottomDepth - 1e-4;
+          const T1 = wouldHitBottom1 && w1.Tfree > 0 ? Math.max(0, w1.Tfree) : w1.Tfree;
+          const T2 = w2 ? (wouldHitBottom2 && w2.Tfree > 0 ? Math.max(0, w2.Tfree) : w2.Tfree) : null;
           const netDownIfFree = w1.Tfree + (w2 ? w2.Tfree : 0);
           const waterRiseCm = 0; // zdvih hladiny od vytlačeného objemu vypnutý
 
@@ -569,12 +607,14 @@
             waterH,
             waterRiseCm,
             xUser,
-            xBottom,
+            xUser2: enable2 ? xUser2 : xUser,
+            xBottom: xBottom1,
+            xBottom2: enable2 ? xBottom2 : xBottom1,
             T1,
             T2,
             w1,
             w2,
-            wouldHitBottom,
+            wouldHitBottom: wouldHitBottom1 || wouldHitBottom2,
             netDownIfFree,
             maxBottomDepth,
             maxUserCm: maxX,
@@ -709,7 +749,9 @@
           let xBottom = (newBottomY - g.baseYWater) / g.pxPerCm;
           xBottom = quantizeDepthCm(clamp(xBottom, -g.airGapCm, g.maxBottomDepth));
           const xUser = clamp(xBottom + g.airGapCm, 0, g.maxUserCm);
-          els.bottomDepth.value = String(xUser);
+          const el =
+            dragWeight.which === "w2" && els.bottomDepth2 ? els.bottomDepth2 : els.bottomDepth;
+          el.value = String(xUser);
         }
 
         function draw(s) {
@@ -846,9 +888,6 @@
           ctx.lineTo(tankX + tankW, tankY);
           ctx.stroke();
 
-          const bottomCm = s.xBottom;
-          const yBottomWeight = baseYWater + bottomCm * pxPerCm;
-
           const w1 = s.w1;
           const w2 = s.w2;
 
@@ -862,7 +901,8 @@
           const hook1 = scaleHook(scales[0]);
           const hook2 = w2 ? scaleHook(scales[1]) : null;
 
-          function drawWeightUnder(hook, sizePx, materialKey) {
+          function drawWeightUnder(hook, sizePx, materialKey, bottomCm) {
+            const yBottomWeight = baseYWater + bottomCm * pxPerCm;
             const x = clamp(hook.hookX - sizePx / 2, tankX + 8 * Z, tankX + tankW - sizePx - 8 * Z);
             const y = yBottomWeight - sizePx;
             const attachX = x + sizePx / 2;
@@ -917,15 +957,16 @@
             return { x, y, w: sizePx, h: sizePx };
           }
 
-          const w1Box = drawWeightUnder(hook1, s1px, w1.materialKey);
-          const w2Box = w2 && hook2 ? drawWeightUnder(hook2, s2px, w2.materialKey) : null;
+          const w1Box = drawWeightUnder(hook1, s1px, w1.materialKey, s.xBottom);
+          const w2Box =
+            w2 && hook2 ? drawWeightUnder(hook2, s2px, w2.materialKey, s.xBottom2) : null;
 
           drawScaleAt(scales[0], s.T1);
           if (w2) drawScaleAt(scales[1], s.T2);
 
           lastWeightBoxes = {
-            w1: { x: w1Box.x, y: w1Box.y, w: w1Box.w, h: w1Box.h },
-            w2: w2Box ? { x: w2Box.x, y: w2Box.y, w: w2Box.w, h: w2Box.h } : null,
+            w1: { x: w1Box.x, y: w1Box.y, w: w1Box.w, h: w1Box.h, key: "w1" },
+            w2: w2Box ? { x: w2Box.x, y: w2Box.y, w: w2Box.w, h: w2Box.h, key: "w2" } : null,
           };
           lastDragGeom = {
             pxPerCm,
@@ -1002,7 +1043,12 @@
         els.vol.addEventListener("input", onAnyChange);
         if (els.enable2 && els.w2Wrap) {
           const sync2Vis = () => {
-            els.w2Wrap.style.display = els.enable2.checked ? "grid" : "none";
+            const on = els.enable2.checked;
+            if (on && !prevEnable2 && els.bottomDepth2) {
+              els.bottomDepth2.value = els.bottomDepth.value;
+            }
+            prevEnable2 = on;
+            els.w2Wrap.style.display = on ? "grid" : "none";
             render();
           };
           els.enable2.addEventListener("change", sync2Vis);
@@ -1023,6 +1069,7 @@
               /* ignore */
             }
             dragWeight.pointerId = null;
+            dragWeight.which = null;
           }
         }
 
@@ -1033,6 +1080,7 @@
           const box = hitWeightBox(d.x, d.y, 24);
           if (!box) return;
           dragWeight.pointerId = e.pointerId;
+          dragWeight.which = box.key || "w1";
           dragWeight.grabOffsetY = d.y - (box.y + box.h);
           els.cv.setPointerCapture(e.pointerId);
           e.preventDefault();
