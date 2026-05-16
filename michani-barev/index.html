@@ -29,7 +29,6 @@
         --readout-text: #f3f4f6;
         --danger: #fb7185;
         --success: #34d399;
-        --venn-blind-bg: #000000;
       }
 
       html[data-mix-surface="rgb"] {
@@ -48,7 +47,6 @@
         --readout-text: #f3f4f6;
         --danger: #fb7185;
         --success: #34d399;
-        --venn-blind-bg: #000000;
       }
 
       html[data-mix-surface="cmy"] {
@@ -67,7 +65,6 @@
         --readout-text: #171923;
         --danger: #dc2626;
         --success: #059669;
-        --venn-blind-bg: #ffffff;
       }
 
       * {
@@ -77,6 +74,7 @@
       body {
         margin: 0;
         min-height: 100vh;
+        min-height: 100dvh;
         background: var(--bg);
         color: var(--text);
         font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
@@ -93,21 +91,23 @@
         display: flex;
         flex-wrap: wrap;
         align-items: stretch;
-        align-content: flex-start;
-        gap: clamp(16px, 3vw, 32px);
-        max-width: 1400px;
+        align-content: stretch;
+        gap: clamp(10px, 1.8vw, 20px);
+        max-width: none;
+        width: 100%;
         margin: 0 auto;
-        padding: clamp(12px, 2vw, 24px);
+        padding: clamp(8px, 1.2vw, 14px);
         min-height: 100dvh;
         box-sizing: border-box;
       }
 
       .setup-panel {
-        flex: 0 0 min(340px, 100%);
-        max-height: min(calc(100dvh - 24px), 920px);
+        flex: 0 0 min(320px, 100%);
+        max-height: none;
+        align-self: stretch;
         overflow: auto;
         padding: 18px;
-        border-radius: 14px;
+        border-radius: 22px;
         scrollbar-gutter: stable;
 
         /* Světlý panel vždy — nesleduje tmavý režim RGB plochy diagramu */
@@ -131,12 +131,12 @@
       }
 
       .viz-column {
-        flex: 1 1 min(420px, 100%);
-        min-width: 260px;
+        flex: 1 1 0;
+        min-width: 0;
         min-height: 0;
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
         justify-content: flex-start;
       }
 
@@ -209,50 +209,6 @@
         background: var(--accent);
         color: #ffffff;
         border-color: var(--accent);
-      }
-
-      input[type="range"] {
-        width: 100%;
-        height: 6px;
-        -webkit-appearance: none;
-        appearance: none;
-        border-radius: 999px;
-        background: var(--area-muted);
-        outline: none;
-      }
-
-      input[type="range"]::-moz-range-track {
-        height: 6px;
-        border-radius: 999px;
-        background: var(--area-muted);
-      }
-
-      input[type="range"]::-moz-range-progress {
-        height: 6px;
-        border-radius: 999px;
-        background: var(--accent);
-      }
-
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: var(--panel-bg);
-        border: 2px solid var(--accent);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        cursor: pointer;
-      }
-
-      input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: var(--panel-bg);
-        border: 2px solid var(--accent);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        cursor: pointer;
       }
 
       .val {
@@ -572,7 +528,7 @@
       /* ——— Vizualizace ——— */
       .viz-readout {
         width: 100%;
-        max-width: min(680px, 100%);
+        max-width: 100%;
         margin-bottom: 12px;
         flex-shrink: 0;
       }
@@ -581,21 +537,18 @@
         margin-bottom: 0;
       }
 
-      /* Test: menší mezera vzorky → diagram (bez „vycpávky“ z vertikálního centrování) */
+      /* Test: bez diagramu pod readoutem */
       .viz-readout:has(#testReadout:not([hidden])) {
-        margin-bottom: 4px;
-      }
-
-      .viz-column:has(#testReadout:not([hidden])) .viz-stage {
-        align-items: flex-start;
+        margin-bottom: 12px;
       }
 
       .test-swatch-row {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: flex-start;
-        gap: clamp(28px, 7vw, 56px);
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-items: center;
+        align-items: start;
+        gap: clamp(12px, 3vw, 28px);
+        width: 100%;
       }
 
       .test-swatch-row[hidden] {
@@ -606,13 +559,15 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        min-width: 7rem;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
       }
 
       .swatch-circle {
-        width: clamp(76px, 15vw, 108px);
-        height: clamp(76px, 15vw, 108px);
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        height: auto;
         border-radius: 50%;
         border: 2px solid var(--border);
         box-sizing: border-box;
@@ -625,11 +580,6 @@
 
       html[data-mix-surface="cmy"] .swatch-circle {
         box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
-      }
-
-      .swatch-circle.swatch-circle--blind {
-        background: var(--area-muted) !important;
-        box-shadow: inset 0 0 0 2px var(--border);
       }
 
       .swatch-label {
@@ -647,21 +597,73 @@
         color: var(--accent);
       }
 
+      .test-sliders-wrap {
+        width: 100%;
+        max-width: min(560px, 100%);
+        margin: 8px auto 0;
+        padding: 0 4px;
+      }
+
+      .test-sliders-wrap[hidden] {
+        display: none !important;
+      }
+
+      /* Stejné bobánky jako na diagramu — jen v řádku pod kolečky */
+      .test-diagram-channels {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: clamp(14px, 4vw, 28px);
+      }
+
+      .test-diagram-channels .diagram-channel-anchor {
+        position: relative;
+        left: auto !important;
+        top: auto !important;
+        transform: none;
+        max-width: none;
+      }
+
       .viz-stage {
         flex: 1;
-        min-height: 280px;
+        min-height: 0;
+        min-width: 0;
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
+      .viz-stage[hidden] {
+        display: none !important;
+      }
+
       .diagram-wrap {
         position: relative;
-        width: min(100%, 680px);
+        box-sizing: border-box;
         aspect-ratio: 400 / 340;
+        max-width: 100%;
         height: auto;
-        max-height: min(72vh, 560px);
+        margin-inline: auto;
+      }
+
+      @supports (container-type: size) {
+        .viz-stage {
+          container-type: size;
+          container-name: vstage;
+        }
+
+        .diagram-wrap {
+          width: min(100cqw, calc(100cqh * 400 / 340));
+        }
+      }
+
+      @supports not (container-type: size) {
+        .diagram-wrap {
+          width: min(100%, calc((100dvh - 11rem) * 400 / 340));
+          max-height: calc(100dvh - 11rem);
+        }
       }
 
       #vennCanvas {
@@ -673,53 +675,6 @@
         border-radius: 0;
         border: none;
         outline: none;
-      }
-
-      .diagram-wrap svg {
-        position: relative;
-        z-index: 1;
-        display: block;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      }
-
-      .expert-placeholder {
-        fill: var(--area-muted);
-        stroke: var(--border);
-        stroke-width: 2;
-        stroke-dasharray: 6 4;
-      }
-
-      .expert-q {
-        fill: var(--muted);
-        font-size: 28px;
-        font-weight: 800;
-        text-anchor: middle;
-        dominant-baseline: central;
-        pointer-events: none;
-      }
-
-      .diagram-wrap.expert-blind .expert-layer {
-        opacity: 1;
-      }
-
-      .expert-layer {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .hint-expert {
-        margin: 14px 0 0;
-        font-size: 0.875rem;
-        color: var(--muted);
-        text-align: center;
-        max-width: 36rem;
-        line-height: 1.4;
-      }
-
-      .hint-expert[hidden] {
-        display: none !important;
       }
 
       .result {
@@ -753,70 +708,33 @@
       }
 
       .hub-back-to-sims {
-        position: fixed;
-        top: max(10px, env(safe-area-inset-top, 0px));
-        left: max(10px, env(safe-area-inset-left, 0px));
-        z-index: 100;
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
         font-size: 0.88rem;
         font-weight: 700;
         text-decoration: none;
-        padding: 8px 14px;
-        border-radius: 999px;
+        padding: 9px 14px;
+        margin: 0 0 14px;
+        border-radius: 12px;
         border: 1px solid var(--border);
-        background: var(--panel-bg);
+        background: var(--area-muted);
         color: var(--text);
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
-      }
-
-      html[data-mix-surface="cmy"] .hub-back-to-sims {
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
       }
 
       .hub-back-to-sims:hover {
         border-color: var(--accent);
         color: var(--accent);
+        background: var(--readout-bg);
       }
     </style>
   </head>
   <body>
-    <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
     <div class="app">
-      <div class="viz-column" aria-label="Vizualizace">
-        <div class="viz-readout">
-          <div id="testReadout" class="test-swatch-row" hidden>
-            <div class="swatch-item">
-              <div id="targetSwatchCircle" class="swatch-circle" role="img" aria-label="Cílová barva"></div>
-              <span class="swatch-label">Cíl</span>
-              <code id="targetHex" class="swatch-hex">—</code>
-            </div>
-            <div class="swatch-item">
-              <div id="mixSwatchCircle" class="swatch-circle" role="img" aria-label="Tvoje namíchaná barva"></div>
-              <span class="swatch-label">Výsledek</span>
-              <code id="mixHexTest" class="swatch-hex">#000000</code>
-            </div>
-          </div>
-        </div>
-
-        <div class="viz-stage">
-          <div class="diagram-wrap" id="diagramWrap">
-            <canvas id="vennCanvas" width="800" height="680" aria-hidden="true"></canvas>
-            <svg viewBox="0 0 400 340" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <g class="expert-layer" id="expertLayer">
-                <circle class="expert-placeholder" cx="200" cy="178" r="38" />
-                <text class="expert-q" x="200" y="182">?</text>
-              </g>
-            </svg>
-            <div id="diagramChannels" class="diagram-channels" aria-label="Intenzity kanálů"></div>
-          </div>
-        </div>
-
-        <p class="hint-expert" id="expertHint" hidden>
-          <span class="warning">Expert:</span> průběžně nevidíš překryv ani střed — v kolečkách vlevo jen měníš čísla u kanálů (bez náhledu výsledné barvy). Po Vyhodnotit se zobrazí.
-        </p>
-      </div>
-
       <aside class="setup-panel" aria-label="Ovládání">
         <div class="controls">
+          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
           <h1 class="panel-title">Míchání barev (RGB / CMY)</h1>
 
           <div class="row">
@@ -835,14 +753,6 @@
             </div>
           </div>
 
-          <div class="row" id="difficultyRow">
-            <label class="segmented-label">Obtížnost (jen Test)</label>
-            <div class="segmented" role="group" aria-label="Obtížnost">
-              <button id="diffStandard" type="button" aria-pressed="true">Standard</button>
-              <button id="diffExpert" type="button" aria-pressed="false">Expert</button>
-            </div>
-          </div>
-
           <div class="row">
             <label class="segmented-label">Akce</label>
             <div class="actions-row">
@@ -855,16 +765,47 @@
           <div class="result" id="resultBox" aria-live="polite"></div>
         </div>
       </aside>
+
+      <div class="viz-column" aria-label="Vizualizace">
+        <div class="viz-readout">
+          <div id="testReadout" class="test-swatch-row" hidden>
+            <div class="swatch-item">
+              <div id="targetSwatchCircle" class="swatch-circle" role="img" aria-label="Cílová barva"></div>
+              <span class="swatch-label">Cíl</span>
+              <code id="targetHex" class="swatch-hex">—</code>
+            </div>
+            <div class="swatch-item">
+              <div id="mixSwatchCircle" class="swatch-circle" role="img" aria-label="Tvoje namíchaná barva"></div>
+              <span class="swatch-label">Výsledek</span>
+              <code id="mixHexTest" class="swatch-hex">#000000</code>
+            </div>
+          </div>
+          <div id="testSlidersWrap" class="test-sliders-wrap" hidden>
+            <div
+              id="testDiagramChannels"
+              class="test-diagram-channels"
+              role="group"
+              aria-label="Intenzity kanálů (test, táhni u čísla jako v Procvičuj)"
+            ></div>
+          </div>
+        </div>
+
+        <div class="viz-stage" id="vizStage">
+          <div class="diagram-wrap" id="diagramWrap">
+            <canvas id="vennCanvas" width="800" height="680" aria-hidden="true"></canvas>
+            <div id="diagramChannels" class="diagram-channels" aria-label="Intenzity kanálů"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
       (function () {
         /** @typedef {"practice"|"test"} Mode */
         /** @typedef {"rgb"|"cmy"} Model */
-        /** @typedef {"standard"|"expert"} Difficulty */
 
-        /** @type {{mode: Mode, model: Model, difficulty: Difficulty, v: [number,number,number]}} */
-        const state = { mode: "practice", model: "rgb", difficulty: "standard", v: [50, 50, 50] };
+        /** @type {{mode: Mode, model: Model, v: [number,number,number]}} */
+        const state = { mode: "practice", model: "rgb", v: [50, 50, 50] };
         /** @type {{model: Model, v: [number,number,number]} | null} */
         let target = null;
         let lastEval = null;
@@ -874,23 +815,21 @@
           modeTest: document.getElementById("modeTest"),
           modelRGB: document.getElementById("modelRGB"),
           modelCMY: document.getElementById("modelCMY"),
-          diffStandard: document.getElementById("diffStandard"),
-          diffExpert: document.getElementById("diffExpert"),
-          difficultyRow: document.getElementById("difficultyRow"),
           diagramChannels: document.getElementById("diagramChannels"),
           btnNewTarget: document.getElementById("btnNewTarget"),
           btnEvaluate: document.getElementById("btnEvaluate"),
           btnReset: document.getElementById("btnReset"),
           testReadout: document.getElementById("testReadout"),
+          testSlidersWrap: document.getElementById("testSlidersWrap"),
+          testDiagramChannels: document.getElementById("testDiagramChannels"),
+          vizStage: document.getElementById("vizStage"),
           targetSwatchCircle: document.getElementById("targetSwatchCircle"),
           mixSwatchCircle: document.getElementById("mixSwatchCircle"),
           targetHex: document.getElementById("targetHex"),
           mixHexTest: document.getElementById("mixHexTest"),
           resultBox: document.getElementById("resultBox"),
-          expertHint: document.getElementById("expertHint"),
           diagramWrap: document.getElementById("diagramWrap"),
           vennCanvas: /** @type {HTMLCanvasElement} */ (document.getElementById("vennCanvas")),
-          expertLayer: document.getElementById("expertLayer"),
         };
 
         const VB = { w: 400, h: 340 };
@@ -922,6 +861,7 @@
         }
 
         function paintVenn() {
+          if (state.mode === "test") return;
           const canvas = els.vennCanvas;
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
@@ -936,16 +876,6 @@
           const tx = (canvas.width - VB.w * scale) / 2;
           const ty = (canvas.height - VB.h * scale) / 2;
           ctx.setTransform(scale, 0, 0, scale, tx, ty);
-
-          const blind = expertBlind();
-          if (blind) {
-            const blindBg =
-              getComputedStyle(document.documentElement).getPropertyValue("--venn-blind-bg").trim() || "#ffffff";
-            ctx.fillStyle = blindBg;
-            ctx.fillRect(0, 0, VB.w, VB.h);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            return;
-          }
 
           const t = state.v.map((x) => clamp01(x / 100));
 
@@ -1111,6 +1041,65 @@
           );
         }
 
+        /** Stejné bobánky jako na diagramu — řádek v Testu (id prefix t* kvůli kolizi s Procvičuj). */
+        function renderTestStrip() {
+          if (!els.testDiagramChannels) return;
+          const labels = channelLabels(state.model);
+          els.testDiagramChannels.innerHTML = "";
+          labels.forEach((ch, i) => {
+            const anchor = document.createElement("div");
+            anchor.className = "diagram-channel-anchor ch-diagram-" + i;
+
+            const wrap = document.createElement("div");
+            wrap.className = "diagram-channel-chip ch-diagram-" + i;
+            const v0 = state.v[i];
+            wrap.innerHTML =
+              '<div class="channel-drag-line">' +
+              '<span class="channel-key">' +
+              ch.key +
+              '</span>' +
+              '<span class="channel-scrub" id="tscrub' +
+              i +
+              '" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+              v0 +
+              '" aria-label="' +
+              ch.name +
+              " (" +
+              ch.key +
+              '), táhni vodorovně u čísla nebo použij šipky po stranách — mění intenzitu">' +
+              '<span class="channel-scrub-inner">' +
+              '<span class="channel-scrub-arrow" aria-hidden="true">◀</span>' +
+              '<span class="channel-val val" id="tval' +
+              i +
+              '">' +
+              v0 +
+              '</span><span class="channel-pct">%</span>' +
+              '<span class="channel-scrub-arrow" aria-hidden="true">▶</span>' +
+              "</span></span>" +
+              "</div>";
+
+            const corr = document.createElement("div");
+            corr.className = "diagram-channel-corr";
+            corr.id = "tcorr" + i;
+            corr.hidden = true;
+
+            anchor.appendChild(wrap);
+            anchor.appendChild(corr);
+            els.testDiagramChannels.appendChild(anchor);
+
+            const scrubEl = wrap.querySelector("#tscrub" + i);
+            const valEl = wrap.querySelector("#tval" + i);
+            if (scrubEl && valEl) bindChannelScrub(scrubEl, valEl, i);
+          });
+
+          for (let i = 0; i < 3; i++) {
+            const scrub = els.testDiagramChannels.querySelector("#tscrub" + i);
+            const valEl = els.testDiagramChannels.querySelector("#tval" + i);
+            if (scrub) scrub.setAttribute("aria-valuenow", String(state.v[i]));
+            if (valEl) valEl.textContent = String(state.v[i]);
+          }
+        }
+
         function renderSliders() {
           const labels = channelLabels(state.model);
           els.diagramChannels.innerHTML = "";
@@ -1166,36 +1155,19 @@
             if (scrub) scrub.setAttribute("aria-valuenow", String(state.v[i]));
             if (valEl) valEl.textContent = String(state.v[i]);
           }
+
+          renderTestStrip();
         }
 
-        /** Po Vyhodnotit: pod bobánky zobrazí rozdíl cíl − tvoje nastavení v %. */
+        /** Korekce jen na řádku v Testu (diagramové corr prvky se nepoužívají). */
         function updateDiagramCorrections() {
-          const show =
-            state.mode === "test" &&
-            lastEval &&
-            typeof lastEval.pct === "number" &&
-            target &&
-            lastEval.model === state.model;
-
           for (let i = 0; i < 3; i++) {
             const el = document.getElementById("corr" + i);
             if (!el) continue;
-            if (!show) {
-              el.hidden = true;
-              el.textContent = "";
-              el.removeAttribute("title");
-              el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
-              continue;
-            }
-            const d = Math.round(lastEval.targetV[i] - lastEval.myV[i]);
-            const sign = d > 0 ? "+" : "";
-            el.textContent = sign + d + "%";
-            el.hidden = false;
-            el.title =
-              "Korekce kanálu: kolik procent přidat nebo ubrat oproti cíli (cílová hodnota minus tvoje při vyhodnocení).";
+            el.hidden = true;
+            el.textContent = "";
+            el.removeAttribute("title");
             el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
-            if (d > 0) el.classList.add("diagram-channel-corr--pos");
-            else if (d < 0) el.classList.add("diagram-channel-corr--neg");
           }
         }
 
@@ -1229,33 +1201,60 @@
           render();
         }
 
-        function expertBlind() {
-          return state.mode === "test" && state.difficulty === "expert" && (!lastEval || typeof lastEval.pct !== "number");
-        }
-
         function updateMixLabelAndExpertChrome() {
           const myRgb = mixToRgb(state.model, state.v);
           const hex = rgbToHex(myRgb).toUpperCase();
           els.mixHexTest.textContent = hex;
+          els.mixSwatchCircle.style.background = hex;
+        }
 
-          const blind = expertBlind();
-          els.diagramWrap.classList.toggle("expert-blind", blind);
-          els.expertHint.hidden = !blind;
+        /** Po Vyhodnotit: pod testovými bobánky stejná korekce jako dřív u diagramu. */
+        function updateTestStripCorrections() {
+          const show =
+            state.mode === "test" &&
+            lastEval &&
+            typeof lastEval.pct === "number" &&
+            target &&
+            lastEval.model === state.model;
 
-          if (blind) {
-            els.mixSwatchCircle.classList.add("swatch-circle--blind");
-            els.mixSwatchCircle.style.background = "";
-          } else {
-            els.mixSwatchCircle.classList.remove("swatch-circle--blind");
-            els.mixSwatchCircle.style.background = hex;
+          for (let i = 0; i < 3; i++) {
+            const el = document.getElementById("tcorr" + i);
+            if (!el) continue;
+            if (!show) {
+              el.hidden = true;
+              el.textContent = "";
+              el.removeAttribute("title");
+              el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
+              continue;
+            }
+            const d = Math.round(lastEval.targetV[i] - lastEval.myV[i]);
+            const sign = d > 0 ? "+" : "";
+            el.textContent = sign + d + "%";
+            el.hidden = false;
+            el.title =
+              "Korekce kanálu: kolik procent přidat nebo ubrat oproti cíli (cílová hodnota minus tvoje při vyhodnocení).";
+            el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
+            if (d > 0) el.classList.add("diagram-channel-corr--pos");
+            else if (d < 0) el.classList.add("diagram-channel-corr--neg");
           }
         }
 
+        function syncTestChannelValsFromState() {
+          if (state.mode !== "test" || !els.testDiagramChannels) return;
+          for (let i = 0; i < 3; i++) {
+            const scrub = els.testDiagramChannels.querySelector("#tscrub" + i);
+            const valEl = els.testDiagramChannels.querySelector("#tval" + i);
+            if (scrub) scrub.setAttribute("aria-valuenow", String(state.v[i]));
+            if (valEl) valEl.textContent = String(state.v[i]);
+          }
+        }
         function updateTargetUi() {
           const inTest = state.mode === "test";
           const hideHexInTest = inTest && !(lastEval && typeof lastEval.pct === "number");
 
           els.testReadout.hidden = !inTest;
+          if (els.testSlidersWrap) els.testSlidersWrap.hidden = !inTest;
+          if (els.vizStage) els.vizStage.hidden = inTest;
           if (inTest && target) {
             const targetRgb = mixToRgb(target.model, target.v);
             const targetHex = rgbToHex(targetRgb).toUpperCase();
@@ -1301,7 +1300,6 @@
           const inTest = state.mode === "test";
           els.btnNewTarget.style.display = inTest ? "inline-block" : "none";
           els.btnEvaluate.style.display = inTest ? "inline-block" : "none";
-          els.difficultyRow.style.display = inTest ? "grid" : "none";
         }
 
         function syncMixSurfaceTheme() {
@@ -1314,8 +1312,10 @@
           paintVenn();
           updateMixLabelAndExpertChrome();
           updateTargetUi();
+          syncTestChannelValsFromState();
           renderResultBox();
           updateDiagramCorrections();
+          updateTestStripCorrections();
         }
 
         els.modePractice.addEventListener("click", () => {
@@ -1347,20 +1347,6 @@
           renderSliders();
           if (state.mode === "test") newTarget();
           lastEval = null;
-          render();
-        });
-
-        els.diffStandard.addEventListener("click", () => {
-          state.difficulty = "standard";
-          setPressed(els.diffStandard, els.diffExpert, true);
-          if (state.mode === "test") newTarget();
-          render();
-        });
-
-        els.diffExpert.addEventListener("click", () => {
-          state.difficulty = "expert";
-          setPressed(els.diffStandard, els.diffExpert, false);
-          if (state.mode === "test") newTarget();
           render();
         });
 

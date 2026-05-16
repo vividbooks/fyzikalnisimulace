@@ -30,7 +30,7 @@ jobs:
           const checks = [
             [/id=["']root["']/, "Missing React mount (#root)"],
             [/class=["'][^"']*stage-svg/, "Missing main SVG (.stage-svg)"],
-            [/VztlakovaSimApp/, "Missing embedded vztlaková sim wrapper"],
+            [/vztlakova-sila\.html/, "Missing vztlaková full-page navigation target"],
             [/Fyzikální simulace/, "Missing expected page title text"],
           ];
           for (const [re, msg] of checks) {

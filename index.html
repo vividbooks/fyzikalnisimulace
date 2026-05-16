@@ -1406,11 +1406,20 @@
       const simId = parseSimFromHash();
 
       useEffect(() => {
-        if (simId !== "michani-barev") return;
-        try {
-          window.location.replace(new URL("michani-barev/", window.location.href).href);
-        } catch (_) {
-          window.location.replace("michani-barev/");
+        if (simId === "michani-barev") {
+          try {
+            window.location.replace(new URL("michani-barev/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("michani-barev/");
+          }
+          return;
+        }
+        if (simId === "vztlakova") {
+          try {
+            window.location.replace(new URL("vztlakova-sila.html", window.location.href).href);
+          } catch (_) {
+            window.location.replace("vztlakova-sila.html");
+          }
         }
       }, [simId]);
 
@@ -1438,7 +1447,11 @@
       }, []);
 
       if (simId === "vztlakova") {
-        return html`<${VztlakovaSimApp} onBack=${goToHub} />`;
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
       }
       if (simId === "paka") {
         return html`<${LeverSimApp} onBack=${goToHub} />`;
@@ -1479,34 +1492,6 @@
           </header>
           <div class="sim-iframe-wrap">
             <iframe class="sim-iframe" title=${title} src=${iframeSrc} loading="lazy" />
-          </div>
-        </div>
-      `;
-    }
-
-    function VztlakovaSimApp({ onBack }) {
-      const src = useMemo(() => {
-        try {
-          return new URL("vztlakova-sila.html", window.location.href).href;
-        } catch (_) {
-          return "vztlakova-sila.html";
-        }
-      }, []);
-      return html`
-        <div class="app app--embed">
-          <header class="sim-subheader">
-            <button
-              type="button"
-              class="sim-back-btn"
-              onClick=${onBack}
-              aria-label="Zpět na přehled simulací"
-            >
-              ← Přehled
-            </button>
-            <h1 class="sim-subheader-title">Vztlaková síla</h1>
-          </header>
-          <div class="sim-iframe-wrap">
-            <iframe class="sim-iframe" title="Vztlaková síla" src=${src} loading="lazy" />
           </div>
         </div>
       `;
