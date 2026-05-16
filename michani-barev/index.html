@@ -2,7 +2,10 @@
 <html lang="cs" data-mix-surface="rgb">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <title>Simulace míchání barev (RGB/CMY)</title>
     <style>
       @font-face {
@@ -727,6 +730,47 @@
         border-color: var(--accent);
         color: var(--accent);
         background: var(--readout-bg);
+      }
+
+      /* Telefony: diagram nahoře, ovládání dole */
+      @media (max-width: 899.98px) {
+        .app {
+          flex-direction: column;
+          flex-wrap: nowrap;
+          align-items: stretch;
+          padding-left: max(8px, env(safe-area-inset-left, 0px));
+          padding-right: max(8px, env(safe-area-inset-right, 0px));
+          padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+          padding-top: max(8px, env(safe-area-inset-top, 0px));
+          gap: 12px;
+        }
+
+        .viz-column {
+          order: 1;
+          flex: 1 1 auto;
+          min-height: min(48vh, 520px);
+          width: 100%;
+        }
+
+        .setup-panel {
+          order: 2;
+          flex: 0 1 auto;
+          width: 100%;
+          max-height: min(46vh, 520px);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          border-radius: 18px;
+          padding: 14px 16px;
+        }
+
+        .hub-back-to-sims {
+          margin-bottom: 10px;
+        }
+
+        .controls {
+          gap: 16px;
+        }
       }
     </style>
   </head>

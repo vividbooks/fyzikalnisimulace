@@ -2,7 +2,10 @@
 <html lang="cs" data-theme="tokyo-midnight-lever">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>Páka — simulace</title>
     <style>
       @font-face {
@@ -69,13 +72,23 @@
         min-height: 0;
       }
 
+      /* Simulace nahoře (rostoucí), nastavení dole */
+      .lever-body {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
       .sim-subheader {
         position: relative;
         z-index: 5;
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 12px 18px;
+        padding: 12px max(18px, env(safe-area-inset-right, 0px)) 12px
+          max(18px, env(safe-area-inset-left, 0px));
+        padding-top: max(12px, env(safe-area-inset-top, 0px));
         border-bottom: 1px solid var(--border-subtle);
         background: rgba(12, 16, 28, 0.82);
         backdrop-filter: blur(12px);
@@ -116,7 +129,7 @@
       }
 
       .stage {
-        flex: 1;
+        flex: 1 1 0;
         min-height: 0;
         display: flex;
         flex-direction: column;
@@ -127,6 +140,75 @@
         position: relative;
         overflow-x: hidden;
         overflow-y: visible;
+      }
+
+      /* Světlý panel nastavení pod simulací (stejný princip jako vztlak / míchání barev) */
+      .lever-setup-panel {
+        flex: 0 0 auto;
+        width: 100%;
+        max-height: min(46vh, 480px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding: 14px max(18px, env(safe-area-inset-right, 0px))
+          max(14px, env(safe-area-inset-bottom, 0px))
+          max(18px, env(safe-area-inset-left, 0px));
+        border-top: 1px solid rgba(148, 163, 184, 0.28);
+        background: #ffffff;
+        color: #171923;
+        box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.28);
+        scrollbar-gutter: stable;
+      }
+
+      .lever-setup-title {
+        margin: 0 0 10px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #171923;
+      }
+
+      .lever-setup-hint {
+        margin: 0 0 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #475569;
+        line-height: 1.45;
+      }
+
+      .lever-setup-sub {
+        margin: 10px 0 0;
+        font-size: 0.88rem;
+        color: #64748b;
+        line-height: 1.4;
+      }
+
+      .lever-setup-check {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 650;
+        color: #171923;
+      }
+
+      .lever-setup-check input {
+        width: 1.15rem;
+        height: 1.15rem;
+        margin-top: 2px;
+        accent-color: #2563eb;
+        flex-shrink: 0;
+      }
+
+      @media (min-width: 900px) {
+        .lever-setup-panel {
+          max-height: 260px;
+          border-radius: 18px 18px 0 0;
+          margin-inline: max(0px, env(safe-area-inset-left, 0px))
+            max(0px, env(safe-area-inset-right, 0px));
+        }
       }
 
       /* flex-basis: 0 — Safari/Chrome správně zmenší výšku i přes „intrinsic“ SVG */
@@ -156,26 +238,6 @@
         user-select: none;
         touch-action: none;
         overflow: visible;
-      }
-
-      .stage-hint {
-        flex-shrink: 0;
-        flex-grow: 0;
-        position: relative;
-        z-index: 10;
-        isolation: isolate;
-        margin: 0;
-        padding: 10px 18px calc(14px + env(safe-area-inset-bottom, 0px));
-        text-align: center;
-        font-size: clamp(1rem, 2.5vw, 1.3rem);
-        font-weight: 650;
-        color: #e2e8f0;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
-        line-height: 1.35;
-        letter-spacing: -0.02em;
-        max-width: min(94vw, 42rem);
-        align-self: center;
-        pointer-events: none;
       }
 
       .clear-weights-btn-wrap {

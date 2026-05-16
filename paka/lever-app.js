@@ -716,6 +716,14 @@
       /** Zamknutá osa — tyč zůstane vodorovně (nezávisle na závažích). */
       const [beamLocked, setBeamLocked] = useState(true);
 
+      const [alwaysShowHoleNumbers, setAlwaysShowHoleNumbers] = useState(() => {
+        try {
+          return window.matchMedia("(max-width: 899px)").matches;
+        } catch (_) {
+          return true;
+        }
+      });
+
       const thetaRef = useRef(0);
       thetaRef.current = theta;
 
@@ -963,7 +971,8 @@
 
       const showDropHints =
         dragPx != null && dragRef.current != null;
-      const showHoleSlotNumbers = showDropHints || hoverHint != null;
+      const showHoleSlotNumbers =
+        showDropHints || hoverHint != null || alwaysShowHoleNumbers;
       const dropTargetHole =
         showDropHints && dragPx ? holeAt(dragPx.x, dragPx.y) : null;
 
@@ -1092,12 +1101,13 @@
               >← Přehled simulací</a>
             <h1 class="sim-subheader-title">Páka</h1>
           </header>
-          <main
-            class="stage"
-            ref=${(el) => {
-              stageRef.current = el;
-            }}
-          >
+          <div class="lever-body">
+            <main
+              class="stage"
+              ref=${(el) => {
+                stageRef.current = el;
+              }}
+            >
             <div class="stage-svg-scale-wrap">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1226,9 +1236,6 @@
               ${hoverHud}
             </svg>
             </div>
-            <p class="stage-hint" aria-live="polite">
-              Umístěte závaží kliknutím na bílé tečky na tyči.
-            </p>
             ${totalWeights > 0 &&
               clearWeightsBtnPos &&
               html`<div
@@ -1247,6 +1254,27 @@
                 </button>
               </div>`}
           </main>
+            <aside class="lever-setup-panel" aria-label="Nastavení">
+              <h2 class="lever-setup-title">Nastavení</h2>
+              <p class="lever-setup-hint">
+                Umístěte závaží kliknutím na bílé tečky na tyči. Závaží sundáš
+                tahem dolů nebo tlačítkem „Sundat závaží“ pod podstavcem.
+              </p>
+              <label class="lever-setup-check">
+                <input
+                  type="checkbox"
+                  checked=${alwaysShowHoleNumbers}
+                  onChange=${(e) =>
+                    setAlwaysShowHoleNumbers(Boolean(e.target.checked))}
+                />
+                <span>Zobrazovat čísla u háčků</span>
+              </label>
+              <p class="lever-setup-sub">
+                Zámek nad osou zamyká nebo odemyká rovnováhu tyče — stačí na něj
+                klepnout.
+              </p>
+            </aside>
+          </div>
         </div>`;
     }
     createRoot(document.getElementById("root")).render(html`<${LeverSimApp} />`);
