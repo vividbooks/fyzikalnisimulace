@@ -15,20 +15,20 @@
      */
     const VIEW = { W: 960, H: 510 };
 
-    /** Dark „Tokyo midnight“ scéna — kontrast s červenou tyčí a světlými dírami. */
+    /** Světlý režim — čitelná tyč, štítky a pozadí scény. */
     const COLORS = {
-      bg: "#060912",
-      beam: "#ff4d5e",
-      pivot: "#f9a8d4",
-      pivotNeedle: "#fbcfe8",
+      bg: "#f1f5f9",
+      beam: "#ef4444",
+      pivot: "#db2777",
+      pivotNeedle: "#fce7f3",
       beamCradle: "#64748b",
-      rope: "#cbd5e1",
-      baseOuter: "#334155",
-      baseInner: "#1e293b",
-      hole: "#f8fafc",
+      rope: "#475569",
+      baseOuter: "#475569",
+      baseInner: "#334155",
+      hole: "#ffffff",
       holeOccupied: "#be123c",
-      holeLabelMuted: "#94a3b8",
-      weight: "#94a3b8",
+      holeLabelMuted: "#64748b",
+      weight: "#64748b",
     };
 
     const SLOTS = 10;
@@ -716,14 +716,6 @@
       /** Zamknutá osa — tyč zůstane vodorovně (nezávisle na závažích). */
       const [beamLocked, setBeamLocked] = useState(true);
 
-      const [alwaysShowHoleNumbers, setAlwaysShowHoleNumbers] = useState(() => {
-        try {
-          return window.matchMedia("(max-width: 899px)").matches;
-        } catch (_) {
-          return true;
-        }
-      });
-
       const thetaRef = useRef(0);
       thetaRef.current = theta;
 
@@ -971,8 +963,7 @@
 
       const showDropHints =
         dragPx != null && dragRef.current != null;
-      const showHoleSlotNumbers =
-        showDropHints || hoverHint != null || alwaysShowHoleNumbers;
+      const showHoleSlotNumbers = showDropHints || hoverHint != null;
       const dropTargetHole =
         showDropHints && dragPx ? holeAt(dragPx.x, dragPx.y) : null;
 
@@ -1101,13 +1092,12 @@
               >← Přehled simulací</a>
             <h1 class="sim-subheader-title">Páka</h1>
           </header>
-          <div class="lever-body">
-            <main
-              class="stage"
-              ref=${(el) => {
-                stageRef.current = el;
-              }}
-            >
+          <main
+            class="stage"
+            ref=${(el) => {
+              stageRef.current = el;
+            }}
+          >
             <div class="stage-svg-scale-wrap">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1226,7 +1216,7 @@
                   fontWeight=${800}
                   letterSpacing="-0.03em"
                   fontFamily=${FONT_STACK}
-                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 2px 14px rgba(244, 114, 182, 0.45))" }}
+                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 2px 10px rgba(219, 39, 119, 0.28))" }}
                   aria-live="polite"
                 >
                   páka je v rovnováze
@@ -1254,27 +1244,6 @@
                 </button>
               </div>`}
           </main>
-            <aside class="lever-setup-panel" aria-label="Nastavení">
-              <h2 class="lever-setup-title">Nastavení</h2>
-              <p class="lever-setup-hint">
-                Umístěte závaží kliknutím na bílé tečky na tyči. Závaží sundáš
-                tahem dolů nebo tlačítkem „Sundat závaží“ pod podstavcem.
-              </p>
-              <label class="lever-setup-check">
-                <input
-                  type="checkbox"
-                  checked=${alwaysShowHoleNumbers}
-                  onChange=${(e) =>
-                    setAlwaysShowHoleNumbers(Boolean(e.target.checked))}
-                />
-                <span>Zobrazovat čísla u háčků</span>
-              </label>
-              <p class="lever-setup-sub">
-                Zámek nad osou zamyká nebo odemyká rovnováhu tyče — stačí na něj
-                klepnout.
-              </p>
-            </aside>
-          </div>
         </div>`;
     }
     createRoot(document.getElementById("root")).render(html`<${LeverSimApp} />`);

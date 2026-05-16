@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs" data-theme="tokyo-midnight-lever">
+<html lang="cs" data-theme="lever-light">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -18,21 +18,20 @@
       }
 
       :root {
-        color-scheme: dark;
-        --bg-base: #05070e;
-        --bg-glow-cyan: rgba(56, 189, 248, 0.085);
-        --bg-glow-violet: rgba(244, 114, 182, 0.06);
-        /* Stejné tokeny jako vztlakova-sila.html (tlačítko zpět do přehledu). */
-        --bg: #0a0f1a;
-        --text: #e8eaf2;
-        --muted: #94a3b8;
-        --accent: #5eb8ff;
-        --border: rgba(120, 140, 190, 0.26);
-        --border-subtle: rgba(148, 163, 184, 0.22);
-        --area-muted: rgba(255, 255, 255, 0.065);
-        --readout-bg: #080e18;
+        color-scheme: light;
+        --bg-base: #f8fafc;
+        --bg-glow-cyan: rgba(56, 189, 248, 0.12);
+        --bg-glow-violet: rgba(219, 39, 119, 0.06);
+        --bg: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --accent: #db2777;
+        --border: rgba(15, 23, 42, 0.12);
+        --border-subtle: rgba(148, 163, 184, 0.35);
+        --area-muted: rgba(241, 245, 249, 0.95);
+        --readout-bg: #f1f5f9;
         /* Stejné jako COLORS.bg ve lever-app (plocha SVG přes celý layout box). */
-        --lever-scene-bg: #060912;
+        --lever-scene-bg: #f1f5f9;
       }
 
       * {
@@ -52,8 +51,8 @@
         background-image:
           radial-gradient(ellipse 125% 95% at 50% -28%, var(--bg-glow-cyan), transparent 54%),
           radial-gradient(ellipse 72% 58% at 108% 38%, var(--bg-glow-violet), transparent 50%),
-          radial-gradient(ellipse 58% 42% at -12% 82%, rgba(56, 189, 248, 0.045), transparent 44%),
-          linear-gradient(168deg, #04060d 0%, #080d18 42%, #050812 100%);
+          radial-gradient(ellipse 58% 42% at -12% 82%, rgba(56, 189, 248, 0.06), transparent 44%),
+          linear-gradient(168deg, #f8fafc 0%, #f1f5f9 42%, #eef2f7 100%);
         background-attachment: fixed;
         color: var(--text);
       }
@@ -72,14 +71,6 @@
         min-height: 0;
       }
 
-      /* Simulace nahoře (rostoucí), nastavení dole */
-      .lever-body {
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-      }
-
       .sim-subheader {
         position: relative;
         z-index: 5;
@@ -90,7 +81,7 @@
           max(18px, env(safe-area-inset-left, 0px));
         padding-top: max(12px, env(safe-area-inset-top, 0px));
         border-bottom: 1px solid var(--border-subtle);
-        background: rgba(12, 16, 28, 0.82);
+        background: rgba(255, 255, 255, 0.82);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         flex-shrink: 0;
@@ -117,7 +108,7 @@
       .hub-back-to-sims:hover {
         border-color: var(--accent);
         color: var(--accent);
-        background: var(--readout-bg);
+        background: #fef3f8;
       }
 
       .sim-subheader-title {
@@ -140,75 +131,6 @@
         position: relative;
         overflow-x: hidden;
         overflow-y: visible;
-      }
-
-      /* Světlý panel nastavení pod simulací (stejný princip jako vztlak / míchání barev) */
-      .lever-setup-panel {
-        flex: 0 0 auto;
-        width: 100%;
-        max-height: min(46vh, 480px);
-        overflow-x: hidden;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-        padding: 14px max(18px, env(safe-area-inset-right, 0px))
-          max(14px, env(safe-area-inset-bottom, 0px))
-          max(18px, env(safe-area-inset-left, 0px));
-        border-top: 1px solid rgba(148, 163, 184, 0.28);
-        background: #ffffff;
-        color: #171923;
-        box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.28);
-        scrollbar-gutter: stable;
-      }
-
-      .lever-setup-title {
-        margin: 0 0 10px;
-        font-size: 1.05rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: #171923;
-      }
-
-      .lever-setup-hint {
-        margin: 0 0 12px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #475569;
-        line-height: 1.45;
-      }
-
-      .lever-setup-sub {
-        margin: 10px 0 0;
-        font-size: 0.88rem;
-        color: #64748b;
-        line-height: 1.4;
-      }
-
-      .lever-setup-check {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        cursor: pointer;
-        font-size: 0.95rem;
-        font-weight: 650;
-        color: #171923;
-      }
-
-      .lever-setup-check input {
-        width: 1.15rem;
-        height: 1.15rem;
-        margin-top: 2px;
-        accent-color: #2563eb;
-        flex-shrink: 0;
-      }
-
-      @media (min-width: 900px) {
-        .lever-setup-panel {
-          max-height: 260px;
-          border-radius: 18px 18px 0 0;
-          margin-inline: max(0px, env(safe-area-inset-left, 0px))
-            max(0px, env(safe-area-inset-right, 0px));
-        }
       }
 
       /* flex-basis: 0 — Safari/Chrome správně zmenší výšku i přes „intrinsic“ SVG */
@@ -252,16 +174,21 @@
       }
 
       .clear-weights-btn {
-        border: 1px solid rgba(244, 114, 182, 0.45);
-        background: rgba(15, 20, 34, 0.92);
-        color: var(--text);
+        border: 1px solid rgba(219, 39, 119, 0.35);
+        background: #ffffff;
+        color: #9d174d;
         padding: 11px 22px;
         border-radius: 999px;
         font-weight: 700;
         font-size: 0.92rem;
         font-family: inherit;
         cursor: pointer;
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 6px 22px rgba(15, 23, 42, 0.08);
+      }
+
+      .clear-weights-btn:hover {
+        border-color: rgba(219, 39, 119, 0.55);
+        background: #fef3f8;
       }
 
       .clear-weights-btn:active {
