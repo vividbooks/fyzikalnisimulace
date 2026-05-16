@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="cs" data-mix-surface="rgb">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simulace míchání barev (RGB/CMY)</title>
+    <style>
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --bg: #000000;
+        --panel-bg: #07080c;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --accent: #7cb4fc;
+        --accent-hover: #a8d0ff;
+        --canvas-border: rgba(255, 255, 255, 0.16);
+        --border: #2a2f3a;
+        --focus: #7cb4fc;
+        --area-muted: #181b22;
+        --readout-bg: #12141a;
+        --readout-text: #f3f4f6;
+        --danger: #fb7185;
+        --success: #34d399;
+        --venn-blind-bg: #000000;
+      }
+
+      html[data-mix-surface="rgb"] {
+        color-scheme: dark;
+        --bg: #000000;
+        --panel-bg: #07080c;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --accent: #7cb4fc;
+        --accent-hover: #a8d0ff;
+        --canvas-border: rgba(255, 255, 255, 0.16);
+        --border: #2a2f3a;
+        --focus: #7cb4fc;
+        --area-muted: #181b22;
+        --readout-bg: #12141a;
+        --readout-text: #f3f4f6;
+        --danger: #fb7185;
+        --success: #34d399;
+        --venn-blind-bg: #000000;
+      }
+
+      html[data-mix-surface="cmy"] {
+        color-scheme: light;
+        --bg: #ffffff;
+        --panel-bg: #ffffff;
+        --text: #171923;
+        --muted: #6b7280;
+        --accent: #3d5a9a;
+        --accent-hover: #334b81;
+        --canvas-border: transparent;
+        --border: #e8eaef;
+        --focus: #3d5a9a;
+        --area-muted: #eceff5;
+        --readout-bg: #f4f5f8;
+        --readout-text: #171923;
+        --danger: #dc2626;
+        --success: #059669;
+        --venn-blind-bg: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      .app {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        align-content: flex-start;
+        gap: clamp(16px, 3vw, 32px);
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: clamp(12px, 2vw, 24px);
+        min-height: 100dvh;
+        box-sizing: border-box;
+      }
+
+      .setup-panel {
+        flex: 0 0 min(340px, 100%);
+        max-height: min(calc(100dvh - 24px), 920px);
+        overflow: auto;
+        padding: 18px;
+        border-radius: 14px;
+        scrollbar-gutter: stable;
+
+        /* Světlý panel vždy — nesleduje tmavý režim RGB plochy diagramu */
+        color-scheme: light;
+        --panel-bg: #ffffff;
+        --text: #171923;
+        --muted: #6b7280;
+        --accent: #3d5a9a;
+        --accent-hover: #334b81;
+        --border: #e8eaef;
+        --focus: #3d5a9a;
+        --area-muted: #eceff5;
+        --readout-bg: #f4f5f8;
+        --readout-text: #171923;
+        --danger: #dc2626;
+        --success: #059669;
+
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      .viz-column {
+        flex: 1 1 min(420px, 100%);
+        min-width: 260px;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .panel-title {
+        margin: 0 0 6px;
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+      }
+
+      .controls {
+        display: grid;
+        gap: 20px;
+      }
+
+      .row {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 650;
+        font-size: 0.8125rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      label.segmented-label {
+        margin-bottom: 0;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin: 0;
+      }
+
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .segmented button {
+        appearance: none;
+        flex: 1 1 auto;
+        min-width: 5rem;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        color: var(--text);
+        font-weight: 650;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, transform 0.08s;
+      }
+
+      .segmented button:hover {
+        border-color: var(--accent);
+      }
+
+      .segmented button:active {
+        transform: translateY(1px);
+      }
+
+      .segmented button[aria-pressed="true"] {
+        background: var(--accent);
+        color: #ffffff;
+        border-color: var(--accent);
+      }
+
+      input[type="range"] {
+        width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 999px;
+        background: var(--area-muted);
+        outline: none;
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--area-muted);
+      }
+
+      input[type="range"]::-moz-range-progress {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--panel-bg);
+        border: 2px solid var(--accent);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--panel-bg);
+        border: 2px solid var(--accent);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+      }
+
+      .val {
+        font-variant-numeric: tabular-nums;
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--accent);
+      }
+
+      /* Kanály jako štítky uprostřed barevných kotoučů — táhnout vodorovně u čísla */
+      .diagram-channels {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
+      }
+
+      .diagram-channel-anchor {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        pointer-events: none;
+        z-index: 4;
+        max-width: 92%;
+      }
+
+      .diagram-channel-chip {
+        position: relative;
+        transform: none;
+        pointer-events: auto;
+        display: inline-flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 1px 4px;
+        max-width: 100%;
+        padding: 7px 11px;
+        border-radius: 999px;
+        box-sizing: border-box;
+      }
+
+      .diagram-channel-corr {
+        pointer-events: none;
+        flex-shrink: 0;
+        font-size: 1.12rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
+        padding: 7px 16px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-corr {
+        color: rgba(255, 255, 255, 0.96);
+        background: rgba(8, 10, 18, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-corr {
+        color: rgba(18, 20, 28, 0.94);
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.09);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-corr.diagram-channel-corr--pos {
+        border-color: rgba(52, 211, 153, 0.45);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-corr.diagram-channel-corr--neg {
+        border-color: rgba(251, 113, 133, 0.45);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-corr.diagram-channel-corr--pos {
+        border-color: rgba(5, 150, 105, 0.35);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-corr.diagram-channel-corr--neg {
+        border-color: rgba(220, 38, 38, 0.35);
+      }
+
+      /* Bobánky = plná intenzita příslušného kanálu (RGB / CMY primárky) */
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 {
+        background: rgb(255, 0, 0);
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        box-shadow: 0 10px 31px rgba(0, 0, 0, 0.42);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 {
+        background: rgb(0, 255, 0);
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        box-shadow: 0 10px 31px rgba(0, 0, 0, 0.28);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 {
+        background: rgb(0, 0, 255);
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        box-shadow: 0 10px 31px rgba(0, 0, 0, 0.42);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip.ch-diagram-0 {
+        background: rgb(0, 255, 255);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        box-shadow: 0 7px 26px rgba(0, 0, 0, 0.12);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip.ch-diagram-1 {
+        background: rgb(255, 0, 255);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        box-shadow: 0 7px 26px rgba(0, 0, 0, 0.12);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip.ch-diagram-2 {
+        background: rgb(255, 255, 0);
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        box-shadow: 0 7px 26px rgba(0, 0, 0, 0.12);
+      }
+
+      /* Kotouče DISKS ve viewBox 400×340 — kotva bobánku + korekce */
+      .diagram-channel-anchor.ch-diagram-0 {
+        left: 30.18%;
+        top: 38.72%;
+      }
+
+      .diagram-channel-anchor.ch-diagram-1 {
+        left: 69.82%;
+        top: 38.72%;
+      }
+
+      .diagram-channel-anchor.ch-diagram-2 {
+        left: 50%;
+        top: 77.65%;
+      }
+
+      .diagram-channel-chip .channel-drag-line {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0 6px;
+        font-size: 1.1rem;
+        line-height: 1.2;
+      }
+
+      .diagram-channel-chip .channel-key {
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        margin-right: 1px;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-key,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-key {
+        color: rgba(255, 255, 255, 0.98);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-key {
+        color: rgba(10, 26, 10, 0.94);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-key {
+        color: rgba(12, 14, 22, 0.94);
+      }
+
+      .diagram-channel-chip .channel-scrub {
+        cursor: ew-resize;
+        padding: 5px 6px;
+        margin: -5px -6px;
+        border-radius: 11px;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .diagram-channel-chip .channel-scrub:focus {
+        outline: none;
+      }
+
+      .diagram-channel-chip .channel-scrub:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+        border-radius: 11px;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-scrub:hover .channel-scrub-inner,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-scrub:hover .channel-scrub-inner {
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-scrub:hover .channel-scrub-inner {
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-scrub:hover .channel-scrub-inner {
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      .diagram-channel-chip .channel-scrub-inner {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        padding: 2px 6px;
+        border-radius: 9px;
+        transition: background 0.12s ease;
+      }
+
+      .diagram-channel-chip .channel-scrub-arrow {
+        flex-shrink: 0;
+        font-size: 0.74rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: 0;
+        pointer-events: none;
+        opacity: 0.72;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-scrub-arrow,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-scrub-arrow {
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-scrub-arrow {
+        color: rgba(10, 26, 10, 0.58);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-scrub-arrow {
+        color: rgba(12, 14, 22, 0.42);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-scrub:hover .channel-scrub-arrow,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-scrub:hover .channel-scrub-arrow {
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-scrub:hover .channel-scrub-arrow {
+        color: rgba(10, 26, 10, 0.78);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-scrub:hover .channel-scrub-arrow {
+        color: rgba(12, 14, 22, 0.62);
+      }
+
+      .diagram-channel-chip .channel-val {
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
+        font-size: 1.15rem;
+        min-width: 2.7ch;
+        text-align: right;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-val,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-pct,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-val,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-pct {
+        color: #fff;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-val,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-pct {
+        color: rgba(10, 26, 10, 0.96);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-val,
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-pct {
+        color: rgba(12, 14, 22, 0.94);
+      }
+
+      .diagram-channel-chip .channel-pct {
+        font-weight: 800;
+        font-size: 1.06rem;
+      }
+
+      .actions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        appearance: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .btn-primary {
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
+
+      .btn-ghost {
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      .btn-ghost:hover {
+        border-color: var(--accent);
+      }
+
+      /* ——— Vizualizace ——— */
+      .viz-readout {
+        width: 100%;
+        max-width: min(680px, 100%);
+        margin-bottom: 12px;
+        flex-shrink: 0;
+      }
+
+      .viz-readout:has(#testReadout[hidden]) {
+        margin-bottom: 0;
+      }
+
+      /* Test: menší mezera vzorky → diagram (bez „vycpávky“ z vertikálního centrování) */
+      .viz-readout:has(#testReadout:not([hidden])) {
+        margin-bottom: 4px;
+      }
+
+      .viz-column:has(#testReadout:not([hidden])) .viz-stage {
+        align-items: flex-start;
+      }
+
+      .test-swatch-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: clamp(28px, 7vw, 56px);
+      }
+
+      .test-swatch-row[hidden] {
+        display: none !important;
+      }
+
+      .swatch-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        min-width: 7rem;
+      }
+
+      .swatch-circle {
+        width: clamp(76px, 15vw, 108px);
+        height: clamp(76px, 15vw, 108px);
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        box-sizing: border-box;
+        flex-shrink: 0;
+      }
+
+      html[data-mix-surface="rgb"] .swatch-circle {
+        box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      html[data-mix-surface="cmy"] .swatch-circle {
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+      }
+
+      .swatch-circle.swatch-circle--blind {
+        background: var(--area-muted) !important;
+        box-shadow: inset 0 0 0 2px var(--border);
+      }
+
+      .swatch-label {
+        font-size: 0.75rem;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .swatch-hex {
+        font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+        font-weight: 800;
+        font-size: 0.88rem;
+        color: var(--accent);
+      }
+
+      .viz-stage {
+        flex: 1;
+        min-height: 280px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .diagram-wrap {
+        position: relative;
+        width: min(100%, 680px);
+        aspect-ratio: 400 / 340;
+        height: auto;
+        max-height: min(72vh, 560px);
+      }
+
+      #vennCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        border-radius: 0;
+        border: none;
+        outline: none;
+      }
+
+      .diagram-wrap svg {
+        position: relative;
+        z-index: 1;
+        display: block;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .expert-placeholder {
+        fill: var(--area-muted);
+        stroke: var(--border);
+        stroke-width: 2;
+        stroke-dasharray: 6 4;
+      }
+
+      .expert-q {
+        fill: var(--muted);
+        font-size: 28px;
+        font-weight: 800;
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+      }
+
+      .diagram-wrap.expert-blind .expert-layer {
+        opacity: 1;
+      }
+
+      .expert-layer {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .hint-expert {
+        margin: 14px 0 0;
+        font-size: 0.875rem;
+        color: var(--muted);
+        text-align: center;
+        max-width: 36rem;
+        line-height: 1.4;
+      }
+
+      .hint-expert[hidden] {
+        display: none !important;
+      }
+
+      .result {
+        margin-top: 4px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--readout-bg);
+        padding: 1rem 1rem 1.1rem;
+        display: none;
+        text-align: center;
+      }
+
+      .result.visible {
+        display: block;
+      }
+
+      .result .pct--hero {
+        margin: 0;
+        font-family: ui-monospace, Menlo, monospace;
+        font-weight: 800;
+        font-size: clamp(2rem, 7vw, 2.85rem);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.05;
+        color: var(--text);
+        letter-spacing: -0.03em;
+      }
+
+      .warning {
+        color: var(--danger);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="viz-column" aria-label="Vizualizace">
+        <div class="viz-readout">
+          <div id="testReadout" class="test-swatch-row" hidden>
+            <div class="swatch-item">
+              <div id="targetSwatchCircle" class="swatch-circle" role="img" aria-label="Cílová barva"></div>
+              <span class="swatch-label">Cíl</span>
+              <code id="targetHex" class="swatch-hex">—</code>
+            </div>
+            <div class="swatch-item">
+              <div id="mixSwatchCircle" class="swatch-circle" role="img" aria-label="Tvoje namíchaná barva"></div>
+              <span class="swatch-label">Výsledek</span>
+              <code id="mixHexTest" class="swatch-hex">#000000</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="viz-stage">
+          <div class="diagram-wrap" id="diagramWrap">
+            <canvas id="vennCanvas" width="800" height="680" aria-hidden="true"></canvas>
+            <svg viewBox="0 0 400 340" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <g class="expert-layer" id="expertLayer">
+                <circle class="expert-placeholder" cx="200" cy="178" r="38" />
+                <text class="expert-q" x="200" y="182">?</text>
+              </g>
+            </svg>
+            <div id="diagramChannels" class="diagram-channels" aria-label="Intenzity kanálů"></div>
+          </div>
+        </div>
+
+        <p class="hint-expert" id="expertHint" hidden>
+          <span class="warning">Expert:</span> průběžně nevidíš překryv ani střed — v kolečkách vlevo jen měníš čísla u kanálů (bez náhledu výsledné barvy). Po Vyhodnotit se zobrazí.
+        </p>
+      </div>
+
+      <aside class="setup-panel" aria-label="Ovládání">
+        <div class="controls">
+          <h1 class="panel-title">Míchání barev (RGB / CMY)</h1>
+
+          <div class="row">
+            <label class="segmented-label">Mód</label>
+            <div class="segmented" role="group" aria-label="Výběr módu">
+              <button id="modePractice" type="button" aria-pressed="true">Procvičuj</button>
+              <button id="modeTest" type="button" aria-pressed="false">Test</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="segmented-label">Model barev</label>
+            <div class="segmented" role="group" aria-label="Výběr modelu barev">
+              <button id="modelRGB" type="button" aria-pressed="true">RGB</button>
+              <button id="modelCMY" type="button" aria-pressed="false">CMY</button>
+            </div>
+          </div>
+
+          <div class="row" id="difficultyRow">
+            <label class="segmented-label">Obtížnost (jen Test)</label>
+            <div class="segmented" role="group" aria-label="Obtížnost">
+              <button id="diffStandard" type="button" aria-pressed="true">Standard</button>
+              <button id="diffExpert" type="button" aria-pressed="false">Expert</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="segmented-label">Akce</label>
+            <div class="actions-row">
+              <button id="btnNewTarget" type="button" class="btn btn-ghost" style="display: none">Nová barva</button>
+              <button id="btnEvaluate" type="button" class="btn btn-primary" style="display: none">Vyhodnotit</button>
+              <button id="btnReset" type="button" class="btn btn-ghost">Reset (50 %)</button>
+            </div>
+          </div>
+
+          <div class="result" id="resultBox" aria-live="polite"></div>
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      (function () {
+        /** @typedef {"practice"|"test"} Mode */
+        /** @typedef {"rgb"|"cmy"} Model */
+        /** @typedef {"standard"|"expert"} Difficulty */
+
+        /** @type {{mode: Mode, model: Model, difficulty: Difficulty, v: [number,number,number]}} */
+        const state = { mode: "practice", model: "rgb", difficulty: "standard", v: [50, 50, 50] };
+        /** @type {{model: Model, v: [number,number,number]} | null} */
+        let target = null;
+        let lastEval = null;
+
+        const els = {
+          modePractice: document.getElementById("modePractice"),
+          modeTest: document.getElementById("modeTest"),
+          modelRGB: document.getElementById("modelRGB"),
+          modelCMY: document.getElementById("modelCMY"),
+          diffStandard: document.getElementById("diffStandard"),
+          diffExpert: document.getElementById("diffExpert"),
+          difficultyRow: document.getElementById("difficultyRow"),
+          diagramChannels: document.getElementById("diagramChannels"),
+          btnNewTarget: document.getElementById("btnNewTarget"),
+          btnEvaluate: document.getElementById("btnEvaluate"),
+          btnReset: document.getElementById("btnReset"),
+          testReadout: document.getElementById("testReadout"),
+          targetSwatchCircle: document.getElementById("targetSwatchCircle"),
+          mixSwatchCircle: document.getElementById("mixSwatchCircle"),
+          targetHex: document.getElementById("targetHex"),
+          mixHexTest: document.getElementById("mixHexTest"),
+          resultBox: document.getElementById("resultBox"),
+          expertHint: document.getElementById("expertHint"),
+          diagramWrap: document.getElementById("diagramWrap"),
+          vennCanvas: /** @type {HTMLCanvasElement} */ (document.getElementById("vennCanvas")),
+          expertLayer: document.getElementById("expertLayer"),
+        };
+
+        const VB = { w: 400, h: 340 };
+        const DISKS = [
+          { cx: 154, cy: 150, r: 88 },
+          { cx: 246, cy: 150, r: 88 },
+          { cx: 200, cy: 226, r: 88 },
+        ];
+
+        /** @param {CanvasRenderingContext2D} ctx */
+        function drawDisk(ctx, cx, cy, r, cssColor) {
+          ctx.fillStyle = cssColor;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        function syncCanvasSize() {
+          const canvas = els.vennCanvas;
+          const wrap = els.diagramWrap;
+          const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+          const rect = wrap.getBoundingClientRect();
+          const w = Math.max(1, Math.round(rect.width * dpr));
+          const h = Math.max(1, Math.round(rect.height * dpr));
+          if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+          }
+        }
+
+        function paintVenn() {
+          const canvas = els.vennCanvas;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          syncCanvasSize();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = "source-over";
+
+          const scale = Math.min(canvas.width / VB.w, canvas.height / VB.h);
+          const tx = (canvas.width - VB.w * scale) / 2;
+          const ty = (canvas.height - VB.h * scale) / 2;
+          ctx.setTransform(scale, 0, 0, scale, tx, ty);
+
+          const blind = expertBlind();
+          if (blind) {
+            const blindBg =
+              getComputedStyle(document.documentElement).getPropertyValue("--venn-blind-bg").trim() || "#ffffff";
+            ctx.fillStyle = blindBg;
+            ctx.fillRect(0, 0, VB.w, VB.h);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            return;
+          }
+
+          const t = state.v.map((x) => clamp01(x / 100));
+
+          if (state.model === "rgb") {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, VB.w, VB.h);
+            ctx.globalCompositeOperation = "lighter";
+            const R = int(t[0] * 255);
+            const G = int(t[1] * 255);
+            const B = int(t[2] * 255);
+            drawDisk(ctx, DISKS[0].cx, DISKS[0].cy, DISKS[0].r, "rgb(" + R + ",0,0)");
+            drawDisk(ctx, DISKS[1].cx, DISKS[1].cy, DISKS[1].r, "rgb(0," + G + ",0)");
+            drawDisk(ctx, DISKS[2].cx, DISKS[2].cy, DISKS[2].r, "rgb(0,0," + B + ")");
+          } else {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, VB.w, VB.h);
+            ctx.globalCompositeOperation = "multiply";
+            const c = t[0];
+            const m = t[1];
+            const y = t[2];
+            drawDisk(ctx, DISKS[0].cx, DISKS[0].cy, DISKS[0].r, "rgb(" + int(255 * (1 - c)) + ",255,255)");
+            drawDisk(ctx, DISKS[1].cx, DISKS[1].cy, DISKS[1].r, "rgb(255," + int(255 * (1 - m)) + ",255)");
+            drawDisk(ctx, DISKS[2].cx, DISKS[2].cy, DISKS[2].r, "rgb(255,255," + int(255 * (1 - y)) + ")");
+          }
+
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+
+        function clamp01(x) {
+          return Math.min(1, Math.max(0, x));
+        }
+
+        function int(n) {
+          return Math.round(Number(n) || 0);
+        }
+
+        function toHexByte(n) {
+          const v = Math.min(255, Math.max(0, int(n)));
+          return v.toString(16).padStart(2, "0");
+        }
+
+        function rgbToHex(rgb) {
+          return "#" + toHexByte(rgb[0]) + toHexByte(rgb[1]) + toHexByte(rgb[2]);
+        }
+
+        /** @param {Model} model @param {[number,number,number]} v100 */
+        function mixToRgb(model, v100) {
+          const a = clamp01(v100[0] / 100);
+          const b = clamp01(v100[1] / 100);
+          const c = clamp01(v100[2] / 100);
+
+          if (model === "rgb") {
+            return [int(a * 255), int(b * 255), int(c * 255)];
+          }
+          return [int((1 - a) * 255), int((1 - b) * 255), int((1 - c) * 255)];
+        }
+
+        /** @param {Model} model */
+        function channelLabels(model) {
+          return model === "rgb"
+            ? [
+                { key: "R", name: "Červená" },
+                { key: "G", name: "Zelená" },
+                { key: "B", name: "Modrá" },
+              ]
+            : [
+                { key: "C", name: "Azurová" },
+                { key: "M", name: "Purpurová" },
+                { key: "Y", name: "Žlutá" },
+              ];
+        }
+
+        function setPressed(a, b, activeA) {
+          a.setAttribute("aria-pressed", activeA ? "true" : "false");
+          b.setAttribute("aria-pressed", activeA ? "false" : "true");
+        }
+
+        /**
+         * Řádek „C: 42%“ — horizontální táhnutí u čísla mění hodnotu (~2 px ≈ 1 %).
+         * @param {HTMLElement} scrubEl
+         * @param {HTMLElement} valSpan
+         * @param {number} index
+         */
+        function bindChannelScrub(scrubEl, valSpan, index) {
+          let dragging = false;
+          let startX = 0;
+          let startV = 0;
+
+          function applyFromDrag(clientX) {
+            const delta = Math.round((clientX - startX) / 2);
+            const nv = Math.min(100, Math.max(0, startV + delta));
+            if (nv !== state.v[index]) {
+              state.v[index] = nv;
+              valSpan.textContent = String(nv);
+              scrubEl.setAttribute("aria-valuenow", String(nv));
+              lastEval = null;
+              render();
+            }
+          }
+
+          scrubEl.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            scrubEl.setPointerCapture(e.pointerId);
+            dragging = true;
+            startX = e.clientX;
+            startV = state.v[index];
+            e.preventDefault();
+          });
+
+          scrubEl.addEventListener("pointermove", (e) => {
+            if (!dragging) return;
+            applyFromDrag(e.clientX);
+          });
+
+          function endDrag(e) {
+            if (!dragging) return;
+            dragging = false;
+            try {
+              scrubEl.releasePointerCapture(e.pointerId);
+            } catch (_) {}
+          }
+
+          scrubEl.addEventListener("pointerup", endDrag);
+          scrubEl.addEventListener("pointercancel", () => {
+            dragging = false;
+          });
+
+          scrubEl.addEventListener("keydown", (e) => {
+            let nv = state.v[index];
+            if (e.key === "ArrowRight" || e.key === "ArrowUp") nv = Math.min(100, nv + 1);
+            else if (e.key === "ArrowLeft" || e.key === "ArrowDown") nv = Math.max(0, nv - 1);
+            else if (e.key === "PageUp") nv = Math.min(100, nv + 10);
+            else if (e.key === "PageDown") nv = Math.max(0, nv - 10);
+            else if (e.key === "Home") nv = 0;
+            else if (e.key === "End") nv = 100;
+            else return;
+            e.preventDefault();
+            if (nv !== state.v[index]) {
+              state.v[index] = nv;
+              valSpan.textContent = String(nv);
+              scrubEl.setAttribute("aria-valuenow", String(nv));
+              lastEval = null;
+              render();
+            }
+          });
+
+          scrubEl.addEventListener(
+            "wheel",
+            (e) => {
+              e.preventDefault();
+              const step = e.shiftKey ? 5 : 1;
+              const dir = e.deltaY > 0 ? -step : step;
+              const nv = Math.min(100, Math.max(0, state.v[index] + dir));
+              if (nv !== state.v[index]) {
+                state.v[index] = nv;
+                valSpan.textContent = String(nv);
+                scrubEl.setAttribute("aria-valuenow", String(nv));
+                lastEval = null;
+                render();
+              }
+            },
+            { passive: false }
+          );
+        }
+
+        function renderSliders() {
+          const labels = channelLabels(state.model);
+          els.diagramChannels.innerHTML = "";
+          labels.forEach((ch, i) => {
+            const anchor = document.createElement("div");
+            anchor.className = "diagram-channel-anchor ch-diagram-" + i;
+
+            const wrap = document.createElement("div");
+            wrap.className = "diagram-channel-chip ch-diagram-" + i;
+            const v0 = state.v[i];
+            wrap.innerHTML =
+              '<div class="channel-drag-line">' +
+              '<span class="channel-key">' +
+              ch.key +
+              '</span>' +
+              '<span class="channel-scrub" id="scrub' +
+              i +
+              '" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+              v0 +
+              '" aria-label="' +
+              ch.name +
+              " (" +
+              ch.key +
+              '), táhni vodorovně u čísla nebo použij šipky po stranách — mění intenzitu">' +
+              '<span class="channel-scrub-inner">' +
+              '<span class="channel-scrub-arrow" aria-hidden="true">◀</span>' +
+              '<span class="channel-val val" id="val' +
+              i +
+              '">' +
+              v0 +
+              '</span><span class="channel-pct">%</span>' +
+              '<span class="channel-scrub-arrow" aria-hidden="true">▶</span>' +
+              "</span></span>" +
+              "</div>";
+
+            const corr = document.createElement("div");
+            corr.className = "diagram-channel-corr";
+            corr.id = "corr" + i;
+            corr.hidden = true;
+
+            anchor.appendChild(wrap);
+            anchor.appendChild(corr);
+            els.diagramChannels.appendChild(anchor);
+
+            const scrubEl = wrap.querySelector("#scrub" + i);
+            const valEl = wrap.querySelector("#val" + i);
+            if (scrubEl && valEl) bindChannelScrub(scrubEl, valEl, i);
+          });
+
+          for (let i = 0; i < 3; i++) {
+            const scrub = els.diagramChannels.querySelector("#scrub" + i);
+            const valEl = els.diagramChannels.querySelector("#val" + i);
+            if (scrub) scrub.setAttribute("aria-valuenow", String(state.v[i]));
+            if (valEl) valEl.textContent = String(state.v[i]);
+          }
+        }
+
+        /** Po Vyhodnotit: pod bobánky zobrazí rozdíl cíl − tvoje nastavení v %. */
+        function updateDiagramCorrections() {
+          const show =
+            state.mode === "test" &&
+            lastEval &&
+            typeof lastEval.pct === "number" &&
+            target &&
+            lastEval.model === state.model;
+
+          for (let i = 0; i < 3; i++) {
+            const el = document.getElementById("corr" + i);
+            if (!el) continue;
+            if (!show) {
+              el.hidden = true;
+              el.textContent = "";
+              el.removeAttribute("title");
+              el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
+              continue;
+            }
+            const d = Math.round(lastEval.targetV[i] - lastEval.myV[i]);
+            const sign = d > 0 ? "+" : "";
+            el.textContent = sign + d + "%";
+            el.hidden = false;
+            el.title =
+              "Korekce kanálu: kolik procent přidat nebo ubrat oproti cíli (cílová hodnota minus tvoje při vyhodnocení).";
+            el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
+            if (d > 0) el.classList.add("diagram-channel-corr--pos");
+            else if (d < 0) el.classList.add("diagram-channel-corr--neg");
+          }
+        }
+
+        function random100() {
+          return Math.floor(Math.random() * 101);
+        }
+
+        function newTarget() {
+          target = { model: state.model, v: [random100(), random100(), random100()] };
+          lastEval = null;
+          render();
+        }
+
+        /** @param {[number,number,number]} a @param {[number,number,number]} b */
+        function similarityPercent(a, b) {
+          const dx = a[0] - b[0];
+          const dy = a[1] - b[1];
+          const dz = a[2] - b[2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          const maxDist = Math.sqrt(3 * 255 * 255);
+          const pct = (1 - dist / maxDist) * 100;
+          return Math.max(0, Math.min(100, pct));
+        }
+
+        function evaluate() {
+          if (!target) return;
+          const targetRgb = mixToRgb(target.model, target.v);
+          const myRgb = mixToRgb(state.model, state.v);
+          const pct = similarityPercent(myRgb, targetRgb);
+          lastEval = { pct, targetRgb, myRgb, targetV: target.v.slice(0), myV: state.v.slice(0), model: state.model };
+          render();
+        }
+
+        function expertBlind() {
+          return state.mode === "test" && state.difficulty === "expert" && (!lastEval || typeof lastEval.pct !== "number");
+        }
+
+        function updateMixLabelAndExpertChrome() {
+          const myRgb = mixToRgb(state.model, state.v);
+          const hex = rgbToHex(myRgb).toUpperCase();
+          els.mixHexTest.textContent = hex;
+
+          const blind = expertBlind();
+          els.diagramWrap.classList.toggle("expert-blind", blind);
+          els.expertHint.hidden = !blind;
+
+          if (blind) {
+            els.mixSwatchCircle.classList.add("swatch-circle--blind");
+            els.mixSwatchCircle.style.background = "";
+          } else {
+            els.mixSwatchCircle.classList.remove("swatch-circle--blind");
+            els.mixSwatchCircle.style.background = hex;
+          }
+        }
+
+        function updateTargetUi() {
+          const inTest = state.mode === "test";
+          const hideHexInTest = inTest && !(lastEval && typeof lastEval.pct === "number");
+
+          els.testReadout.hidden = !inTest;
+          if (inTest && target) {
+            const targetRgb = mixToRgb(target.model, target.v);
+            const targetHex = rgbToHex(targetRgb).toUpperCase();
+            els.targetSwatchCircle.style.background = targetHex;
+            els.targetHex.textContent = targetHex;
+          } else {
+            els.targetHex.textContent = "—";
+            els.targetSwatchCircle.style.background = "";
+          }
+
+          els.targetHex.style.visibility = hideHexInTest ? "hidden" : "visible";
+          els.mixHexTest.style.visibility = hideHexInTest ? "hidden" : "visible";
+        }
+
+        function renderResultBox() {
+          if (!lastEval || !target) {
+            els.resultBox.classList.remove("visible");
+            els.resultBox.innerHTML = "";
+            els.resultBox.removeAttribute("aria-label");
+            return;
+          }
+          const labels = channelLabels(state.model);
+          const fmt = (v) => v.map((x) => int(x) + " %").join(" / ");
+          const pctTxt = lastEval.pct.toFixed(1).replace(".", ",") + " %";
+
+          els.resultBox.classList.add("visible");
+          els.resultBox.innerHTML = '<p class="pct pct--hero">' + pctTxt + "</p>";
+          els.resultBox.setAttribute(
+            "aria-label",
+            "Shoda s cílovou barvou " +
+              pctTxt +
+              ". Tvoje nastavení " +
+              labels.map((x) => x.key).join("") +
+              " " +
+              fmt(lastEval.myV) +
+              ", správně " +
+              fmt(target.v) +
+              "."
+          );
+        }
+
+        function renderButtons() {
+          const inTest = state.mode === "test";
+          els.btnNewTarget.style.display = inTest ? "inline-block" : "none";
+          els.btnEvaluate.style.display = inTest ? "inline-block" : "none";
+          els.difficultyRow.style.display = inTest ? "grid" : "none";
+        }
+
+        function syncMixSurfaceTheme() {
+          document.documentElement.dataset.mixSurface = state.model === "cmy" ? "cmy" : "rgb";
+        }
+
+        function render() {
+          syncMixSurfaceTheme();
+          renderButtons();
+          paintVenn();
+          updateMixLabelAndExpertChrome();
+          updateTargetUi();
+          renderResultBox();
+          updateDiagramCorrections();
+        }
+
+        els.modePractice.addEventListener("click", () => {
+          state.mode = "practice";
+          setPressed(els.modePractice, els.modeTest, true);
+          lastEval = null;
+          render();
+        });
+
+        els.modeTest.addEventListener("click", () => {
+          state.mode = "test";
+          setPressed(els.modePractice, els.modeTest, false);
+          if (!target || target.model !== state.model) newTarget();
+          render();
+        });
+
+        els.modelRGB.addEventListener("click", () => {
+          state.model = "rgb";
+          setPressed(els.modelRGB, els.modelCMY, true);
+          renderSliders();
+          if (state.mode === "test") newTarget();
+          lastEval = null;
+          render();
+        });
+
+        els.modelCMY.addEventListener("click", () => {
+          state.model = "cmy";
+          setPressed(els.modelRGB, els.modelCMY, false);
+          renderSliders();
+          if (state.mode === "test") newTarget();
+          lastEval = null;
+          render();
+        });
+
+        els.diffStandard.addEventListener("click", () => {
+          state.difficulty = "standard";
+          setPressed(els.diffStandard, els.diffExpert, true);
+          if (state.mode === "test") newTarget();
+          render();
+        });
+
+        els.diffExpert.addEventListener("click", () => {
+          state.difficulty = "expert";
+          setPressed(els.diffStandard, els.diffExpert, false);
+          if (state.mode === "test") newTarget();
+          render();
+        });
+
+        els.btnNewTarget.addEventListener("click", () => {
+          newTarget();
+        });
+
+        els.btnEvaluate.addEventListener("click", () => {
+          evaluate();
+        });
+
+        els.btnReset.addEventListener("click", () => {
+          state.v = [50, 50, 50];
+          lastEval = null;
+          renderSliders();
+          render();
+        });
+
+        renderSliders();
+        render();
+
+        if ("ResizeObserver" in window) {
+          new ResizeObserver(() => render()).observe(els.diagramWrap);
+        } else {
+          window.addEventListener("resize", () => render());
+        }
+      })();
+    </script>
+
+    <noscript>
+      <p style="padding: 1rem; text-align: center">Zapni JavaScript — bez něj simulace nefunguje.</p>
+    </noscript>
+  </body>
+</html>
