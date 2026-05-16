@@ -1,335 +1,10 @@
-<!doctype html>
-<html lang="cs">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fyzikální simulace</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
-    }
-    /* Fenomen Sans Book — stejný zdroj jako geometry-app */
-    @font-face {
-      font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      height: 100%;
-    }
-    body {
-      font-family: var(--font-app);
-      background: #ffffff;
-      color: #2a2226;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    #root {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      overflow: visible;
-    }
-    .app {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      width: 100%;
-      overflow: visible;
-    }
-    .stage {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      align-items: stretch;
-      justify-content: stretch;
-      background: #ffffff;
-      padding: 0;
-      position: relative;
-      overflow: visible;
-    }
-    .stage-svg-scale-wrap {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      width: 100%;
-      overflow: visible;
-    }
-    .stage-svg {
-      display: block;
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-      user-select: none;
-      touch-action: none;
-      overflow: visible;
-      font-family: var(--font-app);
-    }
-    .clear-weights-btn-wrap {
-      position: absolute;
-      z-index: 3;
-      transform: translateX(-50%);
-      pointer-events: none;
-    }
-    .clear-weights-btn-wrap .clear-weights-btn {
-      pointer-events: auto;
-    }
-    .clear-weights-btn {
-      border: 1px solid color-mix(in oklab, #5c1f2e 42%, transparent);
-      background: #fff;
-      color: #2a2226;
-      padding: 10px 20px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      font-family: inherit;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(42, 34, 38, 0.12);
-    }
-    .clear-weights-btn:active {
-      transform: translateY(1px);
-    }
-    .stage-hint {
-      position: absolute;
-      left: 50%;
-      top: calc(170px + max(14px, env(safe-area-inset-top, 0px)));
-      transform: translateX(-50%);
-      z-index: 3;
-      margin: 0;
-      max-width: min(92vw, 40rem);
-      padding: 0 18px;
-      text-align: center;
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: #5f6b76;
-      line-height: 1.35;
-      letter-spacing: -0.02em;
-      pointer-events: none;
-    }
-
-    /* —— Přehled simulací (layout podobný geometry-app) —— */
-    .physics-hub {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #ffffff;
-      color: #4e5871;
-    }
-    .hub-top {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px 24px;
-      padding: 20px clamp(18px, 4vw, 40px) 8px;
-      max-width: 1200px;
-      margin: 0 auto;
-      width: 100%;
-    }
-    .hub-brand {
-      margin: 0;
-      font-size: clamp(1.25rem, 2.5vw, 1.65rem);
-      font-weight: 700;
-      color: #4e5871;
-      letter-spacing: -0.02em;
-    }
-    .hub-nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-    .hub-nav button {
-      font-family: inherit;
-      padding: 11px 22px;
-      border-radius: 9999px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 200ms, color 200ms, box-shadow 200ms, border-color 200ms;
-      border: 2px solid #4e5871;
-      background: #fff;
-      color: #4e5871;
-    }
-    .hub-nav button.is-active {
-      border-color: transparent;
-      background: #4d49f3;
-      color: #fff;
-      box-shadow: 0 10px 15px 0 #e0e7ff, 0 4px 6px 0 #e0e7ff;
-    }
-    .hub-nav button:hover:not(.is-active) {
-      background: #f8fafc;
-    }
-    .hub-main {
-      flex: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      width: 100%;
-      padding: 16px clamp(18px, 4vw, 40px) 48px;
-    }
-    .hub-page-title {
-      margin: 8px 0 22px;
-      font-size: clamp(1.75rem, 4vw, 2.25rem);
-      font-weight: 700;
-      color: #4e5871;
-    }
-    .hub-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 20px;
-    }
-    .sim-card {
-      display: flex;
-      flex-direction: column;
-      text-align: left;
-      border-radius: 24px;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 200ms, box-shadow 200ms;
-      -webkit-mask-image: -webkit-radial-gradient(white, black);
-    }
-    .sim-card:hover {
-      transform: scale(1.02);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    }
-    .sim-card:active {
-      transform: scale(0.98);
-    }
-    .sim-card-preview {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 140px;
-      padding: 16px;
-    }
-    .sim-card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-    }
-    .sim-card-footer h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 500;
-      color: #4e5871;
-    }
-    .sim-card-arrow {
-      color: #4d49f3;
-      font-size: 18px;
-      font-weight: 600;
-      opacity: 0.55;
-      transition: opacity 200ms, transform 200ms;
-      flex-shrink: 0;
-    }
-    .sim-card:hover .sim-card-arrow {
-      opacity: 1;
-      transform: translateX(4px);
-    }
-    .hub-empty {
-      margin: 0;
-      padding: 28px 20px;
-      text-align: center;
-      color: #8b93a6;
-      font-size: 1.05rem;
-      background: #f8fafc;
-      border-radius: 20px;
-      border: 1px dashed #e2e8f0;
-    }
-
-    .app--lever {
-      min-height: 100vh;
-    }
-    .sim-subheader {
-      position: relative;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 10px 18px;
-      border-bottom: 1px solid #e5e7eb;
-      background: #fff;
-      flex-shrink: 0;
-    }
-    .sim-back-btn {
-      border: 2px solid #4e5871;
-      background: #fff;
-      color: #4e5871;
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 14px;
-      transition: background 150ms;
-    }
-    .sim-back-btn:hover {
-      background: #f8fafc;
-    }
-    .sim-subheader-title {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #4e5871;
-    }
-
-    .app--embed {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .sim-iframe-wrap {
-      flex: 1;
-      min-height: 0;
-      padding: 0 clamp(14px, 3vw, 24px) clamp(14px, 3vw, 24px);
-      display: flex;
-      flex-direction: column;
-    }
-    .sim-iframe {
-      flex: 1;
-      width: 100%;
-      min-height: min(88vh, 960px);
-      border: 0;
-      border-radius: 16px;
-      background: #f6f8fb;
-      box-shadow: inset 0 0 0 1px #e5e7eb;
-    }
-    .sim-fullnav-placeholder {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #6b7280;
-      min-height: 40vh;
-    }
-  </style>
-</head>
-<body>
-  <div id="root" role="presentation" aria-label="Fyzikální simulace"></div>
-
-  <script type="module">
     import React, { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "https://esm.sh/react@18.3.1";
     import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
     import htm from "https://esm.sh/htm@3.1.1?deps=react@18.3.1";
 
     const html = htm.bind(React.createElement);
-
+    /** Odkaz na přehled — stejný cíl jako dřívější navigace z `onBack`. */
+    const LEVER_HUB_HREF = new URL("../index.html", import.meta.url).href;
     /** Stejný font stack jako geometry-app (Fenomen Sans z Supabase). */
     const FONT_STACK =
       "'Fenomen Sans', ui-sans-serif, system-ui, sans-serif";
@@ -340,22 +15,20 @@
      */
     const VIEW = { W: 960, H: 510 };
 
+    /** Dark „Tokyo midnight“ scéna — kontrast s červenou tyčí a světlými dírami. */
     const COLORS = {
-      bg: "#FFFFFF",
-      beam: "#E63946",
-      pivot: "#5C1F2E",
-      pivotNeedle: "#813B50",
-      beamCradle: "#D3D3D3",
-      rope: "#5C1F2E",
-      baseOuter: "#E0E0E0",
-      baseInner: "#C0C0C0",
-      hole: "#FFFFFF",
-      /** Díra se závažím — tmavší rudá než tyč (#E63946). */
-      holeOccupied: "#9E1B30",
-      /** Neaktivní číslo háčku — šedá vs. vybrané (pivot). */
-      holeLabelMuted: "#a7aeb8",
-      /** Závaží — tmavě modrošedá (odlišná od červené tyče). */
-      weight: "#3d4d5c",
+      bg: "#060912",
+      beam: "#ff4d5e",
+      pivot: "#f9a8d4",
+      pivotNeedle: "#fbcfe8",
+      beamCradle: "#64748b",
+      rope: "#cbd5e1",
+      baseOuter: "#334155",
+      baseInner: "#1e293b",
+      hole: "#f8fafc",
+      holeOccupied: "#be123c",
+      holeLabelMuted: "#94a3b8",
+      weight: "#94a3b8",
     };
 
     const SLOTS = 10;
@@ -367,12 +40,12 @@
     const HOLE_R = 9;
     const HOLE_DROP_HINT_DR = 8;
     /** Čísla nad dírou na tyči (stejná výška bez ohledu na závaží pod ní). */
-    const HOLE_LABEL_GAP_ABOVE = 54;
+    const HOLE_LABEL_GAP_ABOVE = 58;
     /** Když puštění je jen malý pohyb od sebrání → kliknutí (×), ne vrácení na háček. */
     const BEAM_DRAG_TAP_MAX_PX = 14;
-    const HOLE_LABEL_FONT = 20;
+    const HOLE_LABEL_FONT = 27;
     /** Maximum u vybrané díry (kurzor u tečky). */
-    const HOLE_LABEL_NUM_PEAK = 50;
+    const HOLE_LABEL_NUM_PEAK = 66;
     /** Sousedé vlevo/vpravo od nejvýraznější díry — menší než plynulý „kopulec“. */
     const HOLE_LABEL_NEIGHBOR_DAMP = 0.38;
     /** Užší jádro → sousedé zůstanou menší, vybrané číslo výraznější. */
@@ -393,6 +66,7 @@
     const WEIGHT_H = 44;
     /** Zakulacení rohů závaží (menší než polovina výšky → ne celá pilulka). */
     const WEIGHT_CORNER_R = 8;
+    /** Vzdálenost díra → horní hrana prvního závaží (dvakrát +20 % dolů oproti základu 42). */
     const ROPE_FROM_HOLE = 42 * 1.2 * 1.2;
     /** Mezera „provázku“ mezi závažími ve sloupci (svisle). */
     const ROPE_BETWEEN = 10;
@@ -539,9 +213,11 @@
 
     /** Zámeček nad osou: zamknuto ⇒ tyč setrvá v rovnováze (θ = 0) bez ohledu na závaží. */
     const BEAM_LOCK_CX = PIVOT.x;
-    const BEAM_LOCK_CY = PIVOT.y - BEAM_TH / 2 - 56;
+    const BEAM_LOCK_CY = PIVOT.y - BEAM_TH / 2 - 102;
     const BEAM_LOCK_HIT_W = 78;
     const BEAM_LOCK_HIT_H = 94;
+    /** Zvětšený zámek (vizuál + hit v jeho lokálních souřadnicích). */
+    const BEAM_LOCK_UI_SCALE = 1.924;
 
     /** Ohraničení viditelné scény: páka v ±MAX_TILT, štítky, podstavec; spodek navíc pro závaží. */
     const SCENE_PAD = 26;
@@ -549,18 +225,18 @@
     const HOLE_LABEL_TOP_EXTENT = HOLE_LABEL_GAP_ABOVE + HOLE_LABEL_NUM_PEAK * 0.52;
     /** Volný prostor pod nejnižším prvkem (podstavec) pro visící závaží. */
     const SCENE_WEIGHT_MARGIN_BELOW = 300;
+    /** Vizuální zvětšení celé páky/váhy bez změny geometrie v souřadnicích scény. */
+    const SCENE_VISUAL_ZOOM = 1.15 * 1.05;
+    /** Optický posun celé páky dolů ve viewportu SVG; nemění měřítko, jen výřez. */
+    const SCENE_VISUAL_SHIFT_DOWN_FRAC = 0.2;
+    /**
+     * Při max. náklonu ční konce tyče + štítky velmi vysoko → rozšíří viewBox nahoru.
+     * Pro zarovnání nahoře (`xMidYMin`) by pak klidová páka vizuálně klesla dolů.
+     * Proto „ohnisko“ horního okraje držíme u klidové geometrie; při náklonu může přetékat ven (`overflow="visible"` na `<svg>`).
+     */
+    const SCENE_VIEWBOX_REST_TOP_PAD = 96;
 
     const SCENE_VIEW = (() => {
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-      const add = (wx, wy) => {
-        minX = Math.min(minX, wx);
-        maxX = Math.max(maxX, wx);
-        minY = Math.min(minY, wy);
-        maxY = Math.max(maxY, wy);
-      };
       const standTy = PIVOT_STAND_GROUP_TY;
       const { anchor, scale: sc, vbW, vbH } = STAND_ASSET;
       const standCorners = [
@@ -569,63 +245,107 @@
         [0, vbH],
         [vbW, vbH],
       ];
-      const thetas = [MAX_TILT, -MAX_TILT, 0];
-      const hw = BEAM_TH / 2;
-      for (const th of thetas) {
-        for (const [lx, ly] of [
-          [-BEAM_HALF, -hw],
-          [BEAM_HALF, -hw],
-          [BEAM_HALF, hw],
-          [-BEAM_HALF, hw],
-        ]) {
-          const p = toWorld(lx, ly, th);
-          add(p.x, p.y);
-        }
-        for (const lx of [-CRADLE_R, CRADLE_R, 0]) {
-          for (const ly of [hw, hw + CRADLE_R]) {
+
+      const hullCore = (thetas) => {
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        const add = (wx, wy) => {
+          minX = Math.min(minX, wx);
+          maxX = Math.max(maxX, wx);
+          minY = Math.min(minY, wy);
+          maxY = Math.max(maxY, wy);
+        };
+        const hw = BEAM_TH / 2;
+        for (const th of thetas) {
+          for (const [lx, ly] of [
+            [-BEAM_HALF, -hw],
+            [BEAM_HALF, -hw],
+            [BEAM_HALF, hw],
+            [-BEAM_HALF, hw],
+          ]) {
             const p = toWorld(lx, ly, th);
             add(p.x, p.y);
           }
-        }
-        for (const side of ["left", "right"]) {
-          for (let i = 0; i < SLOTS; i++) {
-            const hx = holeX(side, i);
-            const h = toWorld(hx, 0, th);
-            add(h.x, h.y);
-            add(h.x, h.y - HOLE_LABEL_TOP_EXTENT);
+          for (const lx of [-CRADLE_R, CRADLE_R, 0]) {
+            for (const ly of [hw, hw + CRADLE_R]) {
+              const p = toWorld(lx, ly, th);
+              add(p.x, p.y);
+            }
+          }
+          for (const side of ["left", "right"]) {
+            for (let i = 0; i < SLOTS; i++) {
+              const hx = holeX(side, i);
+              const h = toWorld(hx, 0, th);
+              add(h.x, h.y);
+              add(h.x, h.y - HOLE_LABEL_TOP_EXTENT);
+            }
           }
         }
-      }
-      for (const [lx, ly] of standCorners) {
-        const wx = PIVOT.x + sc * (lx - anchor.x);
-        const wy = standTy + sc * (ly - anchor.y);
-        add(wx, wy);
-      }
-      add(BEAM_LOCK_CX - BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY - BEAM_LOCK_HIT_H / 2);
-      add(BEAM_LOCK_CX + BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY + BEAM_LOCK_HIT_H / 2);
-      add(PIVOT.x - 280, BALANCE_LABEL_ABOVE_Y - 38);
-      add(PIVOT.x + 280, BALANCE_LABEL_ABOVE_Y + 2);
-      maxY += SCENE_WEIGHT_MARGIN_BELOW;
+        return { minX, minY, maxX, maxY };
+      };
+
+      const mergeStatics = (bb) => {
+        const add = (wx, wy) => {
+          bb.minX = Math.min(bb.minX, wx);
+          bb.maxX = Math.max(bb.maxX, wx);
+          bb.minY = Math.min(bb.minY, wy);
+          bb.maxY = Math.max(bb.maxY, wy);
+        };
+        for (const [lx, ly] of standCorners) {
+          const wx = PIVOT.x + sc * (lx - anchor.x);
+          const wy = standTy + sc * (ly - anchor.y);
+          add(wx, wy);
+        }
+        add(
+          BEAM_LOCK_CX - (BEAM_LOCK_HIT_W * BEAM_LOCK_UI_SCALE) / 2,
+          BEAM_LOCK_CY - (BEAM_LOCK_HIT_H * BEAM_LOCK_UI_SCALE) / 2,
+        );
+        add(
+          BEAM_LOCK_CX + (BEAM_LOCK_HIT_W * BEAM_LOCK_UI_SCALE) / 2,
+          BEAM_LOCK_CY + (BEAM_LOCK_HIT_H * BEAM_LOCK_UI_SCALE) / 2,
+        );
+        add(PIVOT.x - 280, BALANCE_LABEL_ABOVE_Y - 38);
+        add(PIVOT.x + 280, BALANCE_LABEL_ABOVE_Y + 2);
+      };
+
+      const bbFull = hullCore([MAX_TILT, -MAX_TILT, 0]);
+      mergeStatics(bbFull);
+      const bbRest = hullCore([0]);
+      mergeStatics(bbRest);
+
+      bbFull.minY = Math.max(
+        bbFull.minY,
+        bbRest.minY - SCENE_VIEWBOX_REST_TOP_PAD,
+      );
+
+      const maxY = bbFull.maxY + SCENE_WEIGHT_MARGIN_BELOW;
       const px = SCENE_PAD;
+      const rawMinX = bbFull.minX - px;
+      const rawMinY =
+        bbFull.minY - px - (maxY - bbFull.minY + 2 * px) * SCENE_VISUAL_SHIFT_DOWN_FRAC;
+      const rawW = bbFull.maxX - bbFull.minX + 2 * px;
+      const rawH = maxY - bbFull.minY + 2 * px;
+      const zoomedW = rawW / SCENE_VISUAL_ZOOM;
+      const zoomedH = rawH / SCENE_VISUAL_ZOOM;
       return {
-        minX: minX - px,
-        minY: minY - px,
-        w: maxX - minX + 2 * px,
-        h: maxY - minY + 2 * px,
+        minX: rawMinX + (rawW - zoomedW) / 2,
+        minY: rawMinY + (rawH - zoomedH) / 2,
+        w: zoomedW,
+        h: zoomedH,
       };
     })();
-
-    /** +20 % vizuálně; `transform` na obalu místo na `<svg>` — špatný `getScreenCTM` na některých prohlížečích. */
-    const STAGE_SVG_SCALE = 1.2;
-    const STAGE_SVG_TRANSFORM_ORIGIN = `${((PIVOT.x - SCENE_VIEW.minX) / SCENE_VIEW.w) * 100}% ${((PIVOT.y - SCENE_VIEW.minY) / SCENE_VIEW.h) * 100}%`;
 
     /** Mezera tlačítka „Sundat závaží“ pod spodek podstavce (obrazovka px). */
     const CLEAR_WEIGHTS_BELOW_FOOT_PX = 8;
 
     function hitBeamLock(px, py) {
+      const dx = (px - BEAM_LOCK_CX) / BEAM_LOCK_UI_SCALE;
+      const dy = (py - BEAM_LOCK_CY) / BEAM_LOCK_UI_SCALE;
       return (
-        Math.abs(px - BEAM_LOCK_CX) <= BEAM_LOCK_HIT_W / 2 &&
-        Math.abs(py - BEAM_LOCK_CY) <= BEAM_LOCK_HIT_H / 2
+        Math.abs(dx) <= BEAM_LOCK_HIT_W / 2 &&
+        Math.abs(dy) <= BEAM_LOCK_HIT_H / 2
       );
     }
 
@@ -635,27 +355,27 @@
       const shackle = locked
         ? html`<path
             key="lock-shackle-shut"
-            d="M -16 4 L -16 -12 A 16 16 0 0 1 16 -12 L 16 4"
+            d="M -14 5 L -14 -12 A 14 14 0 0 1 14 -12 L 14 5"
             fill="none"
             stroke=${b}
-            strokeWidth=${4.3}
+            strokeWidth=${4.2}
             strokeLinecap="round"
             strokeLinejoin="round"
           />`
         : html`<path
             key="lock-shackle-open"
-            d="M -16 4 L -16 -12 A 16 16 0 0 1 6 -22"
+            d="M -14 5 L -14 -12 A 14 14 0 0 1 4 -21"
             fill="none"
             stroke=${b}
-            strokeWidth=${4.3}
+            strokeWidth=${4.2}
             strokeLinecap="round"
             strokeLinejoin="round"
           />`;
       return html`
         <g
           key="beam-lock-icon-root"
-          transform=${`translate(${BEAM_LOCK_CX},${BEAM_LOCK_CY})`}
-          style=${{ pointerEvents: "none" }}
+          transform=${`translate(${BEAM_LOCK_CX},${BEAM_LOCK_CY}) scale(${BEAM_LOCK_UI_SCALE})`}
+          style=${{ pointerEvents: "none", filter: "drop-shadow(0 2px 7px rgba(0,0,0,0.34))" }}
         >
           <title>
             ${
@@ -665,9 +385,9 @@
             }
           </title>
           ${shackle}
-          <rect x="-19" y="4" width="38" height="30" rx="6" fill=${b} />
-          <circle cx=${0} cy=${19} r=${3.2} fill="rgba(255,255,255,0.34)" />
-          <rect x=${-1.2} y=${19} width=${2.4} height=${8} rx=${1} fill="rgba(255,255,255,0.34)" />
+          <rect x="-20" y="4" width="40" height="31" rx="7" fill=${b} />
+          <circle cx=${0} cy=${19} r=${3.4} fill="rgba(42, 34, 38, 0.36)" />
+          <rect x=${-1.25} y=${19} width=${2.5} height=${8} rx=${1.1} fill="rgba(42, 34, 38, 0.36)" />
         </g>
       `;
     }
@@ -960,6 +680,7 @@
       const dispW = vb.width * scale;
       const dispH = vb.height * scale;
       const tx = rect.left + (rect.width - dispW) / 2;
+      /** Sladěno s `preserveAspectRatio="xMidYMid meet"` — svislé vycentrování ve viewportu SVG. */
       const ty = rect.top + (rect.height - dispH) / 2;
       return {
         x: vb.x + (clientX - tx) / scale,
@@ -985,531 +706,7 @@
       };
     }
 
-    /** Kategorie a dlaždice — první simulace: páka v „Síly“. */
-    const PHYSICS_CATEGORIES = [
-      {
-        id: "sily",
-        title: "Síly",
-        tiles: [
-          {
-            id: "paka",
-            title: "Páka",
-            hash: "#/sim/paka",
-            previewColor: "#dcf3ff",
-          },
-        ],
-      },
-      {
-        id: "kapaliny",
-        title: "Kapaliny a plyny",
-        tiles: [
-          {
-            id: "vztlakova",
-            title: "Vztlaková síla",
-            hash: "#/sim/vztlakova",
-            previewColor: "#d4f0fc",
-          },
-        ],
-      },
-      {
-        id: "optika",
-        title: "Optika",
-        tiles: [
-          {
-            id: "optika_geometrie",
-            title: "Geometrická optika",
-            hash: "#/sim/optika_geometrie",
-            previewColor: "#e8f4ff",
-          },
-          {
-            id: "skutecny_obraz",
-            title: "Hledání skutečného obrazu",
-            hash: "#/sim/skutecny_obraz",
-            previewColor: "#fdf4e8",
-          },
-          {
-            id: "cocky",
-            title: "Čočky",
-            hash: "#/sim/cocky",
-            previewColor: "#f0e8ff",
-          },
-          {
-            id: "michani-barev",
-            title: "Míchání barev",
-            hash: "#/sim/michani-barev",
-            previewColor: "#ffe8f0",
-          },
-        ],
-      },
-      {
-        id: "zaklady",
-        title: "Základy",
-        tiles: [
-          {
-            id: "graf_pohyb",
-            title: "Graf pohybu",
-            hash: "#/sim/graf_pohyb",
-            previewColor: "#e8fff4",
-          },
-        ],
-      },
-    ];
-
-    /** Kategorie přehledu odpovídající simulaci — Přehled vrátí na stejný panel (např. Vztlaková síla → Kapaliny a plyny). */
-    const SIM_TO_HUB_CATEGORY = {
-      paka: "sily",
-      vztlakova: "kapaliny",
-    };
-
-    const HUB_CATEGORY_STORAGE_KEY = "physicsHubCategory";
-
-    function persistHubCategory(id) {
-      try {
-        sessionStorage.setItem(HUB_CATEGORY_STORAGE_KEY, id);
-      } catch (_) {
-        /* ignore */
-      }
-    }
-
-    function readHubCategoryInitial() {
-      try {
-        const v = sessionStorage.getItem(HUB_CATEGORY_STORAGE_KEY);
-        if (v && PHYSICS_CATEGORIES.some((c) => c.id === v)) return v;
-      } catch (_) {
-        /* ignore */
-      }
-      return "sily";
-    }
-
-    function LeverCardIllustration() {
-      return html`<svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="132"
-        height="88"
-        viewBox="0 0 132 88"
-        aria-hidden="true"
-      >
-        <path
-          d="M 18 52 L 114 40"
-          fill="none"
-          stroke="#E63946"
-          stroke-width="6"
-          stroke-linecap="round"
-        />
-        <circle cx="66" cy="47" r="9" fill="#813B50" />
-        <rect
-          x="58"
-          y="56"
-          width="16"
-          height="22"
-          rx="3"
-          fill="#3d4d5c"
-        />
-        <circle cx="32" cy="50" r="5" fill="#fff" stroke="#5C1F2E" stroke-width="1.5" />
-        <circle cx="98" cy="44" r="5" fill="#fff" stroke="#5C1F2E" stroke-width="1.5" />
-      </svg>`;
-    }
-
-    function VztlakovaCardIllustration() {
-      return html`<svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="132"
-        height="88"
-        viewBox="0 0 132 88"
-        aria-hidden="true"
-      >
-        <rect
-          x="10"
-          y="46"
-          width="112"
-          height="34"
-          rx="8"
-          fill="#7dd3fc"
-          opacity="0.45"
-        />
-        <path
-          d="M 10 46 L 122 46"
-          fill="none"
-          stroke="#0ea5e9"
-          stroke-width="2.5"
-          stroke-linecap="round"
-        />
-        <path
-          d="M 66 46 L 66 28 M 52 28 L 80 28"
-          fill="none"
-          stroke="#64748b"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-        <rect x="56" y="14" width="20" height="14" rx="3" fill="#111827" />
-        <rect x="54" y="40" width="24" height="22" rx="5" fill="#334155" />
-      </svg>`;
-    }
-
-    function GeometricOpticsIllustration() {
-      return html`<svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="132"
-        height="88"
-        viewBox="0 0 132 88"
-        aria-hidden="true"
-      >
-        <path
-          d="M 14 44 L 118 36"
-          fill="none"
-          stroke="#f59e0b"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          opacity="0.85"
-        />
-        <path
-          d="M 14 44 L 118 52"
-          fill="none"
-          stroke="#f59e0b"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          opacity="0.85"
-        />
-        <ellipse cx="66" cy="44" rx="8" ry="22" fill="none" stroke="#3b82f6" stroke-width="3" />
-        <circle cx="22" cy="44" r="4" fill="#ef4444" />
-        <line x1="106" y1="20" x2="106" y2="68" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" />
-      </svg>`;
-    }
-
-    function SkutecnyObrazCardIllustration() {
-      return html`<svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="132"
-        height="88"
-        viewBox="0 0 132 88"
-        aria-hidden="true"
-      >
-        <path d="M 20 58 L 70 40 L 112 50" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" />
-        <ellipse cx="70" cy="40" rx="6" ry="16" fill="none" stroke="#2563eb" stroke-width="2.5" />
-        <rect x="102" y="28" width="10" height="32" rx="2" fill="#94a3b8" />
-        <path
-          d="M 26 58 L 30 44 L 32 58 Z"
-          fill="#f97316"
-          stroke="#c2410c"
-          stroke-width="1"
-        />
-      </svg>`;
-    }
-
-    function CockyCardIllustration() {
-      return html`<svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="132"
-        height="88"
-        viewBox="0 0 132 88"
-        aria-hidden="true"
-      >
-        <line x1="18" y1="54" x2="114" y2="54" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
-        <rect x="24" y="48" width="14" height="14" rx="2" fill="#cbd5e1" />
-        <rect x="94" y="48" width="14" height="14" rx="2" fill="#cbd5e1" />
-        <ellipse cx="66" cy="54" rx="7" ry="18" fill="none" stroke="#4f46e5" stroke-width="2.8" />
-        <path
-          d="M 36 44 L 64 54"
-          fill="none"
-          stroke="#f59e0b"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-        <path
-          d="M 96 44 L 68 54"
-          fill="none"
-          stroke="#f59e0b"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-      </svg>`;
-    }
-
-    function MichaniBarevCardIllustration() {
-      return html`<svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="132"
-        height="88"
-        viewBox="0 0 132 88"
-        aria-hidden="true"
-      >
-        <circle cx="54" cy="40" r="22" fill="#ef4444" opacity="0.55" />
-        <circle cx="78" cy="40" r="22" fill="#22c55e" opacity="0.55" />
-        <circle cx="66" cy="56" r="22" fill="#3b82f6" opacity="0.55" />
-      </svg>`;
-    }
-
-    function GrafPohybCardIllustration() {
-      return html`<svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="132"
-        height="88"
-        viewBox="0 0 132 88"
-        aria-hidden="true"
-      >
-        <line x1="22" y1="66" x2="110" y2="66" stroke="#64748b" stroke-width="2" />
-        <line x1="22" y1="66" x2="22" y2="18" stroke="#64748b" stroke-width="2" />
-        <path
-          d="M 26 58 Q 52 20 78 40 T 108 28"
-          fill="none"
-          stroke="#0d9488"
-          stroke-width="3"
-          stroke-linecap="round"
-        />
-        <circle cx="26" cy="58" r="3" fill="#0f766e" />
-        <circle cx="108" cy="28" r="3" fill="#0f766e" />
-      </svg>`;
-    }
-
-    function HubCardIllustration({ tileId }) {
-      if (tileId === "paka") return html`<${LeverCardIllustration} />`;
-      if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
-      if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
-      if (tileId === "skutecny_obraz") return html`<${SkutecnyObrazCardIllustration} />`;
-      if (tileId === "cocky") return html`<${CockyCardIllustration} />`;
-      if (tileId === "michani-barev") return html`<${MichaniBarevCardIllustration} />`;
-      if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
-      return null;
-    }
-
-    function PhysicsHub() {
-      const [activeId, setActiveId] = useState(readHubCategoryInitial);
-
-      const activeCat = useMemo(
-        () => PHYSICS_CATEGORIES.find((c) => c.id === activeId) ?? PHYSICS_CATEGORIES[0],
-        [activeId],
-      );
-
-      return html`
-        <div class="physics-hub">
-          <header class="hub-top">
-            <h1 class="hub-brand">Fyzikální simulace</h1>
-            <nav class="hub-nav" aria-label="Kategorie">
-              ${PHYSICS_CATEGORIES.map(
-                (c) => html`
-                  <button
-                    key=${c.id}
-                    type="button"
-                    class=${activeId === c.id ? "is-active" : ""}
-                    onClick=${() => {
-                      setActiveId(c.id);
-                      persistHubCategory(c.id);
-                    }}
-                  >
-                    ${c.title}
-                  </button>
-                `,
-              )}
-            </nav>
-          </header>
-          <div class="hub-main">
-            <h2 class="hub-page-title">${activeCat.title}</h2>
-            ${
-              activeCat.tiles.length === 0
-                ? html`<p class="hub-empty">
-                    V této kategorii zatím nic není — další simulace přidáme později.
-                  </p>`
-                : html`
-                    <div class="hub-grid">
-                      ${activeCat.tiles.map(
-                        (t) => html`
-                          <article
-                            key=${t.id}
-                            class="sim-card"
-                            role="button"
-                            tabindex="0"
-                            onClick=${() => {
-                              persistHubCategory(activeId);
-                              location.hash = t.hash.startsWith("#")
-                                ? t.hash
-                                : `#/${t.hash}`;
-                              queueMicrotask(() =>
-                                window.dispatchEvent(new Event("hashchange")),
-                              );
-                            }}
-                            onKeyDown=${(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                persistHubCategory(activeId);
-                                location.hash = t.hash.startsWith("#")
-                                  ? t.hash
-                                  : `#/${t.hash}`;
-                                queueMicrotask(() =>
-                                  window.dispatchEvent(new Event("hashchange")),
-                                );
-                              }
-                            }}
-                          >
-                            <div
-                              class="sim-card-preview"
-                              style=${{ backgroundColor: t.previewColor }}
-                            >
-                              <${HubCardIllustration} tileId=${t.id} />
-                            </div>
-                            <div
-                              class="sim-card-footer"
-                              style=${{ backgroundColor: t.previewColor }}
-                            >
-                              <h3>${t.title}</h3>
-                              <span class="sim-card-arrow" aria-hidden="true">→</span>
-                            </div>
-                          </article>
-                        `,
-                      )}
-                    </div>
-                  `
-            }
-          </div>
-        </div>
-      `;
-    }
-
-    function parseSimFromHash() {
-      const h = (location.hash || "").replace(/^#\/?/, "");
-      const m = h.match(/^sim\/([^/?#]+)/);
-      return m ? m[1] : null;
-    }
-
-    /** Externí simulace (GitHub Pages u FrantisekVvb). */
-    const EXTERNAL_SIM_CONFIG = {
-      optika_geometrie: {
-        title: "Geometrická optika",
-        iframeSrc: "https://frantisekvvb.github.io/optika_geometrie/",
-      },
-      skutecny_obraz: {
-        title: "Hledání skutečného obrazu",
-        iframeSrc: "https://frantisekvvb.github.io/skutecny_obraz/",
-      },
-      cocky: {
-        title: "Čočky",
-        iframeSrc: "https://frantisekvvb.github.io/cocky/",
-      },
-      graf_pohyb: {
-        title: "Graf pohybu",
-        iframeSrc: "https://frantisekvvb.github.io/graf_pohyb/",
-      },
-    };
-
-    function RootApp() {
-      /** Jen kvůli přerenderu po replaceState / popstate — React nečte URL sám. */
-      const [, routeTick] = useReducer((n) => n + 1, 0);
-      useEffect(() => {
-        const sync = () => routeTick();
-        window.addEventListener("hashchange", sync);
-        window.addEventListener("popstate", sync);
-        return () => {
-          window.removeEventListener("hashchange", sync);
-          window.removeEventListener("popstate", sync);
-        };
-      }, []);
-
-      const simId = parseSimFromHash();
-
-      useEffect(() => {
-        if (simId === "michani-barev") {
-          try {
-            window.location.replace(new URL("michani-barev/", window.location.href).href);
-          } catch (_) {
-            window.location.replace("michani-barev/");
-          }
-          return;
-        }
-        if (simId === "vztlakova") {
-          try {
-            window.location.replace(new URL("vztlakova-sila.html", window.location.href).href);
-          } catch (_) {
-            window.location.replace("vztlakova-sila.html");
-          }
-          return;
-        }
-        if (simId === "paka") {
-          try {
-            window.location.replace(new URL("paka/", window.location.href).href);
-          } catch (_) {
-            window.location.replace("paka/");
-          }
-        }
-      }, [simId]);
-
-      const goToHub = useCallback(() => {
-        const sid = parseSimFromHash();
-        const cat = SIM_TO_HUB_CATEGORY[sid] || readHubCategoryInitial();
-        persistHubCategory(cat);
-
-        const path = `${location.pathname}${location.search}`;
-        try {
-          history.replaceState(null, "", path);
-        } catch (_) {
-          try {
-            location.hash = "";
-          } catch (_) {
-            /* např. přísný file:// */
-          }
-        }
-        if (/^#\/?sim\//.test(location.hash || "")) {
-          try {
-            location.hash = "";
-          } catch (_) { /* nop */ }
-        }
-        routeTick();
-      }, []);
-
-      if (simId === "vztlakova") {
-        return html`
-          <div class="app">
-            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
-          </div>
-        `;
-      }
-      if (simId === "paka") {
-        return html`
-          <div class="app">
-            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
-          </div>
-        `;
-      }
-      if (simId === "michani-barev") {
-        return html`
-          <div class="app">
-            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
-          </div>
-        `;
-      }
-      const ext = simId ? EXTERNAL_SIM_CONFIG[simId] : null;
-      if (ext) {
-        return html`<${ExternalSimApp}
-          onBack=${() => {
-            location.hash = "";
-          }}
-          title=${ext.title}
-          iframeSrc=${ext.iframeSrc}
-        />`;
-      }
-      return html`<${PhysicsHub} />`;
-    }
-
-    function ExternalSimApp({ onBack, title, iframeSrc }) {
-      return html`
-        <div class="app app--embed">
-          <header class="sim-subheader">
-            <button
-              type="button"
-              class="sim-back-btn"
-              onClick=${onBack}
-              aria-label="Zpět na přehled simulací"
-            >
-              ← Přehled
-            </button>
-            <h1 class="sim-subheader-title">${title}</h1>
-          </header>
-          <div class="sim-iframe-wrap">
-            <iframe class="sim-iframe" title=${title} src=${iframeSrc} loading="lazy" />
-          </div>
-        </div>
-      `;
-    }
-
-    function LeverSimApp({ onBack }) {
+    function LeverSimApp() {
       const [left, setLeft] = useState(() => zeros());
       const [right, setRight] = useState(() => zeros());
       const [dragPx, setDragPx] = useState(null);
@@ -1887,39 +1084,25 @@
 
       return html`
         <div class="app app--lever">
-          ${onBack
-            ? html`<header class="sim-subheader">
-                <button
-                  type="button"
-                  class="sim-back-btn"
-                  onClick=${onBack}
-                  aria-label="Zpět na přehled simulací"
-                >
-                  ← Přehled
-                </button>
-                <h1 class="sim-subheader-title">Páka</h1>
-              </header>`
-            : null}
+          <header class="sim-subheader">
+            <a
+              class="hub-back-to-sims"
+              href=${LEVER_HUB_HREF}
+              aria-label="Zpět na přehled simulací"
+              >← Přehled simulací</a>
+            <h1 class="sim-subheader-title">Páka</h1>
+          </header>
           <main
             class="stage"
             ref=${(el) => {
               stageRef.current = el;
             }}
           >
-            ${totalWeights === 0 &&
-              html`<p class="stage-hint" aria-live="polite">
-                Umístěte závaží kliknutím na bílé tečky na tyči.
-              </p>`}
-            <div
-              class="stage-svg-scale-wrap"
-              style=${{
-                transform: `scale(${STAGE_SVG_SCALE})`,
-                transformOrigin: STAGE_SVG_TRANSFORM_ORIGIN,
-              }}
-            >
+            <div class="stage-svg-scale-wrap">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="stage-svg"
+              overflow="visible"
               viewBox=${`${SCENE_VIEW.minX} ${SCENE_VIEW.minY} ${SCENE_VIEW.w} ${SCENE_VIEW.h}`}
               preserveAspectRatio="xMidYMid meet"
               ref=${(el) => {
@@ -1994,13 +1177,6 @@
               onPointerUp=${onBalancePointerUp}
               onPointerCancel=${onBalancePointerCancel}
               onPointerLeave=${() => setHoverHint(null)}>
-              <rect
-                x=${SCENE_VIEW.minX}
-                y=${SCENE_VIEW.minY}
-                width=${SCENE_VIEW.w}
-                height=${SCENE_VIEW.h}
-                fill=${COLORS.bg}
-              />
               <${PivotStand} />
               <${Beam}
                 theta=${theta}
@@ -2036,11 +1212,11 @@
                   strokeWidth=${6}
                   strokeLinejoin="round"
                   paintOrder="stroke fill"
-                  fontSize=${32}
+                  fontSize=${38}
                   fontWeight=${800}
                   letterSpacing="-0.03em"
                   fontFamily=${FONT_STACK}
-                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 3px 10px rgba(42, 34, 38, 0.35))" }}
+                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 2px 14px rgba(244, 114, 182, 0.45))" }}
                   aria-live="polite"
                 >
                   páka je v rovnováze
@@ -2050,6 +1226,9 @@
               ${hoverHud}
             </svg>
             </div>
+            <p class="stage-hint" aria-live="polite">
+              Umístěte závaží kliknutím na bílé tečky na tyči.
+            </p>
             ${totalWeights > 0 &&
               clearWeightsBtnPos &&
               html`<div
@@ -2070,8 +1249,4 @@
           </main>
         </div>`;
     }
-
-    createRoot(document.getElementById("root")).render(html`<${RootApp} />`);
-  </script>
-</body>
-</html>
+    createRoot(document.getElementById("root")).render(html`<${LeverSimApp} />`);

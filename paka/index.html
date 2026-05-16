@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="tokyo-midnight-lever">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Páka — simulace</title>
+    <style>
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
+          format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --bg-base: #05070e;
+        --bg-glow-cyan: rgba(56, 189, 248, 0.085);
+        --bg-glow-violet: rgba(244, 114, 182, 0.06);
+        /* Stejné tokeny jako vztlakova-sila.html (tlačítko zpět do přehledu). */
+        --bg: #0a0f1a;
+        --text: #e8eaf2;
+        --muted: #94a3b8;
+        --accent: #5eb8ff;
+        --border: rgba(120, 140, 190, 0.26);
+        --border-subtle: rgba(148, 163, 184, 0.22);
+        --area-muted: rgba(255, 255, 255, 0.065);
+        --readout-bg: #080e18;
+        /* Stejné jako COLORS.bg ve lever-app (plocha SVG přes celý layout box). */
+        --lever-scene-bg: #060912;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+
+      body {
+        overflow-x: hidden;
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        background-color: var(--bg-base);
+        background-image:
+          radial-gradient(ellipse 125% 95% at 50% -28%, var(--bg-glow-cyan), transparent 54%),
+          radial-gradient(ellipse 72% 58% at 108% 38%, var(--bg-glow-violet), transparent 50%),
+          radial-gradient(ellipse 58% 42% at -12% 82%, rgba(56, 189, 248, 0.045), transparent 44%),
+          linear-gradient(168deg, #04060d 0%, #080d18 42%, #050812 100%);
+        background-attachment: fixed;
+        color: var(--text);
+      }
+
+      #root {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .app.app--lever {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .sim-subheader {
+        position: relative;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--border-subtle);
+        background: rgba(12, 16, 28, 0.82);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        flex-shrink: 0;
+      }
+
+      .hub-back-to-sims {
+        display: inline-flex;
+        align-items: center;
+        align-self: center;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 9px 14px;
+        margin: 0;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--area-muted);
+        color: var(--text);
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .hub-back-to-sims:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--readout-bg);
+      }
+
+      .sim-subheader-title {
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+
+      .stage {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: stretch;
+        background: transparent;
+        padding: 0;
+        position: relative;
+        overflow-x: hidden;
+        overflow-y: visible;
+      }
+
+      /* flex-basis: 0 — Safari/Chrome správně zmenší výšku i přes „intrinsic“ SVG */
+      .stage-svg-scale-wrap {
+        flex: 1 1 0;
+        min-height: 0;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        overflow: visible;
+      }
+
+      .stage-svg {
+        display: block;
+        flex: 1 1 auto;
+        align-self: stretch;
+        width: 100%;
+        min-width: 0;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        min-height: 0;
+        background-color: var(--lever-scene-bg);
+        user-select: none;
+        touch-action: none;
+        overflow: visible;
+      }
+
+      .stage-hint {
+        flex-shrink: 0;
+        flex-grow: 0;
+        position: relative;
+        z-index: 10;
+        isolation: isolate;
+        margin: 0;
+        padding: 10px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+        text-align: center;
+        font-size: clamp(1rem, 2.5vw, 1.3rem);
+        font-weight: 650;
+        color: #e2e8f0;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+        line-height: 1.35;
+        letter-spacing: -0.02em;
+        max-width: min(94vw, 42rem);
+        align-self: center;
+        pointer-events: none;
+      }
+
+      .clear-weights-btn-wrap {
+        position: absolute;
+        z-index: 6;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
+      .clear-weights-btn-wrap .clear-weights-btn {
+        pointer-events: auto;
+      }
+
+      .clear-weights-btn {
+        border: 1px solid rgba(244, 114, 182, 0.45);
+        background: rgba(15, 20, 34, 0.92);
+        color: var(--text);
+        padding: 11px 22px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      .clear-weights-btn:active {
+        transform: translateY(1px);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" role="presentation" aria-label="Simulace páky"></div>
+    <script type="module" src="./lever-app.js"></script>
+  </body>
+</html>

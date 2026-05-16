@@ -19,6 +19,8 @@ jobs:
           test -f index.html
           test -f vztlakova-sila.html
           test -f michani-barev/index.html
+          test -f paka/index.html
+          test -f paka/lever-app.js
           test -f README.md
           test -f LICENSE
 
@@ -31,6 +33,7 @@ jobs:
             [/id=["']root["']/, "Missing React mount (#root)"],
             [/class=["'][^"']*stage-svg/, "Missing main SVG (.stage-svg)"],
             [/vztlakova-sila\.html/, "Missing vztlaková full-page navigation target"],
+            [/"paka\/"/, "Missing páka full-page navigation target"],
             [/Fyzikální simulace/, "Missing expected page title text"],
           ];
           for (const [re, msg] of checks) {
