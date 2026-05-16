@@ -751,9 +751,35 @@
         color: var(--danger);
         font-weight: 700;
       }
+
+      .hub-back-to-sims {
+        position: fixed;
+        top: max(10px, env(safe-area-inset-top, 0px));
+        left: max(10px, env(safe-area-inset-left, 0px));
+        z-index: 100;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        color: var(--text);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+      }
+
+      html[data-mix-surface="cmy"] .hub-back-to-sims {
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      }
+
+      .hub-back-to-sims:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
     </style>
   </head>
   <body>
+    <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
     <div class="app">
       <div class="viz-column" aria-label="Vizualizace">
         <div class="viz-readout">

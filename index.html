@@ -307,6 +307,17 @@
       background: #f6f8fb;
       box-shadow: inset 0 0 0 1px #e5e7eb;
     }
+    .sim-fullnav-placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #6b7280;
+      min-height: 40vh;
+    }
   </style>
 </head>
 <body>
@@ -1359,14 +1370,6 @@
       return m ? m[1] : null;
     }
 
-    function resolveEmbeddedSimSrc(pathFromRepoRoot) {
-      try {
-        return new URL(pathFromRepoRoot, window.location.href).href;
-      } catch (_) {
-        return pathFromRepoRoot;
-      }
-    }
-
     /** Externí simulace (GitHub Pages u FrantisekVvb). */
     const EXTERNAL_SIM_CONFIG = {
       optika_geometrie: {
@@ -1402,6 +1405,15 @@
 
       const simId = parseSimFromHash();
 
+      useEffect(() => {
+        if (simId !== "michani-barev") return;
+        try {
+          window.location.replace(new URL("michani-barev/", window.location.href).href);
+        } catch (_) {
+          window.location.replace("michani-barev/");
+        }
+      }, [simId]);
+
       const goToHub = useCallback(() => {
         const sid = parseSimFromHash();
         const cat = SIM_TO_HUB_CATEGORY[sid] || readHubCategoryInitial();
@@ -1432,13 +1444,11 @@
         return html`<${LeverSimApp} onBack=${goToHub} />`;
       }
       if (simId === "michani-barev") {
-        return html`<${ExternalSimApp}
-          onBack=${() => {
-            location.hash = "";
-          }}
-          title="Míchání barev"
-          iframeSrc=${resolveEmbeddedSimSrc("michani-barev/")}
-        />`;
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
       }
       const ext = simId ? EXTERNAL_SIM_CONFIG[simId] : null;
       if (ext) {
