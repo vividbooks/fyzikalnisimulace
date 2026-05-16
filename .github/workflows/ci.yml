@@ -18,6 +18,7 @@ jobs:
         run: |
           test -f index.html
           test -f vztlakova-sila.html
+          test -f michani-barev/index.html
           test -f README.md
           test -f LICENSE
 

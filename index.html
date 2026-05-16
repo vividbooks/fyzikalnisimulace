@@ -1359,6 +1359,14 @@
       return m ? m[1] : null;
     }
 
+    function resolveEmbeddedSimSrc(pathFromRepoRoot) {
+      try {
+        return new URL(pathFromRepoRoot, window.location.href).href;
+      } catch (_) {
+        return pathFromRepoRoot;
+      }
+    }
+
     /** Externí simulace (GitHub Pages u FrantisekVvb). */
     const EXTERNAL_SIM_CONFIG = {
       optika_geometrie: {
@@ -1372,10 +1380,6 @@
       cocky: {
         title: "Čočky",
         iframeSrc: "https://frantisekvvb.github.io/cocky/",
-      },
-      "michani-barev": {
-        title: "Míchání barev",
-        iframeSrc: "https://frantisekvvb.github.io/michani-barev/",
       },
       graf_pohyb: {
         title: "Graf pohybu",
@@ -1426,6 +1430,15 @@
       }
       if (simId === "paka") {
         return html`<${LeverSimApp} onBack=${goToHub} />`;
+      }
+      if (simId === "michani-barev") {
+        return html`<${ExternalSimApp}
+          onBack=${() => {
+            location.hash = "";
+          }}
+          title="Míchání barev"
+          iframeSrc=${resolveEmbeddedSimSrc("michani-barev/")}
+        />`;
       }
       const ext = simId ? EXTERNAL_SIM_CONFIG[simId] : null;
       if (ext) {
