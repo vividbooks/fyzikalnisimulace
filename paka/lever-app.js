@@ -175,9 +175,6 @@
     const STAND_FOOT_BOTTOM_Y =
       PIVOT_STAND_GROUP_TY +
       STAND_ASSET.scale * (STAND_ASSET.vbH - STAND_ASSET.anchor.y);
-    /** „Páka je v rovnováze“ — nad tyčí (`dominantBaseline: bottom` u horního okraje tyče). */
-    const BALANCE_LABEL_ABOVE_Y = PIVOT.y - BEAM_TH / 2 - 114;
-
     function PivotStand() {
       const { anchor, scale } = STAND_ASSET;
       const ty = PIVOT_STAND_GROUP_TY;
@@ -218,6 +215,10 @@
     const BEAM_LOCK_HIT_H = 94;
     /** Zvětšený zámek (vizuál + hit v jeho lokálních souřadnicích). */
     const BEAM_LOCK_UI_SCALE = 1.924;
+    const BEAM_LOCK_TOP_Y =
+      BEAM_LOCK_CY - (BEAM_LOCK_HIT_H * BEAM_LOCK_UI_SCALE) / 2;
+    /** „Páka je v rovnováze“ — nad zámkem (`dominantBaseline: bottom`). */
+    const BALANCE_LABEL_ABOVE_Y = BEAM_LOCK_TOP_Y - 16;
 
     /** Ohraničení viditelné scény: páka v ±MAX_TILT, štítky, podstavec; spodek navíc pro závaží. */
     const SCENE_PAD = 26;

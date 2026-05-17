@@ -199,7 +199,7 @@
       overflow: hidden;
       cursor: pointer;
       transition: transform 200ms, box-shadow 200ms;
-      -webkit-mask-image: -webkit-radial-gradient(white, black);
+      isolation: isolate;
     }
     .sim-card:hover {
       transform: scale(1.02);
@@ -212,14 +212,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex: 1 1 auto;
       min-height: 140px;
       padding: 16px;
+      background: transparent;
     }
     .sim-card-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
       padding: 14px 20px;
+      background: transparent;
     }
     .sim-card-footer h3 {
       margin: 0;
@@ -501,9 +505,6 @@
     const STAND_FOOT_BOTTOM_Y =
       PIVOT_STAND_GROUP_TY +
       STAND_ASSET.scale * (STAND_ASSET.vbH - STAND_ASSET.anchor.y);
-    /** „Páka je v rovnováze“ — nad tyčí (`dominantBaseline: bottom` u horního okraje tyče). */
-    const BALANCE_LABEL_ABOVE_Y = PIVOT.y - BEAM_TH / 2 - 114;
-
     function PivotStand() {
       const { anchor, scale } = STAND_ASSET;
       const ty = PIVOT_STAND_GROUP_TY;
@@ -542,6 +543,9 @@
     const BEAM_LOCK_CY = PIVOT.y - BEAM_TH / 2 - 56;
     const BEAM_LOCK_HIT_W = 78;
     const BEAM_LOCK_HIT_H = 94;
+    const BEAM_LOCK_TOP_Y = BEAM_LOCK_CY - BEAM_LOCK_HIT_H / 2;
+    /** „Páka je v rovnováze“ — nad zámkem (`dominantBaseline: bottom`). */
+    const BALANCE_LABEL_ABOVE_Y = BEAM_LOCK_TOP_Y - 14;
 
     /** Ohraničení viditelné scény: páka v ±MAX_TILT, štítky, podstavec; spodek navíc pro závaží. */
     const SCENE_PAD = 26;
@@ -1316,6 +1320,7 @@
                           <article
                             key=${t.id}
                             class="sim-card"
+                            style=${{ backgroundColor: t.previewColor }}
                             role="button"
                             tabindex="0"
                             onClick=${() => {
@@ -1340,16 +1345,10 @@
                               }
                             }}
                           >
-                            <div
-                              class="sim-card-preview"
-                              style=${{ backgroundColor: t.previewColor }}
-                            >
+                            <div class="sim-card-preview">
                               <${HubCardIllustration} tileId=${t.id} />
                             </div>
-                            <div
-                              class="sim-card-footer"
-                              style=${{ backgroundColor: t.previewColor }}
-                            >
+                            <div class="sim-card-footer">
                               <h3>${t.title}</h3>
                               <span class="sim-card-arrow" aria-hidden="true">→</span>
                             </div>
