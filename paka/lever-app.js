@@ -225,17 +225,17 @@
     /** Odhad výšky štítu čísla nad dírou (dominantBaseline middle, max. font ~ HOLE_LABEL_NUM_PEAK). */
     const HOLE_LABEL_TOP_EXTENT = HOLE_LABEL_GAP_ABOVE + HOLE_LABEL_NUM_PEAK * 0.52;
     /** Volný prostor pod nejnižším prvkem (podstavec) pro visící závaží. */
-    const SCENE_WEIGHT_MARGIN_BELOW = 300;
+    const SCENE_WEIGHT_MARGIN_BELOW = 220;
     /** Vizuální zvětšení celé páky/váhy bez změny geometrie v souřadnicích scény. */
-    const SCENE_VISUAL_ZOOM = 1.15 * 1.05;
+    const SCENE_VISUAL_ZOOM = 1.05;
     /** Optický posun celé páky dolů ve viewportu SVG; nemění měřítko, jen výřez. */
-    const SCENE_VISUAL_SHIFT_DOWN_FRAC = 0.2;
+    const SCENE_VISUAL_SHIFT_DOWN_FRAC = 0.06;
     /**
      * Při max. náklonu ční konce tyče + štítky velmi vysoko → rozšíří viewBox nahoru.
      * Pro zarovnání nahoře (`xMidYMin`) by pak klidová páka vizuálně klesla dolů.
      * Proto „ohnisko“ horního okraje držíme u klidové geometrie; při náklonu může přetékat ven (`overflow="visible"` na `<svg>`).
      */
-    const SCENE_VIEWBOX_REST_TOP_PAD = 96;
+    const SCENE_VIEWBOX_REST_TOP_PAD = 120;
 
     const SCENE_VIEW = (() => {
       const standTy = PIVOT_STAND_GROUP_TY;
@@ -309,6 +309,9 @@
         );
         add(PIVOT.x - 280, BALANCE_LABEL_ABOVE_Y - 38);
         add(PIVOT.x + 280, BALANCE_LABEL_ABOVE_Y + 2);
+        add(PIVOT.x, STAND_FOOT_BOTTOM_Y);
+        add(PIVOT.x - 40, STAND_FOOT_BOTTOM_Y + 24);
+        add(PIVOT.x + 40, STAND_FOOT_BOTTOM_Y + 24);
       };
 
       const bbFull = hullCore([MAX_TILT, -MAX_TILT, 0]);
@@ -1099,7 +1102,10 @@
               stageRef.current = el;
             }}
           >
-            <div class="stage-svg-scale-wrap">
+            <div
+              class="stage-svg-scale-wrap"
+              style=${{ "--scene-ar": `${SCENE_VIEW.w} / ${SCENE_VIEW.h}` }}
+            >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="stage-svg"

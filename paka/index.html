@@ -69,6 +69,9 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
       }
 
       .sim-subheader {
@@ -124,42 +127,39 @@
         min-height: 0;
         display: flex;
         flex-direction: column;
-        align-items: stretch;
-        justify-content: stretch;
+        align-items: center;
+        justify-content: center;
         background: transparent;
         padding: 0;
         position: relative;
-        overflow-x: hidden;
-        overflow-y: visible;
+        overflow: hidden;
       }
 
-      /* flex-basis: 0 — Safari/Chrome správně zmenší výšku i přes „intrinsic“ SVG */
+      /* flex-basis: 0 — Safari/tablet správně zmenší výšku i přes „intrinsic“ SVG */
       .stage-svg-scale-wrap {
         flex: 1 1 0;
         min-height: 0;
         min-width: 0;
         width: 100%;
         max-width: 100%;
+        max-height: 100%;
         display: flex;
-        align-items: stretch;
+        align-items: center;
         justify-content: center;
-        overflow: visible;
+        overflow: hidden;
+        aspect-ratio: var(--scene-ar, 1);
       }
 
       .stage-svg {
         display: block;
-        flex: 1 1 auto;
-        align-self: stretch;
         width: 100%;
-        min-width: 0;
         height: 100%;
         max-width: 100%;
         max-height: 100%;
-        min-height: 0;
         background-color: var(--lever-scene-bg);
         user-select: none;
         touch-action: none;
-        overflow: visible;
+        overflow: hidden;
       }
 
       .clear-weights-btn-wrap {
