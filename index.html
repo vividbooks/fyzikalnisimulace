@@ -1063,6 +1063,8 @@
     const SIM_TO_HUB_CATEGORY = {
       paka: "sily",
       vztlakova: "kapaliny",
+      graf_pohyb: "zaklady",
+      skutecny_obraz: "optika",
     };
 
     const HUB_CATEGORY_STORAGE_KEY = "physicsHubCategory";
@@ -1375,17 +1377,9 @@
         title: "Geometrická optika",
         iframeSrc: "https://frantisekvvb.github.io/optika_geometrie/",
       },
-      skutecny_obraz: {
-        title: "Hledání skutečného obrazu",
-        iframeSrc: "https://frantisekvvb.github.io/skutecny_obraz/",
-      },
       cocky: {
         title: "Čočky",
         iframeSrc: "https://frantisekvvb.github.io/cocky/",
-      },
-      graf_pohyb: {
-        title: "Graf pohybu",
-        iframeSrc: "https://frantisekvvb.github.io/graf_pohyb/",
       },
     };
 
@@ -1427,6 +1421,23 @@
           } catch (_) {
             window.location.replace("paka/");
           }
+          return;
+        }
+        if (simId === "graf_pohyb") {
+          try {
+            window.location.replace(new URL("graf-pohybu/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("graf-pohybu/");
+          }
+          return;
+        }
+        if (simId === "skutecny_obraz") {
+          try {
+            window.location.replace(new URL("skutecny-obraz/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("skutecny-obraz/");
+          }
+          return;
         }
       }, [simId]);
 
@@ -1468,6 +1479,20 @@
         `;
       }
       if (simId === "michani-barev") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "graf_pohyb") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "skutecny_obraz") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
