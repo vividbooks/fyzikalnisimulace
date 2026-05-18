@@ -21,6 +21,8 @@ jobs:
           test -f michani-barev/index.html
           test -f graf-pohybu/index.html
           test -f skutecny-obraz/index.html
+          test -f cocky/index.html
+          test -f cocky/script.js
           test -f paka/index.html
           test -f paka/lever-app.js
           test -f README.md

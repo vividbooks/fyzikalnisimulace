@@ -1065,6 +1065,7 @@
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
       skutecny_obraz: "optika",
+      cocky: "optika",
     };
 
     const HUB_CATEGORY_STORAGE_KEY = "physicsHubCategory";
@@ -1377,10 +1378,6 @@
         title: "Geometrická optika",
         iframeSrc: "https://frantisekvvb.github.io/optika_geometrie/",
       },
-      cocky: {
-        title: "Čočky",
-        iframeSrc: "https://frantisekvvb.github.io/cocky/",
-      },
     };
 
     function RootApp() {
@@ -1439,6 +1436,14 @@
           }
           return;
         }
+        if (simId === "cocky") {
+          try {
+            window.location.replace(new URL("cocky/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("cocky/");
+          }
+          return;
+        }
       }, [simId]);
 
       const goToHub = useCallback(() => {
@@ -1493,6 +1498,13 @@
         `;
       }
       if (simId === "skutecny_obraz") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "cocky") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
