@@ -613,14 +613,9 @@ function fitBenchWorkspaceCanvas() {
 }
 
 function fitDirectionSliderTrack() {
-  if (!verticalSliderWrapEl || !sourceDirectionInput) return;
-  if (window.matchMedia("(max-width: 980px)").matches) {
-    sourceDirectionInput.style.width = "";
-    return;
-  }
-  const h = verticalSliderWrapEl.clientHeight;
-  const len = Math.max(48, h - 8);
-  sourceDirectionInput.style.width = `${len}px`;
+  if (!sourceDirectionInput) return;
+  // Šířku řídí CSS (flex v .sourceDirectionSliderShell), ne výška obalu.
+  sourceDirectionInput.style.width = "";
 }
 
 function fitWorkspaceLayout() {

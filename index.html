@@ -1372,11 +1372,11 @@
       return m ? m[1] : null;
     }
 
-    /** Externí simulace (GitHub Pages u FrantisekVvb). */
+    /** Geometrická optika — vestavěný build ve složce optika_geometrie/ (viz npm run build:optika). */
     const EXTERNAL_SIM_CONFIG = {
       optika_geometrie: {
         title: "Geometrická optika",
-        iframeSrc: "https://frantisekvvb.github.io/optika_geometrie/",
+        iframeSrc: new URL("optika_geometrie/", location.href).href,
       },
     };
 
