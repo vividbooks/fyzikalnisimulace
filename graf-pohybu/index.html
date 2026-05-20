@@ -84,7 +84,7 @@
     }
 
     .chart-wrap {
-      flex: 1 1 58%;
+      flex: 1 1 0;
       min-height: min(240px, 42vh);
       display: flex;
       flex-direction: column;
@@ -114,12 +114,11 @@
     }
 
     .track-section {
-      flex: 1 1 42%;
-      min-height: min(160px, 32vh);
+      flex: 0 0 auto;
       margin-top: 0;
       background: var(--panel);
       border-radius: 14px;
-      padding: clamp(12px, 1.4vw, 18px);
+      padding: 10px 14px 6px;
       border: 1px solid var(--border);
       overflow: hidden;
       display: flex;
@@ -132,9 +131,9 @@
     .track-section > .track-svg {
       display: block;
       width: 100%;
-      flex: 1 1 auto;
-      min-height: 0;
-      height: 100%;
+      flex: 0 0 auto;
+      height: auto;
+      aspect-ratio: 648 / 116;
       margin-left: 0;
       margin-right: 0;
       max-width: none;
@@ -382,8 +381,7 @@
       }
 
       .track-section {
-        flex: 1 1 45%;
-        min-height: 140px;
+        flex: 0 0 auto;
       }
     }
 
@@ -476,7 +474,7 @@
         <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
       </div>
       <div class="track-section">
-        <svg id="track" class="track-svg" viewBox="0 -18 648 114" preserveAspectRatio="xMidYMid meet" aria-label="Dráha"></svg>
+        <svg id="track" class="track-svg" viewBox="0 -34 648 116" preserveAspectRatio="xMidYMin meet" aria-label="Dráha"></svg>
       </div>
     </div>
   </div>
@@ -638,7 +636,7 @@
   let simT = 0;
   let lastFrame = 0;
   let raf = 0;
-  /** Kumulativní natočení kol (°) pro animaci — po každém „Spustit“ se nuluje v kódu přehrávání. */
+  /** Kumulativní natočení kol (°) pro animaci — nuluje se při resetu nebo novém přehrání od začátku. */
   let trackWheelPhaseDeg1 = 0;
   let trackWheelPhaseDeg2 = 0;
 
@@ -830,10 +828,10 @@
     return trackDisplayMetersFromAxis(distAxis) / LENGTH_DISPLAY_MULT;
   }
 
-  /** Posun popisků na trati (0, 80, 160 … m) podle ujeté dráhy u prvního grafu. */
-  function trackLabelBaseMetersForTime(t) {
+  /** Posun popisků na trati (0, 80, 160 … m) podle ujeté dráhy daného grafu. */
+  function trackLabelBaseMetersForArr(arr, t) {
     if (yAxisMode !== "velocity") return 0;
-    const m = trackMetersFromDistanceAxis(distanceAtFrom(points, t));
+    const m = trackMetersFromDistanceAxis(distanceAtFrom(arr, t));
     if (m <= TRACK_SEGMENT_METERS + 1e-9) return 0;
     return Math.floor(m / TRACK_SEGMENT_METERS) * TRACK_SEGMENT_METERS;
   }
@@ -949,7 +947,7 @@
   function syncJetPropulsion(riderG, ptsArr) {
     if (!riderG) return;
     const wantJet =
-      (running || simT > 0) &&
+      running &&
       simEndTimeFrom(ptsArr) > 0 &&
       speedDisplayAtFrom(ptsArr, simT) > JET_SPEED_THRESHOLD_MS;
     const jet = riderG.querySelector(".cyclist-jet");
@@ -1456,15 +1454,15 @@
 
   const TW = 648;
   /** Spodní okraj výřezu dráhy (souřadnice os Y); nálepky pod čárou používají TH. */
-  const TH = 96;
+  const TH = 82;
   /** Horní rezerva viewBoxu dráhy (záporná souřadnice), aby byl vidět horní díl figurky. */
-  const TRACK_VIEW_Y_MIN = -18;
+  const TRACK_VIEW_Y_MIN = -34;
   /** viewBox výška = TH − TRACK_VIEW_Y_MIN */
   const TRACK_VIEW_HEIGHT = TH - TRACK_VIEW_Y_MIN;
-  /** Hlavní čára dráhy (první cyklista „na“ čáře). */
-  const TRACK_LINE_Y = 38;
-  /** Druhý cyklista — posun dolů pod černou linku. */
-  const TRACK_RIDER2_DY = 28;
+  /** Hlavní čára dráhy (osa červeného cyklisty). */
+  const TRACK_LINE_Y = 28;
+  /** Osa modrého cyklisty (režim Dva cyklisti). */
+  const TRACK_LINE2_Y = TRACK_LINE_Y + 28;
   /** Šířka figurky cyklisty ve vlastních souřadnicích (viewBox šířka SVG, polovina pro centrovaní na dráze). */
   const TRACK_RIDER_W = 57;
   const TRACK_RIDER_HALF_W = TRACK_RIDER_W / 2;
@@ -1474,6 +1472,12 @@
   const RIDER_SVG_OFFSET_Y = RIDER_AXLE_ALIGN_Y - RIDER_REAR_HUB_Y;
   /** Poloměr valivého kola v prostoru znaku (bez skluzu) — jen pro vizuální souklad s posunem po dráze. */
   const RIDER_WHEEL_ROLL_RADIUS = 10.4;
+  /** První cyklista (červená helma) — nad osou. */
+  const TRACK_RIDER1_DY =
+    TRACK_LINE_Y - RIDER_AXLE_ALIGN_Y - RIDER_WHEEL_ROLL_RADIUS - 4;
+  /** Druhý cyklista (modrá helma) — nad svou osou. */
+  const TRACK_RIDER2_DY =
+    TRACK_LINE2_Y - RIDER_AXLE_ALIGN_Y - RIDER_WHEEL_ROLL_RADIUS - 4;
   const WHEEL_HUB_FRONT_X = 45.5425;
   const WHEEL_HUB_FRONT_Y = 39.5321;
   const WHEEL_HUB_REAR_X = 11.2049;
@@ -1685,33 +1689,89 @@
   let trackRider = null;
   let trackRider2 = null;
   let trackLine = null;
+  let trackRider1Marker = null;
+  let trackLine2 = null;
+  let trackRider2Marker = null;
 
-  function drawTrack() {
-    trackEl.innerHTML = "";
-    trackEl.setAttribute("viewBox", "0 " + TRACK_VIEW_Y_MIN + " " + TW + " " + TRACK_VIEW_HEIGHT);
-    trackRider2 = null;
+  function drawRider1TrackMarker(distAxis) {
+    const NS = "http://www.w3.org/2000/svg";
+    const cx = trackXFromDist(distAxis);
+    const ly = TRACK_LINE_Y;
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "track-rider1-marker");
+    g.setAttribute("pointer-events", "none");
+
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("cx", String(cx));
+    dot.setAttribute("cy", String(ly));
+    dot.setAttribute("r", "3.5");
+    dot.setAttribute("fill", "#FF184A");
+    g.appendChild(dot);
+
+    trackEl.appendChild(g);
+    trackRider1Marker = g;
+  }
+
+  function updateRider1TrackMarker() {
+    if (!trackRider1Marker) return;
+    if (!points.length) {
+      trackRider1Marker.style.display = "none";
+      return;
+    }
+    const dist = distanceAtFrom(points, simT);
+    const cx = trackXFromDist(dist);
+    const dot = trackRider1Marker.querySelector("circle");
+    if (dot) {
+      dot.setAttribute("cx", String(cx));
+      dot.setAttribute("cy", String(TRACK_LINE_Y));
+    }
+    trackRider1Marker.style.display = "";
+  }
+
+  function drawRider2TrackMarker(distAxis) {
+    const NS = "http://www.w3.org/2000/svg";
+    const cx = trackXFromDist(distAxis);
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "track-rider2-marker");
+    g.setAttribute("pointer-events", "none");
+
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("cx", String(cx));
+    dot.setAttribute("cy", String(TRACK_LINE2_Y));
+    dot.setAttribute("r", "3.5");
+    dot.setAttribute("fill", RIDER2_HELMET_FILL);
+    g.appendChild(dot);
+
+    trackEl.appendChild(g);
+    trackRider2Marker = g;
+  }
+
+  function updateRider2TrackMarker() {
+    if (!trackRider2Marker) return;
+    if (!dualGraph || !points2.length) {
+      trackRider2Marker.style.display = "none";
+      return;
+    }
+    const dist = distanceAtFrom(points2, simT);
+    const cx = trackXFromDist(dist);
+    const dot = trackRider2Marker.querySelector("circle");
+    if (dot) {
+      dot.setAttribute("cx", String(cx));
+      dot.setAttribute("cy", String(TRACK_LINE2_Y));
+    }
+    trackRider2Marker.style.display = "";
+  }
+
+  function drawTrackAxisScale(lineY, labelBase, labelY) {
     const inner = trackInnerWidth();
-    const ly = String(TRACK_LINE_Y);
-
-    trackLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    trackLine.setAttribute("x1", String(TRACK_X_MARGIN));
-    trackLine.setAttribute("y1", ly);
-    trackLine.setAttribute("x2", String(TW - TRACK_X_MARGIN));
-    trackLine.setAttribute("y2", ly);
-    trackLine.setAttribute("stroke", "#111");
-    trackLine.setAttribute("stroke-width", "3");
-    trackEl.appendChild(trackLine);
-
-    const t0 = running || simT > 0 ? simT : 0;
-    const labelBase = trackLabelBaseMetersForTime(t0);
-
+    const ly = lineY;
     for (let si = 0; si <= S_MAX; si++) {
       const x = TRACK_X_MARGIN + (si / S_MAX) * inner;
       const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
       tick.setAttribute("x1", x);
       tick.setAttribute("x2", x);
-      tick.setAttribute("y1", ly);
-      tick.setAttribute("y2", String(TRACK_LINE_Y + 10));
+      tick.setAttribute("y1", String(ly));
+      tick.setAttribute("y2", String(ly + 10));
       tick.setAttribute("stroke", "#444");
       trackEl.appendChild(tick);
       const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -1725,21 +1785,67 @@
         lab.setAttribute("x", String(TW - TRACK_X_MARGIN - 2));
         lab.setAttribute("text-anchor", "end");
       } else {
-        lab.setAttribute("x", x);
+        lab.setAttribute("x", String(x));
         lab.setAttribute("text-anchor", "middle");
       }
-      lab.setAttribute("y", String(TH - 8));
+      lab.setAttribute("y", String(labelY));
       trackEl.appendChild(lab);
     }
+  }
+
+  function drawTrackLine2() {
+    const NS = "http://www.w3.org/2000/svg";
+    trackLine2 = document.createElementNS(NS, "line");
+    trackLine2.setAttribute("x1", String(TRACK_X_MARGIN));
+    trackLine2.setAttribute("y1", String(TRACK_LINE2_Y));
+    trackLine2.setAttribute("x2", String(TW - TRACK_X_MARGIN));
+    trackLine2.setAttribute("y2", String(TRACK_LINE2_Y));
+    trackLine2.setAttribute("stroke", "#111");
+    trackLine2.setAttribute("stroke-width", "3");
+    trackEl.appendChild(trackLine2);
+  }
+
+  function drawTrack() {
+    trackEl.innerHTML = "";
+    trackEl.setAttribute("viewBox", "0 " + TRACK_VIEW_Y_MIN + " " + TW + " " + TRACK_VIEW_HEIGHT);
+    trackRider2 = null;
+    trackRider1Marker = null;
+    trackLine2 = null;
+    trackRider2Marker = null;
+    const ly = String(TRACK_LINE_Y);
+
+    trackLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    trackLine.setAttribute("x1", String(TRACK_X_MARGIN));
+    trackLine.setAttribute("y1", ly);
+    trackLine.setAttribute("x2", String(TW - TRACK_X_MARGIN));
+    trackLine.setAttribute("y2", ly);
+    trackLine.setAttribute("stroke", "#111");
+    trackLine.setAttribute("stroke-width", "3");
+    trackEl.appendChild(trackLine);
+
+    const t0 = running || simT > 0 ? simT : 0;
+    drawTrackAxisScale(
+      TRACK_LINE_Y,
+      trackLabelBaseMetersForArr(points, t0),
+      TRACK_LINE_Y + (dualGraph ? 18 : 22)
+    );
 
     const dist1 = distanceAtFrom(points, t0);
     const cx1 = trackXFromDist(dist1);
+    if (points.length >= 1) drawRider1TrackMarker(dist1);
     trackRider = createTrackRiderGroup(cx1, points, trackWheelPhaseDeg1);
     trackEl.appendChild(trackRider);
 
     if (dualGraph) {
+      drawTrackLine2();
+      drawTrackAxisScale(
+        TRACK_LINE2_Y,
+        trackLabelBaseMetersForArr(points2, t0),
+        TRACK_LINE2_Y + 18
+      );
       const dist2 = distanceAtFrom(points2, t0);
       const cx2 = trackXFromDist(dist2);
+      if (points2.length >= 1) drawRider2TrackMarker(dist2);
       trackRider2 = createTrackRiderGroup(cx2, points2, trackWheelPhaseDeg2, {
         fill: RIDER2_HELMET_FILL,
         stroke: RIDER2_HELMET_STROKE,
@@ -1754,11 +1860,13 @@
     if (trackRider) {
       const cx = trackXFromDist(distanceAtFrom(points, simT));
       const backward = derivativeSignedAtFrom(points, simT) < 0;
+      const dy = TRACK_RIDER1_DY;
       const tr = backward
-        ? "translate(" + cx + ",0) scale(-1,1) translate(" + -TRACK_RIDER_HALF_W + ",0)"
-        : "translate(" + (cx - TRACK_RIDER_HALF_W) + ",0)";
+        ? "translate(" + cx + "," + dy + ") scale(-1,1) translate(" + -TRACK_RIDER_HALF_W + ",0)"
+        : "translate(" + (cx - TRACK_RIDER_HALF_W) + "," + dy + ")";
       trackRider.setAttribute("transform", tr);
       syncJetPropulsion(trackRider, points);
+      updateRider1TrackMarker();
     }
     if (dualGraph && trackRider2) {
       const cx = trackXFromDist(distanceAtFrom(points2, simT));
@@ -1769,6 +1877,9 @@
         : "translate(" + (cx - TRACK_RIDER_HALF_W) + "," + dy + ")";
       trackRider2.setAttribute("transform", tr);
       syncJetPropulsion(trackRider2, points2);
+      updateRider2TrackMarker();
+    } else if (trackRider2Marker) {
+      trackRider2Marker.style.display = "none";
     }
   }
 
@@ -2143,17 +2254,25 @@
       btnRun.textContent = "Spustit";
       cancelAnimationFrame(raf);
       lastFrame = 0;
+      if (yAxisMode === "velocity") drawTrack();
+      else updateTrackRiderPosition();
+      updateChartTimeIndicator();
       return;
     }
     if (points.length < 1 && !(dualGraph && points2.length >= 1)) return;
-    simT = 0;
+    const endT = simEndTime();
+    if (endT > 0 && simT >= endT - 1e-6) {
+      simT = 0;
+      trackWheelPhaseDeg1 = 0;
+      trackWheelPhaseDeg2 = 0;
+    }
     lastFrame = 0;
-    trackWheelPhaseDeg1 = 0;
-    trackWheelPhaseDeg2 = 0;
     running = true;
     btnRun.textContent = "Pozastavit";
-    timerEl.textContent = formatTimer(0);
-    redrawChart();
+    timerEl.textContent = formatTimer(simT);
+    updateChartTimeIndicator();
+    if (yAxisMode === "velocity") drawTrack();
+    else updateTrackRiderPosition();
     raf = requestAnimationFrame(tick);
   });
 

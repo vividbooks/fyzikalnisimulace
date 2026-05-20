@@ -99,15 +99,89 @@
       flex-direction: column;
     }
 
+    .sim-topbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel-bg);
+      color: var(--text);
+    }
+
+    .sim-topbar-intro {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sim-topbar-intro .panel-title {
+      margin: 0;
+    }
+
+    .sim-topbar-intro .hint {
+      margin: 0;
+    }
+
+    .menuBtn {
+      appearance: none;
+      flex: 0 0 auto;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+
+    .menuBtn:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .menuBtn[aria-expanded="true"] {
+      background: var(--panel-bg);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .sim-menu-panel {
+      display: none;
+      flex: 0 0 auto;
+      margin-top: 10px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel-bg);
+      color: var(--text);
+    }
+
+    .sim-menu-panel[data-open="true"] {
+      display: block;
+    }
+
+    .sim-menu-panel .controls {
+      display: grid;
+      gap: 14px;
+    }
+
     .scene-card {
       flex: 1 1 auto;
-      min-height: min(72vh, calc(100dvh - 260px));
+      min-height: min(78vh, calc(100dvh - 200px));
       display: flex;
       flex-direction: column;
       border-radius: 14px;
       overflow: hidden;
       border: 1px solid var(--canvas-border);
       background: var(--canvas-bg);
+      margin-top: 10px;
     }
 
     .sceneWrap {
@@ -130,55 +204,38 @@
       touch-action: none;
     }
 
-    .setup-panel {
-      flex: 0 0 auto;
-      width: 100%;
-      max-height: min(42vh, 480px);
-      overflow-x: hidden;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-      padding: 14px 16px;
-      border-radius: 18px;
-      scrollbar-gutter: stable;
-      color-scheme: light;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
-      color: var(--text);
-    }
-
     .controls {
       display: grid;
       gap: 14px;
     }
 
-    .setup-columns {
+    .sim-menu-grid {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 12px 20px;
       align-items: start;
     }
 
-    .setup-col {
+    .sim-menu-col {
       min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .setup-col--intro .hub-back-to-sims {
-      align-self: flex-start;
-    }
-
-    .setup-col .row,
-    .setup-col .uiToggle,
-    .setup-col .lensToggle {
+    .sim-menu-col .row,
+    .sim-menu-col .uiToggle,
+    .sim-menu-col .lensToggle {
       width: 100%;
     }
 
     @media (max-width: 560px) {
-      .setup-columns {
+      .sim-menu-grid {
         grid-template-columns: 1fr;
+      }
+
+      .sim-topbar {
+        flex-wrap: wrap;
       }
     }
 
@@ -427,59 +484,79 @@
 <body>
   <main class="app">
     <div class="viz-column" aria-label="Simulace">
+      <header class="sim-topbar">
+        <div class="sim-topbar-intro">
+          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+          <h1 class="panel-title">Hledání skutečného obrazu</h1>
+          <p class="hint">
+            Pohybuj plamínkem svíčky a stínítkem sleduj, jaký obraz plamínku je vidět na stínítku.
+          </p>
+        </div>
+        <button
+          id="menuBtn"
+          type="button"
+          class="menuBtn"
+          aria-expanded="false"
+          aria-controls="simMenuPanel"
+        >
+          Menu
+        </button>
+      </header>
+
+      <div
+        id="simMenuPanel"
+        class="sim-menu-panel"
+        data-open="false"
+        aria-label="Nastavení simulace"
+        hidden
+      >
+        <div class="controls">
+          <div class="sim-menu-grid">
+            <div class="sim-menu-col">
+              <div class="row">
+                <span class="row-label">Typ čočky</span>
+                <div id="lensToggle" class="lensToggle" role="group" aria-label="Typ čočky">
+                  <button id="convergingBtn" type="button" aria-pressed="true">Spojka</button>
+                  <button id="divergingBtn" type="button" aria-pressed="false">Rozptylka</button>
+                  <button id="noLensBtn" type="button" aria-pressed="false">Bez čočky</button>
+                  <button id="cameraBtn" type="button" aria-pressed="false">Camera obscura</button>
+                </div>
+              </div>
+              <button id="taskBtn" class="taskBtn" type="button">Badatelský úkol</button>
+            </div>
+            <div class="sim-menu-col">
+              <div class="row">
+                <span class="row-label">Pomocné paprsky</span>
+                <div class="uiToggle" role="group" aria-label="Pomocné paprsky">
+                  <button id="helperRaysBtn" type="button" aria-pressed="false">Pomocné paprsky</button>
+                  <div id="helperMenu" class="helperMenu" data-open="false" role="menu" aria-label="Volba počtu paprsků">
+                    <div class="helperMenuGrid">
+                      <div>
+                        <p class="helperGroupTitle">Počet</p>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="2" aria-checked="false">2 paprsky</button>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="5" aria-checked="true" data-selected="true">5 paprsků</button>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="all" aria-checked="false">Všechny paprsky</button>
+                      </div>
+                      <div>
+                        <p class="helperGroupTitle">Odkud</p>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-points="1" aria-checked="false">1 bod</button>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-points="2" aria-checked="true" data-selected="true">2 body</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="scene-card">
         <div class="sceneWrap">
           <canvas id="scene" width="1600" height="660" aria-label="Optická lavice se spojnou čočkou"></canvas>
         </div>
       </div>
     </div>
-
-    <aside class="setup-panel" aria-label="Nastavení">
-      <div class="controls">
-        <div class="setup-columns">
-          <div class="setup-col setup-col--intro">
-            <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-            <h1 class="panel-title">Hledání skutečného obrazu</h1>
-            <p class="hint">
-              Pohybuj plamínkem svíčky a stínítkem sleduj, jaký obraz plamínku je vidět na stínítku.
-            </p>
-            <div class="row">
-              <span class="row-label">Typ čočky</span>
-            <div id="lensToggle" class="lensToggle" role="group" aria-label="Typ čočky">
-            <button id="convergingBtn" type="button" aria-pressed="true">Spojka</button>
-            <button id="divergingBtn" type="button" aria-pressed="false">Rozptylka</button>
-            <button id="noLensBtn" type="button" aria-pressed="false">Bez čočky</button>
-            <button id="cameraBtn" type="button" aria-pressed="false">Camera obscura</button>
-            </div>
-            </div>
-            <button id="taskBtn" class="taskBtn" type="button">Badatelský úkol</button>
-          </div>
-          <div class="setup-col">
-            <div class="row">
-            <span class="row-label">Pomocné paprsky</span>
-            <div class="uiToggle" role="group" aria-label="Pomocné paprsky">
-            <button id="helperRaysBtn" type="button" aria-pressed="false">Pomocné paprsky</button>
-            <div id="helperMenu" class="helperMenu" data-open="false" role="menu" aria-label="Volba počtu paprsků">
-            <div class="helperMenuGrid">
-            <div>
-            <p class="helperGroupTitle">Počet</p>
-            <button class="helperOption" type="button" role="menuitemradio" data-helper-count="2" aria-checked="false">2 paprsky</button>
-            <button class="helperOption" type="button" role="menuitemradio" data-helper-count="5" aria-checked="true" data-selected="true">5 paprsků</button>
-            <button class="helperOption" type="button" role="menuitemradio" data-helper-count="all" aria-checked="false">Všechny paprsky</button>
-            </div>
-            <div>
-            <p class="helperGroupTitle">Odkud</p>
-            <button class="helperOption" type="button" role="menuitemradio" data-helper-points="1" aria-checked="false">1 bod</button>
-            <button class="helperOption" type="button" role="menuitemradio" data-helper-points="2" aria-checked="true" data-selected="true">2 body</button>
-            </div>
-            </div>
-            </div>
-            </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
 
     <dialog id="taskDialog" class="taskDialog" aria-labelledby="taskDialogTitle">
       <div class="taskPanel" role="document">
@@ -543,6 +620,8 @@
     const divergingBtn = document.getElementById("divergingBtn");
     const noLensBtn = document.getElementById("noLensBtn");
     const cameraBtn = document.getElementById("cameraBtn");
+    const menuBtn = document.getElementById("menuBtn");
+    const simMenuPanel = document.getElementById("simMenuPanel");
     const helperRaysBtn = document.getElementById("helperRaysBtn");
     const helperMenu = document.getElementById("helperMenu");
     const taskBtn = document.getElementById("taskBtn");
@@ -577,17 +656,21 @@
       context.closePath();
     }
 
+    // Vertical half-length of the screen line on the canvas (full height = 2 × this).
+    const SCREEN_HALF_LEN = 176; // 160 × 1.1 — full screen height 352 px
+    const INITIAL_SCREEN_Y = 360;
+
     const state = {
       // pixel coordinates on canvas
       lensX: Math.round(canvas.width * 0.48),
       axisY: 360,
-      candleBaseY: 440,
+      candleBaseY: 445,
       candleX: 140,
       screenX: 900,
-      screenY: 330,
+      screenY: INITIAL_SCREEN_Y,
       fPx: 165,
       lensType: "converging", // "converging" | "diverging" | "none" | "camera"
-      candleHeight: 118,
+      candleHeight: 177,
       showHelperRays: false,
       helperRaysCount: 5, // 2 | 5 | "all"
       helperRaysPoints: 2, // 1 | 2 (1 = only flame tip, 2 = tip + bottom)
@@ -602,6 +685,34 @@
       screenMin: 520,
       screenMax: canvas.width - 40
     };
+
+    const LENS_CANVAS_TOP = 76;
+    const LENS_CANVAS_BOTTOM = canvas.height - 70;
+    const OBJECT_LENS_GAP = 10;
+
+    function lensHalfWidthPx() {
+      if (state.lensType === "none") return 8;
+      if (state.lensType === "camera") return 10;
+      const svgW = state.lensType === "diverging" ? DIVERGING_LENS_SVG_W : CONVERGING_LENS_SVG_W;
+      const svgH = state.lensType === "diverging" ? DIVERGING_LENS_SVG_H : CONVERGING_LENS_SVG_H;
+      const scale = (LENS_CANVAS_BOTTOM - LENS_CANVAS_TOP) / svgH;
+      return (svgW / 2) * scale;
+    }
+
+    function flameHalfWidthPx() {
+      return (state.candleHeight * (FLAME_SVG_W / FLAME_SVG_H)) / 2;
+    }
+
+    function screenHalfWidthPx() {
+      return 16;
+    }
+
+    function applyPositionLimits() {
+      const maxCandleX = state.lensX - lensHalfWidthPx() - flameHalfWidthPx() - OBJECT_LENS_GAP;
+      state.candleX = clamp(state.candleX, limits.candleMin, Math.max(limits.candleMin, maxCandleX));
+      const minScreenX = state.lensX + lensHalfWidthPx() + screenHalfWidthPx() + OBJECT_LENS_GAP;
+      state.screenX = clamp(state.screenX, Math.max(limits.screenMin, minScreenX), limits.screenMax);
+    }
 
     function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
@@ -641,6 +752,7 @@
       if (divergingBtn) divergingBtn.setAttribute("aria-pressed", String(state.lensType === "diverging"));
       if (noLensBtn) noLensBtn.setAttribute("aria-pressed", String(state.lensType === "none"));
       if (cameraBtn) cameraBtn.setAttribute("aria-pressed", String(state.lensType === "camera"));
+      applyPositionLimits();
       draw();
     }
 
@@ -666,8 +778,8 @@
       ctx.save();
       ctx.strokeStyle = "rgba(148,163,184,0.78)";
       ctx.fillStyle = "rgba(226,232,240,0.92)";
-      ctx.lineWidth = 2;
-      ctx.font = '900 14px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
+      ctx.lineWidth = 2.5;
+      ctx.font = '900 20px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
 
@@ -676,16 +788,16 @@
         // small tick + label (without drawing the full axis)
         const y = state.axisY;
         ctx.beginPath();
-        ctx.moveTo(m.x, y - 10);
-        ctx.lineTo(m.x, y + 10);
+        ctx.moveTo(m.x, y - 14);
+        ctx.lineTo(m.x, y + 14);
         ctx.stroke();
 
         // label with subtle pill background for readability
-        const labelY = y + 14;
-        const padX = 8;
-        const padY = 4;
+        const labelY = y + 18;
+        const padX = 10;
+        const padY = 5;
         const w = ctx.measureText(m.label).width + padX * 2;
-        const h = 20;
+        const h = 28;
         ctx.save();
         ctx.fillStyle = "rgba(15,23,42,0.40)";
         ctx.strokeStyle = "rgba(148,163,184,0.30)";
@@ -709,16 +821,17 @@
     function drawLens() {
       if (state.lensType === "none") return;
       if (state.lensType === "camera") {
-        // Pinhole camera: an opaque plate with a small hole.
+        // Pinhole camera: brown chamber over full canvas height.
         const x = state.lensX;
-        const top = 76;
-        const bottom = canvas.height - 70;
+        const chamberW = 20;
+        const chamberH = canvas.height;
+        const chamberR = chamberW / 2;
         ctx.save();
-        ctx.fillStyle = "rgba(2, 6, 23, 0.55)";
-        ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
+        ctx.fillStyle = "#9A6B47";
+        ctx.strokeStyle = "#6B4A32";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        roundRectPath(ctx, x - 10, top, 20, bottom - top, 10);
+        roundRectPath(ctx, x - chamberW / 2, 0, chamberW, chamberH, chamberR);
         ctx.fill();
         ctx.stroke();
 
@@ -728,7 +841,7 @@
         ctx.arc(x, state.axisY, 3.2, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = "rgba(226, 232, 240, 0.55)";
+        ctx.strokeStyle = "#4A3220";
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.arc(x, state.axisY, 3.2, 0, Math.PI * 2);
@@ -737,8 +850,8 @@
         return;
       }
       const x = state.lensX;
-      const top = 76;
-      const bottom = canvas.height - 70;
+      const top = LENS_CANVAS_TOP;
+      const bottom = LENS_CANVAS_BOTTOM;
 
       ctx.save();
       if (state.lensType === "diverging") {
@@ -765,214 +878,95 @@
       ctx.restore();
     }
 
+    const FLAME_SVG_W = 12;
+    const FLAME_SVG_H = 29;
+    const FLAME_SVG_MARKUP = `<svg width="12" height="29" viewBox="0 0 12 29" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79016 18.9447C4.79016 18.9447 6.39764 18.6087 6.76546 20.2253C7.13328 21.8419 6.30683 27.5771 6.30683 27.5771" fill="white"/><path d="M4.79016 18.9447C4.79016 18.9447 6.39764 18.6087 6.76546 20.2253C7.13328 21.8419 6.30683 27.5771 6.30683 27.5771" stroke="#1D1D1B" stroke-width="1.68923" stroke-linecap="round" stroke-linejoin="round"/><g opacity="0.9"><path d="M5.97039 23.2453C3.25945 23.2453 1.13428 20.0575 1.13428 15.9888C1.13428 14.0135 1.84721 10.3399 2.55559 7.579C4.08135 1.62583 5.0395 1.13086 5.96585 1.13086C6.8922 1.13086 7.84126 1.62582 9.37155 7.57446C10.0845 10.3444 10.8019 14.0181 10.8019 15.9843C10.8019 20.053 8.6768 23.2407 5.97039 23.2407V23.2453Z" fill="#FFDD00"/><path d="M5.97135 2.27047C7.18378 2.27047 9.66767 12.6102 9.66767 15.9932C9.66767 19.3762 8.01023 22.1144 5.97135 22.1144C3.93247 22.1144 2.27047 19.3717 2.27047 15.9932C2.27047 12.6147 4.73167 2.27047 5.97135 2.27047ZM5.97135 0C3.9688 0 2.87443 1.77552 1.45765 7.30184C0.731102 10.1354 0 13.918 0 15.9932C0 20.6976 2.62014 24.3849 5.97135 24.3849C9.32257 24.3849 11.9381 20.6976 11.9381 15.9932C11.9381 13.9271 11.2025 10.1399 10.4714 7.2973C9.05011 1.77097 7.95574 0 5.96681 0H5.97135Z" fill="#F03B50"/><path d="M5.97057 2.26975C7.183 2.26975 9.66689 12.6095 9.66689 15.9925C9.66689 19.3755 8.00945 22.1137 5.97057 22.1137C3.93169 22.1137 2.26969 19.3709 2.26969 15.9925C2.26969 12.614 4.73089 2.26975 5.97057 2.26975ZM5.97057 0.907471C4.71273 0.907471 4.09061 2.21527 3.60473 3.43678C3.19605 4.46757 2.76013 5.87981 2.33782 7.52363C1.62489 10.3027 0.90741 13.9945 0.90741 15.9925C0.90741 20.1883 3.13248 23.476 5.97057 23.476C8.80866 23.476 11.0292 20.1883 11.0292 15.9925C11.0292 14.0035 10.3072 10.3072 9.59424 7.52363C9.17193 5.87981 8.73601 4.46757 8.32732 3.43678C7.84598 2.21072 7.22387 0.907471 5.97057 0.907471Z" fill="#FF8158"/><path d="M5.96948 6.34804C6.86859 9.33598 7.85397 13.9042 7.85397 15.993C7.85397 18.6631 6.637 20.2978 5.97403 20.2978C5.31105 20.2978 4.08952 18.6631 4.08952 15.993C4.08952 13.8951 5.07492 9.33143 5.96948 6.34804ZM5.96948 2.27026C4.73434 2.27026 2.26862 12.61 2.26862 15.993C2.26862 19.376 3.92606 22.1142 5.96948 22.1142C8.01291 22.1142 9.66582 19.3715 9.66582 15.993C9.66582 12.6145 7.18191 2.27026 5.96948 2.27026Z" fill="#F6AF34"/></g></svg>`;
+    let flameSvgImage = null;
+    let flameSvgLoadPromise = null;
+
+    function ensureFlameSvgLoaded() {
+      if (flameSvgImage) return Promise.resolve(flameSvgImage);
+      if (!flameSvgLoadPromise) {
+        flameSvgLoadPromise = new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            flameSvgImage = img;
+            resolve(img);
+          };
+          img.onerror = reject;
+          img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(FLAME_SVG_MARKUP)}`;
+        });
+      }
+      return flameSvgLoadPromise;
+    }
+
     function candleHitRect() {
       const x = state.candleX;
       const baseY = state.candleBaseY;
       const h = state.candleHeight;
-      // Flame only: smaller hit box around the flame.
-      return { x: x - 28, y: baseY - h - 14, w: 56, h: h + 22 };
+      const w = h * (FLAME_SVG_W / FLAME_SVG_H);
+      return { x: x - w / 2 - 6, y: baseY - h - 8, w: w + 12, h: h + 14 };
     }
 
     function screenHitRect() {
       const x = state.screenX;
-      const halfLen = 160;
-      const top = state.screenY - halfLen;
-      const bottom = state.screenY + halfLen;
+      const top = state.screenY - SCREEN_HALF_LEN;
+      const bottom = state.screenY + SCREEN_HALF_LEN;
       return { x: x - 16, y: top - 12, w: 32, h: (bottom - top) + 24 };
     }
 
     function drawFlame(x, baseY, height, opts = {}) {
+      if (!flameSvgImage) return;
+
       const inverted = Boolean(opts.inverted);
       const blur = Number.isFinite(opts.blur) ? opts.blur : 0;
       const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 1;
-      const now = Number.isFinite(opts.t) ? opts.t : 0;
       const onWhite = opts.onWhite === true;
+      const t = Number.isFinite(opts.t) ? opts.t : performance.now();
+      const H = clamp(Math.abs(height), 8, onWhite ? 1600 : 320);
+      const scale = H / FLAME_SVG_H;
 
-      const dir = inverted ? -1 : 1;
-      const H = clamp(Math.abs(height), 18, onWhite ? 1600 : 320);
+      // Subtle flicker: tiny wobble + scale breathing + micro-rotation.
+      // Keep it very small so it doesn't look like shaking.
+      const flicker = onWhite ? 0.005 : 0.008;
+      const w = H * (FLAME_SVG_W / FLAME_SVG_H);
+      const dx = Math.sin(t * 0.010 + x * 0.02) * w * (flicker * 0.45);
+      const dy = Math.sin(t * 0.013 + baseY * 0.02) * H * (flicker * 0.28);
+      const rot = Math.sin(t * 0.009) * (flicker * 0.16);
+      const sBreath = 1 + Math.sin(t * 0.017) * (flicker * 0.18);
 
       ctx.save();
       ctx.globalAlpha = alpha;
-
-      if (blur > 0.001) {
-        if ("filter" in ctx) {
-          ctx.filter = `blur(${blur}px)`;
-          drawFlame(x, baseY, height, { ...opts, blur: 0, alpha: 1, t: now });
-          ctx.filter = "none";
-          ctx.restore();
-          return;
-        }
+      if (blur > 0.001 && "filter" in ctx) {
+        ctx.filter = `blur(${blur}px)`;
+      }
+      if (onWhite) {
+        ctx.shadowColor = "rgba(15, 23, 42, 0.14)";
+        ctx.shadowBlur = clamp(H * 0.04, 4, 18);
+        ctx.shadowOffsetY = 1;
       }
 
-      const flick = Math.sin((now / 92) + x * 0.018) * 0.55 + Math.sin((now / 155) + 1.4) * 0.35;
-      const tipY = baseY - dir * H;
-      const fx = x + (inverted ? -1 : 1) * flick * 0.45;
-
-      const wBase = clamp(H * 0.145 + flick * 0.1, 7, onWhite ? 480 : 42);
-      const wMid = wBase * 0.52;
-      const wTip = Math.max(1, wBase * 0.045);
-
-      const wickH = clamp(H * 0.11, 6, onWhite ? 55 : 16);
-      const wickBaseY = baseY;
-      const wickTipY = wickBaseY - dir * wickH;
-
-      const yBase = wickTipY + dir * clamp(H * 0.025, 0, 5);
-      const yMid = baseY - dir * (H * 0.50 + flick * 0.18);
-
-      function flamePath(targetCtx) {
-        targetCtx.beginPath();
-        targetCtx.moveTo(fx, tipY);
-        targetCtx.bezierCurveTo(
-          fx - wTip, tipY + dir * (H * 0.11),
-          fx - wMid * 0.92, yMid - dir * (H * 0.07),
-          fx - wBase, yBase + dir * (H * 0.018)
-        );
-        targetCtx.bezierCurveTo(
-          fx - wBase * 0.56, yBase + dir * (H * 0.048),
-          fx - wBase * 0.14, yBase + dir * (H * 0.058),
-          fx, yBase + dir * (H * 0.058)
-        );
-        targetCtx.bezierCurveTo(
-          fx + wBase * 0.14, yBase + dir * (H * 0.058),
-          fx + wBase * 0.56, yBase + dir * (H * 0.048),
-          fx + wBase, yBase + dir * (H * 0.018)
-        );
-        targetCtx.bezierCurveTo(
-          fx + wMid * 0.92, yMid - dir * (H * 0.07),
-          fx + wTip, tipY + dir * (H * 0.11),
-          fx, tipY
-        );
-        targetCtx.closePath();
-      }
-
-      const coreY = baseY - dir * H * 0.36;
-
-      const wickW = clamp(H * 0.032, 2.2, 5);
-      const wickTop = Math.min(wickBaseY, wickTipY);
-      const wickBot = Math.max(wickBaseY, wickTipY);
-
-      if (!onWhite) {
-        ctx.save();
-        const haloBlur = clamp(H * 0.11, 5, 18);
-        if ("filter" in ctx) ctx.filter = `blur(${haloBlur}px)`;
-        ctx.translate(fx, coreY);
-        ctx.scale(H * 0.34, H * 0.62);
-        const hg = ctx.createRadialGradient(0, 0.08, 0, 0, 0.08, 1);
-        hg.addColorStop(0, "rgba(255, 175, 85, 0.55)");
-        hg.addColorStop(0.38, "rgba(245, 95, 35, 0.35)");
-        hg.addColorStop(0.72, "rgba(190, 45, 25, 0.14)");
-        hg.addColorStop(1, "rgba(120, 25, 15, 0)");
-        ctx.fillStyle = hg;
-        ctx.beginPath();
-        ctx.arc(0, 0.08, 1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.filter = "none";
-        ctx.restore();
-      }
-
-      ctx.beginPath();
-      roundRectPath(ctx, x - wickW / 2, wickTop - 1, wickW, wickBot - wickTop + 3, wickW * 0.35);
-      ctx.fillStyle = onWhite ? "#2a1f18" : "#14100c";
-      ctx.fill();
-
-      if (!onWhite) {
-        ctx.save();
-        flamePath(ctx);
-        ctx.clip();
-        ctx.translate(fx, coreY);
-        ctx.scale(H * 0.195, H * 0.505);
-        const rg = ctx.createRadialGradient(0, -0.06, 0, 0, -0.02, 1);
-        rg.addColorStop(0, "rgba(255, 255, 255, 1)");
-        rg.addColorStop(0.12, "rgba(255, 254, 248, 1)");
-        rg.addColorStop(0.28, "rgba(255, 245, 210, 1)");
-        rg.addColorStop(0.46, "rgba(255, 218, 95, 1)");
-        rg.addColorStop(0.64, "rgba(255, 145, 48, 0.94)");
-        rg.addColorStop(0.82, "rgba(235, 82, 28, 0.72)");
-        rg.addColorStop(1, "rgba(210, 38, 18, 0)");
-        ctx.fillStyle = rg;
-        ctx.beginPath();
-        ctx.arc(0, -0.02, 1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.globalAlpha = 0.4;
-        const blueGrad = ctx.createRadialGradient(
-          x,
-          wickTipY - dir * (H * 0.04),
-          0,
-          x,
-          wickTipY - dir * (H * 0.04),
-          wBase * 1.15
-        );
-        blueGrad.addColorStop(0, "rgba(130, 175, 255, 0.85)");
-        blueGrad.addColorStop(0.42, "rgba(75, 110, 235, 0.45)");
-        blueGrad.addColorStop(1, "rgba(45, 65, 190, 0)");
-        ctx.fillStyle = blueGrad;
-        ctx.beginPath();
-        ctx.ellipse(x, wickTipY - dir * (H * 0.035), wBase * 0.42, H * 0.085, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.globalCompositeOperation = "lighter";
-        const emberR = clamp(H * 0.06, 4, 12);
-        const eg = ctx.createRadialGradient(x, wickTipY, 0, x, wickTipY, emberR * 1.8);
-        eg.addColorStop(0, "rgba(255, 215, 150, 0.95)");
-        eg.addColorStop(0.4, "rgba(255, 125, 40, 0.55)");
-        eg.addColorStop(1, "rgba(255, 85, 18, 0)");
-        ctx.fillStyle = eg;
-        ctx.beginPath();
-        ctx.arc(x, wickTipY, emberR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+      ctx.translate(x + dx, baseY + dy);
+      ctx.rotate(rot);
+      if (inverted) {
+        // Wick at baseY (top), tip extends downward.
+        ctx.scale(scale * sBreath, -scale * sBreath);
+        ctx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
       } else {
-        ctx.save();
-        ctx.shadowColor = "rgba(15, 23, 42, 0.18)";
-        ctx.shadowBlur = clamp(H * 0.05, 8, 28);
-        ctx.shadowOffsetY = 2 * dir;
-        flamePath(ctx);
-        const paperGrad = ctx.createLinearGradient(fx, Math.min(tipY, yBase), fx, Math.max(tipY, yBase));
-        paperGrad.addColorStop(0, "rgba(255, 255, 252, 0.98)");
-        paperGrad.addColorStop(0.28, "rgba(255, 241, 185, 1)");
-        paperGrad.addColorStop(0.58, "rgba(255, 170, 55, 0.98)");
-        paperGrad.addColorStop(0.88, "rgba(248, 112, 35, 0.92)");
-        paperGrad.addColorStop(1, "rgba(235, 85, 28, 0.65)");
-        ctx.fillStyle = paperGrad;
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.globalAlpha = 0.88;
-        ctx.translate(fx, coreY);
-        ctx.scale(H * 0.16, H * 0.42);
-        const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-        cg.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-        cg.addColorStop(0.35, "rgba(255, 236, 160, 0.55)");
-        cg.addColorStop(1, "rgba(255, 200, 60, 0)");
-        ctx.fillStyle = cg;
-        ctx.beginPath();
-        ctx.arc(0, 0, 1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.globalAlpha = 0.35;
-        ctx.fillStyle = "rgba(59, 130, 246, 0.38)";
-        ctx.beginPath();
-        ctx.ellipse(x, wickTipY - dir * 3, wBase * 0.28, H * 0.065, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        ctx.scale(scale * sBreath, scale * sBreath);
+        ctx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
       }
 
+      ctx.filter = "none";
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
       ctx.restore();
     }
 
     function drawScreen() {
       const x = state.screenX;
-      const halfLen = 160;
-      const top = state.screenY - halfLen;
-      const bottom = state.screenY + halfLen;
+      const top = state.screenY - SCREEN_HALF_LEN;
+      const bottom = state.screenY + SCREEN_HALF_LEN;
       ctx.save();
       ctx.strokeStyle = cssVar("--screen", "#0f172a");
       ctx.lineWidth = 7;
@@ -1000,10 +994,8 @@
       return { x: state.candleX, y: baseY };
     }
 
-    function flameTipOffsetFromBase(height, inverted) {
-      const dir = inverted ? -1 : 1;
-      const H = clamp(Math.abs(height), 18, 1600);
-      return 0 - dir * H; // baseY is 0
+    function imageYFromObjectY(yObj, m, yAxis = state.axisY) {
+      return yAxis + (yObj - yAxis) * m;
     }
 
     function drawRays(doPx, image) {
@@ -1407,14 +1399,14 @@
     }
 
     function drawImagePreview(image, focusedInfo) {
-      // panel to the right of the screen, like "Obraz na stínítku"
-      const panelW = 210;
-      // Match preview "paper" height to the physical screen segment (2 * 160 px).
-      // Inner white area has vertical padding 14px on both sides => screen.h = panelH - 28.
-      const panelH = 348;
-      // Fixed position on the canvas (does NOT follow the screen).
+      // Panel preview: inner white height = canvas screen segment (2 × SCREEN_HALF_LEN).
+      const panelPad = 14;
+      const screenSegH = SCREEN_HALF_LEN * 2;
+      const panelW = 315;
+      const panelH = screenSegH + panelPad * 2;
       const x0 = canvas.width - 24 - panelW;
-      const y0 = 112;
+      // Fixed position; top aligned with initial canvas screen line height.
+      const y0 = INITIAL_SCREEN_Y - SCREEN_HALF_LEN - panelPad;
 
       ctx.save();
       // Outer subtle frame (no labels)
@@ -1426,10 +1418,10 @@
 
       // The "screen" (plátno) itself: fully white, no text/labels.
       const screen = {
-        x: x0 + 14,
-        y: y0 + 14,
-        w: panelW - 28,
-        h: panelH - 28
+        x: x0 + panelPad,
+        y: y0 + panelPad,
+        w: panelW - panelPad * 2,
+        h: screenSegH
       };
 
       ctx.fillStyle = "#ffffff";
@@ -1444,13 +1436,11 @@
       ctx.clip();
 
       const drawX = screen.x + screen.w / 2;
-      const centerY = screen.y + screen.h / 2;
 
       // Map world Y on the physical screen segment to preview Y.
       // This makes the preview depend on vertical screen position (screenY).
-      const halfLenWorld = 160; // must match drawScreen()
-      const worldTop = state.screenY - halfLenWorld;
-      const worldBottom = state.screenY + halfLenWorld;
+      const worldTop = state.screenY - SCREEN_HALF_LEN;
+      const worldBottom = state.screenY + SCREEN_HALF_LEN;
       const worldToPreviewY = (yWorld) => screen.y + ((yWorld - worldTop) * screen.h) / (worldBottom - worldTop);
       const worldToPreviewScale = screen.h / (worldBottom - worldTop);
 
@@ -1464,23 +1454,17 @@
       if ((image.type === "real" || image.type === "virtual") && focusedInfo.visible) {
         // Without a lens there is no imaging on a screen: show only a fully blurred glow.
         if (state.lensType === "none") {
-          const flameWorldY = candleFlamePoint(state.candleBaseY, state.candleHeight).y;
-          const flameY = worldToPreviewY(flameWorldY);
-
+          // No lens: only diffuse illumination on the canvas — no flame silhouette.
+          // Intensity falls off with distance from the aperture (lens plane) to the screen.
+          const dBarrierScreen = Math.max(0, state.screenX - state.lensX);
+          const distN = dBarrierScreen / 420;
+          const washAlpha = clamp(0.40 / (1 + distN * distN), 0.01, 0.40);
           ctx.save();
-          if ("filter" in ctx) ctx.filter = "blur(32px)";
-          ctx.globalAlpha = 0.45 * distanceAtten;
-          const r = Math.max(screen.w, screen.h) * 0.55;
-          const g = ctx.createRadialGradient(drawX, flameY, 2, drawX, flameY, r);
-          g.addColorStop(0, "rgba(255, 244, 202, 0.65)");
-          g.addColorStop(0.35, "rgba(253, 224, 71, 0.38)");
-          g.addColorStop(0.8, "rgba(251, 191, 36, 0.10)");
-          g.addColorStop(1, "rgba(251, 191, 36, 0.0)");
-          ctx.fillStyle = g;
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = `rgba(253, 230, 138, ${washAlpha})`;
           ctx.beginPath();
-          ctx.ellipse(drawX, flameY, r, r * 0.75, 0, 0, Math.PI * 2);
+          roundRectPath(ctx, screen.x, screen.y, screen.w, screen.h, 10);
           ctx.fill();
-          ctx.filter = "none";
           ctx.restore();
 
           ctx.restore(); // end clip
@@ -1494,8 +1478,6 @@
         // For a converging lens, once we go inside focal length the image is not projectable.
         // Keep the *same orientation* across the transition and let it blur/fade out (no sudden flip).
         const inverted = image.type === "real" || (image.type === "virtual" && state.lensType === "converging");
-        const mAbs = typeof image.m === "number" ? Math.abs(image.m) : 0;
-        const hPx = Math.max(8, (image.type === "real" ? focusedInfo.imageHeightPx : (state.candleHeight * mAbs)));
 
         let blurPx = 0;
         let alphaPx = 1;
@@ -1529,88 +1511,38 @@
         // Apply distance falloff for all modes (further screen => dimmer).
         alphaPx *= distanceAtten;
 
-        // Always render the *image of the flame point* at its physical position on the screen.
-        // This fixes cases where only a small part (or none) of the candle body is within the screen segment.
-        if (image.type === "real" && typeof image.m === "number") {
-          const flameWorldY = candleFlamePoint(state.candleBaseY, state.candleHeight).y;
-          const flameImgWorldY = state.axisY + (flameWorldY - state.axisY) * image.m;
-          const flameY = worldToPreviewY(flameImgWorldY);
-
-          const spotBlur = blurPx * 1.35;
-          const spotR = clamp(4 + spotBlur * 1.1, 4, 36);
-          const spotAlpha = clamp(alphaPx * (focusedInfo.inFocus ? 0.95 : 0.75), state.lensType === "camera" ? 0.02 : 0.12, 1);
-
-          ctx.save();
-          if ("filter" in ctx && spotBlur > 0.001) ctx.filter = `blur(${spotBlur}px)`;
-          ctx.globalAlpha = spotAlpha;
-          const g = ctx.createRadialGradient(drawX, flameY, 1, drawX, flameY, spotR);
-          g.addColorStop(0, "rgba(255, 244, 202, 0.98)");
-          g.addColorStop(0.22, "rgba(253, 224, 71, 0.90)");
-          g.addColorStop(0.55, "rgba(251, 191, 36, 0.55)");
-          g.addColorStop(1, "rgba(251, 191, 36, 0.0)");
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.ellipse(drawX, flameY, spotR, spotR * 0.82, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.filter = "none";
-          ctx.restore();
-        }
-
         if (image.type === "virtual" && state.lensType === "diverging") {
-          // Smear instead of a recognizable candle.
-          const blobW = screen.w * 0.55;
-          const blobH = screen.h * 0.42;
-          const yCenterWorld = state.axisY + (candleFlamePoint(state.candleBaseY, state.candleHeight).y - state.axisY) * (typeof image.m === "number" ? image.m : 0);
-          const blobCenterY = worldToPreviewY(yCenterWorld);
-          ctx.save();
-          if ("filter" in ctx) ctx.filter = `blur(${blurPx}px)`;
-          ctx.globalAlpha = alphaPx;
-          // warm radial blob (yellow core -> orange -> red)
-          const g = ctx.createRadialGradient(drawX, blobCenterY, 2, drawX, blobCenterY, Math.max(blobW, blobH));
-          g.addColorStop(0, "rgba(253, 224, 71, 0.95)");
-          g.addColorStop(0.35, "rgba(251, 191, 36, 0.75)");
-          g.addColorStop(0.72, "rgba(239, 68, 68, 0.45)");
-          g.addColorStop(1, "rgba(239, 68, 68, 0.0)");
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.ellipse(drawX, blobCenterY, blobW / 2, blobH / 2, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          // a second, slightly offset yellow smear for "flame-like" feel
-          const g2 = ctx.createRadialGradient(drawX, blobCenterY - blobH * 0.12, 1, drawX, blobCenterY - blobH * 0.12, Math.max(blobW, blobH) * 0.7);
-          g2.addColorStop(0, "rgba(255, 244, 202, 0.85)");
-          g2.addColorStop(0.55, "rgba(253, 224, 71, 0.40)");
-          g2.addColorStop(1, "rgba(253, 224, 71, 0.0)");
-          ctx.fillStyle = g2;
-          ctx.beginPath();
-          ctx.ellipse(drawX + blobW * 0.06, blobCenterY - blobH * 0.14, blobW * 0.22, blobH * 0.20, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.filter = "none";
-          ctx.restore();
+          const yFlameCenter = imageYFromObjectY(
+            (candleFlamePoint(state.candleBaseY, state.candleHeight).y + state.candleBaseY) / 2,
+            image.m
+          );
+          const blobH = clamp(screen.h * 0.42, 24, 280);
+          drawFlame(drawX, worldToPreviewY(yFlameCenter) + blobH / 2, blobH, {
+            blur: blurPx,
+            alpha: alphaPx,
+            onWhite: true
+          });
 
           ctx.restore(); // end clip
           ctx.restore();
           return;
         }
 
-        // Project image position onto the screen segment in world coordinates.
-        // This makes it possible that only part of the candle is visible (cropped by the screen bounds).
+        // Map wick (green rays) and tip (blue rays) onto the preview using the screen segment in world space.
         const mVal = typeof image.m === "number" ? image.m : 0;
         const invertedDraw = mVal < 0 ? true : inverted;
+        const yTipObj = candleFlamePoint(state.candleBaseY, state.candleHeight).y;
+        const yWickObj = candleBottomPoint(state.candleBaseY, state.candleHeight).y;
+        const yTipImg = imageYFromObjectY(yTipObj, mVal);
+        const yWickImg = imageYFromObjectY(yWickObj, mVal);
+        const tipPreviewY = worldToPreviewY(yTipImg);
+        const wickPreviewY = worldToPreviewY(yWickImg);
+        const hPxPreview = clamp(Math.abs(tipPreviewY - wickPreviewY), 12, 2200);
 
-        const hPxPreview = clamp(hPx * worldToPreviewScale, 12, 2200);
-        const flameWorldY = candleFlamePoint(state.candleBaseY, state.candleHeight).y;
-        const flameImgWorldY = state.axisY + (flameWorldY - state.axisY) * mVal;
-        const flameTargetY = worldToPreviewY(flameImgWorldY);
-        const tipOff = flameTipOffsetFromBase(hPxPreview, invertedDraw);
-        const baseY = flameTargetY - tipOff;
-
-        drawFlame(drawX, baseY, hPxPreview, {
+        drawFlame(drawX, wickPreviewY, hPxPreview, {
           inverted: invertedDraw,
           blur: blurPx,
           alpha: alphaPx,
-          t: performance.now(),
           onWhite: true
         });
       }
@@ -1694,30 +1626,28 @@
     }
 
     function setCandleX(x) {
-      // Prevent the flame from visually intersecting the lens.
-      // This also avoids extreme geometry right at the lens plane.
-      const minGapToLens = 64;
-      const maxX = Math.max(limits.candleMin, state.lensX - minGapToLens);
-      state.candleX = clamp(x, limits.candleMin, maxX);
+      const maxX = state.lensX - lensHalfWidthPx() - flameHalfWidthPx() - OBJECT_LENS_GAP;
+      state.candleX = clamp(x, limits.candleMin, Math.max(limits.candleMin, maxX));
       draw();
     }
 
     function setScreenX(x) {
-      state.screenX = clamp(x, Math.max(limits.screenMin, state.lensX + 24), limits.screenMax);
+      const minX = state.lensX + lensHalfWidthPx() + screenHalfWidthPx() + OBJECT_LENS_GAP;
+      state.screenX = clamp(x, Math.max(limits.screenMin, minX), limits.screenMax);
       draw();
     }
 
     function setScreenY(y) {
-      const halfLen = 160;
-      state.screenY = clamp(y, 20 + halfLen, canvas.height - 20 - halfLen);
+      // Allow the screen to move beyond the canvas edge, but keep a small visible/grabbable margin.
+      state.screenY = clamp(y, 20, canvas.height - 20);
       draw();
     }
 
     function setScreenPos(x, y) {
       // clamp X first (needs lensX)
-      state.screenX = clamp(x, Math.max(limits.screenMin, state.lensX + 24), limits.screenMax);
-      const halfLen = 160;
-      state.screenY = clamp(y, 20 + halfLen, canvas.height - 20 - halfLen);
+      const minX = state.lensX + lensHalfWidthPx() + screenHalfWidthPx() + OBJECT_LENS_GAP;
+      state.screenX = clamp(x, Math.max(limits.screenMin, minX), limits.screenMax);
+      state.screenY = clamp(y, 20, canvas.height - 20);
       draw();
     }
 
@@ -1777,6 +1707,15 @@
     if (divergingBtn) divergingBtn.addEventListener("click", () => setLensType("diverging"));
     if (noLensBtn) noLensBtn.addEventListener("click", () => setLensType("none"));
     if (cameraBtn) cameraBtn.addEventListener("click", () => setLensType("camera"));
+    if (menuBtn && simMenuPanel) {
+      menuBtn.addEventListener("click", () => {
+        const open = simMenuPanel.getAttribute("data-open") !== "true";
+        simMenuPanel.setAttribute("data-open", String(open));
+        simMenuPanel.hidden = !open;
+        menuBtn.setAttribute("aria-expanded", String(open));
+      });
+    }
+
     if (helperRaysBtn) helperRaysBtn.addEventListener("click", () => {
       state.showHelperRays = !state.showHelperRays;
       helperRaysBtn.setAttribute("aria-pressed", String(state.showHelperRays));
@@ -1824,12 +1763,14 @@
         if (!inside) closeTask();
       });
     }
-    // subtle flame flicker animation (cheap: just redraw)
     function animate(now) {
       draw(now);
       requestAnimationFrame(animate);
     }
-    requestAnimationFrame(animate);
+    applyPositionLimits();
+    ensureFlameSvgLoaded()
+      .then(() => requestAnimationFrame(animate))
+      .catch(() => requestAnimationFrame(animate));
   </script>
 </body>
 </html>
