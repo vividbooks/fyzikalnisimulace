@@ -511,6 +511,45 @@
         align-items: center;
       }
 
+      .actions-scale-toggle {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+        width: 100%;
+        flex: 1 1 100%;
+      }
+
+      .actions-scale-toggle[hidden] {
+        display: none !important;
+      }
+
+      .actions-scale-toggle-label {
+        font-weight: 650;
+        font-size: 0.8125rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .actions-scale-toggle .segmented {
+        flex: 0 1 auto;
+      }
+
+      .actions-scale-toggle .segmented button {
+        min-width: 2.75rem;
+        padding: 8px 14px;
+      }
+
+      .diagram-channel-chip .channel-pct[hidden] {
+        display: none;
+      }
+
+      html[data-intensity-scale="byte"] .diagram-channel-chip .channel-val {
+        min-width: 3.1ch;
+      }
+
       .actions-row .btn {
         white-space: nowrap;
       }
@@ -855,6 +894,56 @@
               >
                 Kód barvy
               </button>
+              <div class="actions-scale-toggle intensity-scale">
+                <span class="actions-scale-toggle-label">Intenzita barev:</span>
+                <div
+                  class="segmented"
+                  role="group"
+                  aria-label="Zobrazení intenzity kanálů"
+                >
+                  <button
+                    id="intensityPct"
+                    type="button"
+                    aria-pressed="true"
+                    title="Intenzita v procentech (0–100 %)"
+                  >
+                    %
+                  </button>
+                  <button
+                    id="intensity255"
+                    type="button"
+                    aria-pressed="false"
+                    title="Intenzita jako hodnota kanálu (0–255)"
+                  >
+                    255
+                  </button>
+                </div>
+              </div>
+              <div id="colorCodeRadixWrap" class="actions-scale-toggle color-code-radix" hidden>
+                <span class="actions-scale-toggle-label">Kód barvy:</span>
+                <div
+                  class="segmented"
+                  role="group"
+                  aria-label="Soustava zápisu kódu barvy"
+                >
+                  <button
+                    id="colorCodeRadix10"
+                    type="button"
+                    aria-pressed="true"
+                    title="Desítková soustava (hodnoty kanálů 0–255)"
+                  >
+                    10
+                  </button>
+                  <button
+                    id="colorCodeRadix16"
+                    type="button"
+                    aria-pressed="false"
+                    title="Šestnáctková soustava (#RRGGBB)"
+                  >
+                    16
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -900,12 +989,17 @@
         /** @typedef {"practice"|"test"} Mode */
         /** @typedef {"rgb"|"cmy"} Model */
 
-        /** @type {{mode: Mode, model: Model, v: [number,number,number], showColorCodes: boolean, hideMixResult: boolean}} */
+        /** @typedef {10 | 16} ColorCodeRadix */
+        /** @typedef {"pct"|"byte"} IntensityScale */
+
+        /** @type {{mode: Mode, model: Model, v: [number,number,number], showColorCodes: boolean, colorCodeRadix: ColorCodeRadix, intensityScale: IntensityScale, hideMixResult: boolean}} */
         const state = {
           mode: "practice",
           model: "rgb",
           v: [50, 50, 50],
           showColorCodes: false,
+          colorCodeRadix: 16,
+          intensityScale: "pct",
           hideMixResult: false,
         };
         /** @type {{model: Model, v: [number,number,number]} | null} */
@@ -923,6 +1017,11 @@
           btnHideMixResult: document.getElementById("btnHideMixResult"),
           btnReset: document.getElementById("btnReset"),
           btnColorCode: document.getElementById("btnColorCode"),
+          colorCodeRadixWrap: document.getElementById("colorCodeRadixWrap"),
+          colorCodeRadix10: document.getElementById("colorCodeRadix10"),
+          colorCodeRadix16: document.getElementById("colorCodeRadix16"),
+          intensityPct: document.getElementById("intensityPct"),
+          intensity255: document.getElementById("intensity255"),
           testReadout: document.getElementById("testReadout"),
           testSlidersWrap: document.getElementById("testSlidersWrap"),
           testDiagramChannels: document.getElementById("testDiagramChannels"),
@@ -1003,16 +1102,18 @@
         }
 
         /** @param {CanvasRenderingContext2D} ctx */
-        function drawVennColorCode(ctx, cx, cy, hex, rgb, mask) {
+        function drawVennColorCode(ctx, cx, cy, codeText, rgb, mask) {
           const bits = (mask & 1) + (mask & 2) + (mask & 4);
-          const fontSize = bits >= 3 ? 6.5 : bits === 2 ? 7 : 7.5;
+          const isDec = state.colorCodeRadix === 10;
+          let fontSize = bits >= 3 ? 6.5 : bits === 2 ? 7 : 7.5;
+          if (isDec) fontSize = Math.max(4.5, fontSize - (bits >= 3 ? 1.5 : 1));
           ctx.save();
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.font =
             "400 " + fontSize + 'px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
           ctx.fillStyle = textColorOnRgb(rgb);
-          ctx.fillText(hex, cx, cy);
+          ctx.fillText(codeText, cx, cy);
           ctx.restore();
         }
 
@@ -1025,7 +1126,7 @@
               ctx,
               region.x,
               region.y,
-              rgbToHex(rgb).toUpperCase(),
+              formatColorCode(rgb, state.colorCodeRadix),
               rgb,
               region.mask
             );
@@ -1108,6 +1209,14 @@
           return "#" + toHexByte(rgb[0]) + toHexByte(rgb[1]) + toHexByte(rgb[2]);
         }
 
+        const COLOR_CODE_DEC_SEP = "\u2002";
+
+        /** @param {[number, number, number]} rgb @param {ColorCodeRadix} radix */
+        function formatColorCode(rgb, radix) {
+          if (radix === 16) return rgbToHex(rgb).toUpperCase();
+          return rgb.map((c) => int(c)).join(COLOR_CODE_DEC_SEP);
+        }
+
         /** @param {Model} model @param {[number,number,number]} v100 */
         function mixToRgb(model, v100) {
           const a = clamp01(v100[0] / 100);
@@ -1140,8 +1249,96 @@
           b.setAttribute("aria-pressed", activeA ? "false" : "true");
         }
 
+        function intensityUsesByte() {
+          return state.intensityScale === "byte";
+        }
+
+        /** @param {number} pct 0–100 */
+        function pctToByte(pct) {
+          return Math.min(255, Math.max(0, Math.round((pct / 100) * 255)));
+        }
+
+        /** @param {number} byte 0–255 */
+        function byteToPct(byte) {
+          return Math.min(100, Math.max(0, Math.round((byte / 255) * 100)));
+        }
+
+        /** @param {number} pct 0–100 */
+        function displayIntensity(pct) {
+          return intensityUsesByte() ? String(pctToByte(pct)) : String(int(pct));
+        }
+
+        /** @param {number} pct 0–100 */
+        function scrubAriaForPct(pct) {
+          if (intensityUsesByte()) {
+            return { min: 0, max: 255, now: pctToByte(pct) };
+          }
+          return { min: 0, max: 100, now: int(pct) };
+        }
+
+        /** @param {HTMLElement} scrubEl @param {HTMLElement} valSpan @param {number} pct */
+        function applyIntensityToScrub(scrubEl, valSpan, pct) {
+          const aria = scrubAriaForPct(pct);
+          scrubEl.setAttribute("aria-valuemin", String(aria.min));
+          scrubEl.setAttribute("aria-valuemax", String(aria.max));
+          scrubEl.setAttribute("aria-valuenow", String(aria.now));
+          valSpan.textContent = displayIntensity(pct);
+          const pctEl = scrubEl.closest(".diagram-channel-chip")?.querySelector(".channel-pct");
+          if (pctEl) pctEl.hidden = intensityUsesByte();
+          const dec = scrubEl.querySelector(".channel-scrub-arrow-dec");
+          const inc = scrubEl.querySelector(".channel-scrub-arrow-inc");
+          const unit = intensityUsesByte() ? "v kanálu" : "procento";
+          if (dec) dec.setAttribute("aria-label", "Snížit o 1 " + unit);
+          if (inc) inc.setAttribute("aria-label", "Zvýšit o 1 " + unit);
+        }
+
+        function syncIntensityScaleChrome() {
+          document.documentElement.dataset.intensityScale = state.intensityScale;
+          setPressed(els.intensityPct, els.intensity255, state.intensityScale === "pct");
+          updateResetButtonLabel();
+          refreshChannelIntensityUi();
+        }
+
+        function updateResetButtonLabel() {
+          const mid = intensityUsesByte() ? pctToByte(50) : 50;
+          const suffix = intensityUsesByte() ? "" : " %";
+          els.btnReset.textContent = "Reset (" + mid + suffix + ")";
+        }
+
+        function refreshChannelIntensityUi() {
+          const pairs = [
+            { root: els.diagramChannels, prefix: "" },
+            { root: els.testDiagramChannels, prefix: "t" },
+          ];
+          for (const { root, prefix } of pairs) {
+            if (!root) continue;
+            for (let i = 0; i < 3; i++) {
+              const scrub = root.querySelector("#" + prefix + "scrub" + i);
+              const valEl = root.querySelector("#" + prefix + "val" + i);
+              if (scrub && valEl) applyIntensityToScrub(scrub, valEl, state.v[i]);
+            }
+          }
+        }
+
+        /** @param {number} byte 0–255 */
+        function byteToPctExact(byte) {
+          const b = Math.min(255, Math.max(0, int(byte)));
+          return (b / 255) * 100;
+        }
+
+        /** @param {number} displayValue hodnota v aktivní soustavě (% nebo 0–255) */
+        function displayValueToPct(displayValue) {
+          if (intensityUsesByte()) return byteToPctExact(displayValue);
+          return Math.min(100, Math.max(0, int(displayValue)));
+        }
+
+        /** @param {number} pct 0–100 */
+        function pctToDisplayValue(pct) {
+          return intensityUsesByte() ? pctToByte(pct) : int(pct);
+        }
+
         /**
-         * Řádek „C: 42%“ — horizontální táhnutí u čísla mění hodnotu (~2 px ≈ 1 %).
+         * Řádek „C: 42“ / „C: 42 %“ — horizontální táhnutí u čísla (~2 px ≈ 1 krok v aktivní soustavě).
          * @param {HTMLElement} scrubEl
          * @param {HTMLElement} valSpan
          * @param {number} index
@@ -1149,22 +1346,36 @@
         function bindChannelScrub(scrubEl, valSpan, index) {
           let dragging = false;
           let startX = 0;
-          let startV = 0;
+          let startDisplay = 0;
 
-          function applyValue(nv) {
-            const clamped = Math.min(100, Math.max(0, nv));
-            if (clamped !== state.v[index]) {
-              state.v[index] = clamped;
-              valSpan.textContent = String(clamped);
-              scrubEl.setAttribute("aria-valuenow", String(clamped));
-              lastEval = null;
-              render();
+          function applyValue(displayValue) {
+            let nextPct;
+            if (intensityUsesByte()) {
+              const nextByte = Math.min(255, Math.max(0, int(displayValue)));
+              if (nextByte === pctToByte(state.v[index])) return;
+              nextPct = byteToPctExact(nextByte);
+            } else {
+              nextPct = displayValueToPct(displayValue);
+              if (nextPct === state.v[index]) return;
             }
+            state.v[index] = nextPct;
+            applyIntensityToScrub(scrubEl, valSpan, nextPct);
+            lastEval = null;
+            render();
           }
 
           function applyFromDrag(clientX) {
             const delta = Math.round((clientX - startX) / 2);
-            applyValue(startV + delta);
+            applyValue(startDisplay + delta);
+          }
+
+          function stepByArrow(delta) {
+            if (intensityUsesByte()) {
+              const nextByte = Math.min(255, Math.max(0, pctToByte(state.v[index]) + delta));
+              applyValue(nextByte);
+            } else {
+              applyValue(pctToDisplayValue(state.v[index]) + delta);
+            }
           }
 
           function bindScrubArrow(el, delta) {
@@ -1177,7 +1388,7 @@
             el.addEventListener("click", (e) => {
               e.preventDefault();
               e.stopPropagation();
-              applyValue(state.v[index] + delta);
+              stepByArrow(delta);
             });
           }
 
@@ -1190,7 +1401,7 @@
             scrubEl.setPointerCapture(e.pointerId);
             dragging = true;
             startX = e.clientX;
-            startV = state.v[index];
+            startDisplay = pctToDisplayValue(state.v[index]);
             e.preventDefault();
           });
 
@@ -1213,13 +1424,15 @@
           });
 
           scrubEl.addEventListener("keydown", (e) => {
-            let nv = state.v[index];
-            if (e.key === "ArrowRight" || e.key === "ArrowUp") nv = Math.min(100, nv + 1);
+            const max = intensityUsesByte() ? 255 : 100;
+            const page = intensityUsesByte() ? 25 : 10;
+            let nv = pctToDisplayValue(state.v[index]);
+            if (e.key === "ArrowRight" || e.key === "ArrowUp") nv = Math.min(max, nv + 1);
             else if (e.key === "ArrowLeft" || e.key === "ArrowDown") nv = Math.max(0, nv - 1);
-            else if (e.key === "PageUp") nv = Math.min(100, nv + 10);
-            else if (e.key === "PageDown") nv = Math.max(0, nv - 10);
+            else if (e.key === "PageUp") nv = Math.min(max, nv + page);
+            else if (e.key === "PageDown") nv = Math.max(0, nv - page);
             else if (e.key === "Home") nv = 0;
-            else if (e.key === "End") nv = 100;
+            else if (e.key === "End") nv = max;
             else return;
             e.preventDefault();
             applyValue(nv);
@@ -1229,11 +1442,60 @@
             "wheel",
             (e) => {
               e.preventDefault();
-              const step = e.shiftKey ? 5 : 1;
+              const step = e.shiftKey ? (intensityUsesByte() ? 25 : 5) : 1;
               const dir = e.deltaY > 0 ? -step : step;
-              applyValue(state.v[index] + dir);
+              applyValue(pctToDisplayValue(state.v[index]) + dir);
             },
             { passive: false }
+          );
+
+          applyIntensityToScrub(scrubEl, valSpan, state.v[index]);
+        }
+
+        /** @param {string} chKey @param {string} chName */
+        function channelScrubHtml(idPrefix, i, chKey, chName) {
+          const pct = state.v[i];
+          const aria = scrubAriaForPct(pct);
+          const pctHidden = intensityUsesByte() ? " hidden" : "";
+          const unitHint = intensityUsesByte()
+            ? "0–255"
+            : "procenta, 0–100";
+          const arrowUnit = intensityUsesByte() ? "v kanálu" : "procento";
+          return (
+            '<span class="channel-scrub" id="' +
+            idPrefix +
+            "scrub" +
+            i +
+            '" tabindex="0" role="slider" aria-valuemin="' +
+            aria.min +
+            '" aria-valuemax="' +
+            aria.max +
+            '" aria-valuenow="' +
+            aria.now +
+            '" aria-label="' +
+            chName +
+            " (" +
+            chKey +
+            "), táhni vodorovně u čísla nebo použij šipky — mění intenzitu (" +
+            unitHint +
+            ')">' +
+            '<span class="channel-scrub-inner">' +
+            '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1 ' +
+            arrowUnit +
+            '">◀</button>' +
+            '<span class="channel-val val" id="' +
+            idPrefix +
+            "val" +
+            i +
+            '">' +
+            displayIntensity(pct) +
+            '</span><span class="channel-pct"' +
+            pctHidden +
+            ">%</span>" +
+            '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1 ' +
+            arrowUnit +
+            '">▶</button>' +
+            "</span></span>"
           );
         }
 
@@ -1248,30 +1510,12 @@
 
             const wrap = document.createElement("div");
             wrap.className = "diagram-channel-chip ch-diagram-" + i;
-            const v0 = state.v[i];
             wrap.innerHTML =
               '<div class="channel-drag-line">' +
               '<span class="channel-key">' +
               ch.key +
-              '</span>' +
-              '<span class="channel-scrub" id="tscrub' +
-              i +
-              '" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
-              v0 +
-              '" aria-label="' +
-              ch.name +
-              " (" +
-              ch.key +
-              '), táhni vodorovně u čísla nebo použij šipky po stranách — mění intenzitu">' +
-              '<span class="channel-scrub-inner">' +
-              '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1 procento">◀</button>' +
-              '<span class="channel-val val" id="tval' +
-              i +
-              '">' +
-              v0 +
-              '</span><span class="channel-pct">%</span>' +
-              '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1 procento">▶</button>' +
-              "</span></span>" +
+              "</span>" +
+              channelScrubHtml("t", i, ch.key, ch.name) +
               "</div>";
 
             const corr = document.createElement("div");
@@ -1288,12 +1532,6 @@
             if (scrubEl && valEl) bindChannelScrub(scrubEl, valEl, i);
           });
 
-          for (let i = 0; i < 3; i++) {
-            const scrub = els.testDiagramChannels.querySelector("#tscrub" + i);
-            const valEl = els.testDiagramChannels.querySelector("#tval" + i);
-            if (scrub) scrub.setAttribute("aria-valuenow", String(state.v[i]));
-            if (valEl) valEl.textContent = String(state.v[i]);
-          }
         }
 
         function renderSliders() {
@@ -1305,30 +1543,12 @@
 
             const wrap = document.createElement("div");
             wrap.className = "diagram-channel-chip ch-diagram-" + i;
-            const v0 = state.v[i];
             wrap.innerHTML =
               '<div class="channel-drag-line">' +
               '<span class="channel-key">' +
               ch.key +
-              '</span>' +
-              '<span class="channel-scrub" id="scrub' +
-              i +
-              '" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
-              v0 +
-              '" aria-label="' +
-              ch.name +
-              " (" +
-              ch.key +
-              '), táhni vodorovně u čísla nebo použij šipky po stranách — mění intenzitu">' +
-              '<span class="channel-scrub-inner">' +
-              '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1 procento">◀</button>' +
-              '<span class="channel-val val" id="val' +
-              i +
-              '">' +
-              v0 +
-              '</span><span class="channel-pct">%</span>' +
-              '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1 procento">▶</button>' +
-              "</span></span>" +
+              "</span>" +
+              channelScrubHtml("", i, ch.key, ch.name) +
               "</div>";
 
             const corr = document.createElement("div");
@@ -1344,13 +1564,6 @@
             const valEl = wrap.querySelector("#val" + i);
             if (scrubEl && valEl) bindChannelScrub(scrubEl, valEl, i);
           });
-
-          for (let i = 0; i < 3; i++) {
-            const scrub = els.diagramChannels.querySelector("#scrub" + i);
-            const valEl = els.diagramChannels.querySelector("#val" + i);
-            if (scrub) scrub.setAttribute("aria-valuenow", String(state.v[i]));
-            if (valEl) valEl.textContent = String(state.v[i]);
-          }
 
           renderTestStrip();
         }
@@ -1430,12 +1643,15 @@
               el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
               continue;
             }
-            const d = Math.round(lastEval.targetV[i] - lastEval.myV[i]);
+            const d = intensityUsesByte()
+              ? pctToByte(lastEval.targetV[i]) - pctToByte(lastEval.myV[i])
+              : Math.round(lastEval.targetV[i] - lastEval.myV[i]);
             const sign = d > 0 ? "+" : "";
             el.textContent = sign + d;
             el.hidden = false;
-            el.title =
-              "Korekce kanálu: kolik procent přidat nebo ubrat oproti cíli (cílová hodnota minus tvoje při vyhodnocení).";
+            el.title = intensityUsesByte()
+              ? "Korekce kanálu: o kolik změnit hodnotu 0–255 oproti cíli (cílová hodnota minus tvoje při vyhodnocení)."
+              : "Korekce kanálu: kolik procent přidat nebo ubrat oproti cíli (cílová hodnota minus tvoje při vyhodnocení).";
             el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
             if (d > 0) el.classList.add("diagram-channel-corr--pos");
             else if (d < 0) el.classList.add("diagram-channel-corr--neg");
@@ -1447,8 +1663,7 @@
           for (let i = 0; i < 3; i++) {
             const scrub = els.testDiagramChannels.querySelector("#tscrub" + i);
             const valEl = els.testDiagramChannels.querySelector("#tval" + i);
-            if (scrub) scrub.setAttribute("aria-valuenow", String(state.v[i]));
-            if (valEl) valEl.textContent = String(state.v[i]);
+            if (scrub && valEl) applyIntensityToScrub(scrub, valEl, state.v[i]);
           }
         }
         function updateTargetUi() {
@@ -1511,6 +1726,9 @@
           els.btnHideMixResult.setAttribute("aria-pressed", state.hideMixResult ? "true" : "false");
           els.btnColorCode.style.display = inPractice ? "inline-block" : "none";
           els.btnColorCode.setAttribute("aria-pressed", state.showColorCodes ? "true" : "false");
+          const showRadix = inPractice && state.showColorCodes;
+          els.colorCodeRadixWrap.hidden = !showRadix;
+          setPressed(els.colorCodeRadix10, els.colorCodeRadix16, state.colorCodeRadix === 10);
         }
 
         function syncMixSurfaceTheme() {
@@ -1519,6 +1737,7 @@
 
         function render() {
           syncMixSurfaceTheme();
+          syncIntensityScaleChrome();
           renderButtons();
           paintVenn();
           updateMixLabelAndExpertChrome();
@@ -1583,6 +1802,30 @@
 
         els.btnColorCode.addEventListener("click", () => {
           state.showColorCodes = !state.showColorCodes;
+          render();
+        });
+
+        els.colorCodeRadix10.addEventListener("click", () => {
+          if (state.colorCodeRadix === 10) return;
+          state.colorCodeRadix = 10;
+          render();
+        });
+
+        els.colorCodeRadix16.addEventListener("click", () => {
+          if (state.colorCodeRadix === 16) return;
+          state.colorCodeRadix = 16;
+          render();
+        });
+
+        els.intensityPct.addEventListener("click", () => {
+          if (state.intensityScale === "pct") return;
+          state.intensityScale = "pct";
+          render();
+        });
+
+        els.intensity255.addEventListener("click", () => {
+          if (state.intensityScale === "byte") return;
+          state.intensityScale = "byte";
           render();
         });
 
