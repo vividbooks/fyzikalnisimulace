@@ -1001,6 +1001,12 @@
             hash: "#/sim/paka",
             previewColor: "#dcf3ff",
           },
+          {
+            id: "hra_newton",
+            title: "Hra Newton",
+            hash: "#/sim/hra_newton",
+            previewColor: "#efe8ff",
+          },
         ],
       },
       {
@@ -1055,6 +1061,18 @@
             hash: "#/sim/graf_pohyb",
             previewColor: "#e8fff4",
           },
+          {
+            id: "mereni_delka",
+            title: "Měření délek",
+            hash: "#/sim/mereni_delka",
+            previewColor: "#eef7d8",
+          },
+          {
+            id: "mereni_hmotnost",
+            title: "Měření hmotnosti",
+            hash: "#/sim/mereni_hmotnost",
+            previewColor: "#fff2cc",
+          },
         ],
       },
     ];
@@ -1062,8 +1080,11 @@
     /** Kategorie přehledu odpovídající simulaci — Přehled vrátí na stejný panel (např. Vztlaková síla → Kapaliny a plyny). */
     const SIM_TO_HUB_CATEGORY = {
       paka: "sily",
+      hra_newton: "sily",
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
+      mereni_delka: "zaklady",
+      mereni_hmotnost: "zaklady",
       skutecny_obraz: "optika",
       cocky: "optika",
     };
@@ -1268,14 +1289,66 @@
       </svg>`;
     }
 
+    function MereniDelkyCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <rect x="14" y="48" width="104" height="16" rx="8" fill="#fde68a" stroke="#ca8a04" stroke-width="2" />
+        <path d="M22 48v16M30 48v10M38 48v16M46 48v10M54 48v16M62 48v10M70 48v16M78 48v10M86 48v16M94 48v10M102 48v16M110 48v10" stroke="#92400e" stroke-width="2" stroke-linecap="round" />
+        <path d="M74 24l22 22" stroke="#475569" stroke-width="6" stroke-linecap="round" />
+        <path d="M96 46l7 2-2-7" fill="#ef4444" />
+      </svg>`;
+    }
+
+    function MereniHmotnostiCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <path d="M66 18v38" stroke="#475569" stroke-width="6" stroke-linecap="round" />
+        <path d="M34 34h64" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+        <path d="M42 40l-8 18h24l-8-18" fill="#93c5fd" stroke="#1d4ed8" stroke-width="2" />
+        <path d="M82 40l-8 18h24l-8-18" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" />
+        <rect x="58" y="58" width="16" height="10" rx="3" fill="#64748b" />
+        <rect x="52" y="68" width="28" height="6" rx="3" fill="#475569" />
+        <rect x="86" y="28" width="10" height="10" rx="2" fill="#f59e0b" />
+      </svg>`;
+    }
+
+    function HraNewtonCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <rect x="16" y="14" width="100" height="60" rx="14" fill="#f5f3ff" stroke="#a78bfa" stroke-width="2" />
+        <circle cx="44" cy="44" r="12" fill="#4f46e5" />
+        <circle cx="86" cy="30" r="5" fill="#fbbf24" />
+        <circle cx="96" cy="54" r="5" fill="#fbbf24" />
+        <path d="M61 44h18M79 44l-5-5M79 44l-5 5" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>`;
+    }
+
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
+      if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
       if (tileId === "skutecny_obraz") return html`<${SkutecnyObrazCardIllustration} />`;
       if (tileId === "cocky") return html`<${CockyCardIllustration} />`;
       if (tileId === "michani-barev") return html`<${MichaniBarevCardIllustration} />`;
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
+      if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
+      if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
       return null;
     }
 
@@ -1372,14 +1445,6 @@
       return m ? m[1] : null;
     }
 
-    /** Geometrická optika — vestavěný build ve složce optika_geometrie/ (viz npm run build:optika). */
-    const EXTERNAL_SIM_CONFIG = {
-      optika_geometrie: {
-        title: "Geometrická optika",
-        iframeSrc: new URL("optika_geometrie/rysovani-app/", new URL(".", location.href).href).href,
-      },
-    };
-
     function RootApp() {
       /** Jen kvůli přerenderu po replaceState / popstate — React nečte URL sám. */
       const [, routeTick] = useReducer((n) => n + 1, 0);
@@ -1420,6 +1485,14 @@
           }
           return;
         }
+        if (simId === "hra_newton") {
+          try {
+            window.location.replace(new URL("hra_newton/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("hra_newton/");
+          }
+          return;
+        }
         if (simId === "graf_pohyb") {
           try {
             window.location.replace(new URL("graf-pohybu/", window.location.href).href);
@@ -1441,6 +1514,30 @@
             window.location.replace(new URL("cocky/", window.location.href).href);
           } catch (_) {
             window.location.replace("cocky/");
+          }
+          return;
+        }
+        if (simId === "optika_geometrie") {
+          try {
+            window.location.replace(new URL("optika_geometrie/rysovani-app/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("optika_geometrie/rysovani-app/");
+          }
+          return;
+        }
+        if (simId === "mereni_delka") {
+          try {
+            window.location.replace(new URL("mereni_delka/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("mereni_delka/");
+          }
+          return;
+        }
+        if (simId === "mereni_hmotnost") {
+          try {
+            window.location.replace(new URL("mereni_hmotnost/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("mereni_hmotnost/");
           }
           return;
         }
@@ -1483,6 +1580,13 @@
           </div>
         `;
       }
+      if (simId === "hra_newton") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
       if (simId === "michani-barev") {
         return html`
           <div class="app">
@@ -1511,38 +1615,28 @@
           </div>
         `;
       }
-      const ext = simId ? EXTERNAL_SIM_CONFIG[simId] : null;
-      if (ext) {
-        return html`<${ExternalSimApp}
-          onBack=${() => {
-            location.hash = "";
-          }}
-          title=${ext.title}
-          iframeSrc=${ext.iframeSrc}
-        />`;
+      if (simId === "optika_geometrie") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "mereni_delka") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "mereni_hmotnost") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
       }
       return html`<${PhysicsHub} />`;
-    }
-
-    function ExternalSimApp({ onBack, title, iframeSrc }) {
-      return html`
-        <div class="app app--embed">
-          <header class="sim-subheader">
-            <button
-              type="button"
-              class="sim-back-btn"
-              onClick=${onBack}
-              aria-label="Zpět na přehled simulací"
-            >
-              ← Přehled
-            </button>
-            <h1 class="sim-subheader-title">${title}</h1>
-          </header>
-          <div class="sim-iframe-wrap">
-            <iframe class="sim-iframe" title=${title} src=${iframeSrc} loading="lazy" />
-          </div>
-        </div>
-      `;
     }
 
     function LeverSimApp({ onBack }) {

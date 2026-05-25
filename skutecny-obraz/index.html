@@ -113,18 +113,37 @@
     }
 
     .sim-topbar-intro {
+      flex: 1 1 auto;
       min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
+    .sim-topbar-heading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .sim-topbar-copy {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
     .sim-topbar-intro .panel-title {
       margin: 0;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
     .sim-topbar-intro .hint {
       margin: 0;
+      min-width: 0;
     }
 
     .menuBtn {
@@ -229,13 +248,34 @@
       width: 100%;
     }
 
-    @media (max-width: 560px) {
+    @media (max-width: 760px) {
       .sim-menu-grid {
         grid-template-columns: 1fr;
       }
 
       .sim-topbar {
         flex-wrap: wrap;
+      }
+
+      .sim-topbar-intro {
+        flex-basis: 100%;
+      }
+
+      .sim-topbar-heading {
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+
+      .sim-topbar-copy {
+        flex-wrap: wrap;
+      }
+
+      .sim-topbar-intro .panel-title {
+        white-space: normal;
+      }
+
+      .menuBtn {
+        margin-left: auto;
       }
     }
 
@@ -268,6 +308,7 @@
 
     .hub-back-to-sims {
       display: inline-flex;
+      flex: 0 0 auto;
       align-items: center;
       font-size: 0.88rem;
       font-weight: 700;
@@ -486,11 +527,15 @@
     <div class="viz-column" aria-label="Simulace">
       <header class="sim-topbar">
         <div class="sim-topbar-intro">
-          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-          <h1 class="panel-title">Hledání skutečného obrazu</h1>
-          <p class="hint">
-            Pohybuj plamínkem svíčky a stínítkem sleduj, jaký obraz plamínku je vidět na stínítku.
-          </p>
+          <div class="sim-topbar-heading">
+            <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+            <div class="sim-topbar-copy">
+              <h1 class="panel-title">Hledání skutečného obrazu</h1>
+              <p class="hint">
+                Pohybuj plamínkem svíčky a stínítkem sleduj, jaký obraz plamínku je vidět na stínítku.
+              </p>
+            </div>
+          </div>
         </div>
         <button
           id="menuBtn"
