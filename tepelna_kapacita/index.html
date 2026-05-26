@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <title>Tepelná kapacita</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="scene" aria-label="Simulace tepelné kapacity">
+      <aside class="setup-panel" aria-label="Nastavení tepelné kapacity">
+        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <div class="panel-copy">
+          <h1 class="panel-title">Tepelná kapacita</h1>
+          <p class="panel-hint">
+            Přetáhni objekt z panelu na pracovní plochu vpravo. Na hořáku pak můžeš spustit ohřev.
+          </p>
+        </div>
+
+        <div class="panel-section">
+          <span class="panel-label">Objekty</span>
+          <div
+            class="supply-strip"
+            id="supply-strip"
+            role="toolbar"
+            aria-label="Zásobník – přetáhněte věc na plochu"
+          ></div>
+        </div>
+
+        <div class="workspace-controls" id="workspace-controls" data-heat-source="burner">
+          <div class="heat-source-control panel-section" role="group" aria-label="Prostředí">
+            <span class="heat-source-control__label panel-label">Prostředí</span>
+            <div class="heat-source-control__buttons">
+              <button
+                type="button"
+                class="heat-source-btn is-active"
+                data-heat-source="burner"
+                aria-pressed="true"
+              >
+                Hořák
+              </button>
+              <button
+                type="button"
+                class="heat-source-btn"
+                data-heat-source="pool"
+                aria-pressed="false"
+              >
+                Bazén
+              </button>
+            </div>
+          </div>
+          <div class="burner-count-control panel-section" role="group" aria-label="Počet hořáků">
+            <span class="burner-count-control__label panel-label">Počet hořáků</span>
+            <div class="burner-count-control__buttons">
+              <button
+                type="button"
+                class="burner-count-btn is-active"
+                data-burner-count="1"
+                aria-pressed="true"
+              >
+                1
+              </button>
+              <button
+                type="button"
+                class="burner-count-btn"
+                data-burner-count="2"
+                aria-pressed="false"
+              >
+                2
+              </button>
+            </div>
+          </div>
+          <div class="pool-count-control panel-section" role="group" aria-label="Počet bazénů">
+            <span class="pool-count-control__label panel-label">Počet bazénů</span>
+            <div class="pool-count-control__buttons">
+              <button
+                type="button"
+                class="pool-count-btn is-active"
+                data-pool-count="1"
+                aria-pressed="true"
+              >
+                1
+              </button>
+              <button
+                type="button"
+                class="pool-count-btn"
+                data-pool-count="2"
+                aria-pressed="false"
+              >
+                2
+              </button>
+            </div>
+          </div>
+          <p class="pool-control__info" id="pool-water-info" hidden>
+            Hmotnost vody v bazénu: 3 kg
+          </p>
+          <div class="cooling-control panel-section" role="group" aria-label="Chladnutí těles">
+            <span class="cooling-control__label panel-label">Chladnutí těles</span>
+            <div class="cooling-control__buttons">
+              <button
+                type="button"
+                class="cooling-btn is-active"
+                data-cooling="off"
+                aria-pressed="true"
+              >
+                Vypnuto
+              </button>
+              <button
+                type="button"
+                class="cooling-btn"
+                data-cooling="on"
+                aria-pressed="false"
+              >
+                Zapnuto
+              </button>
+            </div>
+            <p class="cooling-control__ambient" id="cooling-ambient-info" hidden>
+              Teplota okolního vzduchu:
+              <span class="cooling-control__ambient-value" id="cooling-ambient-value"
+                >20 °C</span
+              >
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <div class="scene-workspace" id="scene-workspace">
+        <div
+          class="pool-water-overlay-wrap"
+          id="pool-water-overlay-wrap"
+          hidden
+          aria-hidden="true"
+        >
+          <object
+            class="pool-water-overlay"
+            type="image/svg+xml"
+            data="assets/pool-water-overlay.svg"
+            width="326"
+            height="264"
+            aria-hidden="true"
+          ></object>
+        </div>
+        <div
+          id="pool-front-frames-layer"
+          class="pool-front-frames-layer"
+          aria-hidden="true"
+        >
+          <div
+            class="pool-front-frame-wrap"
+            data-pool-index="0"
+            hidden
+            aria-hidden="true"
+          >
+            <object
+              class="pool-front-frame"
+              type="image/svg+xml"
+              data="assets/pool-front-frame.svg"
+              width="326"
+              height="264"
+              aria-hidden="true"
+            ></object>
+          </div>
+          <div
+            class="pool-front-frame-wrap"
+            data-pool-index="1"
+            hidden
+            aria-hidden="true"
+          >
+            <object
+              class="pool-front-frame"
+              type="image/svg+xml"
+              data="assets/pool-front-frame.svg"
+              width="326"
+              height="264"
+              aria-hidden="true"
+            ></object>
+          </div>
+        </div>
+        <div class="setup" id="setup" data-heat-source="burner">
+          <div class="burners" id="burners">
+            <div class="burner-slot">
+              <object
+                class="burner"
+                type="image/svg+xml"
+                data="assets/burner.svg"
+                width="113"
+                height="116"
+                aria-label="Hořák 1"
+              ></object>
+              <div class="burner-local-controls">
+                <label class="power-control" for="burner-power">
+                  <span class="power-control__label" id="burner-power-label">Výkon hořáku: 500 W</span>
+                  <input
+                    id="burner-power"
+                    class="power-control__slider"
+                    type="range"
+                    min="0"
+                    max="1000"
+                    step="10"
+                    value="500"
+                    aria-valuemin="0"
+                    aria-valuemax="1000"
+                    aria-valuenow="500"
+                    aria-valuetext="500 W"
+                    aria-labelledby="burner-power-label"
+                  />
+                </label>
+                <button
+                  type="button"
+                  id="burner-toggle"
+                  class="burner-toggle"
+                  aria-pressed="false"
+                  aria-describedby="burner-toggle-hint"
+                  aria-label="Zapnout hořák"
+                >
+                  <span class="burner-toggle__label">Hořák</span>
+                  <span class="burner-toggle__switch" aria-hidden="true"></span>
+                </button>
+                <p class="burner-toggle-hint" id="burner-toggle-hint">
+                  Nejdřív přetáhni nádobu nebo cihlu na hořák.
+                </p>
+              </div>
+              <div class="heat-outputs" data-burner-index="0" hidden>
+                <div class="heat-output" aria-live="polite">
+                  <span class="heat-output__label"></span>
+                  <span class="heat-output__value">0 J</span>
+                </div>
+              </div>
+            </div>
+            <div class="burner-slot burner-slot--second">
+              <object
+                class="burner"
+                type="image/svg+xml"
+                data="assets/burner.svg"
+                width="113"
+                height="116"
+                aria-label="Hořák 2"
+              ></object>
+              <div class="heat-outputs" data-burner-index="1" hidden>
+                <div class="heat-output" aria-live="polite">
+                  <span class="heat-output__label"></span>
+                  <span class="heat-output__value">0 J</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pool-setup" id="pool-setup" hidden>
+            <div class="pools" id="pools">
+              <div class="pool-slot">
+                <object
+                  class="pool"
+                  type="image/svg+xml"
+                  data="assets/pool.svg"
+                  width="326"
+                  height="264"
+                  aria-label="Bazén 1"
+                ></object>
+                <button
+                  type="button"
+                  class="pool-brick-hit"
+                  data-pool-index="0"
+                  hidden
+                  aria-label="Přetáhnout cihlu z bazénu 1"
+                ></button>
+                <div class="pool-water-output" hidden aria-live="polite">
+                  <div class="pool-water-output__row">
+                    <span class="pool-water-output__label">Teplota vody v bazénu</span>
+                    <span class="pool-water-output__value pool-water-side-temp"
+                      >20 °C</span
+                    >
+                  </div>
+                  <div class="pool-water-output__row">
+                    <span class="pool-water-output__label"
+                      >Teplo odevzdané vodě<br />v bazénu:</span
+                    >
+                    <span
+                      class="pool-water-output__value pool-water-output__value--heat pool-water-heat-delivered"
+                      >0 J</span
+                    >
+                  </div>
+                </div>
+                <div class="heat-outputs heat-outputs--pool" data-burner-index="0" hidden>
+                  <div class="heat-output" aria-live="polite">
+                    <span class="heat-output__label"></span>
+                    <span class="heat-output__value">0 J</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pool-slot pool-slot--second">
+                <object
+                  class="pool"
+                  type="image/svg+xml"
+                  data="assets/pool.svg"
+                  width="326"
+                  height="264"
+                  aria-label="Bazén 2"
+                ></object>
+                <button
+                  type="button"
+                  class="pool-brick-hit"
+                  data-pool-index="1"
+                  hidden
+                  aria-label="Přetáhnout cihlu z bazénu 2"
+                ></button>
+                <div class="pool-water-output" hidden aria-live="polite">
+                  <div class="pool-water-output__row">
+                    <span class="pool-water-output__label">Teplota vody v bazénu</span>
+                    <span class="pool-water-output__value pool-water-side-temp"
+                      >20 °C</span
+                    >
+                  </div>
+                  <div class="pool-water-output__row">
+                    <span class="pool-water-output__label"
+                      >Teplo odevzdané vodě<br />v bazénu:</span
+                    >
+                    <span
+                      class="pool-water-output__value pool-water-output__value--heat pool-water-heat-delivered"
+                      >0 J</span
+                    >
+                  </div>
+                </div>
+                <div class="heat-outputs heat-outputs--pool" data-burner-index="1" hidden>
+                  <div class="heat-output" aria-live="polite">
+                    <span class="heat-output__label"></span>
+                    <span class="heat-output__value">0 J</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="main.js"></script>
+  </body>
+</html>

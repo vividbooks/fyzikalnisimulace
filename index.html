@@ -1001,12 +1001,6 @@
             hash: "#/sim/paka",
             previewColor: "#dcf3ff",
           },
-          {
-            id: "hra_newton",
-            title: "Hra Newton",
-            hash: "#/sim/hra_newton",
-            previewColor: "#efe8ff",
-          },
         ],
       },
       {
@@ -1075,6 +1069,18 @@
           },
         ],
       },
+      {
+        id: "energie",
+        title: "Energie",
+        tiles: [
+          {
+            id: "tepelna_kapacita",
+            title: "Tepelná kapacita",
+            hash: "#/sim/tepelna_kapacita",
+            previewColor: "#fff3e6",
+          },
+        ],
+      },
     ];
 
     /** Kategorie přehledu odpovídající simulaci — Přehled vrátí na stejný panel (např. Vztlaková síla → Kapaliny a plyny). */
@@ -1085,6 +1091,7 @@
       graf_pohyb: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
+      tepelna_kapacita: "energie",
       skutecny_obraz: "optika",
       cocky: "optika",
     };
@@ -1338,6 +1345,23 @@
       </svg>`;
     }
 
+    function TepelnaKapacitaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <rect x="22" y="48" width="32" height="18" rx="5" fill="#fb923c" stroke="#c2410c" stroke-width="2" />
+        <rect x="78" y="42" width="32" height="24" rx="5" fill="#60a5fa" stroke="#1d4ed8" stroke-width="2" />
+        <path d="M31 48c0-9 8-11 8-20 7 7 11 13 11 20" fill="#f97316" stroke="#ea580c" stroke-width="2" stroke-linejoin="round" />
+        <path d="M88 42c0-7 5-10 5-18 7 6 10 12 10 18" fill="#93c5fd" stroke="#2563eb" stroke-width="2" stroke-linejoin="round" />
+        <path d="M62 30h12M68 24v12" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+        <path d="M38 70h56" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+      </svg>`;
+    }
+
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
       if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
@@ -1349,6 +1373,7 @@
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
+      if (tileId === "tepelna_kapacita") return html`<${TepelnaKapacitaCardIllustration} />`;
       return null;
     }
 
@@ -1541,6 +1566,14 @@
           }
           return;
         }
+        if (simId === "tepelna_kapacita") {
+          try {
+            window.location.replace(new URL("tepelna_kapacita/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("tepelna_kapacita/");
+          }
+          return;
+        }
       }, [simId]);
 
       const goToHub = useCallback(() => {
@@ -1630,6 +1663,13 @@
         `;
       }
       if (simId === "mereni_hmotnost") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "tepelna_kapacita") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
