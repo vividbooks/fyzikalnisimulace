@@ -1,0 +1,931 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+  height: 100%;
+  background: #ffffff;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+  touch-action: manipulation;
+}
+
+@font-face {
+  font-family: "Fenomen Sans";
+  src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.hub-back-to-sims {
+  position: fixed;
+  top: 0.8rem;
+  left: 0.8rem;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #e8eaef;
+  border-radius: 0.75rem;
+  background: rgba(236, 239, 245, 0.92);
+  color: #171923;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.hub-back-to-sims:hover {
+  border-color: #3d5a9a;
+  color: #3d5a9a;
+}
+
+.scene {
+  position: relative;
+  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.supply-strip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fafafa;
+  z-index: 5;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.supply-strip--drop-target {
+  background: #fff0f0;
+  border-bottom-color: #e8b4b4;
+}
+
+.supply-item {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.supply-item:hover {
+  border-color: #dddddd;
+  background: #ffffff;
+}
+
+.supply-item:active {
+  cursor: grabbing;
+}
+
+.supply-item__visual {
+  display: block;
+  pointer-events: none;
+}
+
+.supply-item__label {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: #4d4d4d;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scene-workspace {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2rem;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.setup,
+.pool-setup,
+.burners {
+  touch-action: none;
+}
+
+.spawn-ghost {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+}
+
+.spawn-ghost .vessel-handle {
+  cursor: grabbing;
+}
+
+.spawn-ghost .vessel-visual,
+.spawn-ghost .water-vessel,
+.spawn-ghost .oil-vessel,
+.spawn-ghost .alcohol-vessel,
+.spawn-ghost .gold-brick,
+.spawn-ghost .copper-brick,
+.spawn-ghost .marble-brick,
+.spawn-ghost .aluminum-brick {
+  display: block;
+}
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.scene-workspace .vessel-draggable {
+  position: absolute;
+  z-index: 2;
+  user-select: none;
+  transition: left 0.22s ease-out, top 0.22s ease-out;
+}
+
+.scene-workspace .vessel-draggable--no-transition {
+  transition: none;
+}
+
+.vessel-temp-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #c62828;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.vessel-handle {
+  position: relative;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.vessel-draggable.is-dragging {
+  position: fixed !important;
+  z-index: 15;
+  transition: none;
+}
+
+.vessel-draggable.is-dragging .vessel-handle {
+  cursor: grabbing;
+}
+
+.vessel-visual-wrap {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.vessel-visual,
+.water-vessel,
+.oil-vessel,
+.alcohol-vessel {
+  display: block;
+  flex-shrink: 0;
+  width: 160px;
+  height: 184px;
+  pointer-events: none;
+}
+
+.gold-brick,
+.copper-brick,
+.marble-brick,
+.aluminum-brick {
+  display: block;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.vessel-handle--solid-brick {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.vessel-stats {
+  position: absolute;
+  left: calc(100% + 0.75rem);
+  bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 9.5rem;
+}
+
+.vessel-draggable--stats-left .vessel-stats {
+  left: auto;
+  right: calc(100% + 0.75rem);
+}
+
+.vessel-stats__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.vessel-stats__row[hidden] {
+  display: none !important;
+}
+
+.scene-workspace:has(.setup[data-heat-source="pool"]) .vessel-stats__row--mass,
+.scene-workspace:has(.setup[data-heat-source="pool"]) .vessel-mass-control {
+  display: none !important;
+}
+
+.vessel-stats__label {
+  color: #666666;
+}
+
+.vessel-stats__value {
+  font-variant-numeric: tabular-nums;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.vessel-mass-control {
+  display: block;
+  margin-top: -0.15rem;
+}
+
+.vessel-mass-control__slider {
+  width: 100%;
+  height: 0.35rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.vessel-mass-control__slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.vessel-mass-control__slider--water {
+  accent-color: #59a2ff;
+}
+
+.vessel-mass-control__slider--oil {
+  accent-color: #d9a441;
+}
+
+.vessel-mass-control__slider--alcohol {
+  accent-color: #9b7fd4;
+}
+
+.vessel-mass-control__slider--gold {
+  accent-color: #f6af34;
+}
+
+.vessel-mass-control__slider--copper {
+  accent-color: #c47c45;
+}
+
+.vessel-mass-control__slider--marble {
+  accent-color: #9a9590;
+}
+
+.vessel-mass-control__slider--aluminum {
+  accent-color: #8fa3b8;
+}
+
+.burners {
+  display: flex;
+  align-items: flex-end;
+  /* střed kádinky 160px – šířka hořáku 113px + mezera mezi nádobami */
+  gap: calc(160px - 113px + 2.5rem);
+  flex-shrink: 0;
+}
+
+.burners:not(.burners--dual) {
+  gap: 0;
+}
+
+.burners:not(.burners--dual) .burner-slot--second {
+  display: none;
+}
+
+.burners[hidden] {
+  display: none !important;
+}
+
+.pool-setup {
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.pool-setup[hidden] {
+  display: none !important;
+}
+
+.pools {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5rem;
+  flex-shrink: 0;
+}
+
+.pools:not(.pools--dual) {
+  gap: 0;
+}
+
+.pools:not(.pools--dual) .pool-slot--second {
+  display: none;
+}
+
+.pool-slot {
+  position: relative;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.pool-front-frames-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 7;
+}
+
+.pool-front-frames-layer .pool-front-frame-wrap {
+  position: absolute;
+  pointer-events: none;
+}
+
+.pool-front-frames-layer .pool-front-frame-wrap[hidden] {
+  display: none !important;
+}
+
+.pool-front-frames-layer .pool-front-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pool-brick-hit {
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 4;
+}
+
+.pool-brick-hit[hidden] {
+  display: none !important;
+}
+
+.pool-brick-hit:active {
+  cursor: grabbing;
+}
+
+.pool {
+  display: block;
+  width: 326px;
+  height: 264px;
+  flex-shrink: 0;
+  transition: filter 0.2s ease;
+}
+
+.setup[data-heat-source="pool"] .power-control,
+.setup[data-heat-source="pool"] .burner-toggle {
+  display: none;
+}
+
+.setup--pool-heating .pool {
+  filter: drop-shadow(0 0 10px rgba(33, 109, 232, 0.45));
+}
+
+.pool-water-output {
+  position: absolute;
+  left: calc(100% + 1rem);
+  top: 32%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 11rem;
+  max-width: 14rem;
+  pointer-events: none;
+}
+
+.pools--dual .pool-slot:first-child .pool-water-output {
+  left: auto;
+  right: calc(100% + 1rem);
+}
+
+.pool-water-output__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pool-water-output[hidden] {
+  display: none !important;
+}
+
+.pool-water-output__label {
+  font-size: 0.75rem;
+  color: #666666;
+  line-height: 1.3;
+}
+
+.pool-water-output__value {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: #c62828;
+  font-weight: 600;
+}
+
+.pool-water-output__value--heat {
+  color: #1a1a1a;
+}
+
+.heat-outputs--pool {
+  position: absolute;
+  left: calc(100% + 1rem);
+  bottom: 0.35rem;
+  pointer-events: auto;
+}
+
+.pools--dual .pool-slot:first-child .heat-outputs--pool {
+  left: auto;
+  right: calc(100% + 1rem);
+}
+
+.pool-water-overlay-wrap {
+  position: absolute;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.pool-water-overlay-wrap[hidden] {
+  display: none !important;
+}
+
+.pool-water-overlay {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.vessel-draggable--pool-immersive {
+  z-index: 4;
+  pointer-events: none;
+}
+
+.vessel-draggable--pool-immersive .vessel-handle {
+  visibility: visible;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  background: transparent;
+}
+
+.vessel-draggable--pool-immersive.is-dragging .vessel-handle {
+  cursor: grabbing;
+}
+
+/* Ponoření: #59A2FF přes cihlu (opacity 0.7 jako v pool-submerged.svg), okolí beze změny. */
+.vessel-draggable--pool-immersive .vessel-visual {
+  visibility: visible;
+  pointer-events: none;
+}
+
+.vessel-draggable--pool-immersive .vessel-visual-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: #59a2ff;
+  opacity: 0.7;
+  pointer-events: none;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+.vessel-draggable--pool-immersive.vessel-draggable--gold .vessel-visual-wrap::after {
+  mask-image: url("assets/gold-brick.svg");
+  -webkit-mask-image: url("assets/gold-brick.svg");
+}
+
+.vessel-draggable--pool-immersive.vessel-draggable--copper .vessel-visual-wrap::after {
+  mask-image: url("assets/copper-brick.svg");
+  -webkit-mask-image: url("assets/copper-brick.svg");
+}
+
+.vessel-draggable--pool-immersive.vessel-draggable--marble .vessel-visual-wrap::after {
+  mask-image: url("assets/marble-brick.svg");
+  -webkit-mask-image: url("assets/marble-brick.svg");
+}
+
+.vessel-draggable--pool-immersive.vessel-draggable--aluminum .vessel-visual-wrap::after {
+  mask-image: url("assets/aluminum-brick.svg");
+  -webkit-mask-image: url("assets/aluminum-brick.svg");
+}
+
+.vessel-draggable--pool-immersive .vessel-stats {
+  display: none;
+}
+
+.vessel-draggable--pool-immersive .vessel-temp-badge {
+  z-index: 7;
+  pointer-events: none;
+}
+
+.workspace-controls {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
+  touch-action: manipulation;
+}
+
+.workspace-controls input,
+.workspace-controls button,
+.vessel-mass-control,
+.vessel-mass-control__slider,
+.burner-toggle,
+.power-control input {
+  touch-action: manipulation;
+}
+
+.heat-source-control,
+.burner-count-control,
+.pool-count-control,
+.cooling-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.heat-source-control__label {
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+}
+
+.heat-source-control__buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.heat-source-btn {
+  padding: 0.58rem 0.95rem;
+  border: 1px solid #e8eaef;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  color: #171923;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.heat-source-btn:hover {
+  border-color: #3d5a9a;
+  background: #f4f7ff;
+}
+
+.heat-source-btn.is-active {
+  border-color: #3d5a9a;
+  background: #3d5a9a;
+  color: #ffffff;
+}
+
+.heat-source-btn:focus-visible {
+  outline: 2px solid #3d5a9a;
+  outline-offset: 2px;
+}
+
+.workspace-controls[data-heat-source="pool"] .burner-count-control,
+.workspace-controls[data-heat-source="pool"] .cooling-control {
+  display: none;
+}
+
+.workspace-controls[data-heat-source="burner"] .pool-count-control {
+  display: none;
+}
+
+.pool-count-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.pool-count-control__label {
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+}
+
+.pool-count-control__buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.pool-count-btn {
+  min-width: 2.25rem;
+  padding: 0.58rem 0.95rem;
+  border: 1px solid #e8eaef;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  color: #171923;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pool-count-btn:hover {
+  border-color: #3d5a9a;
+  background: #f4f7ff;
+}
+
+.pool-count-btn.is-active {
+  border-color: #3d5a9a;
+  background: #3d5a9a;
+  color: #ffffff;
+}
+
+.pool-count-btn:focus-visible {
+  outline: 2px solid #3d5a9a;
+  outline-offset: 2px;
+}
+
+.pool-control__info {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+  line-height: 1.35;
+}
+
+.pool-control__info[hidden] {
+  display: none !important;
+}
+
+.burner-count-control__label {
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+}
+
+.burner-count-control__buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.burner-count-btn {
+  min-width: 2.75rem;
+  padding: 0.58rem 0.95rem;
+  border: 1px solid #e8eaef;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  color: #171923;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.burner-count-btn:hover {
+  border-color: #c44a20;
+  background: #fff7f4;
+}
+
+.burner-count-btn.is-active {
+  border-color: #c44a20;
+  background: #c44a20;
+  color: #ffffff;
+}
+
+.burner-count-btn:focus-visible {
+  outline: 2px solid #c44a20;
+  outline-offset: 2px;
+}
+
+.cooling-control__label {
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+}
+
+.cooling-control__buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.cooling-btn {
+  padding: 0.58rem 0.95rem;
+  border: 1px solid #e8eaef;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  color: #171923;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cooling-btn:hover {
+  border-color: #3d5a9a;
+  background: #f4f7ff;
+}
+
+.cooling-btn.is-active {
+  border-color: #3d5a9a;
+  background: #3d5a9a;
+  color: #ffffff;
+}
+
+.cooling-btn:focus-visible {
+  outline: 2px solid #3d5a9a;
+  outline-offset: 2px;
+}
+
+.cooling-control__ambient {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+  line-height: 1.35;
+}
+
+.cooling-control__ambient[hidden] {
+  display: none !important;
+}
+
+.cooling-control__ambient-value {
+  font-variant-numeric: tabular-nums;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.burner-slot {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.burner {
+  display: block;
+  flex-shrink: 0;
+  width: 113px;
+  height: 116px;
+}
+
+.heat-outputs {
+  position: absolute;
+  left: calc(100% + 1rem);
+  bottom: 0.35rem;
+  padding-bottom: 0;
+}
+
+.burners--dual .burner-slot:first-child .heat-outputs {
+  left: auto;
+  right: 100%;
+}
+
+.heat-outputs[hidden] {
+  display: none;
+}
+
+.heat-output {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: none;
+  padding-bottom: 0.35rem;
+}
+
+.heat-output__label {
+  font-size: 0.75rem;
+  color: #666666;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.heat-output__value {
+  align-self: center;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.power-control {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 0.65rem;
+}
+
+.power-control__label {
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+  text-align: center;
+}
+
+.power-control__slider {
+  width: 100%;
+  height: 0.35rem;
+  margin: 0;
+  accent-color: #ff8158;
+  cursor: pointer;
+}
+
+.burner-toggle {
+  margin-top: 0.65rem;
+  padding: 0.68rem 1rem;
+  border: 1px solid #e8eaef;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  color: #171923;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.burner-toggle:hover:not(:disabled) {
+  border-color: #c44a20;
+  background: #fff7f4;
+}
+
+.burner-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.burner-toggle[aria-pressed="true"] {
+  border-color: #c44a20;
+  background: #c44a20;
+  color: #ffffff;
+}
+
+.burner-toggle:focus-visible {
+  outline: 2px solid #c44a20;
+  outline-offset: 2px;
+}

@@ -1074,9 +1074,9 @@
         title: "Energie",
         tiles: [
           {
-            id: "tepelna_kapacita",
+            id: "tepelna_kapacita_puvodni",
             title: "Tepelná kapacita",
-            hash: "#/sim/tepelna_kapacita",
+            hash: "#/sim/tepelna_kapacita_puvodni",
             previewColor: "#fff3e6",
           },
         ],
@@ -1091,6 +1091,7 @@
       graf_pohyb: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
+      tepelna_kapacita_puvodni: "energie",
       tepelna_kapacita: "energie",
       skutecny_obraz: "optika",
       cocky: "optika",
@@ -1373,7 +1374,7 @@
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
-      if (tileId === "tepelna_kapacita") return html`<${TepelnaKapacitaCardIllustration} />`;
+      if (tileId === "tepelna_kapacita" || tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
       return null;
     }
 
@@ -1574,6 +1575,14 @@
           }
           return;
         }
+        if (simId === "tepelna_kapacita_puvodni") {
+          try {
+            window.location.replace(new URL("tepelna_kapacita_puvodni/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("tepelna_kapacita_puvodni/");
+          }
+          return;
+        }
       }, [simId]);
 
       const goToHub = useCallback(() => {
@@ -1670,6 +1679,13 @@
         `;
       }
       if (simId === "tepelna_kapacita") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "tepelna_kapacita_puvodni") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
