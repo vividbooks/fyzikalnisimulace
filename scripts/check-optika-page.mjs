@@ -16,11 +16,18 @@ await page.waitForTimeout(3000);
 const rootLen = (await page.locator("#root").innerHTML()).length;
 const titleCount = await page.locator("text=Geometrická optika").count();
 const backCount = await page.locator("text=Přehled simulací").count();
+const backPartial = await page.locator("a[href*='index.html']").count();
+const allLinks = await page.locator("header a, #root a").allTextContents().catch(() => []);
+const rootLinks = await page.locator("#root a").evaluateAll((els) =>
+  els.map((a) => ({ href: a.getAttribute("href"), text: a.textContent?.trim() }))
+);
 
 console.log("url:", url);
 console.log("root html length:", rootLen);
 console.log("title count:", titleCount);
 console.log("back link count:", backCount);
+console.log("index.html links:", backPartial);
+console.log("root links sample:", JSON.stringify(rootLinks.slice(0, 10), null, 2));
 console.log("errors:", errors.length ? errors.join("\n") : "none");
 
 await browser.close();
