@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Hra Newton</title>
+  <title>Zákon setrvačnosti</title>
   <style>
     @font-face {
       font-family: "Fenomen Sans";
@@ -99,17 +99,19 @@
       background: var(--panel-bg);
       box-shadow: none;
       color: var(--text);
+      pointer-events: auto;
     }
 
-    body.mobile-playing .sim-topbar,
-    body.mobile-counting .sim-topbar {
+    .sim-topbar * {
+      pointer-events: auto;
+    }
+
+    body.mobile-playing .sim-topbar {
       display: none;
     }
 
     body.mobile-playing,
-    body.mobile-counting,
-    body.mobile-playing .app,
-    body.mobile-counting .app {
+    body.mobile-playing .app {
       background: #070b1c;
     }
 
@@ -117,8 +119,7 @@
       display: none;
     }
 
-    body.mobile-playing .viz-column,
-    body.mobile-counting .viz-column {
+    body.mobile-playing .viz-column {
       display: flex;
       width: 100%;
       height: 100vh;
@@ -220,9 +221,23 @@
       gap: 18px;
     }
 
+    .html-controls > .html-btn.primary {
+      grid-column: 1 / -1;
+      width: 100%;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .html-controls .control-row.is-dpad,
     .html-controls .readout {
       display: none;
+    }
+
+    .mode-setup {
+      display: grid;
+      gap: 18px;
     }
 
     .control-row {
@@ -297,11 +312,13 @@
       border-radius: 12px;
       background: var(--area-muted);
       box-shadow: inset 0 0 0 1px rgba(61, 90, 154, 0.12);
+      pointer-events: none;
     }
 
     .option-copy {
       display: grid;
       gap: 2px;
+      pointer-events: none;
     }
 
     .option-title {
@@ -421,6 +438,44 @@
       border-radius: 50%;
     }
 
+    .scenario-icon-open::before {
+      inset: 8px;
+      border: 3px dashed currentColor;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--accent);
+      content: "";
+      position: absolute;
+    }
+
+    .scenario-icon-custom::before,
+    .scenario-icon-custom::after {
+      content: "";
+      position: absolute;
+      background: currentColor;
+      color: var(--accent);
+      border-radius: 2px;
+    }
+
+    .scenario-icon-custom::before {
+      width: 16px;
+      height: 3px;
+      left: 9px;
+      top: 10px;
+      transform: rotate(-42deg);
+      transform-origin: left center;
+    }
+
+    .scenario-icon-custom::after {
+      width: 8px;
+      height: 8px;
+      left: 18px;
+      top: 18px;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px solid currentColor;
+    }
+
     .segmented button[aria-pressed="true"] .option-icon {
       color: #ffffff;
     }
@@ -482,22 +537,28 @@
     .dpad button[data-dir="right"] { grid-column: 3; grid-row: 2; }
     .dpad button[data-dir="down"] { grid-column: 2; grid-row: 3; }
 
-    .mobile-game-hud,
-    .mobile-countdown {
+    body.is-zavod .dpad button[data-dir="up"],
+    body.is-zavod .dpad button[data-dir="down"] {
       display: none;
     }
 
-    body.mobile-playing .mobile-game-hud {
+    .mobile-game-hud {
+      display: none;
+    }
+
+    body.mobile-playing:not(.is-editing) .mobile-game-hud {
       display: flex;
     }
 
-    body.mobile-counting .mobile-countdown {
-      display: grid;
+    body.is-editing .mobile-game-hud {
+      display: none !important;
     }
+
 
     .mobile-game-hud {
       position: fixed;
-      inset: auto 0 max(12px, env(safe-area-inset-bottom, 0px) + 12px);
+      /* posun panelu rychlosti/d-padu výš */
+      inset: auto 0 max(44px, env(safe-area-inset-bottom, 0px) + 44px);
       z-index: 7;
       pointer-events: none;
       align-items: flex-end;
@@ -517,6 +578,21 @@
       box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
     }
 
+    /* V závodu se rychlost kreslí do canvasu → HTML panel skryj, ať se nepřekrývá. */
+    body.is-zavod .mobile-speed {
+      display: none;
+    }
+
+    body.is-zavod .mobile-game-hud {
+      justify-content: flex-end;
+    }
+
+    body.is-zavod .mobile-dpad.is-axis-aligned {
+      position: fixed;
+      margin: 0;
+      bottom: max(44px, env(safe-area-inset-bottom, 0px) + 44px);
+    }
+
     .mobile-speed strong {
       font-size: 1.65rem;
       line-height: 1;
@@ -525,34 +601,45 @@
 
     .mobile-dpad {
       pointer-events: auto;
-      padding: 8px;
+      padding: 6px 8px;
       border: 1px solid var(--border);
       border-radius: 20px;
       background: rgba(255, 255, 255, 0.86);
       box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
     }
 
-    .mobile-countdown {
-      position: fixed;
-      inset: 0;
-      z-index: 20;
-      place-items: center;
-      background: rgba(244, 245, 248, 0.58);
-      backdrop-filter: blur(6px);
-      pointer-events: none;
+    /* V závodu ukazujeme jen ← →, takže D-pad zploštíme do 1 řádku. */
+    body.is-zavod .mobile-dpad {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 10px;
     }
 
-    .mobile-countdown strong {
-      display: grid;
-      place-items: center;
-      width: min(42vw, 168px);
-      aspect-ratio: 1;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #ffffff;
-      font-size: clamp(4rem, 20vw, 7rem);
-      line-height: 1;
-      box-shadow: 0 18px 54px rgba(61, 90, 154, 0.38);
+    body.is-zavod .mobile-dpad button {
+      width: 56px;
+      height: 48px;
+    }
+
+    .game-back-btn {
+      display: none;
+      position: fixed;
+      z-index: 9;
+      top: max(12px, env(safe-area-inset-top, 0px) + 10px);
+      left: max(12px, env(safe-area-inset-left, 0px) + 10px);
+      flex: none;
+      min-width: auto;
+      padding: 0.55rem 1.15rem;
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+    }
+
+    .game-back-btn:not([hidden]) {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .win-overlay {
@@ -565,17 +652,33 @@
       z-index: 10;
     }
     .win-overlay.show { display: flex; }
+    .win-dialog {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      width: max-content;
+      max-width: 92vw;
+    }
     .win-box {
+      width: 100%;
       background: var(--panel-bg);
       padding: 2rem 2.5rem;
       border-radius: 14px;
       border: 1px solid var(--border);
       text-align: center;
       box-shadow: 0 18px 48px rgba(0,0,0,0.22);
+      box-sizing: border-box;
     }
     .win-box h2 { margin-bottom: 0.75rem; color: var(--accent); }
-    .win-box button {
+    .win-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
       margin-top: 1rem;
+    }
+    .win-actions button {
       padding: 0.6rem 1.4rem;
       font-size: 1rem;
       border: 1px solid var(--accent);
@@ -584,37 +687,37 @@
       border-radius: 10px;
       cursor: pointer;
     }
-    .win-box button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-    .race-side-panel {
-      position: fixed;
+    .win-actions button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .win-actions .is-secondary {
+      background: var(--panel-bg);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .win-actions .is-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--readout-bg);
+    }
+    .race-record-panel {
       display: none;
-      z-index: 11;
-      padding: 8px 10px;
+      width: 100%;
+      padding: 1rem 1.25rem;
       background: var(--panel-bg);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.16);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.22);
       box-sizing: border-box;
-      pointer-events: auto;
-      height: auto;
-      overflow: visible;
+      text-align: left;
     }
-    .race-side-panel.show { display: block; }
-    .race-side-panel .race-record-msg {
+    .race-record-panel.show { display: block; }
+    .race-record-panel .race-record-msg {
       font-size: 13px;
       line-height: 1.35;
       color: #07553A;
       font-weight: 500;
       margin-bottom: 8px;
     }
-    .race-side-panel label {
-      display: block;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 4px;
-      color: #333;
-    }
-    .race-side-panel input {
+    .race-record-panel input {
       width: 100%;
       padding: 6px 8px;
       font-size: 14px;
@@ -623,11 +726,11 @@
       margin-bottom: 8px;
       box-sizing: border-box;
     }
-    .race-side-panel input:focus {
+    .race-record-panel input:focus {
       outline: none;
       border-color: var(--accent);
     }
-    .race-side-panel button {
+    .race-record-panel button {
       width: 100%;
       padding: 8px;
       font-size: 14px;
@@ -638,8 +741,8 @@
       border-radius: 10px;
       cursor: pointer;
     }
-    .race-side-panel button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-    .race-side-panel .race-thanks {
+    .race-record-panel button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .race-record-panel .race-thanks {
       font-size: 13px;
       font-weight: 600;
       color: var(--accent);
@@ -664,8 +767,13 @@
       }
 
       .html-controls {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        /* 4 sloupce dělaly příliš úzké karty → překryvy. */
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: end;
+      }
+
+      .mode-setup {
+        grid-column: 1 / -1;
       }
 
       .html-controls .control-row.is-dpad {
@@ -673,8 +781,7 @@
       }
 
       .html-controls .control-row,
-      .html-controls .readout,
-      .html-controls .primary {
+      .html-controls .readout {
         min-width: 0;
       }
 
@@ -705,6 +812,10 @@
     @media (max-width: 1100px) {
       .html-controls {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .mode-setup {
+        grid-column: 1 / -1;
       }
     }
 
@@ -762,86 +873,95 @@
         display: none;
       }
 
-      body.mobile-playing .sim-topbar,
-      body.mobile-counting .sim-topbar {
+      body.mobile-playing .sim-topbar {
         display: none;
       }
 
-      body.mobile-playing .mobile-game-hud {
+      body.mobile-playing:not(.is-editing) .mobile-game-hud {
         display: flex;
       }
 
-      body.mobile-counting .mobile-countdown {
-        display: grid;
-      }
     }
   </style>
 </head>
 <body>
   <main class="app">
+    <button type="button" class="html-btn game-back-btn" id="gameBackBtn" hidden>Zpět</button>
     <header class="sim-topbar">
       <div class="sim-topbar-intro">
         <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
         <div>
-          <h1 class="panel-title">Hra Newton</h1>
-          <p class="hint">Ovládej těleso motory, nastav hmotnost a sleduj, jak se mění pohyb.</p>
+          <h1 class="panel-title">Zákon setrvačnosti</h1>
         </div>
       </div>
-      <div class="html-controls" aria-label="Ovládání hry Newton">
-        <div class="control-row">
-          <span class="control-label">Režim</span>
-          <div class="segmented mode-cards">
-            <button type="button" id="modeBludiste" aria-pressed="true">
-              <span class="option-icon mode-icon-maze" aria-hidden="true"></span>
-              <span class="option-copy">
-                <span class="option-title">Mise v poli</span>
-                <span class="option-desc">sbírej energii mezi překážkami</span>
-              </span>
-            </button>
-            <button type="button" id="modeZavod" aria-pressed="false">
-              <span class="option-icon mode-icon-race" aria-hidden="true"></span>
-              <span class="option-copy">
-                <span class="option-title">Orbitální závod</span>
-                <span class="option-desc">leť na čas ke značce a zpět</span>
-              </span>
-            </button>
+      <div class="html-controls" aria-label="Ovládání simulace Zákon setrvačnosti">
+        <div class="mode-setup">
+          <div class="control-row">
+            <span class="control-label">Režim</span>
+            <div class="segmented mode-cards">
+              <button type="button" id="modeBludiste" aria-pressed="true">
+                <span class="option-icon mode-icon-maze" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Mise v poli</span>
+                  <span class="option-desc">sbírej energii mezi překážkami</span>
+                </span>
+              </button>
+              <button type="button" id="modeZavod" aria-pressed="false">
+                <span class="option-icon mode-icon-race" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Orbitální závod</span>
+                  <span class="option-desc">leť na čas ke značce a zpět</span>
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
-        <div class="control-row" id="scenarioControls">
-          <span class="control-label">Scénář</span>
-          <div class="segmented scenario-cards">
-            <button type="button" id="scenario1" aria-pressed="true">
-              <span class="option-icon scenario-icon-field" aria-hidden="true"></span>
-              <span class="option-copy">
-                <span class="option-title">Volné pole</span>
-                <span class="option-desc">víc prostoru, několik energetických jader</span>
-              </span>
-            </button>
-            <button type="button" id="scenario2" aria-pressed="false">
-              <span class="option-icon scenario-icon-arena" aria-hidden="true"></span>
-              <span class="option-copy">
-                <span class="option-title">Úzký koridor</span>
-                <span class="option-desc">jedno jádro, přesnější manévrování</span>
-              </span>
-            </button>
+          <div class="control-row" id="scenarioControls">
+            <span class="control-label">Scénář</span>
+            <div class="segmented scenario-cards">
+              <button type="button" id="scenario1" aria-pressed="true">
+                <span class="option-icon scenario-icon-field" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Překážky</span>
+                  <span class="option-desc">více prostoru, několik náhodných překážek</span>
+                </span>
+              </button>
+              <button type="button" id="scenario2" aria-pressed="false">
+                <span class="option-icon scenario-icon-arena" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Úzký koridor</span>
+                  <span class="option-desc">jedna úzká cesta, přesnější manévrování</span>
+                </span>
+              </button>
+              <button type="button" id="scenario3" aria-pressed="false">
+                <span class="option-icon scenario-icon-open" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Volné pole</span>
+                  <span class="option-desc">otevřená plocha bez překážek</span>
+                </span>
+              </button>
+              <button type="button" id="scenario4" aria-pressed="false">
+                <span class="option-icon scenario-icon-custom" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Vlastní scénář</span>
+                  <span class="option-desc">vytvoř si vlastní rozložení v editoru</span>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="control-row" id="raceControls" hidden>
           <button type="button" class="html-btn" id="raceObstacles">Překážky vypnuté</button>
         </div>
-        <div class="control-row">
+        <div class="control-row" id="physicsControls">
           <div class="button-row">
             <button type="button" class="html-btn" id="frictionBtn">Tření vypnuto</button>
             <button type="button" class="html-btn is-active" id="vectorsBtn">Vektory zapnuté</button>
           </div>
         </div>
-        <div class="control-row" id="editorControls">
-          <button type="button" class="html-btn" id="editorBtn">Editor</button>
-        </div>
-        <div class="control-row">
+        <div class="control-row" id="massControls">
           <div class="mass-head">
             <label for="massRange">Hmotnost</label>
-            <span class="mass-value" id="massValue">3.0</span>
+            <span class="mass-value" id="massValue">3,0</span>
           </div>
           <input id="massRange" type="range" min="1" max="8" step="0.1" value="3" />
         </div>
@@ -882,22 +1002,23 @@
         <button type="button" data-dir="down" aria-label="Dolů">↓</button>
       </div>
     </div>
-    <div class="mobile-countdown" aria-hidden="true">
-      <strong id="mobileCountdownValue">3</strong>
-    </div>
   </main>
-  <div id="raceNewRecordPanel" class="race-side-panel">
-    <p class="race-record-msg">Podařilo se ti zajet závod v rekordním čase! Napiš nám svou přezdívku a my tvůj rekord zveřejníme.</p>
-    <label for="raceNickname">Přezdívka</label>
-    <input type="text" id="raceNickname" maxlength="48" placeholder="Tvoje jméno" autocomplete="nickname" />
-    <button type="button" id="raceNicknameSubmit">Odeslat</button>
-    <p class="race-thanks" id="raceNicknameThanks" hidden>Děkujeme!</p>
-  </div>
   <div class="win-overlay" id="winOverlay">
-    <div class="win-box">
-      <h2 id="winTitle">Všechny mince sebrány!</h2>
-      <p id="winMessage">Gratulujeme, vyhráváš.</p>
-      <button type="button" id="restartBtn">Hrát znovu</button>
+    <div class="win-dialog">
+      <div class="win-box">
+        <h2 id="winTitle">Všechny mince sebrány!</h2>
+        <p id="winMessage">Gratulujeme, vyhráváš.</p>
+        <div class="win-actions">
+          <button type="button" id="restartBtn">Hrát znovu</button>
+          <button type="button" class="is-secondary" id="menuReturnBtn">Návrat do menu</button>
+        </div>
+      </div>
+      <div id="raceNewRecordPanel" class="race-record-panel">
+        <p class="race-record-msg">Podařilo se ti zajet závod v rekordním čase! Napiš nám svou přezdívku a my tvůj rekord zveřejníme.</p>
+        <input type="text" id="raceNickname" maxlength="48" placeholder="Přezdívka" autocomplete="nickname" />
+        <button type="button" id="raceNicknameSubmit">Odeslat</button>
+        <p class="race-thanks" id="raceNicknameThanks" hidden>Děkujeme!</p>
+      </div>
     </div>
   </div>
   <script>
@@ -915,9 +1036,19 @@
   const W = WORLD.w, H = WORLD.h;
   const PLAYER_R = 29.5;
   const PLAYER_COLOR = '#8b7cff';
+  const MASS_COLOR_MIN = { r: 0xf0, g: 0xa3, b: 0xfc };
+  const MASS_COLOR_MAX = { r: 0x7c, g: 0x04, b: 0x7e };
   const WALL_FILL = '#25f3c2';
   const WALL_STROKE = '#0e8c78';
   const WALL_SIZE = 98;
+  const EDITOR_GRID_SCALE = 0.9;
+  const EDITOR_CELL = WALL_SIZE * EDITOR_GRID_SCALE;
+
+  function bludistePlayGridCellCount() {
+    const cols = Math.floor((PLAY.w - 2) / WALL_SIZE);
+    const rows = Math.floor((PLAY.h - 2) / WALL_SIZE);
+    return { cols, rows };
+  }
   const UI = {
     font: '"Fenomen Sans", system-ui, sans-serif',
     panel: '#ffffff',
@@ -933,6 +1064,24 @@
     shadow: 'rgba(15, 23, 42, 0.12)'
   };
   const CONTROL_PANEL = { x: 2, y: 2, w: 188, h: 842, radius: 22 };
+  const EDITOR_PANEL_CX = CONTROL_PANEL.x + CONTROL_PANEL.w / 2;
+  const EDITOR_UI_LEGACY_ORIGIN = { x: 2, y: 2 };
+
+  function editorUiShift() {
+    const margin = 14;
+    return {
+      dx: PLAY.x + (margin - viewOffsetX) / viewScale - EDITOR_UI_LEGACY_ORIGIN.x,
+      dy: PLAY.y + (margin - viewOffsetY) / viewScale - EDITOR_UI_LEGACY_ORIGIN.y
+    };
+  }
+
+  function shiftEditorUiX(x) {
+    return x + editorUiShift().dx;
+  }
+
+  function shiftEditorUiY(y) {
+    return y + editorUiShift().dy;
+  }
 
   function resizeGameCanvas() {
     const rect = wrap.getBoundingClientRect();
@@ -946,6 +1095,25 @@
     viewScale = Math.min(canvas.width / WORLD.w, canvas.height / WORLD.h);
     viewOffsetX = (canvas.width - WORLD.w * viewScale) / 2;
     viewOffsetY = (canvas.height - WORLD.h * viewScale) / 2;
+    layoutMobileRaceDpad();
+  }
+
+  function layoutMobileRaceDpad() {
+    const dpad = document.querySelector('.mobile-dpad');
+    if (!dpad) return;
+    if (!isZavod() || mobilePhase !== 'playing') {
+      dpad.classList.remove('is-axis-aligned');
+      dpad.style.left = '';
+      dpad.style.right = '';
+      return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const scale = rect.width / canvas.width;
+    const axisRightCanvas = PLAY.w * viewScale + viewOffsetX;
+    const axisRightScreen = rect.left + axisRightCanvas * scale;
+    dpad.classList.add('is-axis-aligned');
+    dpad.style.left = `${Math.round(axisRightScreen - dpad.offsetWidth)}px`;
+    dpad.style.right = 'auto';
   }
 
   const DEFAULT_WALLS = [
@@ -982,8 +1150,7 @@
 
   function buildFullPerimeterLines() {
     const lines = [];
-    const top = Math.floor(PLAY.w / WALL_SIZE);
-    const left = Math.floor(PLAY.h / WALL_SIZE);
+    const { cols: top, rows: left } = bludistePlayGridCellCount();
     for (let i = 0; i < top; i++) {
       lines.push({ side: 'top', index: i });
       lines.push({ side: 'bottom', index: i });
@@ -997,7 +1164,7 @@
 
   function buildHorizontalPerimeterLines() {
     const lines = [];
-    const top = Math.floor(PLAY.w / WALL_SIZE);
+    const { cols: top } = bludistePlayGridCellCount();
     for (let i = 0; i < top; i++) {
       lines.push({ side: 'top', index: i });
       lines.push({ side: 'bottom', index: i });
@@ -1042,6 +1209,11 @@
       coins: SCENARIO_2_COINS,
       player: SCENARIO_2_PLAYER,
       lines: SCENARIO_2_LINES
+    },
+    3: {
+      walls: [],
+      coins: DEFAULT_COINS,
+      player: { x: 742.5, y: 676 }
     }
   };
 
@@ -1058,9 +1230,7 @@
     [247, 327],
     [247, 425],
     [247, 523],
-    [247, 621],
-    [247, 719],
-    [247, 817]
+    [247, 621]
   ];
   const ZAVOD_END_WALLS = [
     [15147, 33],
@@ -1069,9 +1239,7 @@
     [15147, 327],
     [15147, 425],
     [15147, 523],
-    [15147, 621],
-    [15147, 719],
-    [15147, 817]
+    [15147, 621]
   ];
   const ZAVOD_GOAL_X = 14949;
   const ZAVOD_WALL_GOAL_GAP = ZAVOD_END_WALLS[0][0] - ZAVOD_GOAL_X;
@@ -1079,8 +1247,17 @@
   const RACE_TIMER = { x: 6, y: 55, w: 178, h: 72 };
   const RACE_OBSTACLES_TOGGLE = { x: 6, y: 150, w: 178, h: 34 };
   const RACE_RECORD_PANEL = { x: 6, y: 192, w: 178, h: 52 };
-  const RACE_NEW_RECORD_FORM = { x: 6, y: 254, w: 178, h: 200 };
-  const RACE_AXIS = { x: PLAY.x, y: PLAY.y + PLAY.h + 6, w: PLAY.w, h: 24 };
+  // Závodní plocha: 7 čtvercových dlaždic na výšku.
+  const RACE_PLAY_ROWS = 7;
+  const RACE_PLAY_H = 2 + RACE_PLAY_ROWS * WALL_SIZE;
+  // Ukazatel postupu musí být uvnitř viditelné oblasti canvasu (ne pod ní).
+  const RACE_AXIS = { x: PLAY.x, y: PLAY.y + RACE_PLAY_H + 8, w: PLAY.w, h: 36 };
+  // Panely UI kotvíme do hrací oblasti, aby byly vždy vidět.
+  const HUD_COL_W = 186;
+  const HUD_GAP = 10;
+  const HUD_STAT_H = 50;
+  const HUD_RECORD_H = 24;
+  const HUD_ACTION_H = 38;
 
   const RACE_RECORD_SEC = 40.28;
   const RACE_RECORD_NAME = 'František';
@@ -1093,16 +1270,21 @@
   const EDITOR_BTN = { x: 98, y: 348, w: 86, h: 34 };
   const VECTORS_TOGGLE = { x: 6, y: 748, w: 178, h: 34 };
   const NEW_GAME_BTN = { x: 6, y: 458, w: 178, h: 46 };
-  const EDITOR_RUN_BTN = { x: 6, y: 458, w: 178, h: 46 };
+  const EDITOR_FRAME_BTN = { x: 6, y: 452, w: 178, h: 46 };
+  const EDITOR_RUN_BTN = { x: 6, y: 508, w: 178, h: 46 };
+  const EDITOR_BACK_BTN = { x: 6, y: 564, w: 178, h: 46 };
   const MASS_SLIDER = { x: 8, y: 398, w: 174, trackY: 424, trackH: 10, thumbR: 11 };
+  const PALETTE_WALL_SIZE = 83.3;
+  const PALETTE_LINE_W = 98;
   const PALETTE = {
-    wall:   { x: 61, y: 88, w: 98, h: 98 },
-    coin:   { cx: 110, cy: 230, r: 24 },
-    line:   { x: 61, y: 300, w: 98, h: 20 },
-    circle: { cx: 110, cy: 390, r: 29.5 }
+    wall:   { x: EDITOR_PANEL_CX - PALETTE_WALL_SIZE / 2, y: 95.35, w: PALETTE_WALL_SIZE, h: PALETTE_WALL_SIZE },
+    coin:   { cx: EDITOR_PANEL_CX, cy: 230, r: 24 },
+    line:   { x: EDITOR_PANEL_CX - PALETTE_LINE_W / 2, y: 300, w: PALETTE_LINE_W, h: 20 },
+    circle: { cx: EDITOR_PANEL_CX, cy: 390, r: 29.5 }
   };
   const BORDER_LINE_WIDTH = 6;
   const FRICTION_COEF = 0.96;
+  const FRICTION_FLOOR = '#e2e2e2';
   const MASS_MIN = 1;
   const MASS_MAX = 8;
   const MASS_MID = 3;
@@ -1121,6 +1303,14 @@
       a: 0.32 + ((seed + seed3) % 100) / 160
     };
   });
+
+  function playH() {
+    return isZavod() ? RACE_PLAY_H : PLAY.h;
+  }
+
+  function playBottomY() {
+    return PLAY.y + playH();
+  }
 
   // URL webové aplikace z Google Apps Script (viz README). Prázdné = zápis vypnutý.
   const RACE_SHEET_LOG_URL = 'https://script.google.com/macros/s/AKfycbzTp7flNN5_njdoUO6gNE33npzFEAjA6QSzeVpT2ULzl8FcruEH8NZxguk5w2DvrybIPg/exec';
@@ -1149,6 +1339,9 @@
   let pointerDir = null;
   let lastTime = 0;
   let flameTime = 0;
+  let playElapsed = 0;
+  // Výchozí orientace rakety: špička doprava.
+  let shipAngleHold = Math.PI / 2;
   let won = false;
   let gameState = 'playing';
   let explosion = null;
@@ -1160,6 +1353,7 @@
   let editorCoins = [];
   let editorPlayer = null;
   let editorLines = [];
+  let editorPointer = { x: 0, y: 0, clientX: 0, clientY: 0, active: false };
   let borderLines = [];
   let raceGoal = null;
   let raceElapsed = 0;
@@ -1168,6 +1362,7 @@
   let raceObstaclesEnabled = false;
   let raceStopwatchRunning = false;
   let raceObstacleWalls = [];
+  let raceIntroSecondsLeft = 0;
   let bludisteScenario = 1;
   let pendingNewRecord = false;
   let lastUiSync = 0;
@@ -1177,19 +1372,21 @@
     modeZavod: document.getElementById('modeZavod'),
     scenario1: document.getElementById('scenario1'),
     scenario2: document.getElementById('scenario2'),
+    scenario3: document.getElementById('scenario3'),
+    scenario4: document.getElementById('scenario4'),
     scenarioControls: document.getElementById('scenarioControls'),
     raceControls: document.getElementById('raceControls'),
+    physicsControls: document.getElementById('physicsControls'),
+    massControls: document.getElementById('massControls'),
     raceObstacles: document.getElementById('raceObstacles'),
     frictionBtn: document.getElementById('frictionBtn'),
     vectorsBtn: document.getElementById('vectorsBtn'),
-    editorControls: document.getElementById('editorControls'),
-    editorBtn: document.getElementById('editorBtn'),
     massRange: document.getElementById('massRange'),
     massValue: document.getElementById('massValue'),
     newGameHtml: document.getElementById('newGameHtml'),
     speedValue: document.getElementById('speedValue'),
     mobileSpeedValue: document.getElementById('mobileSpeedValue'),
-    mobileCountdownValue: document.getElementById('mobileCountdownValue')
+    gameBackBtn: document.getElementById('gameBackBtn')
   };
 
   let mobilePhase = 'setup';
@@ -1198,27 +1395,17 @@
   function setMobilePhase(phase) {
     mobilePhase = phase;
     document.body.classList.toggle('mobile-setup', phase === 'setup');
-    document.body.classList.toggle('mobile-counting', phase === 'counting');
     document.body.classList.toggle('mobile-playing', phase === 'playing');
+    layoutMobileRaceDpad();
   }
 
   function startMobileCountdown() {
+    // Odpočítávání zrušeno – nová hra začne hned.
     clearInterval(countdownTimer);
+    countdownTimer = null;
     newGame();
-    setMobilePhase('counting');
-    let count = 3;
-    uiEls.mobileCountdownValue.textContent = String(count);
-    countdownTimer = setInterval(() => {
-      count -= 1;
-      if (count > 0) {
-        uiEls.mobileCountdownValue.textContent = String(count);
-        return;
-      }
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-      setMobilePhase('playing');
-      resizeGameCanvas();
-    }, 850);
+    setMobilePhase('playing');
+    resizeGameCanvas();
   }
 
   function setUiFont(weight, size) {
@@ -1322,34 +1509,43 @@
   }
 
   function drawPlaySurface(x, y, w, h) {
-    ctx.fillStyle = '#0b1020';
+    const frictionFloor = isBludiste() && frictionEnabled;
+    ctx.fillStyle = frictionFloor ? FRICTION_FLOOR : '#0b1020';
     ctx.fillRect(x, y, w, h);
 
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, w, h);
     ctx.clip();
-    for (const star of STAR_FIELD) {
-      if (star.x < x || star.x > x + w || star.y < y || star.y > y + h) continue;
-      ctx.fillStyle = `rgba(236, 244, 255, ${star.a})`;
-      ctx.beginPath();
-      ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
-      ctx.fill();
+    if (!frictionFloor) {
+      const starParallax = isZavod() ? raceCameraOffset() * 0.25 : 0;
+      for (const star of STAR_FIELD) {
+        const sx = x + ((((star.x - starParallax) - x) % w) + w) % w;
+        if (star.y < y || star.y > y + h) continue;
+        ctx.fillStyle = `rgba(236, 244, 255, ${star.a})`;
+        ctx.beginPath();
+        ctx.arc(sx, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
-    ctx.lineWidth = 1;
-    const grid = 98;
-    for (let gx = x + ((-raceCameraOffset()) % grid); gx < x + w; gx += grid) {
-      ctx.beginPath();
-      ctx.moveTo(gx, y);
-      ctx.lineTo(gx, y + h);
-      ctx.stroke();
-    }
-    for (let gy = y; gy < y + h; gy += grid) {
-      ctx.beginPath();
-      ctx.moveTo(x, gy);
-      ctx.lineTo(x + w, gy);
-      ctx.stroke();
+    if (!isZavod() && !isBludiste() && !frictionFloor && appMode !== 'editing') {
+      const { cols, rows } = playGridBounds();
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+      ctx.lineWidth = 1;
+      for (let c = 0; c <= cols; c++) {
+        const gx = PLAY.x + 1 + c * WALL_SIZE;
+        ctx.beginPath();
+        ctx.moveTo(gx, PLAY.y);
+        ctx.lineTo(gx, PLAY.y + rows * WALL_SIZE + 1);
+        ctx.stroke();
+      }
+      for (let r = 0; r <= rows; r++) {
+        const gy = PLAY.y + 1 + r * WALL_SIZE;
+        ctx.beginPath();
+        ctx.moveTo(PLAY.x, gy);
+        ctx.lineTo(PLAY.x + cols * WALL_SIZE + 1, gy);
+        ctx.stroke();
+      }
     }
     ctx.restore();
   }
@@ -1375,7 +1571,7 @@
     const wallX = ZAVOD_START_WALLS[0][0];
     return {
       x: wallX + WALL_SIZE + ZAVOD_WALL_GOAL_GAP + PLAYER_R + 12,
-      y: PLAY.y + PLAY.h / 2
+    y: PLAY.y + playH() / 2
     };
   }
 
@@ -1393,12 +1589,19 @@
 
   function syncHtmlControls() {
     if (!uiEls.modeBludiste) return;
+    document.body.classList.toggle('is-editing', appMode === 'editing');
+    document.body.classList.toggle('is-zavod', isZavod());
+    layoutMobileRaceDpad();
     uiEls.modeBludiste.setAttribute('aria-pressed', String(isBludiste()));
     uiEls.modeZavod.setAttribute('aria-pressed', String(isZavod()));
     uiEls.scenario1.setAttribute('aria-pressed', String(bludisteScenario === 1));
     uiEls.scenario2.setAttribute('aria-pressed', String(bludisteScenario === 2));
+    uiEls.scenario3.setAttribute('aria-pressed', String(bludisteScenario === 3));
+    uiEls.scenario4.setAttribute('aria-pressed', String(bludisteScenario === 4 || appMode === 'editing'));
     uiEls.scenarioControls.hidden = !isBludiste();
-    uiEls.raceControls.hidden = !isZavod();
+    uiEls.raceControls.hidden = true;
+    uiEls.physicsControls.hidden = isZavod();
+    uiEls.massControls.hidden = isZavod();
     uiEls.raceObstacles.textContent = raceObstaclesEnabled ? 'Překážky zapnuté' : 'Překážky vypnuté';
     uiEls.raceObstacles.classList.toggle('is-active', raceObstaclesEnabled);
     uiEls.frictionBtn.textContent = frictionEnabled ? 'Tření zapnuto' : 'Tření vypnuto';
@@ -1406,19 +1609,23 @@
     uiEls.frictionBtn.disabled = !settingsEditable || !isBludiste();
     uiEls.vectorsBtn.textContent = velocityVectorsVisible ? 'Vektory zapnuté' : 'Vektory vypnuté';
     uiEls.vectorsBtn.classList.toggle('is-active', velocityVectorsVisible);
-    uiEls.editorControls.hidden = !isBludiste();
-    uiEls.editorBtn.textContent = appMode === 'editing' ? 'Spustit editor' : 'Editor';
-    uiEls.editorBtn.classList.toggle('is-active', appMode === 'editing');
     uiEls.massRange.value = playerMass.toFixed(1);
     uiEls.massRange.disabled = !settingsEditable || !isBludiste();
-    uiEls.massValue.textContent = playerMass.toFixed(1);
+    uiEls.massValue.textContent = formatMass(playerMass);
     const speedText = String(Math.round(playerSpeed()));
     uiEls.speedValue.textContent = speedText;
     uiEls.mobileSpeedValue.textContent = speedText;
+    uiEls.gameBackBtn.hidden = !(
+      isBludiste() &&
+      mobilePhase === 'playing' &&
+      appMode === 'playing'
+    );
   }
 
   function setupBludisteLevel() {
+    if (bludisteScenario === 4) return;
     const sc = BLUDISTE_SCENARIOS[bludisteScenario];
+    if (!sc) return;
     walls = sc.walls.map(w => [...w]);
     coins = sc.coins.map(c => ({ x: c[0], y: c[1], taken: false }));
     borderLines = (sc.lines || []).map(s => ({ side: s.side, index: s.index }));
@@ -1430,12 +1637,22 @@
   }
 
   function setBludisteScenario(num) {
+    if (!isBludiste()) return;
+    if (num === 4) {
+      if (bludisteScenario === 4 && appMode !== 'editing') return;
+      bludisteScenario = 4;
+      if (appMode === 'editing') appMode = 'playing';
+      clearTrail();
+      syncHtmlControls();
+      return;
+    }
     if (bludisteScenario === num && appMode === 'playing') return;
     bludisteScenario = num;
     if (appMode === 'editing') appMode = 'playing';
     clearTrail();
     setupBludisteLevel();
     resetPlayerState();
+    syncHtmlControls();
   }
 
   function isScenarioBtn(x, y, num) {
@@ -1461,7 +1678,7 @@
     const maxWx = ZAVOD_GOAL_X - ZAVOD_WALL_GOAL_GAP - WALL_SIZE;
     const minC = Math.floor((minWx - PLAY.x - 1) / WALL_SIZE);
     const maxC = Math.floor((maxWx - PLAY.x - 1) / WALL_SIZE);
-    const rows = Math.floor((PLAY.h - 2) / WALL_SIZE);
+    const rows = Math.floor((playH() - 2) / WALL_SIZE);
     const startWallX = ZAVOD_START_WALLS[0][0];
     const endWallX = ZAVOD_END_WALLS[0][0];
     const picked = [];
@@ -1537,6 +1754,7 @@
     raceElapsed = 0;
     raceFinishTime = 0;
     raceStopwatchRunning = false;
+    raceIntroSecondsLeft = 8;
   }
 
   function formatStopwatch(sec) {
@@ -1547,42 +1765,15 @@
     return `${whole},${cc} s`;
   }
 
-  function isNewRaceRecord() {
-    return raceFinishTime > 0 && raceFinishTime < RACE_RECORD_SEC;
+  function formatClock(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const mm = Math.floor(s / 60);
+    const ss = s % 60;
+    return `${mm}:${String(ss).padStart(2, '0')}`;
   }
 
-  function layoutRaceSidePanel(el, box) {
-    const rect = canvas.getBoundingClientRect();
-    const sx = rect.width / W;
-    const sy = rect.height / H;
-    const left = rect.left + box.x * sx;
-    let top = rect.top + box.y * sy;
-    const width = box.w * sx;
-    const minH = box.h * sy;
-    const margin = 8;
-    el.style.left = `${left}px`;
-    el.style.width = `${width}px`;
-    el.style.minHeight = `${minH}px`;
-    el.style.height = 'auto';
-    el.style.maxHeight = '';
-    el.style.overflowY = 'visible';
-    el.style.fontSize = `${Math.max(11, 13 * sy)}px`;
-    const input = el.querySelector('input');
-    if (input) input.style.fontSize = `${Math.max(12, 14 * sy)}px`;
-    el.style.top = `${top}px`;
-    el.style.visibility = 'hidden';
-    const panelH = el.offsetHeight;
-    const maxTop = window.innerHeight - panelH - margin;
-    if (top > maxTop) top = Math.max(rect.top + margin, maxTop);
-    const minTop = rect.top + margin;
-    if (top < minTop) top = minTop;
-    el.style.top = `${top}px`;
-    el.style.visibility = '';
-    const spaceBelow = window.innerHeight - top - margin;
-    if (panelH > spaceBelow) {
-      el.style.maxHeight = `${spaceBelow}px`;
-      el.style.overflowY = 'auto';
-    }
+  function isNewRaceRecord() {
+    return raceFinishTime > 0 && raceFinishTime < RACE_RECORD_SEC;
   }
 
   function hideRaceNewRecordForm() {
@@ -1592,16 +1783,13 @@
     document.getElementById('raceNickname').value = '';
     document.getElementById('raceNicknameThanks').hidden = true;
     document.getElementById('raceNickname').hidden = false;
-    document.querySelector('#raceNewRecordPanel label').hidden = false;
     document.getElementById('raceNicknameSubmit').hidden = false;
     document.querySelector('#raceNewRecordPanel .race-record-msg').hidden = false;
   }
 
   function showRaceNewRecordForm() {
     pendingNewRecord = true;
-    const panel = document.getElementById('raceNewRecordPanel');
-    panel.classList.add('show');
-    layoutRaceSidePanel(panel, RACE_NEW_RECORD_FORM);
+    document.getElementById('raceNewRecordPanel').classList.add('show');
     document.getElementById('raceNickname').focus();
   }
 
@@ -1615,7 +1803,6 @@
     pendingNewRecord = false;
     document.getElementById('raceNicknameThanks').hidden = false;
     document.getElementById('raceNickname').hidden = true;
-    document.querySelector('#raceNewRecordPanel label').hidden = true;
     document.getElementById('raceNicknameSubmit').hidden = true;
     document.querySelector('#raceNewRecordPanel .race-record-msg').hidden = true;
     setTimeout(hideRaceNewRecordForm, 2200);
@@ -1707,15 +1894,74 @@
     return arr;
   }
 
-  function playGridBounds() {
+  function playGridCellCount() {
     const cols = Math.floor((PLAY.w - 2) / WALL_SIZE);
-    const rows = Math.floor((PLAY.h - 2) / WALL_SIZE);
+    const rows = Math.floor((playH() - 2) / WALL_SIZE);
+    return { cols, rows };
+  }
+
+  function playGridBounds() {
+    const { cols, rows } = isBludiste() ? bludistePlayGridCellCount() : playGridCellCount();
     return {
       cols,
       rows,
       w: 2 + cols * WALL_SIZE,
       h: 2 + rows * WALL_SIZE
     };
+  }
+
+  function editorGridLayout() {
+    const { cols, rows } = bludistePlayGridCellCount();
+    const w = 2 + cols * EDITOR_CELL;
+    const h = 2 + rows * EDITOR_CELL;
+    return {
+      cols,
+      rows,
+      w,
+      h,
+      ox: PLAY.x + PLAY.w - w,
+      oy: PLAY.y + (PLAY.h - h) / 2,
+      cell: EDITOR_CELL
+    };
+  }
+
+  function editorCellIndex(wx, wy) {
+    const { ox, oy, cell, cols, rows } = editorGridLayout();
+    const c = Math.round((wx - ox - 1) / cell);
+    const r = Math.round((wy - oy - 1) / cell);
+    return {
+      c: Math.min(cols - 1, Math.max(0, c)),
+      r: Math.min(rows - 1, Math.max(0, r))
+    };
+  }
+
+  function playCellOrigin(c, r) {
+    return [PLAY.x + 1 + c * WALL_SIZE, PLAY.y + 1 + r * WALL_SIZE];
+  }
+
+  function playCellCenter(c, r) {
+    const [wx, wy] = playCellOrigin(c, r);
+    return { x: wx + WALL_SIZE / 2, y: wy + WALL_SIZE / 2 };
+  }
+
+  function editorSegmentCoords(seg) {
+    const { ox, oy, w, h, cell } = editorGridLayout();
+    const { side, index } = seg;
+    if (side === 'top') {
+      const x = ox + index * cell;
+      return { x1: x, y1: oy, x2: x + cell, y2: oy };
+    }
+    if (side === 'bottom') {
+      const x = ox + index * cell;
+      const y = oy + h;
+      return { x1: x, y1: y, x2: x + cell, y2: y };
+    }
+    if (side === 'left') {
+      const y = oy + index * cell;
+      return { x1: ox, y1: y, x2: ox, y2: y + cell };
+    }
+    const y = oy + index * cell;
+    return { x1: ox + w, y1: y, x2: ox + w, y2: y + cell };
   }
 
   function wallGrid() {
@@ -1900,6 +2146,7 @@
     player.y = levelStart.playerY;
     player.vx = 0;
     player.vy = 0;
+    shipAngleHold = Math.PI / 2;
     coins = levelStart.coins.map(c => ({ x: c.x, y: c.y, taken: false }));
     borderLines = (levelStart.lines || []).map(s => ({ side: s.side, index: s.index }));
     motors = { up: false, down: false, left: false, right: false };
@@ -1909,6 +2156,7 @@
     gameState = 'playing';
     explosion = null;
     clearTrail();
+    playElapsed = 0;
     if (isZavod()) {
       playerMass = MASS_MID;
       resetRaceStopwatch();
@@ -1922,10 +2170,21 @@
     resetPlayerState();
   }
 
+  function returnToMenu() {
+    keys.clear();
+    pointerDir = null;
+    if (appMode === 'editing') appMode = 'playing';
+    document.getElementById('winOverlay').classList.remove('show');
+    hideRaceNewRecordForm();
+    setMobilePhase('setup');
+    syncHtmlControls();
+  }
+
   function newGame() {
     clearTrail();
-    if (isBludiste()) generateRandomLevel();
-    else setupZavodLevel();
+    if (isZavod()) setupZavodLevel();
+    else if (bludisteScenario === 4) startEditor();
+    else setupBludisteLevel();
     resetPlayerState();
   }
 
@@ -1981,44 +2240,79 @@
     return (playerMass - MASS_MIN) / (MASS_MAX - MASS_MIN);
   }
 
+  function formatMass(mass) {
+    return mass.toFixed(1).replace('.', ',');
+  }
+
+  function massColorRgb(t) {
+    const u = Math.max(0, Math.min(1, t));
+    return {
+      r: Math.round(MASS_COLOR_MIN.r + (MASS_COLOR_MAX.r - MASS_COLOR_MIN.r) * u),
+      g: Math.round(MASS_COLOR_MIN.g + (MASS_COLOR_MAX.g - MASS_COLOR_MIN.g) * u),
+      b: Math.round(MASS_COLOR_MIN.b + (MASS_COLOR_MAX.b - MASS_COLOR_MIN.b) * u)
+    };
+  }
+
+  function rgbCss(rgb) {
+    return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+  }
+
+  function rgbaCss(rgb, alpha) {
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  }
+
+  function scaleRgb(rgb, factor) {
+    return {
+      r: Math.min(255, Math.round(rgb.r * factor)),
+      g: Math.min(255, Math.round(rgb.g * factor)),
+      b: Math.min(255, Math.round(rgb.b * factor))
+    };
+  }
+
   function playerColor() {
-    const t = massT();
-    const sat = 52 + t * 18;
-    const light = 76 - t * 52;
-    return `hsl(258, ${sat}%, ${light}%)`;
+    return rgbCss(massColorRgb(massT()));
   }
 
   function playerColorDark(active) {
-    const t = massT();
-    const sat = 52 + t * 18;
-    const light = (active ? 58 : 64) - t * 34;
-    return `hsl(258, ${sat}%, ${light}%)`;
+    const base = massColorRgb(massT());
+    return rgbCss(scaleRgb(base, active ? 0.9 : 0.72));
   }
 
   function playerColorAlpha(alpha) {
-    const t = massT();
-    const sat = 52 + t * 18;
-    const light = 76 - t * 52;
-    return `hsla(258, ${sat}%, ${light}%, ${alpha})`;
+    return rgbaCss(massColorRgb(massT()), alpha);
   }
 
   function shipAngle() {
+    if (isBludiste()) return 0;
+
     const speed = playerSpeed();
-    if (speed > 4) return Math.atan2(player.vy, player.vx) + Math.PI / 2;
     const m = motorActive();
-    if (m.up) return Math.PI;
-    if (m.down) return 0;
-    if (m.left) return Math.PI / 2;
-    if (m.right) return -Math.PI / 2;
-    return 0;
+    // Orbitální závod: při zapnutí motoru z opačné strany se raketa okamžitě otočí o 180°.
+    if (isZavod()) {
+      if (m.left) shipAngleHold = Math.PI / 2;
+      else if (m.right) shipAngleHold = -Math.PI / 2;
+      return shipAngleHold;
+    }
+
+    if (speed > 4) {
+      shipAngleHold = Math.atan2(player.vy, player.vx) + Math.PI / 2;
+      return shipAngleHold;
+    }
+    if (m.up) shipAngleHold = Math.PI;
+    else if (m.down) shipAngleHold = 0;
+    else if (m.left) shipAngleHold = Math.PI / 2;
+    else if (m.right) shipAngleHold = -Math.PI / 2;
+    return shipAngleHold;
   }
 
   function playerTrailColorAlpha(alpha) {
-    const t = massT();
-    const sat = 52 + t * 18;
-    let light = 76 - t * 52;
-    light = light + (100 - light) * 0.5;
-    return `hsla(258, ${sat}%, ${light}%, ${alpha})`;
+    const base = massColorRgb(massT());
+    const trail = {
+      r: Math.round(base.r + (255 - base.r) * 0.35),
+      g: Math.round(base.g + (255 - base.g) * 0.35),
+      b: Math.round(base.b + (255 - base.b) * 0.35)
+    };
+    return rgbaCss(trail, alpha);
   }
 
   function frictionStrength() {
@@ -2056,7 +2350,7 @@
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(PLAY.x, PLAY.y, PLAY.w, PLAY.h);
+    ctx.rect(PLAY.x, PLAY.y, PLAY.w, playH());
     ctx.clip();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -2122,12 +2416,16 @@
     if (mobilePhase !== 'playing') {
       return { up: false, down: false, left: false, right: false };
     }
-    return {
-      up: keys.has('ArrowUp') || pointerDir === 'up',
-      down: keys.has('ArrowDown') || pointerDir === 'down',
-      left: keys.has('ArrowLeft') || pointerDir === 'left',
-      right: keys.has('ArrowRight') || pointerDir === 'right'
-    };
+    const up = keys.has('ArrowUp') || pointerDir === 'up';
+    const down = keys.has('ArrowDown') || pointerDir === 'down';
+    const left = keys.has('ArrowLeft') || pointerDir === 'left';
+    const right = keys.has('ArrowRight') || pointerDir === 'right';
+
+    if (isZavod()) {
+      return { up: false, down: false, left, right };
+    }
+
+    return { up, down, left, right };
   }
 
   function hitRect(px, py, r) {
@@ -2135,12 +2433,8 @@
   }
 
   function perimeterCounts() {
-    return {
-      top: Math.floor(PLAY.w / WALL_SIZE),
-      bottom: Math.floor(PLAY.w / WALL_SIZE),
-      left: Math.floor(PLAY.h / WALL_SIZE),
-      right: Math.floor(PLAY.h / WALL_SIZE)
-    };
+    const { cols, rows } = isZavod() ? playGridCellCount() : bludistePlayGridCellCount();
+    return { top: cols, bottom: cols, left: rows, right: rows };
   }
 
   function lineKey(seg) {
@@ -2155,7 +2449,7 @@
     }
     if (side === 'bottom') {
       const x = PLAY.x + index * WALL_SIZE;
-      const y = PLAY.y + PLAY.h;
+    const y = playBottomY();
       return { x1: x, y1: y, x2: x + WALL_SIZE, y2: y };
     }
     if (side === 'left') {
@@ -2185,8 +2479,7 @@
     return false;
   }
 
-  function drawBorderLine(seg) {
-    const { x1, y1, x2, y2 } = segmentCoords(seg);
+  function strokeBorderSegment(x1, y1, x2, y2) {
     ctx.save();
     ctx.shadowColor = 'rgba(37, 243, 194, 0.44)';
     ctx.shadowBlur = 12;
@@ -2205,6 +2498,38 @@
     ctx.lineTo(x2, y2);
     ctx.stroke();
     ctx.restore();
+  }
+
+  function drawBorderLine(seg) {
+    const { x1, y1, x2, y2 } = segmentCoords(seg);
+    strokeBorderSegment(x1, y1, x2, y2);
+  }
+
+  function drawEditorBorderLine(seg) {
+    const { x1, y1, x2, y2 } = editorSegmentCoords(seg);
+    strokeBorderSegment(x1, y1, x2, y2);
+  }
+
+  function snapEditorPerimeterSegment(x, y) {
+    const pad = 55;
+    const { cols, rows } = editorGridLayout();
+    let best = null;
+    let bestD = pad;
+
+    function trySeg(side, index) {
+      const { x1, y1, x2, y2 } = editorSegmentCoords({ side, index });
+      const d = distPointSegment(x, y, x1, y1, x2, y2);
+      if (d < bestD) {
+        bestD = d;
+        best = { side, index };
+      }
+    }
+
+    for (let i = 0; i < cols; i++) trySeg('top', i);
+    for (let i = 0; i < cols; i++) trySeg('bottom', i);
+    for (let i = 0; i < rows; i++) trySeg('left', i);
+    for (let i = 0; i < rows; i++) trySeg('right', i);
+    return best;
   }
 
   function snapPerimeterSegment(x, y) {
@@ -2233,7 +2558,7 @@
     const hitPad = 30;
     for (let i = editorLines.length - 1; i >= 0; i--) {
       const seg = editorLines[i];
-      const { x1, y1, x2, y2 } = segmentCoords(seg);
+      const { x1, y1, x2, y2 } = editorSegmentCoords(seg);
       if (distPointSegment(x, y, x1, y1, x2, y2) < hitPad) {
         editorLines.splice(i, 1);
         return true;
@@ -2246,7 +2571,7 @@
     const minX = PLAY.x + PLAYER_R;
     const maxX = PLAY.x + PLAY.w - PLAYER_R;
     const minY = PLAY.y + PLAYER_R;
-    const maxY = PLAY.y + PLAY.h - PLAYER_R;
+    const maxY = playBottomY() - PLAYER_R;
     let nx = x, ny = y;
     if (!isZavod()) {
       if (nx < minX) nx = maxX;
@@ -2266,6 +2591,12 @@
     if (won) return;
 
     updateRaceStopwatch(dt);
+    if (isZavod() && !raceStopwatchRunning && raceIntroSecondsLeft > 0) {
+      raceIntroSecondsLeft = Math.max(0, raceIntroSecondsLeft - dt);
+    }
+    if (gameState === 'playing') {
+      playElapsed += dt;
+    }
 
     motors = motorActive();
 
@@ -2407,13 +2738,65 @@
 
     ctx.fillStyle = UI.muted;
     setUiFont(600, 12);
-    ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.fillText('Start', a.x + 8, a.y + a.h / 2);
+    ctx.fillText('Start', a.x + 8, a.y + a.h - 12);
     ctx.textAlign = 'right';
-    ctx.fillText('Cíl', a.x + a.w - 8, a.y + a.h / 2);
+    ctx.fillText('Cíl', a.x + a.w - 8, a.y + a.h - 12);
+
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawRaceIntro() {
+    if (!isZavod() || raceStopwatchRunning || raceIntroSecondsLeft <= 0) return;
+
+    const sentences = [
+      'Dotkni se cílové čáry, leť zpět na start a zastav raketu za startovní čarou.',
+      'A snaž se to stihnout co nejrychleji!',
+    ];
+
+    const pad = 18;
+    const w = Math.min(PLAY.w - 120, 980);
+    const x = PLAY.x + (PLAY.w - w) / 2;
+    const y = PLAY.y + 84;
+    const fontSize = 20;
+    const lineH = 30;
+    const cardH = 112;
+
+    ctx.save();
+    drawUiCard(x, y, w, cardH, { radius: 18, fill: 'rgba(255, 255, 255, 0.92)', stroke: UI.border, shadow: false });
+    ctx.fillStyle = UI.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    setUiFont(700, fontSize);
+
+    const maxTextW = w - pad * 2;
+    const centerX = x + w / 2;
+    const lines = [];
+    for (const sentence of sentences) {
+      const words = sentence.split(/\s+/);
+      let line = '';
+      for (const word of words) {
+        const next = line ? `${line} ${word}` : word;
+        if (ctx.measureText(next).width <= maxTextW) {
+          line = next;
+        } else {
+          if (line) lines.push(line);
+          line = word;
+        }
+      }
+      if (line) lines.push(line);
+    }
+
+    const textBlockH = lines.length * lineH;
+    let yy = y + (cardH - textBlockH) / 2;
+    for (let i = 0; i < lines.length; i += 1) {
+      ctx.fillText(lines[i], centerX, yy);
+      yy += lineH;
+    }
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
   }
 
   function drawRaceStart() {
@@ -2427,7 +2810,7 @@
     ctx.setLineDash([14, 10]);
     ctx.beginPath();
     ctx.moveTo(sx, PLAY.y);
-    ctx.lineTo(sx, PLAY.y + PLAY.h);
+    ctx.lineTo(sx, playBottomY());
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.shadowBlur = 0;
@@ -2449,15 +2832,16 @@
   function drawRaceGoal() {
     if (!raceGoal) return;
     const sx = worldToScreenX(raceGoal.x);
+    const reached = racePhase !== 'outbound';
     ctx.save();
-    ctx.shadowColor = 'rgba(139, 124, 255, 0.5)';
+    ctx.shadowColor = reached ? 'rgba(34, 197, 94, 0.55)' : 'rgba(139, 124, 255, 0.5)';
     ctx.shadowBlur = 10;
-    ctx.strokeStyle = '#8b7cff';
+    ctx.strokeStyle = reached ? '#22c55e' : '#8b7cff';
     ctx.lineWidth = 3;
     ctx.setLineDash([14, 10]);
     ctx.beginPath();
     ctx.moveTo(sx, PLAY.y);
-    ctx.lineTo(sx, PLAY.y + PLAY.h);
+    ctx.lineTo(sx, playBottomY());
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
@@ -2557,29 +2941,91 @@
     return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
   }
 
+  function buildEditorPerimeterLines() {
+    const { cols, rows } = editorGridLayout();
+    const lines = [];
+    for (let i = 0; i < cols; i++) {
+      lines.push({ side: 'top', index: i });
+      lines.push({ side: 'bottom', index: i });
+    }
+    for (let i = 0; i < rows; i++) {
+      lines.push({ side: 'left', index: i });
+      lines.push({ side: 'right', index: i });
+    }
+    return lines;
+  }
+
+  function editorIsFullyFramed() {
+    const expected = buildEditorPerimeterLines();
+    if (editorLines.length !== expected.length) return false;
+    const keys = new Set(editorLines.map(lineKey));
+    return expected.every(seg => keys.has(lineKey(seg)));
+  }
+
+  function toggleEditorFrame() {
+    if (editorIsFullyFramed()) {
+      editorLines = [];
+    } else {
+      editorLines = buildEditorPerimeterLines();
+    }
+  }
+
+  function isEditorFrameBtn(x, y) {
+    const b = EDITOR_FRAME_BTN;
+    const bx = shiftEditorUiX(b.x);
+    const by = shiftEditorUiY(b.y);
+    return x >= bx && x <= bx + b.w && y >= by && y <= by + b.h;
+  }
+
   function isEditorRunBtn(x, y) {
     const b = EDITOR_RUN_BTN;
-    return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    const bx = shiftEditorUiX(b.x);
+    const by = shiftEditorUiY(b.y);
+    return x >= bx && x <= bx + b.w && y >= by && y <= by + b.h;
+  }
+
+  function isEditorBackBtn(x, y) {
+    const b = EDITOR_BACK_BTN;
+    const bx = shiftEditorUiX(b.x);
+    const by = shiftEditorUiY(b.y);
+    return x >= bx && x <= bx + b.w && y >= by && y <= by + b.h;
   }
 
   function inPlayArea(x, y) {
-    return x >= PLAY.x && x <= PLAY.x + PLAY.w && y >= PLAY.y && y <= PLAY.y + PLAY.h;
+    if (appMode === 'editing') {
+      const { ox, oy, w, h } = editorGridLayout();
+      return x >= ox && x <= ox + w && y >= oy && y <= oy + h;
+    }
+    return x >= PLAY.x && x <= PLAY.x + PLAY.w && y >= PLAY.y && y <= playBottomY();
+  }
+
+  function snapEditorCellFromPoint(x, y) {
+    const { cols, rows, w, h, ox, oy, cell } = editorGridLayout();
+    const c = Math.floor((x - ox - 1) / cell);
+    const r = Math.floor((y - oy - 1) / cell);
+    if (c < 0 || r < 0 || c >= cols || r >= rows) return null;
+    const wx = ox + 1 + c * cell;
+    const wy = oy + 1 + r * cell;
+    if (wx + cell > ox + w + 0.5 || wy + cell > oy + h + 0.5) return null;
+    return [wx, wy];
   }
 
   function snapWallFromPoint(x, y) {
+    if (appMode === 'editing') return snapEditorCellFromPoint(x, y);
     const c = Math.floor((x - PLAY.x - 1) / WALL_SIZE);
     const r = Math.floor((y - PLAY.y - 1) / WALL_SIZE);
     const wx = PLAY.x + 1 + c * WALL_SIZE;
     const wy = PLAY.y + 1 + r * WALL_SIZE;
     if (wx < PLAY.x || wy < PLAY.y ||
-        wx + WALL_SIZE > PLAY.x + PLAY.w || wy + WALL_SIZE > PLAY.y + PLAY.h) {
+        wx + WALL_SIZE > PLAY.x + PLAY.w || wy + WALL_SIZE > playBottomY()) {
       return null;
     }
     return [wx, wy];
   }
 
   function editorCellCenter(wx, wy) {
-    return { x: wx + WALL_SIZE / 2, y: wy + WALL_SIZE / 2 };
+    const { cell } = editorGridLayout();
+    return { x: wx + cell / 2, y: wy + cell / 2 };
   }
 
   function editorOccupantAt(wx, wy) {
@@ -2613,24 +3059,41 @@
 
   function paletteToolAt(x, y) {
     const w = PALETTE.wall;
-    if (x >= w.x - 6 && x <= w.x + w.w + 6 && y >= w.y - 6 && y <= w.y + w.h + 6) return 'wall';
+    const wx = shiftEditorUiX(w.x);
+    const wy = shiftEditorUiY(w.y);
+    if (x >= wx - 6 && x <= wx + w.w + 6 && y >= wy - 6 && y <= wy + w.h + 6) return 'wall';
     const line = PALETTE.line;
-    if (x >= line.x - 12 && x <= line.x + line.w + 12 && y >= line.y - 18 && y <= line.y + line.h + 18) {
+    const lx = shiftEditorUiX(line.x);
+    const ly = shiftEditorUiY(line.y);
+    if (x >= lx - 12 && x <= lx + line.w + 12 && y >= ly - 18 && y <= ly + line.h + 18) {
       return 'line';
     }
     const coin = PALETTE.coin;
-    if (Math.hypot(x - coin.cx, y - coin.cy) <= coin.r + 18) return 'coin';
+    const ccx = shiftEditorUiX(coin.cx);
+    const ccy = shiftEditorUiY(coin.cy);
+    if (Math.hypot(x - ccx, y - ccy) <= coin.r + 18) return 'coin';
     const circle = PALETTE.circle;
-    if (Math.hypot(x - circle.cx, y - circle.cy) <= circle.r + 18) return 'circle';
+    const cx = shiftEditorUiX(circle.cx);
+    const cy = shiftEditorUiY(circle.cy);
+    if (Math.hypot(x - cx, y - cy) <= ufoHitRadius() + 14) return 'circle';
     return null;
   }
 
   function isEditorPanelUi(x, y) {
-    return x < PLAY.x && y < EDITOR_RUN_BTN.y + EDITOR_RUN_BTN.h + 10;
+    const { dx, dy } = editorUiShift();
+    const px = EDITOR_UI_LEGACY_ORIGIN.x + dx;
+    const py = EDITOR_UI_LEGACY_ORIGIN.y + dy;
+    return (
+      x >= px &&
+      x <= px + CONTROL_PANEL.w &&
+      y >= py &&
+      y <= py + EDITOR_BACK_BTN.y + EDITOR_BACK_BTN.h + 10
+    );
   }
 
   function startEditor() {
     if (!isBludiste()) return;
+    bludisteScenario = 4;
     appMode = 'editing';
     editorTool = 'wall';
     editorWalls = [];
@@ -2645,12 +3108,15 @@
     draggingMass = false;
     clearTrail();
     document.getElementById('winOverlay').classList.remove('show');
+    setMobilePhase('playing');
+    resizeGameCanvas();
+    syncHtmlControls();
   }
 
   function handleEditorPlace(x, y) {
     if (editorTool === 'line') {
       if (toggleEditorLineAt(x, y)) return;
-      const seg = snapPerimeterSegment(x, y);
+      const seg = snapEditorPerimeterSegment(x, y);
       if (!seg) return;
       const key = lineKey(seg);
       if (!editorLines.some(s => lineKey(s) === key)) editorLines.push(seg);
@@ -2679,25 +3145,25 @@
   }
 
   function drawEditorGrid() {
-    const { cols, rows, w: gridW, h: gridH } = playGridBounds();
+    const { cols, rows, w: gridW, h: gridH, ox, oy, cell } = editorGridLayout();
     ctx.save();
     ctx.beginPath();
-    ctx.rect(PLAY.x, PLAY.y, gridW, gridH);
+    ctx.rect(ox, oy, gridW, gridH);
     ctx.clip();
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.strokeStyle = frictionEnabled ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.32)';
     ctx.lineWidth = 1;
     for (let c = 0; c <= cols; c++) {
-      const x = PLAY.x + 1 + c * WALL_SIZE;
+      const x = ox + 1 + c * cell;
       ctx.beginPath();
-      ctx.moveTo(x, PLAY.y);
-      ctx.lineTo(x, PLAY.y + gridH);
+      ctx.moveTo(x, oy);
+      ctx.lineTo(x, oy + gridH);
       ctx.stroke();
     }
     for (let r = 0; r <= rows; r++) {
-      const y = PLAY.y + 1 + r * WALL_SIZE;
+      const y = oy + 1 + r * cell;
       ctx.beginPath();
-      ctx.moveTo(PLAY.x, y);
-      ctx.lineTo(PLAY.x + gridW, y);
+      ctx.moveTo(ox, y);
+      ctx.lineTo(ox + gridW, y);
       ctx.stroke();
     }
     ctx.restore();
@@ -2705,11 +3171,28 @@
 
   function runEditorLevel() {
     if (!editorPlayer) return;
-    walls = editorWalls.map(w => [...w]);
-    coins = editorCoins.map(c => ({ x: c.x, y: c.y, taken: false }));
+    walls = editorWalls.map(([wx, wy]) => {
+      const { c, r } = editorCellIndex(wx, wy);
+      return playCellOrigin(c, r);
+    });
+    coins = editorCoins.map(coin => {
+      const cell = snapEditorCellFromPoint(coin.x, coin.y);
+      if (!cell) return { x: coin.x, y: coin.y, taken: false };
+      const { c, r } = editorCellIndex(cell[0], cell[1]);
+      const center = playCellCenter(c, r);
+      return { x: center.x, y: center.y, taken: false };
+    });
     borderLines = editorLines.map(s => ({ side: s.side, index: s.index }));
-    player.x = editorPlayer.x;
-    player.y = editorPlayer.y;
+    const playerCell = snapEditorCellFromPoint(editorPlayer.x, editorPlayer.y);
+    if (playerCell) {
+      const { c, r } = editorCellIndex(playerCell[0], playerCell[1]);
+      const center = playCellCenter(c, r);
+      player.x = center.x;
+      player.y = center.y;
+    } else {
+      player.x = editorPlayer.x;
+      player.y = editorPlayer.y;
+    }
     saveLevelStart();
     appMode = 'playing';
     resetPlayerState();
@@ -2740,7 +3223,7 @@
     ctx.fillStyle = locked ? '#8a94a5' : UI.text;
     setUiFont(650, 17);
     ctx.textAlign = 'left';
-    ctx.fillText(playerMass.toFixed(1), s.x + 96, s.y + 5);
+    ctx.fillText(formatMass(playerMass), s.x + 96, s.y + 5);
     ctx.restore();
 
     fillRoundedRect(s.x, s.trackY, s.w, s.trackH, 999, locked ? '#e8ecf2' : '#e6ebf2');
@@ -2930,15 +3413,130 @@
     );
   }
 
-  function drawSpeed() {
-    const speed = Math.round(playerSpeed());
-    drawUiSectionLabel('RYCHLOST', 12, 725);
+  function raceHudLayout() {
+    const padX = 12;
+    const gap = HUD_GAP;
+    const axisGap = 4;
+    const totalW = Math.min(HUD_COL_W * 2 + gap, PLAY.w - 24);
+    const colW = (totalW - gap) / 2;
+    const metricsX = PLAY.x + (PLAY.w - totalW) / 2;
+    const actionsX = PLAY.x + padX;
+    const statH = HUD_STAT_H;
+    const recordH = HUD_RECORD_H;
+    const actionH = HUD_ACTION_H;
+    const metricsH = statH + recordH + 6;
+
+    const hudRowY = RACE_AXIS.y + RACE_AXIS.h + axisGap;
+    const actionsY = hudRowY + 10;
+    const metricsY = hudRowY + 10;
+
+    const backBox = { x: actionsX, y: actionsY, w: colW, h: actionH };
+    const vectorsBox = { x: actionsX + colW + gap, y: actionsY, w: colW, h: actionH };
+
+    const metricsBox = { x: metricsX, y: metricsY, w: totalW, h: metricsH };
+    const speedBox = { x: metricsX, y: metricsY, w: colW, h: statH };
+    const timerBox = { x: metricsX + colW + gap, y: metricsY, w: colW, h: statH };
+    const recordBox = {
+      x: metricsX,
+      y: metricsY + statH + 3,
+      w: totalW,
+      h: recordH
+    };
+
+    const panel = {
+      x: metricsX - 8,
+      y: metricsY - 8,
+      w: totalW + 16,
+      h: metricsH + 16
+    };
+    return { speedBox, timerBox, metricsBox, recordBox, backBox, vectorsBox, panel };
+  }
+
+  function drawRaceHudStat(box, label, value, valueColor, opts) {
+    const frame = !opts || opts.frame !== false;
+    if (frame) {
+      drawUiCard(box.x, box.y, box.w, box.h, { radius: 10, fill: UI.surface, stroke: UI.border, shadow: false });
+    }
+    const centerX = box.x + box.w / 2;
     ctx.save();
-    ctx.fillStyle = UI.text;
-    setUiFont(700, 32);
-    ctx.textAlign = 'left';
-    ctx.fillText(String(speed), 12, 759);
+    ctx.fillStyle = UI.muted;
+    setUiFont(600, 12);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(label, centerX, box.y + 16);
+    ctx.fillStyle = valueColor;
+    setUiFont(800, 20);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(value, centerX, box.y + 30);
     ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+  }
+
+  function drawRaceHud() {
+    if (!isZavod()) return;
+    const L = raceHudLayout();
+
+    drawUiCard(L.panel.x, L.panel.y, L.panel.w, L.panel.h, {
+      radius: 14,
+      fill: 'rgba(255, 255, 255, 0.94)',
+      stroke: UI.border,
+      shadow: false
+    });
+
+    drawUiCard(L.metricsBox.x, L.metricsBox.y, L.metricsBox.w, L.metricsBox.h, {
+      radius: 10,
+      fill: UI.surface,
+      stroke: UI.border,
+      shadow: false
+    });
+
+    drawRaceHudStat(
+      L.speedBox,
+      'RYCHLOST',
+      String(Math.round(playerSpeed())),
+      UI.text,
+      { frame: false }
+    );
+
+    const timeText = raceStopwatchRunning ? formatStopwatch(raceElapsed) : '0,00 s';
+    drawRaceHudStat(
+      L.timerBox,
+      'ČASOMÍRA',
+      timeText,
+      raceStopwatchRunning ? UI.accent : '#8a94a5',
+      { frame: false }
+    );
+
+    const recordText = `Rekord: ${formatStopwatch(RACE_RECORD_SEC)} (${RACE_RECORD_NAME})`;
+    ctx.save();
+    ctx.strokeStyle = UI.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(L.recordBox.x + 10, L.recordBox.y);
+    ctx.lineTo(L.recordBox.x + L.recordBox.w - 10, L.recordBox.y);
+    ctx.stroke();
+    ctx.fillStyle = UI.muted;
+    setUiFont(650, 13);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(recordText, L.recordBox.x + L.recordBox.w / 2, L.recordBox.y + L.recordBox.h / 2 + 1);
+    ctx.restore();
+
+    drawUiButton(L.backBox.x, L.backBox.y, L.backBox.w, L.backBox.h, 'Zpět', {
+      fontSize: 15,
+      radius: 10,
+      fill: '#ffffff',
+      stroke: UI.border
+    });
+    drawUiButton(
+      L.vectorsBox.x,
+      L.vectorsBox.y,
+      L.vectorsBox.w,
+      L.vectorsBox.h,
+      velocityVectorsVisible ? 'Vektory zapnuté' : 'Vektory vypnuté',
+      { active: velocityVectorsVisible, fontSize: 14, radius: 10 }
+    );
   }
 
   function drawRaceTimer() {
@@ -2976,16 +3574,65 @@
     drawUiButton(b.x, b.y, b.w, b.h, 'Editor', { fontSize: 14, radius: 10 });
   }
 
+  function drawEditorFrameButton() {
+    const b = EDITOR_FRAME_BTN;
+    const active = editorIsFullyFramed();
+    drawUiButton(b.x, b.y, b.w, b.h, 'Orámovat', {
+      fontSize: 16,
+      radius: 12,
+      active,
+      fill: active ? '#e6faf1' : '#ffffff',
+      stroke: active ? '#92d8bb' : UI.border,
+      textColor: active ? UI.success : UI.text
+    });
+  }
+
   function drawEditorRunButton() {
     const b = EDITOR_RUN_BTN;
-    drawUiButton(
-      b.x,
-      b.y,
-      b.w,
-      b.h,
-      'Spustit',
-      { fontSize: 18, radius: 12, fill: '#e6faf1', stroke: '#92d8bb', textColor: UI.success }
-    );
+    const enabled = !!editorPlayer;
+    drawUiButton(b.x, b.y, b.w, b.h, 'Spustit', {
+      fontSize: 18,
+      radius: 12,
+      disabled: !enabled,
+      fill: enabled ? '#e6faf1' : null,
+      stroke: enabled ? '#92d8bb' : null,
+      textColor: enabled ? UI.success : null
+    });
+  }
+
+  function drawEditorBackButton() {
+    const b = EDITOR_BACK_BTN;
+    drawUiButton(b.x, b.y, b.w, b.h, 'Zpět', {
+      fontSize: 16,
+      radius: 12,
+      fill: '#ffffff',
+      stroke: UI.border
+    });
+  }
+
+  function drawEditorRunDisabledTooltip(clientX, clientY) {
+    const label = 'musíš vložit ufo';
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const fontSize = 22;
+    const padX = 16;
+    const padY = 12;
+    const x = (clientX - rect.left) * dpr + 18;
+    const y = (clientY - rect.top) * dpr + 18;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    setUiFont(700, fontSize);
+    const textW = ctx.measureText(label).width;
+    const boxW = textW + padX * 2;
+    const boxH = fontSize + padY * 2;
+    fillRoundedRect(x, y, boxW, boxH, 12, 'rgba(255, 255, 255, 0.96)');
+    strokeRoundedRect(x, y, boxW, boxH, 12, UI.border, 1.5);
+    ctx.fillStyle = UI.text;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + padX, y + boxH / 2 + 0.5);
+    ctx.restore();
   }
 
   function drawPaletteItem(tool, selected) {
@@ -3011,14 +3658,8 @@
       ctx.lineTo(l.x + l.w, midY);
       ctx.stroke();
     } else if (tool === 'circle') {
-      const { cx, cy, r } = PALETTE.circle;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = PLAYER_COLOR;
-      ctx.fill();
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      const { cx, cy } = PALETTE.circle;
+      drawUfoAt(cx, cy);
     }
     if (selected) {
       let bx, by, bw, bh;
@@ -3033,10 +3674,11 @@
         bw = (PALETTE.coin.r + 10) * 2;
         bh = bw;
       } else {
-        bx = PALETTE.circle.cx - PALETTE.circle.r - 10;
-        by = PALETTE.circle.cy - PALETTE.circle.r - 10;
-        bw = (PALETTE.circle.r + 10) * 2;
-        bh = bw;
+        const pad = ufoHitRadius() + 6;
+        bx = PALETTE.circle.cx - pad;
+        by = PALETTE.circle.cy - pad;
+        bw = pad * 2;
+        bh = pad * 2;
       }
       ctx.strokeStyle = UI.accent;
       ctx.lineWidth = 3;
@@ -3049,36 +3691,27 @@
     setUiFont(700, 22);
     ctx.textAlign = 'left';
     ctx.fillText('Editor', 12, 42);
-    ctx.fillStyle = UI.muted;
-    setUiFont(500, 13);
-    ctx.fillText('Klik na prázdnou buňku = položit', 12, 64);
-    ctx.fillText('Klik na prvek = odstranit', 12, 80);
 
     drawPaletteItem('wall', editorTool === 'wall');
     drawPaletteItem('coin', editorTool === 'coin');
     drawPaletteItem('line', editorTool === 'line');
     drawPaletteItem('circle', editorTool === 'circle');
 
+    drawEditorFrameButton();
     drawEditorRunButton();
-    if (!editorPlayer) {
-      ctx.fillStyle = '#b45309';
-      setUiFont(600, 13);
-      ctx.textAlign = 'center';
-      ctx.fillText('Přidej fialový kruh', 95, 520);
-      ctx.textAlign = 'left';
-    }
+    drawEditorBackButton();
   }
 
   function drawEditorPerimeterHints() {
     if (editorTool !== 'line') return;
-    const counts = perimeterCounts();
+    const { cols, rows } = editorGridLayout();
     ctx.save();
     ctx.strokeStyle = 'rgba(50, 244, 171, 0.35)';
     ctx.lineWidth = 14;
     ctx.lineCap = 'round';
     const addSide = (side, n) => {
       for (let i = 0; i < n; i++) {
-        const { x1, y1, x2, y2 } = segmentCoords({ side, index: i });
+        const { x1, y1, x2, y2 } = editorSegmentCoords({ side, index: i });
         const key = lineKey({ side, index: i });
         if (editorLines.some(s => lineKey(s) === key)) continue;
         ctx.beginPath();
@@ -3087,29 +3720,22 @@
         ctx.stroke();
       }
     };
-    addSide('top', counts.top);
-    addSide('bottom', counts.bottom);
-    addSide('left', counts.left);
-    addSide('right', counts.right);
+    addSide('top', cols);
+    addSide('bottom', cols);
+    addSide('left', rows);
+    addSide('right', rows);
     ctx.restore();
   }
 
   function drawEditorObjects() {
     drawEditorPerimeterHints();
-    for (const seg of editorLines) drawBorderLine(seg);
+    for (const seg of editorLines) drawEditorBorderLine(seg);
     for (const [wx, wy] of editorWalls) {
-      drawSpaceBlock(wx, wy);
+      drawSpaceBlock(wx, wy, EDITOR_CELL, EDITOR_CELL);
     }
     for (const coin of editorCoins) drawCoin(coin.x, coin.y);
     if (editorPlayer) {
-      const { x, y } = editorPlayer;
-      ctx.beginPath();
-      ctx.arc(x, y, PLAYER_R, 0, Math.PI * 2);
-      ctx.fillStyle = PLAYER_COLOR;
-      ctx.fill();
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      drawUfoAt(editorPlayer.x, editorPlayer.y);
     }
   }
 
@@ -3181,6 +3807,22 @@
     ctx.stroke();
   }
 
+  function drawMotorNozzleLocal(hx, hy, dirX, dirY, active) {
+    const perpX = -dirY;
+    const perpY = dirX;
+    ctx.fillStyle = playerColorDark(active);
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(hx + dirX * 7, hy + dirY * 7);
+    ctx.lineTo(hx + perpX * 6, hy + perpY * 6);
+    ctx.lineTo(hx - dirX * 3, hy - dirY * 3);
+    ctx.lineTo(hx - perpX * 6, hy - perpY * 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
   function drawExplosion() {
     if (!explosion) return;
     const { x, y, particles, time } = explosion;
@@ -3211,23 +3853,7 @@
     ctx.globalAlpha = 1;
   }
 
-  function drawPlayer() {
-    if (gameState !== 'playing') return;
-    const x = isZavod() ? raceScreenX() : player.x;
-    const y = player.y;
-    const motorDefs = [
-      { key: 'up',    dirX: 0, dirY: -1 },
-      { key: 'down',  dirX: 0, dirY: 1 },
-      { key: 'left',  dirX: -1, dirY: 0 },
-      { key: 'right', dirX: 1, dirY: 0 }
-    ];
-
-    const angle = shipAngle();
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.shadowColor = 'rgba(124, 58, 237, 0.22)';
-    ctx.shadowBlur = 6;
+  function drawRocketBody() {
     ctx.beginPath();
     ctx.moveTo(0, -PLAYER_R - 6);
     ctx.lineTo(PLAYER_R * 0.7, PLAYER_R * 0.62);
@@ -3236,13 +3862,11 @@
     ctx.closePath();
     ctx.fillStyle = PLAYER_COLOR;
     ctx.fill();
-    ctx.shadowBlur = 0;
     ctx.strokeStyle = '#111827';
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = '#9ee7ff';
-    ctx.strokeStyle = '#111827';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(0, -PLAYER_R * 0.2, PLAYER_R * 0.24, 0, Math.PI * 2);
@@ -3253,11 +3877,98 @@
     ctx.beginPath();
     ctx.roundRect(-PLAYER_R * 0.42, PLAYER_R * 0.38, PLAYER_R * 0.84, 7, 4);
     ctx.fill();
+  }
+
+  function drawUfoBody() {
+    const outerR = PLAYER_R * 1.05;
+
+    ctx.beginPath();
+    ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+    ctx.fillStyle = playerColor();
+    ctx.fill();
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, outerR * 0.76, 0, Math.PI * 2);
+    ctx.strokeStyle = playerColorDark(false);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, PLAYER_R * 0.32, 0, Math.PI * 2);
+    ctx.fillStyle = '#9ee7ff';
+    ctx.fill();
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function drawUfoAt(x, y) {
+    const nozzleDist = PLAYER_R * 0.92;
+    const motorDefs = [
+      { dirX: 0, dirY: -1 },
+      { dirX: 0, dirY: 1 },
+      { dirX: -1, dirY: 0 },
+      { dirX: 1, dirY: 0 }
+    ];
+    ctx.save();
+    ctx.translate(x, y);
+    drawUfoBody();
+    for (const m of motorDefs) {
+      drawMotorNozzleLocal(m.dirX * nozzleDist, m.dirY * nozzleDist, m.dirX, m.dirY, false);
+    }
+    ctx.restore();
+  }
+
+  function ufoHitRadius() {
+    return PLAYER_R * 1.05 + 4;
+  }
+
+  function drawPlayer() {
+    if (gameState !== 'playing') return;
+    const x = isZavod() ? raceScreenX() : player.x;
+    const y = player.y;
+    const motorDefs = [
+      { key: 'up',    dirX: 0, dirY: -1 },
+      { key: 'down',  dirX: 0, dirY: 1 },
+      { key: 'left',  dirX: -1, dirY: 0 },
+      { key: 'right', dirX: 1, dirY: 0 }
+    ];
+    const nozzleDist = isBludiste() ? PLAYER_R * 0.92 : PLAYER_R * 0.78;
+    const flameDist = PLAYER_R + 5;
+
+    const angle = shipAngle();
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.shadowColor = 'rgba(124, 58, 237, 0.22)';
+    ctx.shadowBlur = 6;
+    if (isBludiste()) drawUfoBody();
+    else drawRocketBody();
+    ctx.shadowBlur = 0;
+
+    if (isBludiste()) {
+      for (const m of motorDefs) {
+        const hx = m.dirX * nozzleDist;
+        const hy = m.dirY * nozzleDist;
+        drawMotorNozzleLocal(hx, hy, m.dirX, m.dirY, motors[m.key]);
+      }
+      let seed = 0;
+      for (const m of motorDefs) {
+        if (!motors[m.key]) continue;
+        drawFlame(m.dirX * flameDist, m.dirY * flameDist, m.dirX, m.dirY, seed);
+        seed += 2.1;
+      }
+    }
+
     ctx.restore();
 
-    let seed = 0;
-    for (const m of motorDefs) {
-      if (motors[m.key]) {
+    if (isZavod()) {
+      let seed = 0;
+      for (const m of motorDefs) {
+        if (!motors[m.key]) continue;
         const nx = x + m.dirX * (PLAYER_R + 3);
         const ny = y + m.dirY * (PLAYER_R + 3);
         drawFlame(nx, ny, m.dirX, m.dirY, seed);
@@ -3275,24 +3986,36 @@
     const offsetY = viewOffsetY;
     ctx.setTransform(viewScale, 0, 0, viewScale, offsetX - PLAY.x * viewScale, offsetY - PLAY.y * viewScale);
     if (appMode === 'editing') {
-      const { w: gridW, h: gridH } = playGridBounds();
-      drawPlaySurface(PLAY.x, PLAY.y, gridW, gridH);
+      const { w: gridW, h: gridH, ox, oy } = editorGridLayout();
+      drawPlaySurface(ox, oy, gridW, gridH);
     } else {
-      drawPlaySurface(PLAY.x, PLAY.y, PLAY.w, PLAY.h);
+      drawPlaySurface(PLAY.x, PLAY.y, PLAY.w, playH());
     }
 
     if (appMode === 'editing') {
       drawEditorGrid();
       drawEditorObjects();
+      ctx.save();
+      const { dx, dy } = editorUiShift();
+      ctx.translate(dx, dy);
+      drawControlPanelShell();
       drawEditorPanel();
       ctx.restore();
+      ctx.restore();
+      if (
+        !editorPlayer &&
+        editorPointer.active &&
+        isEditorRunBtn(editorPointer.x, editorPointer.y)
+      ) {
+        drawEditorRunDisabledTooltip(editorPointer.clientX, editorPointer.clientY);
+      }
       return;
     }
 
     if (isZavod()) {
       ctx.save();
       ctx.beginPath();
-      ctx.rect(PLAY.x, PLAY.y, PLAY.w, PLAY.h);
+      ctx.rect(PLAY.x, PLAY.y, PLAY.w, playH());
       ctx.clip();
     }
 
@@ -3312,20 +4035,15 @@
       drawRaceGoal();
     }
 
+    if (isZavod()) drawRaceIntro();
     drawTrail();
     drawPlayer();
     drawExplosion();
 
     if (isZavod()) ctx.restore();
     if (velocityVectorsVisible && gameState === 'playing') drawVelocityVectors();
+    if (isZavod()) drawRaceHud();
     if (isZavod()) drawRaceAxis();
-    if (isZavod()) {
-      if (pendingNewRecord) {
-        const f = RACE_NEW_RECORD_FORM;
-        fillRoundedRect(f.x, f.y, f.w, f.h, 12, 'rgba(61, 90, 154, 0.08)');
-        strokeRoundedRect(f.x, f.y, f.w, f.h, 12, UI.accent, 1.5);
-      }
-    }
     ctx.restore();
   }
 
@@ -3372,19 +4090,30 @@
   });
   window.addEventListener('keyup', e => keys.delete(e.key));
 
-  function setDirection(dir, active) {
-    if (mobilePhase !== 'playing') {
+    function setDirection(dir, active) {
+    if (mobilePhase !== 'playing' || appMode === 'editing') {
       pointerDir = null;
       return;
     }
+      if (isZavod() && (dir === 'up' || dir === 'down')) {
+        return;
+      }
     if (active) pointerDir = dir;
     else if (pointerDir === dir) pointerDir = null;
   }
 
   function handlePointerDown(p) {
     if (appMode === 'editing') {
+      if (isEditorFrameBtn(p.x, p.y)) {
+        toggleEditorFrame();
+        return;
+      }
       if (isEditorRunBtn(p.x, p.y)) {
-        runEditorLevel();
+        if (editorPlayer) runEditorLevel();
+        return;
+      }
+      if (isEditorBackBtn(p.x, p.y)) {
+        returnToMenu();
         return;
       }
       const tool = paletteToolAt(p.x, p.y);
@@ -3395,6 +4124,25 @@
       if (!isEditorPanelUi(p.x, p.y)) handleEditorPlace(p.x, p.y);
       return;
     }
+
+    if (isZavod()) {
+      const { backBox, vectorsBox } = raceHudLayout();
+      if (p.x >= backBox.x && p.x <= backBox.x + backBox.w && p.y >= backBox.y && p.y <= backBox.y + backBox.h) {
+        returnToMenu();
+        return;
+      }
+      if (
+        p.x >= vectorsBox.x &&
+        p.x <= vectorsBox.x + vectorsBox.w &&
+        p.y >= vectorsBox.y &&
+        p.y <= vectorsBox.y + vectorsBox.h
+      ) {
+        velocityVectorsVisible = !velocityVectorsVisible;
+        syncHtmlControls();
+        return;
+      }
+    }
+
     pointerDir = dirAt(p.x, p.y);
   }
 
@@ -3411,7 +4159,14 @@
   canvas.addEventListener('mousedown', e => handlePointerDown(canvasPos(e)));
   window.addEventListener('mouseup', handlePointerUp);
   canvas.addEventListener('mouseleave', () => {
+    editorPointer.active = false;
     if (!draggingMass) pointerDir = null;
+  });
+  canvas.addEventListener('mousemove', e => {
+    const p = canvasPos(e);
+    if (appMode === 'editing') {
+      editorPointer = { x: p.x, y: p.y, clientX: e.clientX, clientY: e.clientY, active: true };
+    }
   });
   window.addEventListener('mousemove', e => {
     if (isBludiste() && draggingMass && settingsEditable) setMassFromX(canvasPos(e).x);
@@ -3431,6 +4186,8 @@
   uiEls.modeZavod.addEventListener('click', () => setPlayMode('zavod'));
   uiEls.scenario1.addEventListener('click', () => setBludisteScenario(1));
   uiEls.scenario2.addEventListener('click', () => setBludisteScenario(2));
+  uiEls.scenario3.addEventListener('click', () => setBludisteScenario(3));
+  uiEls.scenario4.addEventListener('click', () => setBludisteScenario(4));
   uiEls.raceObstacles.addEventListener('click', () => {
     if (!isZavod()) return;
     raceObstaclesEnabled = !raceObstaclesEnabled;
@@ -3446,12 +4203,6 @@
     velocityVectorsVisible = !velocityVectorsVisible;
     syncHtmlControls();
   });
-  uiEls.editorBtn.addEventListener('click', () => {
-    if (!isBludiste()) return;
-    if (appMode === 'editing') runEditorLevel();
-    else if (gameState === 'playing') startEditor();
-    syncHtmlControls();
-  });
   uiEls.massRange.addEventListener('input', () => {
     if (!isBludiste() || !settingsEditable) return;
     playerMass = Number(uiEls.massRange.value);
@@ -3459,12 +4210,14 @@
   });
   uiEls.newGameHtml.addEventListener('click', startMobileCountdown);
   document.querySelector('.html-controls').addEventListener('click', e => {
-    const target = e.target;
-    if (!(target instanceof HTMLButtonElement)) return;
-    if (target.id === 'modeBludiste') setPlayMode('bludiste');
-    if (target.id === 'modeZavod') setPlayMode('zavod');
-    if (target.id === 'scenario1') setBludisteScenario(1);
-    if (target.id === 'scenario2') setBludisteScenario(2);
+    const btn = e.target instanceof Element ? e.target.closest('button') : null;
+    if (!(btn instanceof HTMLButtonElement)) return;
+    if (btn.id === 'modeBludiste') setPlayMode('bludiste');
+    if (btn.id === 'modeZavod') setPlayMode('zavod');
+    if (btn.id === 'scenario1') setBludisteScenario(1);
+    if (btn.id === 'scenario2') setBludisteScenario(2);
+    if (btn.id === 'scenario3') setBludisteScenario(3);
+    if (btn.id === 'scenario4') setBludisteScenario(4);
     syncHtmlControls();
   });
   document.querySelectorAll('.dpad button[data-dir]').forEach(btn => {
@@ -3481,14 +4234,14 @@
   });
 
   document.getElementById('restartBtn').addEventListener('click', resetGame);
+  document.getElementById('menuReturnBtn').addEventListener('click', returnToMenu);
+  uiEls.gameBackBtn.addEventListener('click', returnToMenu);
   document.getElementById('raceNicknameSubmit').addEventListener('click', submitRaceNickname);
   document.getElementById('raceNickname').addEventListener('keydown', e => {
     if (e.key === 'Enter') submitRaceNickname();
   });
   window.addEventListener('resize', () => {
     resizeGameCanvas();
-    const panel = document.getElementById('raceNewRecordPanel');
-    if (panel.classList.contains('show')) layoutRaceSidePanel(panel, RACE_NEW_RECORD_FORM);
   });
 
   resizeGameCanvas();
