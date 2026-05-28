@@ -1,6 +1,6 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /rysovani-app/
+  RewriteBase /optika_geometrie/rysovani-app/
 
   # Don't rewrite files or directories
   RewriteCond %{REQUEST_FILENAME} !-f

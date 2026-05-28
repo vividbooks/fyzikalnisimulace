@@ -989,8 +989,32 @@
       };
     }
 
-    /** Kategorie a dlaždice — první simulace: páka v „Síly“. */
+    /** Kategorie a dlaždice — výchozí panel: Základy. */
     const PHYSICS_CATEGORIES = [
+      {
+        id: "zaklady",
+        title: "Základy",
+        tiles: [
+          {
+            id: "graf_pohyb",
+            title: "Graf pohybu",
+            hash: "#/sim/graf_pohyb",
+            previewColor: "#e8fff4",
+          },
+          {
+            id: "mereni_delka",
+            title: "Měření délek",
+            hash: "#/sim/mereni_delka",
+            previewColor: "#eef7d8",
+          },
+          {
+            id: "mereni_hmotnost",
+            title: "Měření hmotnosti",
+            hash: "#/sim/mereni_hmotnost",
+            previewColor: "#fff2cc",
+          },
+        ],
+      },
       {
         id: "sily",
         title: "Síly",
@@ -1052,30 +1076,6 @@
         ],
       },
       {
-        id: "zaklady",
-        title: "Základy",
-        tiles: [
-          {
-            id: "graf_pohyb",
-            title: "Graf pohybu",
-            hash: "#/sim/graf_pohyb",
-            previewColor: "#e8fff4",
-          },
-          {
-            id: "mereni_delka",
-            title: "Měření délek",
-            hash: "#/sim/mereni_delka",
-            previewColor: "#eef7d8",
-          },
-          {
-            id: "mereni_hmotnost",
-            title: "Měření hmotnosti",
-            hash: "#/sim/mereni_hmotnost",
-            previewColor: "#fff2cc",
-          },
-        ],
-      },
-      {
         id: "energie",
         title: "Energie",
         tiles: [
@@ -1119,7 +1119,7 @@
       } catch (_) {
         /* ignore */
       }
-      return "sily";
+      return "zaklady";
     }
 
     function LeverCardIllustration() {

@@ -10,12 +10,40 @@
       <link rel="preconnect" href="https://api.vividbooks.com" crossorigin />
       <link rel="preconnect" href="https://app.vividbooks.com" crossorigin />
       <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-      <script type="module" crossorigin src="./assets/index-CirqRLh0.js"></script>
-      <link rel="stylesheet" crossorigin href="./assets/index-DgdolkM6.css">
+      <script>
+        (function () {
+          var path = window.location.pathname.replace(/\/index\.html$/i, "");
+          var marker = "/optika_geometrie/rysovani-app";
+          var idx = path.indexOf(marker);
+          var appRoot =
+            idx >= 0 ? path.slice(0, idx + marker.length) : path.replace(/\/$/, "") || "/";
+
+          var key = "optika_geometrie_spa_redirect";
+          var redirect = sessionStorage.getItem(key);
+          if (redirect) {
+            sessionStorage.removeItem(key);
+            var target = appRoot + (redirect.charAt(0) === "/" ? redirect : "/" + redirect);
+            if (window.location.pathname + window.location.search + window.location.hash !== target) {
+              history.replaceState(null, "", target);
+            }
+          }
+
+          var css = document.createElement("link");
+          css.rel = "stylesheet";
+          css.crossOrigin = "anonymous";
+          css.href = appRoot + "/assets/index-DgdolkM6.css";
+          document.head.appendChild(css);
+
+          var js = document.createElement("script");
+          js.type = "module";
+          js.crossOrigin = "anonymous";
+          js.src = appRoot + "/assets/index-CirqRLh0.js";
+          document.head.appendChild(js);
+        })();
+      </script>
     </head>
 
     <body>
       <div id="root"></div>
     </body>
   </html>
-  
