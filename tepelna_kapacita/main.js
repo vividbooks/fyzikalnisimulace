@@ -137,7 +137,11 @@ const FLUID_PATH_KEYFRAMES = {
 };
 
 const SNAP_RADIUS = 130;
-const POOL_BRICK_SNAP_RADIUS = 130;
+const POOL_BRICK_SNAP_RADIUS_Y = 200;
+const POOL_BRICK_SNAP_RADIUS_X = 72;
+/** Vodorovné odsazení zóny, ve které cihla přichytí k bazénu (podíl šířky bazénu). */
+const POOL_DROP_ZONE_X_INSET_RATIO = 0.16;
+const POOL_DROP_ZONE_Y_INSET_TOP_RATIO = 0.12;
 const FLAME_TIP_OFFSET_Y = 8;
 const FLAME_CENTER_X_RATIO = 87.375 / 113;
 const POOL_WATER_CENTER_X_RATIO = 68 / 136;
@@ -561,7 +565,7 @@ function spawnVessel(typeKey, left, top) {
     ({ left: x, top: y } = clampSpawnPosition(typeKey, beside.left, beside.top));
   }
 
-  const snapTarget =
+  let snapTarget =
     isPoolMode() && !config.solidBrickKey
       ? null
       : findNearestHeatSource(
@@ -598,28 +602,29 @@ function spawnVessel(typeKey, left, top) {
 
   vesselControllers.push(controller);
 
-  if (snapTarget) {
-    controller.snapToBurner(snapTarget.index);
-  } else {
-    refreshBurnerControls();
-  }
+  const finalizeSpawn = () => {
+    if (isPoolMode() && config.solidBrickKey) {
+      const poolIndex = findPoolIndexForBrick(elements.root);
+      if (poolIndex !== null) {
+        controller.snapToBurner(poolIndex);
+      } else if (snapTarget) {
+        controller.snapToBurner(snapTarget.index);
+      } else {
+        refreshBurnerControls();
+      }
+    } else if (snapTarget) {
+      controller.snapToBurner(snapTarget.index);
+    } else {
+      refreshBurnerControls();
+    }
 
-  requestAnimationFrame(() => {
     elements.root.classList.remove("vessel-draggable--no-transition");
-  });
-  updateDisplays();
-  updatePoolWaterOverlay();
-  return controller;
-}
+    updateDisplays();
+    updatePoolWaterOverlay();
+  };
 
-function isPointInWorkspace(clientX, clientY) {
-  const workspaceRect = workspaceEl.getBoundingClientRect();
-  return (
-    clientX >= workspaceRect.left &&
-    clientX <= workspaceRect.right &&
-    clientY >= workspaceRect.top &&
-    clientY <= workspaceRect.bottom
-  );
+  requestAnimationFrame(finalizeSpawn);
+  return controller;
 }
 
 function isPointInSupply(clientX, clientY) {
@@ -630,6 +635,25 @@ function isPointInSupply(clientX, clientY) {
     clientX <= rect.right &&
     clientY >= rect.top &&
     clientY <= rect.bottom
+  );
+}
+
+function isGhostOverSupply(ghost) {
+  if (!ghost || !supplyStrip) return false;
+  const rect = ghost.getBoundingClientRect();
+  return isPointInSupply(
+    rect.left + rect.width / 2,
+    rect.top + rect.height / 2
+  );
+}
+
+function getGhostWorkspacePosition(typeKey, ghost) {
+  const ghostRect = ghost.getBoundingClientRect();
+  const workspaceRect = workspaceEl.getBoundingClientRect();
+  return clampSpawnPosition(
+    typeKey,
+    ghostRect.left - workspaceRect.left,
+    ghostRect.top - workspaceRect.top
   );
 }
 
@@ -653,17 +677,31 @@ function destroyVessel(controller) {
   refreshBurnerControls();
 }
 
+const SPAWN_DRAG_THRESHOLD_PX = 6;
+
 function onSpawnPointerMove(event) {
   if (!spawnDrag || spawnDrag.pointerId !== event.pointerId) return;
 
-  const { ghost, offsetX, offsetY } = spawnDrag;
+  const { ghost, offsetX, offsetY, startX, startY } = spawnDrag;
+  if (
+    Math.hypot(event.clientX - startX, event.clientY - startY) >=
+    SPAWN_DRAG_THRESHOLD_PX
+  ) {
+    spawnDrag.didMove = true;
+  }
+
   ghost.style.left = `${event.clientX - offsetX}px`;
   ghost.style.top = `${event.clientY - offsetY}px`;
+  setSupplyDropHighlight(isGhostOverSupply(ghost));
   event.preventDefault();
 }
 
 function finishSpawnDragListeners() {
-  document.removeEventListener("pointermove", onSpawnPointerMove);
+  if (!spawnDrag?.source) return;
+  const { source } = spawnDrag;
+  source.removeEventListener("pointermove", onSpawnPointerMove);
+  source.removeEventListener("pointerup", onSpawnDragEnd);
+  source.removeEventListener("pointercancel", onSpawnDragEnd);
   document.removeEventListener("pointerup", onSpawnDragEnd);
   document.removeEventListener("pointercancel", onSpawnDragEnd);
 }
@@ -671,18 +709,20 @@ function finishSpawnDragListeners() {
 function onSpawnDragEnd(event) {
   if (!spawnDrag || spawnDrag.pointerId !== event.pointerId) return;
 
+  const { typeKey, ghost, source, didMove } = spawnDrag;
   finishSpawnDragListeners();
-
-  const { typeKey, ghost, offsetX, offsetY } = spawnDrag;
+  if (source?.hasPointerCapture?.(event.pointerId)) {
+    source.releasePointerCapture(event.pointerId);
+  }
   spawnDrag = null;
+  setSupplyDropHighlight(false);
 
-  if (isPointInWorkspace(event.clientX, event.clientY)) {
-    const workspaceRect = workspaceEl.getBoundingClientRect();
-    spawnVessel(
-      typeKey,
-      event.clientX - workspaceRect.left - offsetX,
-      event.clientY - workspaceRect.top - offsetY
-    );
+  const droppedOnSupply =
+    isGhostOverSupply(ghost) || isPointInSupply(event.clientX, event.clientY);
+
+  if (didMove && !droppedOnSupply) {
+    const { left, top } = getGhostWorkspacePosition(typeKey, ghost);
+    spawnVessel(typeKey, left, top);
   }
 
   ghost.remove();
@@ -691,6 +731,7 @@ function onSpawnDragEnd(event) {
 function startSpawnFromSupply(typeKey, event) {
   if (event.button !== undefined && event.button !== 0) return;
 
+  const source = event.currentTarget;
   const displaySize = getItemDisplaySize(typeKey, DEFAULT_SPAWN_MASS_G);
   const ghost = document.createElement("div");
   ghost.className = "spawn-ghost";
@@ -702,7 +743,7 @@ function startSpawnFromSupply(typeKey, event) {
   ghost.appendChild(handle);
   document.body.appendChild(ghost);
 
-  const sourceRect = event.currentTarget.getBoundingClientRect();
+  const sourceRect = source.getBoundingClientRect();
   const offsetX =
     ((event.clientX - sourceRect.left) / sourceRect.width) * displaySize.width;
   const offsetY =
@@ -713,12 +754,19 @@ function startSpawnFromSupply(typeKey, event) {
   spawnDrag = {
     typeKey,
     ghost,
+    source,
     pointerId: event.pointerId,
     offsetX,
     offsetY,
+    startX: event.clientX,
+    startY: event.clientY,
+    didMove: false,
   };
 
-  document.addEventListener("pointermove", onSpawnPointerMove);
+  source.setPointerCapture(event.pointerId);
+  source.addEventListener("pointermove", onSpawnPointerMove);
+  source.addEventListener("pointerup", onSpawnDragEnd);
+  source.addEventListener("pointercancel", onSpawnDragEnd);
   document.addEventListener("pointerup", onSpawnDragEnd);
   document.addEventListener("pointercancel", onSpawnDragEnd);
   event.preventDefault();
@@ -1183,43 +1231,130 @@ function isPointerOverPool(clientX, clientY, marginPx = 16) {
   return findPoolIndexAt(clientX, clientY, marginPx) !== null;
 }
 
-function isSolidBrickNearPoolBottom(rootEl, poolIndex) {
-  const poolEl = getPoolElement(poolIndex);
-  if (!isPoolMode() || !poolEl || !rootEl) {
-    return false;
-  }
-
-  const poolRect = poolEl.getBoundingClientRect();
-  const brickRect = rootEl.getBoundingClientRect();
-  const brickCenterX = (brickRect.left + brickRect.right) / 2;
-  const poolBrickCenterX =
-    poolRect.left + poolRect.width * POOL_BRICK_CENTER_X_RATIO;
-  const targetBottomY = poolRect.top + poolRect.height * POOL_BRICK_FLOOR_Y_RATIO;
-
-  const horizontalClose =
-    Math.abs(brickCenterX - poolBrickCenterX) < poolRect.width * 0.42;
-  const verticalClose =
-    Math.abs(brickRect.bottom - targetBottomY) < poolRect.height * 0.14;
-
-  return horizontalClose && verticalClose;
+function getBrickSnapRect(rootEl) {
+  const handle = rootEl?.querySelector?.(".vessel-handle");
+  const visual = rootEl?.querySelector?.(".vessel-visual");
+  return (
+    visual?.getBoundingClientRect() ??
+    handle?.getBoundingClientRect() ??
+    rootEl?.getBoundingClientRect()
+  );
 }
 
-function shouldSnapSolidBrickToPool(clientX, clientY, rootEl = null) {
-  const poolIndex = findPoolIndexAt(clientX, clientY);
-  if (!isPoolMode() || poolIndex === null) {
+function rectsOverlap(a, b, padX = 0, padY = 0) {
+  return !(
+    a.right < b.left - padX ||
+    a.left > b.right + padX ||
+    a.bottom < b.top - padY ||
+    a.top > b.bottom + padY
+  );
+}
+
+function getPoolDropZoneRect(poolRect) {
+  return {
+    left: poolRect.left + poolRect.width * POOL_DROP_ZONE_X_INSET_RATIO,
+    top: poolRect.top + poolRect.height * POOL_DROP_ZONE_Y_INSET_TOP_RATIO,
+    right: poolRect.right - poolRect.width * POOL_DROP_ZONE_X_INSET_RATIO,
+    bottom: poolRect.bottom - poolRect.height * 0.01,
+  };
+}
+
+function isPointInPoolDropZone(clientX, clientY, poolIndex) {
+  const poolRect = getPoolElement(poolIndex)?.getBoundingClientRect();
+  if (!poolRect?.width) {
     return false;
   }
 
-  if (rootEl && isSolidBrickNearPoolBottom(rootEl, poolIndex)) {
-    return true;
+  const zone = getPoolDropZoneRect(poolRect);
+  return (
+    clientX >= zone.left &&
+    clientX <= zone.right &&
+    clientY >= zone.top &&
+    clientY <= zone.bottom
+  );
+}
+
+function findPoolIndexAtDropPoint(clientX, clientY) {
+  for (let poolIndex = 0; poolIndex < sim.poolCount; poolIndex += 1) {
+    if (isPointInPoolDropZone(clientX, clientY, poolIndex)) {
+      return poolIndex;
+    }
   }
 
-  const poolRect = getPoolElement(poolIndex)?.getBoundingClientRect();
-  if (!poolRect) {
-    return true;
+  return null;
+}
+
+/** Bazén podle překryvu cihly (obdélníková zóna vody v SVG). */
+function findPoolIndexForBrick(rootEl) {
+  if (!isPoolMode() || !rootEl) {
+    return null;
   }
 
-  return clientY >= poolRect.top + poolRect.height * 0.5;
+  const brickRect = getBrickSnapRect(rootEl);
+  if (!brickRect?.width) {
+    return null;
+  }
+
+  for (let poolIndex = 0; poolIndex < sim.poolCount; poolIndex += 1) {
+    const poolRect = getPoolElement(poolIndex)?.getBoundingClientRect();
+    if (!poolRect?.width) {
+      continue;
+    }
+
+    if (rectsOverlap(brickRect, getPoolDropZoneRect(poolRect), 6, 24)) {
+      return poolIndex;
+    }
+  }
+
+  return null;
+}
+
+function resolvePoolIndexForBrickDrop(rootEl, clientX, clientY) {
+  const fromBrick = findPoolIndexForBrick(rootEl);
+  if (fromBrick !== null) {
+    return fromBrick;
+  }
+
+  const fromPointer = findPoolIndexAtDropPoint(clientX, clientY);
+  if (fromPointer !== null) {
+    return fromPointer;
+  }
+
+  const brickRect = getBrickSnapRect(rootEl);
+  if (!brickRect) {
+    return null;
+  }
+
+  return findPoolIndexAtDropPoint(
+    (brickRect.left + brickRect.right) / 2,
+    (brickRect.top + brickRect.bottom) / 2
+  );
+}
+
+function buildPoolSnapForIndex(poolIndex, solidBrickKey) {
+  const { width, height } = solidBrickKey
+    ? getSolidBrickHandleSize(solidBrickKey)
+    : { width: VESSEL_DISPLAY_WIDTH, height: VESSEL_DISPLAY_HEIGHT };
+
+  return {
+    index: poolIndex,
+    snapPos: getHeatSourceSnapPosition(
+      poolIndex,
+      width,
+      height,
+      solidBrickKey
+    ),
+    distance: 0,
+  };
+}
+
+function resolvePoolSnapTarget(rootEl, clientX, clientY, solidBrickKey) {
+  const poolIndex = resolvePoolIndexForBrickDrop(rootEl, clientX, clientY);
+  if (poolIndex === null) {
+    return null;
+  }
+
+  return buildPoolSnapForIndex(poolIndex, solidBrickKey);
 }
 
 function getPoolSnapPosition(
@@ -1321,7 +1456,18 @@ function findNearestHeatSource(
       centerY = top + vesselHeight;
       snapCenterX = snapPos.left + vesselWidth / 2;
       snapCenterY = snapPos.top + vesselHeight;
-      snapRadius = POOL_BRICK_SNAP_RADIUS;
+
+      const dx = centerX - snapCenterX;
+      const dy = centerY - snapCenterY;
+      const inRange =
+        (dx * dx) / (POOL_BRICK_SNAP_RADIUS_X * POOL_BRICK_SNAP_RADIUS_X) +
+          (dy * dy) / (POOL_BRICK_SNAP_RADIUS_Y * POOL_BRICK_SNAP_RADIUS_Y) <=
+        1;
+
+      if (inRange && (!nearest || Math.hypot(dx, dy) < nearest.distance)) {
+        nearest = { index, snapPos, distance: Math.hypot(dx, dy) };
+      }
+      continue;
     }
 
     const distance = Math.hypot(centerX - snapCenterX, centerY - snapCenterY);
@@ -1548,6 +1694,30 @@ function updateBurnerCountButtons() {
   });
 }
 
+function syncDualBurnerAlignment() {
+  if (!burnersEl) return;
+
+  if (sim.burnerCount !== 2 || isPoolMode()) {
+    burnersEl.style.removeProperty("--dual-burner-controls-space");
+    return;
+  }
+
+  const firstSlot = burnersEl.querySelector(".burner-slot");
+  const secondSlot = burnersEl.querySelector(".burner-slot--second");
+  const controls = firstSlot?.querySelector(".burner-local-controls");
+  if (!firstSlot || !secondSlot || !controls) {
+    burnersEl.style.removeProperty("--dual-burner-controls-space");
+    return;
+  }
+
+  const gapPx = Number.parseFloat(getComputedStyle(firstSlot).rowGap || "0") || 0;
+  const controlsHeight = controls.offsetHeight || 0;
+  burnersEl.style.setProperty(
+    "--dual-burner-controls-space",
+    `${Math.max(0, controlsHeight + gapPx)}px`
+  );
+}
+
 function setBurnerCount(count) {
   sim.burnerCount = count === 2 ? 2 : 1;
 
@@ -1567,6 +1737,7 @@ function setBurnerCount(count) {
   setBurnerFlame();
   updateHeatOutput();
   refreshBurnerControls();
+  syncDualBurnerAlignment();
 
   for (const controller of vesselControllers) {
     if (
@@ -2091,6 +2262,17 @@ function createVesselController({
   function beginDrag(event) {
     if (event.button !== undefined && event.button !== 0) return;
 
+    // Pojistka: když se z nějakého důvodu nedoručil předchozí pointerup,
+    // uvolníme zachycení a resetujeme stav, aby objekt nezůstal "zamrzlý".
+    if (activePointerId !== null && activePointerId !== event.pointerId) {
+      try {
+        handle.releasePointerCapture(activePointerId);
+      } catch {
+        // ignore
+      }
+      activePointerId = null;
+    }
+
     const wasSnappedToActiveHeatSource =
       fluidState.snappedBurnerIndex !== null &&
       isHeatSourceIndexActive(fluidState.snappedBurnerIndex);
@@ -2136,6 +2318,8 @@ function createVesselController({
 
     activePointerId = event.pointerId;
     handle.setPointerCapture(event.pointerId);
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", onPointerUp);
 
     if (sim.burnerOn && wasSnappedToActiveHeatSource) {
       setBurnerOn(false);
@@ -2147,6 +2331,14 @@ function createVesselController({
   }
 
   function onPointerDown(event) {
+    const interactiveSelector =
+      'input, textarea, select, option, button, a, [role="button"], [role="link"], [contenteditable="true"], .vessel-mass-control__slider, .power-control__slider';
+
+    // Klik na ovládací prvky má zůstat ovládáním (slider, tlačítka), ne drag.
+    if (event.target instanceof Element && event.target.closest(interactiveSelector)) {
+      return;
+    }
+
     beginDrag(event);
   }
 
@@ -2159,6 +2351,8 @@ function createVesselController({
   function onPointerUp(event) {
     if (activePointerId !== event.pointerId) return;
 
+    document.removeEventListener("pointerup", onPointerUp);
+    document.removeEventListener("pointercancel", onPointerUp);
     handle.releasePointerCapture(event.pointerId);
     activePointerId = null;
     setSupplyDropHighlight(false);
@@ -2169,7 +2363,36 @@ function createVesselController({
       return;
     }
 
+    const poolSnap =
+      solidBrickKey && isPoolMode()
+        ? resolvePoolSnapTarget(root, event.clientX, event.clientY, solidBrickKey)
+        : null;
+
+    root.classList.add("vessel-draggable--no-transition");
+
+    if (poolSnap) {
+      root.classList.remove("is-dragging");
+      snapToBurner(poolSnap.index);
+      requestAnimationFrame(() => {
+        root.classList.remove("vessel-draggable--no-transition");
+      });
+      return;
+    }
+
     let { left: placedLeft, top: placedTop } = finishDropOnWorkspace();
+
+    if (solidBrickKey && isPoolMode()) {
+      const retryPoolSnap = resolvePoolSnapTarget(
+        root,
+        event.clientX,
+        event.clientY,
+        solidBrickKey
+      );
+      if (retryPoolSnap) {
+        snapToBurner(retryPoolSnap.index);
+        return;
+      }
+    }
 
     if (
       isPoolMode() &&
@@ -2182,33 +2405,9 @@ function createVesselController({
       return;
     }
 
-    let snapTarget = findSnapTarget(placedLeft, placedTop);
-    const poolIndexAtPointer = findPoolIndexAt(event.clientX, event.clientY);
-    const nearPoolBottom =
-      solidBrickKey &&
-      isPoolMode() &&
-      poolIndexAtPointer !== null &&
-      isSolidBrickNearPoolBottom(root, poolIndexAtPointer);
-
-    if (nearPoolBottom) {
-      const { width, height } = getVesselSize();
-      snapTarget = {
-        index: poolIndexAtPointer,
-        snapPos: getHeatSourceSnapPosition(
-          poolIndexAtPointer,
-          width,
-          height,
-          solidBrickKey
-        ),
-        distance: 0,
-      };
-    }
-
+    const snapTarget = findSnapTarget(placedLeft, placedTop);
     const allowSnap =
-      snapTarget &&
-      (!isPoolMode() ||
-        (solidBrickKey &&
-          shouldSnapSolidBrickToPool(event.clientX, event.clientY, root)));
+      snapTarget && (!isPoolMode() || Boolean(solidBrickKey));
 
     if (allowSnap) {
       snapToBurner(snapTarget.index);
@@ -2256,7 +2455,10 @@ function createVesselController({
     },
   };
 
-  handle.addEventListener("pointerdown", onPointerDown);
+  // Chytání a tahání musí fungovat i kliknutím na text/staty vedle objektu.
+  // V režimu ponoření do bazénu má root `pointer-events: none`, proto musí zůstat i listener na handle.
+  root.addEventListener("pointerdown", onPointerDown, { capture: true });
+  handle.addEventListener("pointerdown", onPointerDown, { capture: true });
   handle.addEventListener("pointermove", onPointerMove);
   handle.addEventListener("pointerup", onPointerUp);
   handle.addEventListener("pointercancel", (event) => {
@@ -2528,6 +2730,7 @@ if (workspaceEl && setupEl) {
   initWorkspaceTouchLock();
 
   window.addEventListener("resize", () => {
+    syncDualBurnerAlignment();
     for (const controller of vesselControllers) {
       controller.onResize();
     }

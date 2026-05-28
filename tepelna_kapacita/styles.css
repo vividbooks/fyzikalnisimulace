@@ -19,6 +19,7 @@ body {
   color: #171923;
   font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @font-face {
@@ -199,6 +200,10 @@ body {
   touch-action: none;
   overscroll-behavior: none;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .setup,
@@ -242,6 +247,11 @@ body {
   z-index: 2;
   user-select: none;
   transition: left 0.22s ease-out, top 0.22s ease-out;
+}
+
+/* Cihly nad podkladem bazénu i předním rámečkem (rámeček z-index 7). */
+.scene-workspace:has(.setup[data-heat-source="pool"]) .vessel-draggable {
+  z-index: 8;
 }
 
 .scene-workspace .vessel-draggable--no-transition {
@@ -411,6 +421,7 @@ body {
   /* střed kádinky 160px – šířka hořáku 226px + mezera mezi nádobami */
   gap: max(2.5rem, calc(226px - 160px + 2.5rem));
   flex-shrink: 0;
+  --dual-burner-controls-space: 0px;
 }
 
 .burners:not(.burners--dual) {
@@ -420,6 +431,11 @@ body {
 
 .burners:not(.burners--dual) .burner-slot--second {
   display: none;
+}
+
+.burners--dual .burner-slot--second {
+  /* dorovná výšku levého slotu (který má ovládání výkonu) */
+  padding-bottom: var(--dual-burner-controls-space);
 }
 
 .burners[hidden] {
@@ -532,6 +548,7 @@ body {
 .pools--dual .pool-slot:first-child .pool-water-output {
   left: auto;
   right: calc(100% + 1rem);
+  text-align: right;
 }
 
 .pool-water-output__row {
@@ -590,7 +607,6 @@ body {
 }
 
 .vessel-draggable--pool-immersive {
-  z-index: 4;
   pointer-events: none;
 }
 
@@ -652,7 +668,7 @@ body {
 }
 
 .vessel-draggable--pool-immersive .vessel-temp-badge {
-  z-index: 7;
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -777,6 +793,15 @@ body {
 .burner-slot {
   position: relative;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.burner-figure {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .burner {
@@ -835,9 +860,7 @@ body {
 }
 
 .burner-local-controls {
-  position: absolute;
-  left: calc(100% + 0.9rem);
-  bottom: 2.4rem;
+  position: relative;
   z-index: 8;
   width: min(14.5rem, 44vw);
   display: grid;
@@ -850,12 +873,12 @@ body {
   pointer-events: auto;
 }
 
-.setup[data-heat-source="pool"] .burner-local-controls {
-  display: none;
+.burners--dual .burner-slot:first-child .burner-local-controls {
+  transform: translateX(calc(clamp(1.25rem, 4.5vw, 3.25rem) + 150px));
 }
 
-.burners--dual .burner-slot:first-child .burner-local-controls {
-  left: calc(100% + 0.9rem);
+.setup[data-heat-source="pool"] .burner-local-controls {
+  display: none;
 }
 
 .power-control__slider {
@@ -882,6 +905,11 @@ body {
   font-weight: 800;
   cursor: pointer;
   transition: color 0.15s ease;
+}
+
+.burner-toggle__state {
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 
 .burner-toggle:hover:not(:disabled) {
@@ -937,19 +965,6 @@ body {
   background: #eef0f5;
 }
 
-.burner-toggle-hint {
-  max-width: none;
-  margin: -0.1rem 0 0;
-  color: #6b7280;
-  font-size: 0.76rem;
-  line-height: 1.25;
-  text-align: left;
-}
-
-.burner-toggle:not(:disabled) + .burner-toggle-hint {
-  display: none;
-}
-
 @media (max-width: 760px) {
   html,
   body {
@@ -974,10 +989,7 @@ body {
   }
 
   .burner-local-controls {
-    left: 50%;
-    bottom: calc(100% + 0.75rem);
     width: min(15rem, 78vw);
-    transform: translateX(-50%);
   }
 }
 

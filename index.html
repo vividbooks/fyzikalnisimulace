@@ -1074,9 +1074,9 @@
         title: "Energie",
         tiles: [
           {
-            id: "tepelna_kapacita_puvodni",
+            id: "tepelna_kapacita",
             title: "Tepelná kapacita",
-            hash: "#/sim/tepelna_kapacita_puvodni",
+            hash: "#/sim/tepelna_kapacita",
             previewColor: "#fff3e6",
           },
         ],
@@ -1091,7 +1091,6 @@
       graf_pohyb: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
-      tepelna_kapacita_puvodni: "energie",
       tepelna_kapacita: "energie",
       skutecny_obraz: "optika",
       cocky: "optika",
@@ -1374,7 +1373,7 @@
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
-      if (tileId === "tepelna_kapacita" || tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
+      if (tileId === "tepelna_kapacita") return html`<${TepelnaKapacitaCardIllustration} />`;
       return null;
     }
 

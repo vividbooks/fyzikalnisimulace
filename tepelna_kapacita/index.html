@@ -15,9 +15,6 @@
         <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
         <div class="panel-copy">
           <h1 class="panel-title">Tepelná kapacita</h1>
-          <p class="panel-hint">
-            Přetáhni objekt z panelu na pracovní plochu vpravo. Na hořáku pak můžeš spustit ohřev.
-          </p>
         </div>
 
         <div class="panel-section">
@@ -182,14 +179,22 @@
         <div class="setup" id="setup" data-heat-source="burner">
           <div class="burners" id="burners">
             <div class="burner-slot">
-              <object
-                class="burner"
-                type="image/svg+xml"
-                data="assets/burner.svg"
-                width="113"
-                height="116"
-                aria-label="Hořák 1"
-              ></object>
+              <div class="burner-figure">
+                <object
+                  class="burner"
+                  type="image/svg+xml"
+                  data="assets/burner.svg"
+                  width="113"
+                  height="116"
+                  aria-label="Hořák 1"
+                ></object>
+                <div class="heat-outputs" data-burner-index="0" hidden>
+                  <div class="heat-output" aria-live="polite">
+                    <span class="heat-output__label"></span>
+                    <span class="heat-output__value">0 J</span>
+                  </div>
+                </div>
+              </div>
               <div class="burner-local-controls">
                 <label class="power-control" for="burner-power">
                   <span class="power-control__label" id="burner-power-label">Výkon hořáku: 500 W</span>
@@ -213,36 +218,29 @@
                   id="burner-toggle"
                   class="burner-toggle"
                   aria-pressed="false"
-                  aria-describedby="burner-toggle-hint"
                   aria-label="Zapnout hořák"
                 >
-                  <span class="burner-toggle__label">Hořák</span>
+                  <span class="burner-toggle__state burner-toggle__state--off">Vypnuto</span>
                   <span class="burner-toggle__switch" aria-hidden="true"></span>
+                  <span class="burner-toggle__state burner-toggle__state--on">Zapnuto</span>
                 </button>
-                <p class="burner-toggle-hint" id="burner-toggle-hint">
-                  Nejdřív přetáhni nádobu nebo cihlu na hořák.
-                </p>
-              </div>
-              <div class="heat-outputs" data-burner-index="0" hidden>
-                <div class="heat-output" aria-live="polite">
-                  <span class="heat-output__label"></span>
-                  <span class="heat-output__value">0 J</span>
-                </div>
               </div>
             </div>
             <div class="burner-slot burner-slot--second">
-              <object
-                class="burner"
-                type="image/svg+xml"
-                data="assets/burner.svg"
-                width="113"
-                height="116"
-                aria-label="Hořák 2"
-              ></object>
-              <div class="heat-outputs" data-burner-index="1" hidden>
-                <div class="heat-output" aria-live="polite">
-                  <span class="heat-output__label"></span>
-                  <span class="heat-output__value">0 J</span>
+              <div class="burner-figure">
+                <object
+                  class="burner"
+                  type="image/svg+xml"
+                  data="assets/burner.svg"
+                  width="113"
+                  height="116"
+                  aria-label="Hořák 2"
+                ></object>
+                <div class="heat-outputs" data-burner-index="1" hidden>
+                  <div class="heat-output" aria-live="polite">
+                    <span class="heat-output__label"></span>
+                    <span class="heat-output__value">0 J</span>
+                  </div>
                 </div>
               </div>
             </div>
