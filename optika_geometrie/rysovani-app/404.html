@@ -5,7 +5,35 @@
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
       <title>Geometrická optika</title>
-      <style>body{padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+      <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+      <meta http-equiv="Pragma" content="no-cache" />
+      <meta http-equiv="Expires" content="0" />
+      <style>
+        body {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          margin: 0;
+        }
+        #optika-hub-nav {
+          padding: 24px 24px 0;
+          max-width: 1320px;
+          margin: 0 auto;
+          background: #ffffff;
+        }
+        #optika-hub-back {
+          font-family: "Fenomen Sans", system-ui, sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          text-decoration: none;
+          padding: 10px 14px;
+          border-radius: 9999px;
+          background: #eceff5;
+          color: #171923;
+          border: 1px solid #e8eaef;
+          white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+        }
+      </style>
       <link rel="preconnect" href="https://jjpiguuubvmiobmixwgh.supabase.co" crossorigin />
       <link rel="preconnect" href="https://api.vividbooks.com" crossorigin />
       <link rel="preconnect" href="https://app.vividbooks.com" crossorigin />
@@ -31,19 +59,44 @@
           var css = document.createElement("link");
           css.rel = "stylesheet";
           css.crossOrigin = "anonymous";
-          css.href = appRoot + "/assets/index-DgdolkM6.css";
+          var assetV = "20260529-hub-center";
+          css.href = appRoot + "/assets/index-DgdolkM6.css?v=" + assetV;
           document.head.appendChild(css);
+
+          var hubIdx = path.indexOf("/optika_geometrie/");
+          var hubHref = (hubIdx >= 0 ? path.slice(0, hubIdx) : "") + "/index.html";
+          var hubLink = document.getElementById("optika-hub-back");
+          if (hubLink) hubLink.setAttribute("href", hubHref);
 
           var js = document.createElement("script");
           js.type = "module";
           js.crossOrigin = "anonymous";
           js.src = appRoot + "/assets/index-CirqRLh0.js";
           document.head.appendChild(js);
+
+          var root = document.getElementById("root");
+          var hubNav = document.getElementById("optika-hub-nav");
+          if (root && hubNav) {
+            var hideHubNavIfReactRendered = function () {
+              var reactHub = root.querySelector("a[href*='index.html']");
+              if (reactHub && (reactHub.textContent || "").indexOf("Přehled") >= 0) {
+                hubNav.style.display = "none";
+              }
+            };
+            hideHubNavIfReactRendered();
+            new MutationObserver(hideHubNavIfReactRendered).observe(root, {
+              childList: true,
+              subtree: true,
+            });
+          }
         })();
       </script>
     </head>
 
     <body>
+      <nav id="optika-hub-nav" aria-label="Navigace">
+        <a id="optika-hub-back" href="/index.html">← Přehled simulací</a>
+      </nav>
       <div id="root"></div>
     </body>
   </html>
