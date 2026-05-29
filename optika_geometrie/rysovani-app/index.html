@@ -70,14 +70,28 @@
           document.head.appendChild(js);
 
           function setupOptikaHubNav() {
+            var hubNav = document.getElementById("optika-hub-nav");
+            if (!hubNav) return;
+
+            var afterApp = path
+              .slice(appRoot.length)
+              .replace(/^\//, "")
+              .split("?")[0]
+              .replace(/\/$/, "");
+            var isMenuRoute = !afterApp || afterApp === "menu-rysovani";
+
+            if (!isMenuRoute) {
+              hubNav.style.display = "none";
+              return;
+            }
+
             var hubIdx = path.indexOf("/optika_geometrie/");
             var hubHref = (hubIdx >= 0 ? path.slice(0, hubIdx) : "") + "/index.html";
             var hubLink = document.getElementById("optika-hub-back");
             if (hubLink) hubLink.setAttribute("href", hubHref);
 
             var root = document.getElementById("root");
-            var hubNav = document.getElementById("optika-hub-nav");
-            if (!root || !hubNav) return;
+            if (!root) return;
 
             var hideHubNavIfReactRendered = function () {
               var reactHub = root.querySelector("a[href*='index.html']");
