@@ -1,5 +1,5 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./FreeGeometryEditor-BpPJHxgV.js","./index-CirqRLh0.js","./index-DgdolkM6.css","./slider-CRhdl_vq.js","./mouse-pointer-2-B0ODaAdM.js","./zoom-out-D3kbsEU6.js"])))=>i.map(i=>d[i]);
-import{c as Jt,r as b,j as e,I as Ms,o as Ls,X as Xn,R as pt,T as Ss,P as Ws,t as At,u as Rs,g as Ns,e as Es,d as Vs,f as zs,_ as $s}from"./index-CirqRLh0.js";import{Z as Is,a as As}from"./zoom-out-D3kbsEU6.js";import{M as Cn,H as Bn,E as Cs}from"./mouse-pointer-2-B0ODaAdM.js";import{p as Pn}from"./geometrySubmissionCodec-DMXGC_dM.js";/**
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./FreeGeometryEditor-BpPJHxgV.js?v=20260529-center-v2","./index-CirqRLh0.js?v=20260529-center-v2","./index-DgdolkM6.css","./slider-CRhdl_vq.js","./mouse-pointer-2-B0ODaAdM.js","./zoom-out-D3kbsEU6.js"])))=>i.map(i=>d[i]);
+import{c as Jt,r as b,j as e,I as Ms,o as Ls,X as Xn,R as pt,T as Ss,P as Ws,t as At,u as Rs,g as Ns,e as Es,d as Vs,f as zs,_ as $s}from"./index-CirqRLh0.js?v=20260529-center-v2";import{Z as Is,a as As}from"./zoom-out-D3kbsEU6.js";import{M as Cn,H as Bn,E as Cs}from"./mouse-pointer-2-B0ODaAdM.js";import{p as Pn}from"./geometrySubmissionCodec-DMXGC_dM.js";/**
  * @license lucide-react v0.487.0 - ISC
  *
  * This source code is licensed under the ISC license.

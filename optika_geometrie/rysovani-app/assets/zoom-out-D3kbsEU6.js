@@ -1,4 +1,4 @@
-import{c as e}from"./index-CirqRLh0.js";/**
+import{c as e}from"./index-CirqRLh0.js?v=20260529-center-v2";/**
  * @license lucide-react v0.487.0 - ISC
  *
  * This source code is licensed under the ISC license.
