@@ -63,20 +63,22 @@
           css.href = appRoot + "/assets/index-DgdolkM6.css?v=" + assetV;
           document.head.appendChild(css);
 
-          var hubIdx = path.indexOf("/optika_geometrie/");
-          var hubHref = (hubIdx >= 0 ? path.slice(0, hubIdx) : "") + "/index.html";
-          var hubLink = document.getElementById("optika-hub-back");
-          if (hubLink) hubLink.setAttribute("href", hubHref);
-
           var js = document.createElement("script");
           js.type = "module";
           js.crossOrigin = "anonymous";
           js.src = appRoot + "/assets/index-CirqRLh0.js";
           document.head.appendChild(js);
 
-          var root = document.getElementById("root");
-          var hubNav = document.getElementById("optika-hub-nav");
-          if (root && hubNav) {
+          function setupOptikaHubNav() {
+            var hubIdx = path.indexOf("/optika_geometrie/");
+            var hubHref = (hubIdx >= 0 ? path.slice(0, hubIdx) : "") + "/index.html";
+            var hubLink = document.getElementById("optika-hub-back");
+            if (hubLink) hubLink.setAttribute("href", hubHref);
+
+            var root = document.getElementById("root");
+            var hubNav = document.getElementById("optika-hub-nav");
+            if (!root || !hubNav) return;
+
             var hideHubNavIfReactRendered = function () {
               var reactHub = root.querySelector("a[href*='index.html']");
               if (reactHub && (reactHub.textContent || "").indexOf("Přehled") >= 0) {
@@ -88,6 +90,12 @@
               childList: true,
               subtree: true,
             });
+          }
+
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", setupOptikaHubNav);
+          } else {
+            setupOptikaHubNav();
           }
         })();
       </script>
