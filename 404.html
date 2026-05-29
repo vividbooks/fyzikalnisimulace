@@ -9,13 +9,36 @@
         var marker = "/optika_geometrie/rysovani-app";
         var idx = path.indexOf(marker);
         if (idx === -1) return;
+
         var appBase = path.slice(0, idx + marker.length);
-        var inAppPath = path.slice(idx + marker.length) || "/";
-        sessionStorage.setItem(
-          "optika_geometrie_spa_redirect",
-          inAppPath + window.location.search + window.location.hash
-        );
-        window.location.replace(appBase + "/index.html");
+        var targetUrl = path + window.location.search + window.location.hash;
+
+        function fallbackRedirect() {
+          var inAppPath = path.slice(idx + marker.length) || "/";
+          sessionStorage.setItem(
+            "optika_geometrie_spa_redirect",
+            inAppPath + window.location.search + window.location.hash
+          );
+          window.location.replace(appBase + "/index.html");
+        }
+
+        fetch(appBase + "/index.html", { cache: "no-store" })
+          .then(function (response) {
+            if (!response.ok) throw new Error("index.html fetch failed");
+            return response.text();
+          })
+          .then(function (html) {
+            document.open();
+            document.write(html);
+            document.close();
+            if (
+              window.location.pathname + window.location.search + window.location.hash !==
+              targetUrl
+            ) {
+              history.replaceState(null, "", targetUrl);
+            }
+          })
+          .catch(fallbackRedirect);
       })();
     </script>
   </head>
