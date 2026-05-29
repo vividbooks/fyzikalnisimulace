@@ -282,7 +282,12 @@
       padding: 10px 12px;
     }
 
-    .segmented.mode-cards,
+    .segmented.mode-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     .segmented.scenario-cards {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -446,6 +451,36 @@
       opacity: 0.55;
     }
 
+    .mode-icon-fight::before,
+    .mode-icon-fight::after {
+      content: "";
+      position: absolute;
+      color: var(--accent);
+    }
+
+    .mode-icon-fight::before {
+      left: 8px;
+      top: 8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 2px currentColor;
+      background:
+        linear-gradient(currentColor 0 0) 50% 100% / 2px 8px no-repeat,
+        linear-gradient(currentColor 0 0) 100% 50% / 5px 2px no-repeat,
+        linear-gradient(currentColor 0 0) 0 50% / 5px 2px no-repeat;
+    }
+
+    .mode-icon-fight::after {
+      right: 7px;
+      bottom: 7px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.7;
+    }
+
     .scenario-icon-field::before,
     .scenario-icon-field::after,
     .scenario-icon-arena::before,
@@ -586,6 +621,44 @@
     .dpad button[data-dir="right"] { grid-column: 3; grid-row: 2; }
     .dpad button[data-dir="down"] { grid-column: 2; grid-row: 3; }
 
+    .dpad-drag-handle {
+      grid-column: 2;
+      grid-row: 2;
+      display: none;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      min-width: 0;
+      padding: 0;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .dpad-drag-handle svg {
+      width: 30px;
+      height: 30px;
+      display: block;
+      pointer-events: none;
+    }
+
+    .dpad-drag-handle:active,
+    .dpad.is-panel-dragging .dpad-drag-handle {
+      cursor: grabbing;
+    }
+
+    body.mobile-playing:not(.is-zavod) .dpad-float-panel .dpad-drag-handle {
+      display: grid;
+    }
+
+    .dpad-float-panel.is-drag-positioned {
+      position: fixed;
+      z-index: 9;
+      margin: 0;
+    }
+
     body.is-zavod .dpad button[data-dir="up"],
     body.is-zavod .dpad button[data-dir="down"] {
       display: none;
@@ -677,7 +750,8 @@
       z-index: 11;
       top: max(12px, env(safe-area-inset-top, 0px) + 10px);
       left: max(12px, env(safe-area-inset-left, 0px) + 10px);
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
       gap: 8px;
       pointer-events: none;
     }
@@ -685,6 +759,43 @@
     .game-play-actions:not([hidden]) {
       display: flex;
       pointer-events: auto;
+    }
+
+    .game-play-actions-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .game-play-actions-buttons .html-btn {
+      pointer-events: auto;
+    }
+
+    .game-play-readout {
+      pointer-events: none;
+      display: grid;
+      gap: 2px;
+      min-width: 5.5rem;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+    }
+
+    .game-play-readout strong {
+      font-size: 1.65rem;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    body.is-boj.mobile-playing .mobile-game-hud .mobile-speed {
+      display: none;
+    }
+
+    body.is-boj.mobile-playing .mobile-game-hud {
+      justify-content: flex-end;
     }
 
     .game-play-actions .html-btn {
@@ -700,6 +811,12 @@
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
+    }
+
+    .game-play-pause-btn.is-active {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
     }
 
     .win-overlay {
@@ -947,8 +1064,17 @@
 <body>
   <main class="app">
     <div class="game-play-actions" id="gamePlayActions" hidden>
-      <button type="button" class="html-btn" id="gameBackBtn">Zpět</button>
-      <button type="button" class="html-btn primary" id="gameNewGameBtn">Nová hra</button>
+      <div class="game-play-actions-buttons">
+        <button type="button" class="html-btn" id="gameBackBtn">Zpět</button>
+        <button type="button" class="html-btn primary" id="gameNewGameBtn">Nová hra</button>
+      </div>
+      <div class="game-play-readout readout" id="bojAmmoPanel" hidden>
+        <span class="control-label">Skóre</span>
+        <strong id="bojScoreValue">0 : 0</strong>
+        <span class="control-label" id="bojAmmoLabel">Zásobník</span>
+        <strong id="bojAmmoValue">30</strong>
+      </div>
+      <button type="button" class="html-btn game-play-pause-btn" id="bojTrainingPauseBtn" hidden>Pauza</button>
     </div>
     <header class="sim-topbar">
       <div class="sim-topbar-intro">
@@ -974,6 +1100,13 @@
                 <span class="option-copy">
                   <span class="option-title">Orbitální závod</span>
                   <span class="option-desc">leť na čas ke značce a zpět</span>
+                </span>
+              </button>
+              <button type="button" id="modeBoj" aria-pressed="false">
+                <span class="option-icon mode-icon-fight" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Bitva</span>
+                  <span class="option-desc">trénink nebo souboj 1v1 ve vesmíru</span>
                 </span>
               </button>
             </div>
@@ -1011,6 +1144,53 @@
               </button>
             </div>
           </div>
+          <div class="control-row" id="bojScenarioControls" hidden>
+            <span class="control-label">Scénář</span>
+            <div class="segmented scenario-cards">
+              <button type="button" id="bojScenario1" aria-pressed="false">
+                <span class="option-icon scenario-icon-open" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">Trénink</span>
+                  <span class="option-desc">sestřel 5 červených raket ve vesmíru</span>
+                </span>
+              </button>
+              <button type="button" id="bojScenario2" aria-pressed="true">
+                <span class="option-icon mode-icon-fight" aria-hidden="true"></span>
+                <span class="option-copy">
+                  <span class="option-title">1v1</span>
+                  <span class="option-desc">souboj s červenou raketou</span>
+                </span>
+              </button>
+            </div>
+          </div>
+          <div class="control-row" id="bojTrainingCountControls" hidden>
+            <span class="control-label">Počet raket</span>
+            <div class="segmented" style="gap: 12px; align-items: center; padding: 10px 12px;">
+              <input type="range" id="bojTrainingCountRange" min="0" max="5" step="1" value="5" style="flex: 1; min-width: 160px;" />
+              <span class="mass-value" id="bojTrainingCountValue">5</span>
+            </div>
+          </div>
+          <div class="control-row" id="bojTrainingOptionsControls" hidden>
+            <span class="control-label">Zobrazení</span>
+            <div class="button-row">
+              <button type="button" class="html-btn" id="bojTrainingVectorsBtn">Vektory vypnuté</button>
+              <button type="button" class="html-btn" id="bojTrainingTrajectoriesBtn">Trajektorie vypnuté</button>
+            </div>
+          </div>
+          <div class="control-row" id="boj1v1WinsControls" hidden>
+            <span class="control-label">Počet vítězství</span>
+            <div class="segmented" style="gap: 12px; align-items: center; padding: 10px 12px;">
+              <input type="range" id="boj1v1WinsRange" min="1" max="5" step="1" value="1" style="flex: 1; min-width: 160px;" />
+              <span class="mass-value" id="boj1v1WinsValue">1</span>
+            </div>
+          </div>
+          <div class="control-row" id="bojMassControls" hidden>
+            <div class="mass-head">
+              <label for="bojMassRange">Hmotnost raket</label>
+              <span class="mass-value" id="bojMassValue">1</span>
+            </div>
+            <input id="bojMassRange" type="range" min="1" max="10" step="1" value="1" />
+          </div>
         </div>
         <div class="control-row" id="raceControls" hidden>
           <button type="button" class="html-btn" id="raceObstacles">Překážky vypnuté</button>
@@ -1044,16 +1224,17 @@
         </div>
         <button type="button" class="html-btn primary" id="newGameHtml">Nová hra</button>
         <div class="control-row is-dpad">
-          <span class="control-label">Motory</span>
-          <div class="dpad" aria-label="Směr motoru">
+          <span class="control-label" id="motorControlLabel">Motory</span>
+          <div class="dpad dpad-float-panel" id="motorDpad" data-drag-id="motorDpad" aria-label="Směr motoru">
             <button type="button" data-dir="up" aria-label="Nahoru">↑</button>
             <button type="button" data-dir="left" aria-label="Doleva">←</button>
             <button type="button" data-dir="right" aria-label="Doprava">→</button>
             <button type="button" data-dir="down" aria-label="Dolů">↓</button>
+            <button type="button" class="dpad-drag-handle" aria-label="Posunout ovládací panel" tabindex="-1"></button>
           </div>
         </div>
-        <div class="readout">
-          <span class="control-label">Rychlost</span>
+        <div class="readout" id="speedReadout">
+          <span class="control-label" id="speedReadoutLabel">Rychlost</span>
           <strong id="speedValue">0</strong>
         </div>
       </div>
@@ -1068,15 +1249,16 @@
       </div>
     </div>
     <div class="mobile-game-hud" aria-label="Mobilní ovládání hry">
-      <div class="mobile-speed">
-        <span class="control-label">Rychlost</span>
+      <div class="mobile-speed" id="mobileSpeedPanel">
+        <span class="control-label" id="mobileSpeedLabel">Rychlost</span>
         <strong id="mobileSpeedValue">0</strong>
       </div>
-      <div class="dpad mobile-dpad" aria-label="Směr motoru">
+      <div class="dpad mobile-dpad dpad-float-panel" data-drag-id="mobileDpad" aria-label="Směr motoru">
         <button type="button" data-dir="up" aria-label="Nahoru">↑</button>
         <button type="button" data-dir="left" aria-label="Doleva">←</button>
         <button type="button" data-dir="right" aria-label="Doprava">→</button>
         <button type="button" data-dir="down" aria-label="Dolů">↓</button>
+        <button type="button" class="dpad-drag-handle" aria-label="Posunout ovládací panel" tabindex="-1"></button>
       </div>
     </div>
   </main>
@@ -1175,15 +1357,162 @@
     layoutMobileRaceDpad();
   }
 
+  const DPAD_DRAG_HANDLE_SVG = `<svg width="114" height="114" viewBox="0 0 114 114" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M55.2322 113.268C56.2085 114.244 57.7915 114.244 58.7678 113.268L74.6777 97.3579C75.654 96.3816 75.654 94.7986 74.6777 93.8223C73.7014 92.846 72.1184 92.846 71.1421 93.8223L57 107.964L42.8579 93.8223C41.8816 92.846 40.2986 92.846 39.3223 93.8223C38.346 94.7986 38.346 96.3816 39.3223 97.3579L55.2322 113.268ZM58.7678 0.732231C57.7915 -0.24408 56.2085 -0.24408 55.2322 0.732231L39.3223 16.6421C38.346 17.6184 38.346 19.2014 39.3223 20.1777C40.2986 21.154 41.8816 21.154 42.8579 20.1777L57 6.03554L71.1421 20.1777C72.1184 21.154 73.7014 21.154 74.6777 20.1777C75.654 19.2014 75.654 17.6184 74.6777 16.6421L58.7678 0.732231ZM57 111.5H59.5L59.5 2.5H57H54.5L54.5 111.5H57Z" fill="black"/><path d="M0.732233 55.2322C-0.244078 56.2085 -0.244078 57.7915 0.732233 58.7678L16.6421 74.6777C17.6184 75.654 19.2014 75.654 20.1777 74.6777C21.154 73.7014 21.154 72.1184 20.1777 71.1421L6.03553 57L20.1777 42.8579C21.154 41.8816 21.154 40.2986 20.1777 39.3223C19.2014 38.346 17.6184 38.346 16.6421 39.3223L0.732233 55.2322ZM113.268 58.7678C114.244 57.7915 114.244 56.2085 113.268 55.2322L97.3579 39.3223C96.3816 38.346 94.7986 38.346 93.8223 39.3223C92.846 40.2986 92.846 41.8816 93.8223 42.8579L107.964 57L93.8223 71.1421C92.846 72.1184 92.846 73.7014 93.8223 74.6777C94.7986 75.654 96.3816 75.654 97.3579 74.6777L113.268 58.7678ZM2.5 57V59.5H111.5V57V54.5H2.5V57Z" fill="black"/></svg>`;
+  const DPAD_PANEL_POS_STORAGE_KEY = 'newtonDpadPanelPos';
+  let dpadPanelDragState = null;
+
+  function loadDpadPanelPosition(id) {
+    try {
+      const raw = localStorage.getItem(DPAD_PANEL_POS_STORAGE_KEY);
+      if (!raw) return null;
+      const all = JSON.parse(raw);
+      const pos = all[id];
+      if (!pos || typeof pos.left !== 'number' || typeof pos.top !== 'number') return null;
+      return pos;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveDpadPanelPosition(id, left, top) {
+    try {
+      const raw = localStorage.getItem(DPAD_PANEL_POS_STORAGE_KEY);
+      const all = raw ? JSON.parse(raw) : {};
+      all[id] = { left, top };
+      localStorage.setItem(DPAD_PANEL_POS_STORAGE_KEY, JSON.stringify(all));
+    } catch (_) {}
+  }
+
+  function resetDpadPanelPosition(panel) {
+    panel.classList.remove('is-drag-positioned', 'is-panel-dragging', 'is-axis-aligned');
+    panel.style.left = '';
+    panel.style.top = '';
+    panel.style.right = '';
+    panel.style.bottom = '';
+  }
+
+  function clearSavedDpadPanelPositions() {
+    try {
+      localStorage.removeItem(DPAD_PANEL_POS_STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  function resetAllDpadPanelsToDefault() {
+    dpadPanelDragState = null;
+    clearSavedDpadPanelPositions();
+    document.querySelectorAll('.dpad-float-panel').forEach(resetDpadPanelPosition);
+    layoutMobileRaceDpad();
+  }
+
+  function applyDpadPanelPosition(panel) {
+    if (isZavod()) {
+      resetDpadPanelPosition(panel);
+      return;
+    }
+    const pos = loadDpadPanelPosition(panel.dataset.dragId);
+    if (!pos) return;
+    const maxLeft = Math.max(0, window.innerWidth - panel.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - panel.offsetHeight);
+    panel.classList.add('is-drag-positioned');
+    panel.style.left = `${Math.min(Math.max(0, pos.left), maxLeft)}px`;
+    panel.style.top = `${Math.min(Math.max(0, pos.top), maxTop)}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+  }
+
+  function syncDraggableDpadPanels() {
+    if (dpadPanelDragState) return;
+    document.querySelectorAll('.dpad-float-panel').forEach(panel => {
+      if (panel.classList.contains('is-panel-dragging')) return;
+      if (isZavod()) resetDpadPanelPosition(panel);
+      else applyDpadPanelPosition(panel);
+    });
+  }
+
+  function dpadPanelPointerPos(e) {
+    if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function moveDpadPanelDrag(e) {
+    if (!dpadPanelDragState) return;
+    const { x, y } = dpadPanelPointerPos(e);
+    if (x == null || y == null) return;
+    e.preventDefault();
+    const { panel, offsetX, offsetY } = dpadPanelDragState;
+    const maxLeft = Math.max(0, window.innerWidth - panel.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - panel.offsetHeight);
+    panel.style.left = `${Math.min(Math.max(0, x - offsetX), maxLeft)}px`;
+    panel.style.top = `${Math.min(Math.max(0, y - offsetY), maxTop)}px`;
+  }
+
+  function endDpadPanelDrag() {
+    if (!dpadPanelDragState) return;
+    const { panel } = dpadPanelDragState;
+    panel.classList.remove('is-panel-dragging');
+    const left = parseFloat(panel.style.left);
+    const top = parseFloat(panel.style.top);
+    if (Number.isFinite(left) && Number.isFinite(top)) {
+      saveDpadPanelPosition(panel.dataset.dragId, left, top);
+    }
+    dpadPanelDragState = null;
+  }
+
+  function startDpadPanelDrag(e, panel) {
+    if (isZavod()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const { x, y } = dpadPanelPointerPos(e);
+    const rect = panel.getBoundingClientRect();
+    panel.classList.add('is-drag-positioned', 'is-panel-dragging');
+    panel.style.left = `${rect.left}px`;
+    panel.style.top = `${rect.top}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    dpadPanelDragState = { panel, offsetX: x - rect.left, offsetY: y - rect.top };
+  }
+
+  function initDraggableDpadPanels() {
+    document.querySelectorAll('.dpad-drag-handle').forEach(handle => {
+      if (!handle.innerHTML.trim()) handle.innerHTML = DPAD_DRAG_HANDLE_SVG;
+      const panel = handle.closest('.dpad-float-panel');
+      if (!panel) return;
+      handle.addEventListener('pointerdown', e => {
+        if (isZavod() || mobilePhase !== 'playing' || appMode === 'editing') return;
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        startDpadPanelDrag(e, panel);
+        handle.setPointerCapture(e.pointerId);
+      });
+      handle.addEventListener('pointermove', e => {
+        if (dpadPanelDragState && dpadPanelDragState.panel === panel) moveDpadPanelDrag(e);
+      });
+      handle.addEventListener('pointerup', e => {
+        if (dpadPanelDragState && dpadPanelDragState.panel === panel) endDpadPanelDrag();
+        try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+      });
+      handle.addEventListener('pointercancel', endDpadPanelDrag);
+    });
+    window.addEventListener('pointermove', moveDpadPanelDrag);
+    window.addEventListener('pointerup', endDpadPanelDrag);
+    window.addEventListener('pointercancel', endDpadPanelDrag);
+    syncDraggableDpadPanels();
+  }
+
   function layoutMobileRaceDpad() {
     const dpad = document.querySelector('.mobile-dpad');
     if (!dpad) return;
+    if (dpadPanelDragState || dpad.classList.contains('is-panel-dragging')) return;
     if (!isZavod() || mobilePhase !== 'playing') {
       dpad.classList.remove('is-axis-aligned');
-      dpad.style.left = '';
-      dpad.style.right = '';
+      if (!dpad.classList.contains('is-drag-positioned')) {
+        dpad.style.left = '';
+        dpad.style.top = '';
+        dpad.style.right = '';
+        dpad.style.bottom = '';
+      }
       return;
     }
+    resetDpadPanelPosition(dpad);
     const rect = canvas.getBoundingClientRect();
     const scale = rect.width / canvas.width;
     const axisRightCanvas = PLAY.w * viewScale + viewOffsetX;
@@ -1370,6 +1699,42 @@
   const ACCEL_AT_MID = 520;
   const ACCEL_POWER = 3.4;
   const MAX_SPEED = 10000;
+  const BOJ_PLAYER_THRUST_ACCEL = 125;
+  const BOJ_ANG_ACCEL = 7.5;
+  const BOJ_ANG_DAMP = 0.9;
+  const BOJ_MAX_ANG_VEL = 3.2;
+  const BOJ_BULLET_SPEED = 620;
+  const BOJ_BULLET_MASS = 0.22;
+  const BOJ_BULLET_R = 5;
+  const BOJ_BULLET_LIFE = 3.5;
+  const BOJ_FIRE_COOLDOWN = 0.26;
+  const BOJ_NOSE_OFFSET = PLAYER_R + 6;
+  const BOJ_AMMO_MAX = 30;
+  const BOJ_ENEMY_COLOR = '#e53935';
+  const BOJ_ENEMY_COLOR_DARK = '#b71c1c';
+  const BOJ_ENEMY_COCKPIT = '#ffc9c9';
+  const BOJ_REF_MASS = 3;
+  const BOJ_MASS_MAX = 10;
+  const BOJ_MASS_EFFECT_AT_8 = 0.42;
+  const BOJ_MASS_EFFECT_AT_10 = 0.32;
+  const BOJ_MASS_EFFECT_AT_10_THRUST = 0.29;
+  const BOJ_MASS_CURVE = 1.12;
+  const BOJ_MASS_THRUST_CURVE = 1.28;
+  const BOJ_MASS_MOVE_FLOOR = 0.15;
+  const BOJ_ENEMY_HP = 1;
+  const BOJ_ENEMY_HIT_R = PLAYER_R;
+  const BOJ_AI_AIM_TOLERANCE = 0.14;
+  const BOJ_AI_TURN_TOLERANCE = 0.1;
+  const BOJ_AI_FIRE_RANGE = 820;
+  const BOJ_AI_MIN_FIRE_RANGE = 110;
+  const BOJ_AI_PREFER_DIST_MIN = 170;
+  const BOJ_AI_PREFER_DIST_MAX = 440;
+  const BOJ_AI_THREAT_DIST = 540;
+  const BOJ_AI_LEAD_TIME = 0.38;
+  const BOJ_TRAINING_TARGET_COUNT_MAX = 5;
+  const BOJ_1V1_WINS_MAX = 5;
+  const BOJ_AI_EVADE_DURATION = 0.7;
+  const BOJ_AI_BULLET_NEAR_DIST = PLAYER_R + 55;
   const COIN_COUNT = 5;
   const STAR_FIELD = Array.from({ length: 120 }, (_, i) => {
     const seed = (i * 9301 + 49297) % 233280;
@@ -1422,6 +1787,31 @@
   let playElapsed = 0;
   // Výchozí orientace rakety: špička doprava.
   let shipAngleHold = Math.PI / 2;
+  let shipAngularVel = 0;
+  let bojProjectiles = [];
+  let bojFireCooldown = 0;
+  let bojUpWasPressed = false;
+  let bojAmmo = BOJ_AMMO_MAX;
+  let bojEnemy = null;
+  let bojEnemyFx = null;
+  /** 1 = trénink, 2 = 1v1 */
+  let bojScenario = 2;
+  let bojTrainingTargetCount = BOJ_TRAINING_TARGET_COUNT_MAX;
+  let boj1v1WinsRequired = 1;
+  let bojShipMass = MASS_MIN;
+  let bojPlayerWins = 0;
+  let bojEnemyWins = 0;
+  let bojTrainingVectorsVisible = false;
+  let bojTrainingTrajectoriesVisible = false;
+  let bojTrainingTargets = [];
+  let bojTrainingExplosions = [];
+  let bojTrainingBulletTrails = [];
+  const BOJ_TRAINING_TRAIL_MIN_DIST = 5;
+  const BOJ_COUNTDOWN_SEC = 3;
+  const BOJ_1V1_ANNOUNCE_SEC = 1.7;
+  let bojCountdownSecondsLeft = 0;
+  let boj1v1Announcement = null;
+  let boj1v1AmmoDrawHandled = false;
   let won = false;
   let gameState = 'playing';
   let explosion = null;
@@ -1450,11 +1840,29 @@
   const uiEls = {
     modeBludiste: document.getElementById('modeBludiste'),
     modeZavod: document.getElementById('modeZavod'),
+    modeBoj: document.getElementById('modeBoj'),
+    motorControlLabel: document.getElementById('motorControlLabel'),
+    motorDpad: document.getElementById('motorDpad'),
     scenario1: document.getElementById('scenario1'),
     scenario2: document.getElementById('scenario2'),
     scenario3: document.getElementById('scenario3'),
     scenario4: document.getElementById('scenario4'),
     scenarioControls: document.getElementById('scenarioControls'),
+    bojScenarioControls: document.getElementById('bojScenarioControls'),
+    bojScenario1: document.getElementById('bojScenario1'),
+    bojScenario2: document.getElementById('bojScenario2'),
+    bojTrainingCountControls: document.getElementById('bojTrainingCountControls'),
+    bojTrainingCountRange: document.getElementById('bojTrainingCountRange'),
+    bojTrainingCountValue: document.getElementById('bojTrainingCountValue'),
+    bojTrainingOptionsControls: document.getElementById('bojTrainingOptionsControls'),
+    bojTrainingVectorsBtn: document.getElementById('bojTrainingVectorsBtn'),
+    bojTrainingTrajectoriesBtn: document.getElementById('bojTrainingTrajectoriesBtn'),
+    boj1v1WinsControls: document.getElementById('boj1v1WinsControls'),
+    boj1v1WinsRange: document.getElementById('boj1v1WinsRange'),
+    boj1v1WinsValue: document.getElementById('boj1v1WinsValue'),
+    bojMassControls: document.getElementById('bojMassControls'),
+    bojMassRange: document.getElementById('bojMassRange'),
+    bojMassValue: document.getElementById('bojMassValue'),
     raceControls: document.getElementById('raceControls'),
     physicsControls: document.getElementById('physicsControls'),
     massControls: document.getElementById('massControls'),
@@ -1466,11 +1874,20 @@
     massRange: document.getElementById('massRange'),
     massValue: document.getElementById('massValue'),
     newGameHtml: document.getElementById('newGameHtml'),
+    speedReadout: document.getElementById('speedReadout'),
+    speedReadoutLabel: document.getElementById('speedReadoutLabel'),
     speedValue: document.getElementById('speedValue'),
+    mobileSpeedPanel: document.getElementById('mobileSpeedPanel'),
+    mobileSpeedLabel: document.getElementById('mobileSpeedLabel'),
     mobileSpeedValue: document.getElementById('mobileSpeedValue'),
     gamePlayActions: document.getElementById('gamePlayActions'),
     gameBackBtn: document.getElementById('gameBackBtn'),
-    gameNewGameBtn: document.getElementById('gameNewGameBtn')
+    gameNewGameBtn: document.getElementById('gameNewGameBtn'),
+    bojAmmoPanel: document.getElementById('bojAmmoPanel'),
+    bojScoreValue: document.getElementById('bojScoreValue'),
+    bojAmmoLabel: document.getElementById('bojAmmoLabel'),
+    bojAmmoValue: document.getElementById('bojAmmoValue'),
+    bojTrainingPauseBtn: document.getElementById('bojTrainingPauseBtn')
   };
 
   let mobilePhase = 'setup';
@@ -1481,6 +1898,7 @@
     document.body.classList.toggle('mobile-setup', phase === 'setup');
     document.body.classList.toggle('mobile-playing', phase === 'playing');
     layoutMobileRaceDpad();
+    syncDraggableDpadPanels();
   }
 
   function startMobileCountdown() {
@@ -1652,7 +2070,7 @@
         ctx.fill();
       }
     }
-    if (!isZavod() && !isBludiste() && !frictionFloor && appMode !== 'editing') {
+    if (!isZavod() && !isBludiste() && !isBoj() && !frictionFloor && appMode !== 'editing') {
       const { cols, rows } = playGridBounds();
       ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
       ctx.lineWidth = 1;
@@ -1691,6 +2109,333 @@
     return playMode === 'zavod';
   }
 
+  function isBoj() {
+    return playMode === 'boj';
+  }
+
+  function isBojTraining() {
+    return isBoj() && bojScenario === 1;
+  }
+
+  function isBoj1v1() {
+    return isBoj() && bojScenario === 2;
+  }
+
+  function isBojCountdownActive() {
+    return isBoj() && bojCountdownSecondsLeft > 0;
+  }
+
+  function isBoj1v1AnnouncementActive() {
+    return isBoj1v1() && boj1v1Announcement && boj1v1Announcement.timeLeft > 0;
+  }
+
+  function isBoj1v1RoundBlocked() {
+    return isBojCountdownActive() || isBoj1v1AnnouncementActive();
+  }
+
+  function showBoj1v1RoundAnnouncement(title, subtitle) {
+    if (!isBoj1v1() || boj1v1WinsRequired <= 1) return false;
+    boj1v1Announcement = { title, subtitle, timeLeft: BOJ_1V1_ANNOUNCE_SEC };
+    return true;
+  }
+
+  function startBojCountdown() {
+    if (!isBoj1v1()) return;
+    bojCountdownSecondsLeft = BOJ_COUNTDOWN_SEC;
+    keys.clear();
+    pointerDir = null;
+    shipAngularVel = 0;
+    if (bojEnemy) bojEnemy.angularVel = 0;
+  }
+
+  function boj1v1ScoreText() {
+    return `${bojPlayerWins} : ${bojEnemyWins}`;
+  }
+
+  function resetBoj1v1MatchScores() {
+    bojPlayerWins = 0;
+    bojEnemyWins = 0;
+    boj1v1Announcement = null;
+  }
+
+  function startBoj1v1Round() {
+    if (!isBoj1v1()) return;
+    boj1v1Announcement = null;
+    boj1v1AmmoDrawHandled = false;
+    won = false;
+    gameState = 'playing';
+    explosion = null;
+    bojEnemyFx = null;
+    clearBojProjectiles();
+    resetBojAmmo();
+    shipAngularVel = 0;
+    keys.clear();
+    pointerDir = null;
+    const playerSpawn = bojPlayerSpawnPos();
+    player.x = playerSpawn.x;
+    player.y = playerSpawn.y;
+    player.vx = 0;
+    player.vy = 0;
+    resetBojEnemy();
+    shipAngleHold = 0;
+    shipAngularVel = 0;
+    bojEnemy.angle = Math.PI;
+    bojEnemy.angularVel = 0;
+    startBojCountdown();
+  }
+
+  function recordBoj1v1PlayerRoundWin() {
+    bojPlayerWins += 1;
+    if (bojPlayerWins >= boj1v1WinsRequired) {
+      won = true;
+      showWinOverlay('boj-match-win');
+      return;
+    }
+    if (!showBoj1v1RoundAnnouncement('Bod pro tebe!', `Skóre ${boj1v1ScoreText()}`)) {
+      startBoj1v1Round();
+    }
+  }
+
+  function recordBoj1v1EnemyRoundWin() {
+    bojEnemyWins += 1;
+    if (bojEnemyWins >= boj1v1WinsRequired) {
+      won = true;
+      showWinOverlay('boj-match-lose');
+      return;
+    }
+    gameState = 'playing';
+    explosion = null;
+    if (!showBoj1v1RoundAnnouncement('Bod pro soupeře!', `Skóre ${boj1v1ScoreText()}`)) {
+      startBoj1v1Round();
+    }
+  }
+
+  function bojTrainingVectorsOn() {
+    return isBojTraining() && bojTrainingVectorsVisible;
+  }
+
+  function gameplayVectorsVisible() {
+    return gameState === 'playing' || gameState === 'paused';
+  }
+
+  function bojTrainingTrajectoriesOn() {
+    return isBojTraining() && bojTrainingTrajectoriesVisible;
+  }
+
+  function toggleBojTrainingPause() {
+    if (!isBojTraining() || won || gameState === 'exploding' || isBojCountdownActive()) return;
+    gameState = gameState === 'paused' ? 'playing' : 'paused';
+    syncHtmlControls();
+  }
+
+  function clearBojTrainingTrajectories() {
+    bojTrainingBulletTrails = [];
+    for (const b of bojProjectiles) delete b.trail;
+  }
+
+  function clearBojEnemyState() {
+    bojEnemy = null;
+    bojEnemyFx = null;
+  }
+
+  function clearBojTrainingState() {
+    bojTrainingTargets = [];
+    bojTrainingExplosions = [];
+    bojTrainingBulletTrails = [];
+  }
+
+  function appendBojTrainingBulletTrailPoint(b) {
+    if (!b.trail || b.trail.length === 0) return;
+    const last = b.trail[b.trail.length - 1];
+    if (Math.hypot(b.x - last.x, b.y - last.y) < BOJ_TRAINING_TRAIL_MIN_DIST) return;
+    b.trail.push({ x: b.x, y: b.y });
+  }
+
+  function sealBojTrainingBulletTrail(b) {
+    if (!b.trail || b.trail.length === 0) return;
+    const last = b.trail[b.trail.length - 1];
+    if (Math.hypot(b.x - last.x, b.y - last.y) > 0.5) {
+      b.trail.push({ x: b.x, y: b.y });
+    }
+  }
+
+  function archiveBojTrainingBulletTrail(b) {
+    if (!isBojTraining() || !b.trail) return;
+    sealBojTrainingBulletTrail(b);
+    if (b.trail.length < 2) return;
+    bojTrainingBulletTrails.push({
+      owner: b.owner,
+      points: b.trail.slice()
+    });
+  }
+
+  function setupBojTrainingTargets() {
+    clearBojTrainingState();
+    const targetCount = Math.max(0, Math.min(BOJ_TRAINING_TARGET_COUNT_MAX, Math.floor(bojTrainingTargetCount)));
+    if (targetCount === 0) {
+      bojTrainingTargets = [];
+      return;
+    }
+    const margin = bojSpawnMargin() + 48;
+    const minX = PLAY.x + margin;
+    const maxX = PLAY.x + PLAY.w - margin;
+    const minY = PLAY.y + margin;
+    const maxY = playBottomY() - margin;
+    const playerSpawnX = PLAY.x + PLAY.w / 2;
+    const playerSpawnY = PLAY.y + playH() / 2;
+    const playerClear = PLAYER_R + BOJ_ENEMY_HIT_R + 80;
+    const targetSep = PLAYER_R + BOJ_ENEMY_HIT_R + 52;
+    const spots = [];
+
+    for (let attempt = 0; attempt < 600 && spots.length < targetCount; attempt++) {
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
+      if (Math.hypot(x - playerSpawnX, y - playerSpawnY) < playerClear) continue;
+      if (spots.some(p => Math.hypot(p.x - x, p.y - y) < targetSep)) continue;
+      spots.push({ x, y });
+    }
+
+    for (let attempt = 0; attempt < 400 && spots.length < targetCount; attempt++) {
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
+      if (Math.hypot(x - playerSpawnX, y - playerSpawnY) < playerClear * 0.85) continue;
+      if (spots.some(p => Math.hypot(p.x - x, p.y - y) < targetSep * 0.8)) continue;
+      spots.push({ x, y });
+    }
+
+    while (spots.length < targetCount) {
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
+      if (spots.some(p => Math.hypot(p.x - x, p.y - y) < targetSep * 0.65)) continue;
+      spots.push({ x, y });
+    }
+
+    bojTrainingTargets = spots.map(p => ({
+      x: p.x,
+      y: p.y,
+      angle: Math.random() * Math.PI * 2,
+      alive: true
+    }));
+  }
+
+  function triggerBojTrainingCollision(target) {
+    if (!isBojTraining() || gameState !== 'playing' || won) return;
+    const cx = (player.x + target.x) / 2;
+    const cy = (player.y + target.y) / 2;
+    clearTrail();
+    clearBojProjectiles();
+    player.vx = 0;
+    player.vy = 0;
+    gameState = 'exploding';
+    explosion = makeBojExplosionFx(cx, cy, [
+      PLAYER_COLOR,
+      BOJ_ENEMY_COLOR,
+      '#ff8a65',
+      '#ffd54a',
+      '#6b63ff',
+      '#7f1d1d'
+    ]);
+    explosion.bojTrainingFail = true;
+    explosion.bojTrainingFailReason = 'collision';
+  }
+
+  function checkBojTrainingPlayerCollision() {
+    if (!isBojTraining() || gameState !== 'playing' || won) return;
+    const minDist = PLAYER_R + BOJ_ENEMY_HIT_R;
+    for (const target of bojTrainingTargets) {
+      if (!target.alive) continue;
+      if (Math.hypot(player.x - target.x, player.y - target.y) < minDist) {
+        triggerBojTrainingCollision(target);
+        return;
+      }
+    }
+  }
+
+  function bojTrainingTargetsAlive() {
+    return bojTrainingTargets.filter(t => t.alive).length;
+  }
+
+  function hitBojTrainingTarget(target, bulletIndex) {
+    if (!target.alive) return;
+    target.alive = false;
+    const bullet = bojProjectiles[bulletIndex];
+    archiveBojTrainingBulletTrail(bullet);
+    bojProjectiles.splice(bulletIndex, 1);
+    bojTrainingExplosions.push(
+      makeBojExplosionFx(target.x, target.y, [
+        BOJ_ENEMY_COLOR,
+        '#ff6f60',
+        '#ff8a65',
+        '#ffd54a',
+        '#7f1d1d'
+      ])
+    );
+    if (bojTrainingTargetsAlive() === 0 && gameState === 'playing' && !won) {
+      won = true;
+      showWinOverlay('boj-training');
+    }
+  }
+
+  function checkBojTrainingTargetHits() {
+    if (!isBojTraining() || gameState !== 'playing') return;
+    const playerHitR = PLAYER_R + BOJ_BULLET_R;
+    for (let i = bojProjectiles.length - 1; i >= 0; i--) {
+      const b = bojProjectiles[i];
+      if (b.owner !== 'player') continue;
+      for (const target of bojTrainingTargets) {
+        if (!target.alive) continue;
+        if (Math.hypot(b.x - target.x, b.y - target.y) < BOJ_ENEMY_HIT_R + BOJ_BULLET_R) {
+          hitBojTrainingTarget(target, i);
+          break;
+        }
+      }
+      if (gameState !== 'playing') return;
+      if (Math.hypot(b.x - player.x, b.y - player.y) < playerHitR) {
+        bojProjectiles.splice(i, 1);
+        triggerBojTrainingSelfBulletHit();
+        return;
+      }
+    }
+  }
+
+  function triggerBojTrainingSelfBulletHit() {
+    if (!isBojTraining() || gameState !== 'playing' || won) return;
+    clearTrail();
+    clearBojProjectiles();
+    player.vx = 0;
+    player.vy = 0;
+    gameState = 'exploding';
+    explosion = makeBojExplosionFx(player.x, player.y, [
+      PLAYER_COLOR,
+      BOJ_ENEMY_COLOR,
+      '#ff8a65',
+      '#ffd54a',
+      '#6b63ff',
+      '#7f1d1d'
+    ]);
+    explosion.bojTrainingFail = true;
+    explosion.bojTrainingFailReason = 'selfBullet';
+  }
+
+  function updateBojTrainingExplosions(dt) {
+    for (let i = bojTrainingExplosions.length - 1; i >= 0; i--) {
+      const fx = bojTrainingExplosions[i];
+      fx.time += dt;
+      for (const p of fx.particles) {
+        if (!p.ring) {
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vy += 220 * dt;
+          p.vx *= 0.98;
+        } else {
+          p.size += 180 * dt;
+        }
+        p.life -= dt * 1.15;
+      }
+      if (fx.time >= fx.duration) bojTrainingExplosions.splice(i, 1);
+    }
+  }
+
   function raceStartPosition() {
     const wallX = ZAVOD_START_WALLS[0][0];
     return {
@@ -1715,17 +2460,53 @@
     if (!uiEls.modeBludiste) return;
     document.body.classList.toggle('is-editing', appMode === 'editing');
     document.body.classList.toggle('is-zavod', isZavod());
+    document.body.classList.toggle('is-boj', isBoj());
     layoutMobileRaceDpad();
     uiEls.modeBludiste.setAttribute('aria-pressed', String(isBludiste()));
     uiEls.modeZavod.setAttribute('aria-pressed', String(isZavod()));
+    uiEls.modeBoj.setAttribute('aria-pressed', String(isBoj()));
     uiEls.scenario1.setAttribute('aria-pressed', String(bludisteScenario === 1));
     uiEls.scenario2.setAttribute('aria-pressed', String(bludisteScenario === 2));
     uiEls.scenario3.setAttribute('aria-pressed', String(bludisteScenario === 3));
     uiEls.scenario4.setAttribute('aria-pressed', String(bludisteScenario === 4 || appMode === 'editing'));
     uiEls.scenarioControls.hidden = !isBludiste();
+    if (uiEls.bojScenarioControls) uiEls.bojScenarioControls.hidden = !isBoj();
+    if (uiEls.bojScenario1) uiEls.bojScenario1.setAttribute('aria-pressed', String(bojScenario === 1));
+    if (uiEls.bojScenario2) uiEls.bojScenario2.setAttribute('aria-pressed', String(bojScenario === 2));
+    if (uiEls.bojTrainingCountControls) uiEls.bojTrainingCountControls.hidden = !isBojTraining();
+    if (uiEls.bojTrainingCountRange) uiEls.bojTrainingCountRange.value = String(bojTrainingTargetCount);
+    if (uiEls.bojTrainingCountValue) uiEls.bojTrainingCountValue.textContent = String(bojTrainingTargetCount);
+    if (uiEls.boj1v1WinsControls) uiEls.boj1v1WinsControls.hidden = !isBoj1v1();
+    if (uiEls.bojMassControls) uiEls.bojMassControls.hidden = !isBoj();
+    if (uiEls.bojMassRange) uiEls.bojMassRange.value = String(bojShipMass);
+    if (uiEls.bojMassValue) uiEls.bojMassValue.textContent = formatBojMass(bojShipMass);
+    if (uiEls.boj1v1WinsRange) uiEls.boj1v1WinsRange.value = String(boj1v1WinsRequired);
+    if (uiEls.boj1v1WinsValue) uiEls.boj1v1WinsValue.textContent = String(boj1v1WinsRequired);
+    if (uiEls.bojTrainingOptionsControls) uiEls.bojTrainingOptionsControls.hidden = !isBojTraining();
+    if (uiEls.bojTrainingVectorsBtn) {
+      uiEls.bojTrainingVectorsBtn.textContent = bojTrainingVectorsVisible
+        ? 'Vektory zapnuté'
+        : 'Vektory vypnuté';
+      uiEls.bojTrainingVectorsBtn.classList.toggle('is-active', bojTrainingVectorsVisible);
+    }
+    if (uiEls.bojTrainingTrajectoriesBtn) {
+      uiEls.bojTrainingTrajectoriesBtn.textContent = bojTrainingTrajectoriesVisible
+        ? 'Trajektorie zapnuté'
+        : 'Trajektorie vypnuté';
+      uiEls.bojTrainingTrajectoriesBtn.classList.toggle('is-active', bojTrainingTrajectoriesVisible);
+    }
     uiEls.raceControls.hidden = true;
-    uiEls.physicsControls.hidden = isZavod();
-    uiEls.massControls.hidden = isZavod();
+    uiEls.physicsControls.hidden = isZavod() || isBoj();
+    uiEls.massControls.hidden = isZavod() || isBoj();
+    if (uiEls.motorControlLabel) {
+      uiEls.motorControlLabel.textContent = isBoj() ? 'Pohon a otáčení' : 'Motory';
+    }
+    if (uiEls.motorDpad) {
+      uiEls.motorDpad.setAttribute(
+        'aria-label',
+        isBoj() ? 'Nahoru střela, dolů hlavní motor, vlevo a vpravo otáčení' : 'Směr motoru'
+      );
+    }
     uiEls.raceObstacles.textContent = raceObstaclesEnabled ? 'Překážky zapnuté' : 'Překážky vypnuté';
     uiEls.raceObstacles.classList.toggle('is-active', raceObstaclesEnabled);
     syncFrictionControls();
@@ -1734,14 +2515,53 @@
     uiEls.massRange.value = playerMass.toFixed(1);
     uiEls.massRange.disabled = !settingsEditable || !isBludiste();
     uiEls.massValue.textContent = formatMass(playerMass);
-    const speedText = String(Math.round(playerSpeed()));
-    uiEls.speedValue.textContent = speedText;
-    uiEls.mobileSpeedValue.textContent = speedText;
     const showPlayActions =
-      isBludiste() && mobilePhase === 'playing' && appMode === 'playing';
+      (isBludiste() || isBoj()) && mobilePhase === 'playing' && appMode === 'playing';
+    const showBojAmmoPanel = isBoj1v1() && showPlayActions;
+    const showBojTrainingPause =
+      isBojTraining() && showPlayActions && !won && gameState !== 'exploding';
+    const readoutLabel = isBoj1v1() ? 'Zásobník' : 'Rychlost';
+    const readoutText = isBoj1v1() ? String(bojAmmo) : String(Math.round(playerSpeed()));
+    if (uiEls.speedReadoutLabel) uiEls.speedReadoutLabel.textContent = readoutLabel;
+    if (uiEls.mobileSpeedLabel) uiEls.mobileSpeedLabel.textContent = readoutLabel;
+    uiEls.speedValue.textContent = readoutText;
+    uiEls.mobileSpeedValue.textContent = readoutText;
+    if (uiEls.bojAmmoPanel) uiEls.bojAmmoPanel.hidden = !showBojAmmoPanel;
+    if (uiEls.bojScoreValue) uiEls.bojScoreValue.textContent = boj1v1ScoreText();
+    if (uiEls.bojAmmoValue) uiEls.bojAmmoValue.textContent = String(bojAmmo);
+    if (showBojAmmoPanel && uiEls.bojAmmoPanel) {
+      uiEls.bojAmmoPanel.setAttribute(
+        'aria-label',
+        `Skóre ${boj1v1ScoreText()}, zásobník ${bojAmmo} střel`
+      );
+    }
+    if (uiEls.bojTrainingPauseBtn) {
+      uiEls.bojTrainingPauseBtn.hidden = !showBojTrainingPause;
+      uiEls.bojTrainingPauseBtn.textContent = gameState === 'paused' ? 'Pokračovat' : 'Pauza';
+      uiEls.bojTrainingPauseBtn.classList.toggle('is-active', gameState === 'paused');
+      uiEls.bojTrainingPauseBtn.setAttribute(
+        'aria-label',
+        gameState === 'paused' ? 'Pokračovat ve hře' : 'Pozastavit hru'
+      );
+    }
+    if (uiEls.speedReadout) {
+      uiEls.speedReadout.hidden = isBojTraining();
+      uiEls.speedReadout.setAttribute(
+        'aria-label',
+        isBoj1v1() ? `Zásobník: ${bojAmmo} střel` : `Rychlost: ${readoutText}`
+      );
+    }
+    if (uiEls.mobileSpeedPanel) {
+      uiEls.mobileSpeedPanel.setAttribute(
+        'aria-label',
+        isBoj1v1() ? `Zásobník: ${bojAmmo} střel` : `Rychlost: ${readoutText}`
+      );
+    }
     uiEls.gamePlayActions.hidden = !showPlayActions;
     uiEls.gameNewGameBtn.hidden =
-      !showPlayActions || (bludisteScenario !== 1 && bludisteScenario !== 2 && bludisteScenario !== 3);
+      !isBludiste() ||
+      !showPlayActions ||
+      (bludisteScenario !== 1 && bludisteScenario !== 2 && bludisteScenario !== 3);
   }
 
   function setupBludisteLevel() {
@@ -1756,6 +2576,572 @@
     player.x = sc.player.x;
     player.y = sc.player.y;
     saveLevelStart();
+  }
+
+  function resetBojAmmo() {
+    bojAmmo = BOJ_AMMO_MAX;
+  }
+
+  function clearBojProjectiles() {
+    if (bojTrainingTrajectoriesOn()) {
+      for (const b of bojProjectiles) archiveBojTrainingBulletTrail(b);
+    }
+    bojProjectiles = [];
+    bojFireCooldown = 0;
+    bojUpWasPressed = false;
+  }
+
+  function bojShipForward(angle) {
+    return { fx: Math.sin(angle), fy: -Math.cos(angle) };
+  }
+
+  function bojForwardVector() {
+    return bojShipForward(shipAngleHold);
+  }
+
+  function bojShipTip(ship) {
+    const { fx, fy } = bojShipForward(ship.angle);
+    return {
+      x: ship.x + fx * BOJ_NOSE_OFFSET,
+      y: ship.y + fy * BOJ_NOSE_OFFSET
+    };
+  }
+
+  function bojTipPosition() {
+    return bojShipTip({ x: player.x, y: player.y, angle: shipAngleHold });
+  }
+
+  function bojAmplifyMassMovementFactor(factor) {
+    return Math.max(BOJ_MASS_MOVE_FLOOR, 1 - 2 * (1 - factor));
+  }
+
+  function bojMassFactorFor(mass, curve, effectAtMax) {
+    mass = Math.max(MASS_MIN, Math.min(BOJ_MASS_MAX, mass));
+    let factor;
+    if (mass <= 8) {
+      const t = (mass - MASS_MIN) / (8 - MASS_MIN);
+      factor = 1 - Math.pow(t, curve) * (1 - BOJ_MASS_EFFECT_AT_8);
+    } else {
+      const t = (mass - 8) / (BOJ_MASS_MAX - 8);
+      factor = BOJ_MASS_EFFECT_AT_8 - t * (BOJ_MASS_EFFECT_AT_8 - effectAtMax);
+    }
+    return bojAmplifyMassMovementFactor(factor);
+  }
+
+  function bojShipMassFactor(mass = bojShipMass) {
+    return bojMassFactorFor(mass, BOJ_MASS_CURVE, BOJ_MASS_EFFECT_AT_10);
+  }
+
+  function bojThrustMassFactor(mass = bojShipMass) {
+    return bojMassFactorFor(mass, BOJ_MASS_THRUST_CURVE, BOJ_MASS_EFFECT_AT_10_THRUST);
+  }
+
+  function bojPlayerThrustAccel() {
+    return BOJ_PLAYER_THRUST_ACCEL * bojThrustMassFactor();
+  }
+
+  function bojEnemyThrustAccel() {
+    return bojPlayerThrustAccel();
+  }
+
+  function bojRecoilImpulse(mass = bojShipMass) {
+    const refImpulse = BOJ_BULLET_SPEED * (BOJ_BULLET_MASS / BOJ_REF_MASS);
+    return refImpulse * bojShipMassFactor(mass);
+  }
+
+  function applyBojShipMass(mass) {
+    bojShipMass = Math.round(Math.max(MASS_MIN, Math.min(BOJ_MASS_MAX, mass)));
+    if (isBoj()) playerMass = bojShipMass;
+  }
+
+  function formatBojMass(mass) {
+    return String(Math.round(mass));
+  }
+
+  function bojEnemyHullColor() {
+    const heaviness = (bojShipMass - MASS_MIN) / (BOJ_MASS_MAX - MASS_MIN);
+    return rgbCss(scaleRgb({ r: 229, g: 57, b: 53 }, 1 - heaviness * 0.3));
+  }
+
+  function bojEnemyHullColorDark() {
+    const heaviness = (bojShipMass - MASS_MIN) / (BOJ_MASS_MAX - MASS_MIN);
+    return rgbCss(scaleRgb({ r: 183, g: 28, b: 28 }, 1 - heaviness * 0.22));
+  }
+
+  function bojNormalizeAngle(a) {
+    let angle = a;
+    while (angle > Math.PI) angle -= Math.PI * 2;
+    while (angle < -Math.PI) angle += Math.PI * 2;
+    return angle;
+  }
+
+  function bojAngleDiff(from, to) {
+    return bojNormalizeAngle(to - from);
+  }
+
+  function makeBojExplosionFx(x, y, colors) {
+    const particles = [];
+    for (let i = 0; i < 32; i++) {
+      const angle = (Math.PI * 2 * i) / 32 + Math.random() * 0.4;
+      const speed = 120 + Math.random() * 280;
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1,
+        size: 4 + Math.random() * 10,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
+    }
+    for (let r = 0; r < 3; r++) {
+      particles.push({
+        x,
+        y,
+        vx: 0,
+        vy: 0,
+        life: 1,
+        size: 16 + r * 20,
+        color: r === 0 ? 'rgba(255,90,60,0.9)' : r === 1 ? 'rgba(255,170,80,0.5)' : 'rgba(229,57,53,0.35)',
+        ring: true
+      });
+    }
+    return { x, y, time: 0, duration: 0.85, particles };
+  }
+
+  function bojSpawnMargin() {
+    return PLAYER_R + 56;
+  }
+
+  function bojPlayerSpawnPos() {
+    const m = bojSpawnMargin();
+    return { x: PLAY.x + m, y: playBottomY() - m };
+  }
+
+  function bojEnemySpawnPos() {
+    const m = bojSpawnMargin();
+    return { x: PLAY.x + PLAY.w - m, y: PLAY.y + m };
+  }
+
+  function bojAngleToward(fromX, fromY, toX, toY) {
+    return Math.atan2(toX - fromX, -(toY - fromY));
+  }
+
+  function resetBojEnemy() {
+    const spawn = bojEnemySpawnPos();
+    bojEnemy = {
+      x: spawn.x,
+      y: spawn.y,
+      vx: 0,
+      vy: 0,
+      angle: bojAngleToward(spawn.x, spawn.y, player.x, player.y),
+      angularVel: 0,
+      ammo: BOJ_AMMO_MAX,
+      fireCooldown: 0,
+      hp: BOJ_ENEMY_HP,
+      evadeTimer: Math.random() * Math.PI * 2,
+      evadeUntil: 0,
+      evadeSide: Math.random() < 0.5 ? -1 : 1,
+      alive: true,
+      motors: { thrust: false, left: false, right: false }
+    };
+    bojEnemyFx = null;
+  }
+
+  function bojTriggerEnemyEvade(side) {
+    if (!bojEnemy || !bojEnemy.alive) return;
+    bojEnemy.evadeUntil = BOJ_AI_EVADE_DURATION;
+    bojEnemy.evadeSide = side;
+    bojEnemy.evadeTimer += 1.1;
+  }
+
+  function bojDetectPlayerBulletThreat() {
+    if (!bojEnemy || !bojEnemy.alive) return null;
+    let best = null;
+    for (const b of bojProjectiles) {
+      if (b.owner !== 'player') continue;
+      const bsp = Math.hypot(b.vx, b.vy);
+      if (bsp < 40) continue;
+      const toEnemyX = bojEnemy.x - b.x;
+      const toEnemyY = bojEnemy.y - b.y;
+      const approach = toEnemyX * b.vx + toEnemyY * b.vy;
+      if (approach <= 0) continue;
+      const cross = Math.abs(toEnemyX * b.vy - toEnemyY * b.vx) / bsp;
+      const along = approach / bsp;
+      if (cross > BOJ_AI_BULLET_NEAR_DIST || along < -30 || along > 500) continue;
+      if (!best || cross < best.cross) {
+        const perpX = -b.vy / bsp;
+        const perpY = b.vx / bsp;
+        const side = perpX * toEnemyX + perpY * toEnemyY >= 0 ? 1 : -1;
+        best = { cross, perpX, perpY, side };
+      }
+    }
+    return best;
+  }
+
+  function damageBojEnemy() {
+    if (!bojEnemy || !bojEnemy.alive) return;
+    bojEnemy.hp -= 1;
+    bojEnemy.evadeTimer += 1.4;
+    if (bojEnemy.hp <= 0) destroyBojEnemy();
+  }
+
+  function fireBojProjectileFrom(ship, owner) {
+    if (owner === 'player') {
+      if (!isBojTraining() && bojAmmo <= 0) return;
+      if (!isBojTraining()) bojAmmo -= 1;
+      bojFireCooldown = BOJ_FIRE_COOLDOWN;
+    } else {
+      if (!bojEnemy || !bojEnemy.alive || bojEnemy.ammo <= 0) return;
+      bojEnemy.ammo -= 1;
+      bojEnemy.fireCooldown = BOJ_FIRE_COOLDOWN;
+    }
+
+    const { fx, fy } = bojShipForward(ship.angle);
+    const tip = bojShipTip(ship);
+    const shipVx = ship.vx || 0;
+    const shipVy = ship.vy || 0;
+    const vLaunchX = BOJ_BULLET_SPEED * fx;
+    const vLaunchY = BOJ_BULLET_SPEED * fy;
+    bojProjectiles.push({
+      x: tip.x,
+      y: tip.y,
+      vx: vLaunchX + shipVx,
+      vy: vLaunchY + shipVy,
+      vLaunchX,
+      vLaunchY,
+      vShipX: shipVx,
+      vShipY: shipVy,
+      life: BOJ_BULLET_LIFE,
+      owner,
+      ...(bojTrainingTrajectoriesOn() ? { trail: [{ x: tip.x, y: tip.y }] } : {})
+    });
+    const recoil = bojRecoilImpulse();
+    if (owner === 'player') {
+      player.vx -= recoil * fx;
+      player.vy -= recoil * fy;
+      if (
+        isBoj1v1() &&
+        bojEnemy &&
+        bojEnemy.alive &&
+        Math.abs(bojAngleDiff(ship.angle, bojAngleToward(player.x, player.y, bojEnemy.x, bojEnemy.y))) < 0.55
+      ) {
+        const toEnemyX = bojEnemy.x - player.x;
+        const toEnemyY = bojEnemy.y - player.y;
+        const perpX = -fy;
+        const perpY = fx;
+        const side = perpX * toEnemyX + perpY * toEnemyY >= 0 ? 1 : -1;
+        bojTriggerEnemyEvade(side);
+      }
+    } else {
+      ship.vx -= recoil * fx;
+      ship.vy -= recoil * fy;
+    }
+  }
+
+  function fireBojProjectile() {
+    if (!isBojTraining() && bojAmmo <= 0) return;
+    fireBojProjectileFrom(
+      { x: player.x, y: player.y, angle: shipAngleHold, vx: player.vx, vy: player.vy },
+      'player'
+    );
+  }
+
+  function fireBojEnemyProjectile() {
+    if (!bojEnemy || !bojEnemy.alive || bojEnemy.ammo <= 0) return;
+    fireBojProjectileFrom(bojEnemy, 'enemy');
+  }
+
+  function destroyBojEnemy() {
+    if (!bojEnemy || !bojEnemy.alive) return;
+    bojEnemy.alive = false;
+    bojEnemy.motors = { thrust: false, left: false, right: false };
+    bojEnemyFx = makeBojExplosionFx(bojEnemy.x, bojEnemy.y, [
+      BOJ_ENEMY_COLOR,
+      '#ff6f60',
+      '#ff8a65',
+      '#ffd54a',
+      '#7f1d1d'
+    ]);
+  }
+
+  function updateBojEnemyFx(dt) {
+    if (!bojEnemyFx) return;
+    bojEnemyFx.time += dt;
+    for (const p of bojEnemyFx.particles) {
+      if (!p.ring) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 220 * dt;
+        p.vx *= 0.98;
+      } else {
+        p.size += 180 * dt;
+      }
+      p.life -= dt * 1.15;
+    }
+    if (bojEnemyFx.time >= bojEnemyFx.duration) {
+      bojEnemyFx = null;
+      if (isBoj1v1() && gameState === 'playing' && !won) {
+        recordBoj1v1PlayerRoundWin();
+      }
+    }
+  }
+
+  function updateBojEnemy(dt) {
+    if (!bojEnemy || !bojEnemy.alive || isBoj1v1RoundBlocked()) return;
+
+    const dx = player.x - bojEnemy.x;
+    const dy = player.y - bojEnemy.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const ux = dx / dist;
+    const uy = dy / dist;
+    const perpX = -uy;
+    const perpY = ux;
+
+    const leadX = player.x + player.vx * BOJ_AI_LEAD_TIME;
+    const leadY = player.y + player.vy * BOJ_AI_LEAD_TIME;
+    const leadAngle = bojAngleToward(bojEnemy.x, bojEnemy.y, leadX, leadY);
+    const fleeAngle = bojAngleToward(bojEnemy.x, bojEnemy.y, bojEnemy.x - dx, bojEnemy.y - dy);
+
+    bojEnemy.evadeTimer += dt;
+    if (bojEnemy.evadeUntil > 0) bojEnemy.evadeUntil = Math.max(0, bojEnemy.evadeUntil - dt);
+
+    const bulletThreat = bojDetectPlayerBulletThreat();
+    if (bulletThreat) bojTriggerEnemyEvade(bulletThreat.side);
+
+    const strafeSign = bojEnemy.evadeSide;
+    const strafeAngle = Math.atan2(perpX * strafeSign, -perpY * strafeSign);
+    const evading = bojEnemy.evadeUntil > 0;
+
+    const playerAimingAtUs =
+      Math.abs(bojAngleDiff(shipAngleHold, bojAngleToward(player.x, player.y, bojEnemy.x, bojEnemy.y))) < 0.45;
+    const threatened = (playerAimingAtUs && dist < BOJ_AI_THREAT_DIST) || evading;
+    const tooClose = dist < BOJ_AI_PREFER_DIST_MIN;
+    const tooFar = dist > BOJ_AI_PREFER_DIST_MAX;
+
+    let desiredAngle;
+    if (evading) {
+      desiredAngle = bulletThreat
+        ? Math.atan2(bulletThreat.perpX * bulletThreat.side, -bulletThreat.perpY * bulletThreat.side)
+        : strafeAngle;
+    } else if (threatened || tooClose) {
+      desiredAngle = threatened ? strafeAngle : fleeAngle;
+    } else if (tooFar) {
+      desiredAngle = leadAngle;
+    } else {
+      desiredAngle = strafeAngle;
+    }
+
+    const angleDiff = bojAngleDiff(bojEnemy.angle, desiredAngle);
+    const leadDiff = bojAngleDiff(bojEnemy.angle, leadAngle);
+    const turnRate = BOJ_ANG_ACCEL;
+
+    bojEnemy.motors = { thrust: false, left: false, right: false };
+    bojEnemy.fireCooldown = Math.max(0, bojEnemy.fireCooldown - dt);
+
+    if (angleDiff > BOJ_AI_TURN_TOLERANCE) {
+      bojEnemy.angularVel += turnRate * dt;
+      bojEnemy.motors.left = true;
+    } else if (angleDiff < -BOJ_AI_TURN_TOLERANCE) {
+      bojEnemy.angularVel -= turnRate * dt;
+      bojEnemy.motors.right = true;
+    }
+
+    bojEnemy.angularVel *= Math.pow(BOJ_ANG_DAMP, dt * 60);
+    bojEnemy.angularVel = Math.max(-BOJ_MAX_ANG_VEL, Math.min(BOJ_MAX_ANG_VEL, bojEnemy.angularVel));
+    bojEnemy.angle += bojEnemy.angularVel * dt;
+
+    const sinA = Math.sin(bojEnemy.angle);
+    const cosA = Math.cos(bojEnemy.angle);
+    const wantThrust =
+      tooFar ||
+      tooClose ||
+      threatened ||
+      evading ||
+      (dist >= BOJ_AI_MIN_FIRE_RANGE && Math.abs(angleDiff) < 0.55);
+    if (wantThrust) {
+      const thrust = bojEnemyThrustAccel();
+      bojEnemy.vx += thrust * sinA * dt;
+      bojEnemy.vy += -thrust * cosA * dt;
+      bojEnemy.motors.thrust = true;
+    }
+
+    if (
+      bojEnemy.ammo > 0 &&
+      bojEnemy.fireCooldown <= 0 &&
+      Math.abs(leadDiff) < BOJ_AI_AIM_TOLERANCE &&
+      dist >= BOJ_AI_MIN_FIRE_RANGE &&
+      dist <= BOJ_AI_FIRE_RANGE
+    ) {
+      fireBojEnemyProjectile();
+    }
+
+    const esp = Math.hypot(bojEnemy.vx, bojEnemy.vy);
+    if (esp > MAX_SPEED) {
+      bojEnemy.vx = (bojEnemy.vx / esp) * MAX_SPEED;
+      bojEnemy.vy = (bojEnemy.vy / esp) * MAX_SPEED;
+    }
+
+    const nx = bojEnemy.x + bojEnemy.vx * dt;
+    const ny = bojEnemy.y + bojEnemy.vy * dt;
+    const wrapped = wrapPosition(nx, ny);
+    bojEnemy.x = wrapped.x;
+    bojEnemy.y = wrapped.y;
+  }
+
+  function checkBoj1v1AmmoDraw() {
+    if (
+      !isBoj1v1() ||
+      gameState !== 'playing' ||
+      won ||
+      boj1v1AmmoDrawHandled ||
+      isBoj1v1RoundBlocked() ||
+      !bojEnemy ||
+      !bojEnemy.alive
+    ) {
+      return;
+    }
+    if (bojAmmo > 0 || bojEnemy.ammo > 0 || bojProjectiles.length > 0) return;
+
+    boj1v1AmmoDrawHandled = true;
+    clearBojProjectiles();
+    if (
+      !showBoj1v1RoundAnnouncement(
+        'Remíza',
+        `Vyčerpán zásobník — skóre ${boj1v1ScoreText()}`
+      )
+    ) {
+      startBoj1v1Round();
+    }
+  }
+
+  function triggerBojDrawCollision() {
+    if (!isBoj() || gameState !== 'playing' || won || !bojEnemy || !bojEnemy.alive) return;
+    const cx = (player.x + bojEnemy.x) / 2;
+    const cy = (player.y + bojEnemy.y) / 2;
+    clearTrail();
+    clearBojProjectiles();
+    bojEnemy.alive = false;
+    bojEnemyFx = null;
+    player.vx = 0;
+    player.vy = 0;
+    bojEnemy.vx = 0;
+    bojEnemy.vy = 0;
+    gameState = 'exploding';
+    explosion = makeBojExplosionFx(cx, cy, [
+      PLAYER_COLOR,
+      BOJ_ENEMY_COLOR,
+      '#ff8a65',
+      '#ffd54a',
+      '#6b63ff',
+      '#7f1d1d'
+    ]);
+    explosion.bojDraw = true;
+  }
+
+  function checkBojShipCollision() {
+    if (!isBoj() || gameState !== 'playing' || won || !bojEnemy || !bojEnemy.alive) return;
+    const dist = Math.hypot(player.x - bojEnemy.x, player.y - bojEnemy.y);
+    if (dist < PLAYER_R + BOJ_ENEMY_HIT_R) {
+      triggerBojDrawCollision();
+    }
+  }
+
+  function checkBojCombatCollisions() {
+    if (gameState !== 'playing') return;
+    const playerHitR = PLAYER_R + BOJ_BULLET_R;
+    for (let i = bojProjectiles.length - 1; i >= 0; i--) {
+      const b = bojProjectiles[i];
+      if (b.owner === 'player') {
+        if (bojEnemy && bojEnemy.alive) {
+          if (Math.hypot(b.x - bojEnemy.x, b.y - bojEnemy.y) < BOJ_ENEMY_HIT_R + BOJ_BULLET_R) {
+            bojProjectiles.splice(i, 1);
+            damageBojEnemy();
+            continue;
+          }
+        }
+        if (Math.hypot(b.x - player.x, b.y - player.y) < playerHitR) {
+          bojProjectiles.splice(i, 1);
+          triggerExplosion(player.x, player.y);
+          return;
+        }
+      } else if (b.owner === 'enemy') {
+        if (Math.hypot(b.x - player.x, b.y - player.y) < playerHitR) {
+          bojProjectiles.splice(i, 1);
+          triggerExplosion(player.x, player.y);
+          return;
+        }
+      }
+    }
+  }
+
+  function tryBojFire() {
+    if (!isBoj() || gameState !== 'playing' || won || bojFireCooldown > 0 || isBoj1v1RoundBlocked()) return;
+    if (!isBojTraining() && bojAmmo <= 0) return;
+    fireBojProjectile();
+  }
+
+  function updateBojFireInput() {
+    const up = keys.has('ArrowUp') || pointerDir === 'up';
+    if (up && !bojUpWasPressed) tryBojFire();
+    bojUpWasPressed = up;
+  }
+
+  function bojProjectileOutOfPlay(x, y) {
+    const minX = PLAY.x + BOJ_BULLET_R;
+    const maxX = PLAY.x + PLAY.w - BOJ_BULLET_R;
+    const minY = PLAY.y + BOJ_BULLET_R;
+    const maxY = playBottomY() - BOJ_BULLET_R;
+    return x < minX || x > maxX || y < minY || y > maxY;
+  }
+
+  function updateBojProjectiles(dt) {
+    for (let i = bojProjectiles.length - 1; i >= 0; i--) {
+      const b = bojProjectiles[i];
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      if (bojTrainingTrajectoriesOn() && b.trail) appendBojTrainingBulletTrailPoint(b);
+      b.life -= dt;
+      if (b.life <= 0 || bojProjectileOutOfPlay(b.x, b.y)) {
+        if (bojTrainingTrajectoriesOn()) archiveBojTrainingBulletTrail(b);
+        bojProjectiles.splice(i, 1);
+      }
+    }
+  }
+
+  function setupBojLevel() {
+    applyBojShipMass(bojShipMass);
+    walls = [];
+    coins = [];
+    borderLines = [];
+    raceGoal = null;
+    gameState = 'playing';
+    shipAngularVel = 0;
+    clearBojProjectiles();
+    resetBojAmmo();
+    clearBojEnemyState();
+    clearBojTrainingState();
+
+    if (isBoj1v1()) {
+      resetBoj1v1MatchScores();
+      startBoj1v1Round();
+    } else {
+      player.x = PLAY.x + PLAY.w / 2;
+      player.y = PLAY.y + playH() / 2;
+      shipAngleHold = 0;
+      setupBojTrainingTargets();
+      bojCountdownSecondsLeft = 0;
+    }
+    saveLevelStart();
+  }
+
+  function setBojScenario(num) {
+    if (!isBoj() || bojScenario === num) return;
+    bojScenario = num;
+    clearTrail();
+    setupBojLevel();
+    resetPlayerState();
+    syncHtmlControls();
   }
 
   function setBludisteScenario(num) {
@@ -1954,6 +3340,27 @@
     if (isZavod()) {
       title.textContent = 'Závod dokončen!';
       msg.textContent = `Tvůj čas: ${formatStopwatch(raceFinishTime)}`;
+    } else if (kind === 'boj-draw') {
+      title.textContent = 'Remíza!';
+      msg.textContent = 'Rakety se srazily — nikdo nevyhrál.';
+    } else if (kind === 'boj-training') {
+      title.textContent = 'Trénink splněn!';
+      msg.textContent = 'Sestřelil jsi všech 5 červených raket.';
+    } else if (kind === 'boj-training-fail-self') {
+      title.textContent = 'Trénink neúspěšný';
+      msg.textContent = 'Zasáhl tě vlastní střela.';
+    } else if (kind === 'boj-training-fail') {
+      title.textContent = 'Trénink neúspěšný';
+      msg.textContent = 'Narazil jsi do červené rakety.';
+    } else if (kind === 'boj-match-win') {
+      title.textContent = 'Vítězství!';
+      msg.textContent = `Vyhrál jsi souboj ${bojPlayerWins}:${bojEnemyWins} — první k ${boj1v1WinsRequired} vítězstvím.`;
+    } else if (kind === 'boj-match-lose') {
+      title.textContent = 'Prohra';
+      msg.textContent = `Prohrál jsi souboj ${bojPlayerWins}:${bojEnemyWins} — soupeř dosáhl ${boj1v1WinsRequired} vítězství.`;
+    } else if (kind === 'boj') {
+      title.textContent = 'Nepřítel zničen!';
+      msg.textContent = 'Zničil jsi červenou raketu.';
     } else {
       title.textContent = 'Všechny mince sebrány!';
       msg.textContent = 'Gratulujeme, vyhráváš.';
@@ -2002,8 +3409,10 @@
     if (appMode === 'editing') appMode = 'playing';
     frictionMode = 'off';
     clearTrail();
+    clearBojProjectiles();
     hideRaceNewRecordForm();
     if (mode === 'zavod') setupZavodLevel();
+    else if (mode === 'boj') setupBojLevel();
     else setupBludisteLevel();
     resetPlayerState();
   }
@@ -2493,6 +3902,24 @@
       resetRaceStopwatch();
       racePhase = 'outbound';
     }
+    if (isBoj()) {
+      playerMass = bojShipMass;
+      shipAngularVel = 0;
+      clearBojProjectiles();
+      resetBojAmmo();
+      if (isBoj1v1()) {
+        clearBojTrainingState();
+        resetBoj1v1MatchScores();
+        startBoj1v1Round();
+      } else {
+        clearBojEnemyState();
+        player.x = PLAY.x + PLAY.w / 2;
+        player.y = PLAY.y + playH() / 2;
+        shipAngleHold = 0;
+        setupBojTrainingTargets();
+        bojCountdownSecondsLeft = 0;
+      }
+    }
     document.getElementById('winOverlay').classList.remove('show');
     hideRaceNewRecordForm();
   }
@@ -2516,6 +3943,7 @@
       return;
     }
     clearTrail();
+    resetAllDpadPanelsToDefault();
     if (bludisteScenario === 1) generateRandomLevel();
     else if (bludisteScenario === 2) generateRandomCorridorLevel();
     else generateRandomOpenFieldLevel();
@@ -2529,7 +3957,9 @@
 
   function newGame() {
     clearTrail();
+    resetAllDpadPanelsToDefault();
     if (isZavod()) setupZavodLevel();
+    else if (isBoj()) setupBojLevel();
     else if (bludisteScenario === 4) startEditor();
     else setupBludisteLevel();
     resetPlayerState();
@@ -2576,7 +4006,44 @@
       }
       p.life -= dt * 1.15;
     }
-    if (explosion.time >= explosion.duration) resetGame();
+    if (explosion.time >= explosion.duration) {
+      if (explosion.bojDraw) {
+        explosion = null;
+        if (isBoj1v1()) {
+          gameState = 'playing';
+          if (
+            !showBoj1v1RoundAnnouncement(
+              'Remíza',
+              `Žádný bod — skóre ${boj1v1ScoreText()}`
+            )
+          ) {
+            startBoj1v1Round();
+          }
+          return;
+        }
+        gameState = 'playing';
+        won = true;
+        showWinOverlay('boj-draw');
+        return;
+      }
+      if (explosion.bojTrainingFail) {
+        const failKind =
+          explosion.bojTrainingFailReason === 'selfBullet'
+            ? 'boj-training-fail-self'
+            : 'boj-training-fail';
+        explosion = null;
+        gameState = 'playing';
+        won = true;
+        showWinOverlay(failKind);
+        return;
+      }
+      if (isBoj1v1()) {
+        explosion = null;
+        recordBoj1v1EnemyRoundWin();
+        return;
+      }
+      resetGame();
+    }
   }
 
   function playerAccel() {
@@ -2584,7 +4051,9 @@
   }
 
   function massT() {
-    return (playerMass - MASS_MIN) / (MASS_MAX - MASS_MIN);
+    const mass = isBoj() ? bojShipMass : playerMass;
+    const max = isBoj() ? BOJ_MASS_MAX : MASS_MAX;
+    return (mass - MASS_MIN) / (max - MASS_MIN);
   }
 
   function formatMass(mass) {
@@ -2631,6 +4100,7 @@
 
   function shipAngle() {
     if (isBludiste()) return 0;
+    if (isBoj()) return shipAngleHold;
 
     const speed = playerSpeed();
     const m = motorActive();
@@ -2782,6 +4252,10 @@
 
     if (isZavod()) {
       return { up: false, down: false, left, right };
+    }
+
+    if (isBoj()) {
+      return { up: false, down, left, right };
     }
 
     return { up, down, left, right };
@@ -2947,7 +4421,22 @@
       updateExplosion(dt);
       return;
     }
-    if (won) return;
+    if (gameState === 'paused') return;
+    if (isBoj1v1AnnouncementActive()) {
+      boj1v1Announcement.timeLeft -= dt;
+      motors = { up: false, down: false, left: false, right: false };
+      if (boj1v1Announcement.timeLeft <= 0) {
+        boj1v1Announcement = null;
+        startBoj1v1Round();
+      }
+      return;
+    }
+    if (isBojCountdownActive()) {
+      bojCountdownSecondsLeft = Math.max(0, bojCountdownSecondsLeft - dt);
+      motors = { up: false, down: false, left: false, right: false };
+      return;
+    }
+    if (won && !(isBoj1v1() && bojEnemyFx)) return;
 
     updateRaceStopwatch(dt);
     if (isZavod() && !raceStopwatchRunning && raceIntroSecondsLeft > 0) {
@@ -2964,12 +4453,34 @@
       if (moving || Math.hypot(player.vx, player.vy) > 1) lockSettings();
     }
 
-    // Motor na straně kruhu tlačí opačným směrem (raketa)
-    const accel = playerAccel();
-    if (motors.up) player.vy += accel * dt;
-    if (motors.down) player.vy -= accel * dt;
-    if (motors.left) player.vx += accel * dt;
-    if (motors.right) player.vx -= accel * dt;
+    bojFireCooldown = Math.max(0, bojFireCooldown - dt);
+
+    if (isBoj()) {
+      updateBojFireInput();
+
+      if (motors.left) shipAngularVel -= BOJ_ANG_ACCEL * dt;
+      if (motors.right) shipAngularVel += BOJ_ANG_ACCEL * dt;
+      shipAngularVel *= Math.pow(BOJ_ANG_DAMP, dt * 60);
+      shipAngularVel = Math.max(-BOJ_MAX_ANG_VEL, Math.min(BOJ_MAX_ANG_VEL, shipAngularVel));
+      shipAngleHold += shipAngularVel * dt;
+
+      if (motors.down) {
+        const sinA = Math.sin(shipAngleHold);
+        const cosA = Math.cos(shipAngleHold);
+        const thrust = bojPlayerThrustAccel();
+        player.vx += thrust * sinA * dt;
+        player.vy += -thrust * cosA * dt;
+      }
+
+    } else {
+      bojUpWasPressed = false;
+      // Motor na straně kruhu tlačí opačným směrem (raketa / UFO)
+      const accel = playerAccel();
+      if (motors.up) player.vy += accel * dt;
+      if (motors.down) player.vy -= accel * dt;
+      if (motors.left) player.vx += accel * dt;
+      if (motors.right) player.vx -= accel * dt;
+    }
 
     if (isBludiste() && frictionIsOn()) {
       const f = Math.pow(frictionCoef(), dt * 60);
@@ -2998,7 +4509,26 @@
 
     player.x = nx;
     player.y = ny;
+    if (isBojTraining()) {
+      checkBojTrainingPlayerCollision();
+      if (gameState === 'exploding') return;
+    }
     updateTrail();
+
+    if (isBoj()) {
+      updateBojProjectiles(dt);
+      if (isBoj1v1()) {
+        updateBojEnemy(dt);
+        checkBojShipCollision();
+        if (gameState === 'playing') checkBojCombatCollisions();
+        checkBoj1v1AmmoDraw();
+        updateBojEnemyFx(dt);
+      } else if (isBojTraining()) {
+        checkBojTrainingTargetHits();
+        if (gameState === 'exploding') return;
+        updateBojTrainingExplosions(dt);
+      }
+    }
 
     for (const coin of coins) {
       if (!coin.taken) {
@@ -3729,6 +5259,24 @@
     drawVelocityArrowLine(originX, originY, tipX, tipY, color, Math.abs(value));
   }
 
+  function drawVelocityVector2D(originX, originY, vx, vy, color) {
+    const mag = Math.hypot(vx, vy);
+    if (mag < 0.5) return;
+    const len = mag * VEL_ARROW_SCALE;
+    const tipX = originX + (vx / mag) * len;
+    const tipY = originY + (vy / mag) * len;
+    drawVelocityArrowLine(originX, originY, tipX, tipY, color, mag);
+  }
+
+  function drawBojProjectileVelocityVectors(b) {
+    if (b.vLaunchX == null || b.vShipX == null) return;
+    const originX = worldToScreenX(b.x);
+    const originY = b.y;
+    drawVelocityVector2D(originX, originY, b.vShipX, b.vShipY, '#2563eb');
+    drawVelocityVector2D(originX, originY, b.vLaunchX, b.vLaunchY, '#d97706');
+    drawVelocityVector2D(originX, originY, b.vx, b.vy, '#d62828');
+  }
+
   function drawResultantVelocityArrow(originX, originY) {
     const lenX = velocityArrowLength(player.vx);
     const lenY = velocityArrowLength(player.vy);
@@ -3743,7 +5291,14 @@
     return isZavod() ? raceScreenX() : player.x;
   }
 
+  function playerVelocityVectorsVisible() {
+    if (isBojTraining()) return bojTrainingVectorsVisible;
+    if (isBludiste()) return velocityVectorsVisible;
+    return false;
+  }
+
   function drawVelocityVectors() {
+    if (!playerVelocityVectorsVisible()) return;
     ctx.save();
     ctx.beginPath();
     ctx.rect(PLAY.x, PLAY.y, PLAY.w, PLAY.h);
@@ -4118,11 +5673,11 @@
     ctx.closePath();
   }
 
-  function drawFlame(baseX, baseY, dirX, dirY, seed) {
+  function drawFlame(baseX, baseY, dirX, dirY, seed, scale = 1) {
     const t = flameTime;
     const flicker = 0.92 + 0.08 * Math.sin(t * 0.02 + seed);
-    const len = 38 * flicker;
-    const spread = 10;
+    const len = 38 * flicker * scale;
+    const spread = 10 * scale;
     const wobble = 0;
 
     ctx.save();
@@ -4212,20 +5767,20 @@
     ctx.globalAlpha = 1;
   }
 
-  function drawRocketBody() {
+  function drawRocketBodyStyled(hullColor, cockpitColor) {
     ctx.beginPath();
     ctx.moveTo(0, -PLAYER_R - 6);
     ctx.lineTo(PLAYER_R * 0.7, PLAYER_R * 0.62);
     ctx.lineTo(0, PLAYER_R * 0.36);
     ctx.lineTo(-PLAYER_R * 0.7, PLAYER_R * 0.62);
     ctx.closePath();
-    ctx.fillStyle = PLAYER_COLOR;
+    ctx.fillStyle = hullColor;
     ctx.fill();
     ctx.strokeStyle = '#111827';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = '#9ee7ff';
+    ctx.fillStyle = cockpitColor;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(0, -PLAYER_R * 0.2, PLAYER_R * 0.24, 0, Math.PI * 2);
@@ -4236,6 +5791,160 @@
     ctx.beginPath();
     ctx.roundRect(-PLAYER_R * 0.42, PLAYER_R * 0.38, PLAYER_R * 0.84, 7, 4);
     ctx.fill();
+  }
+
+  function drawRocketBody() {
+    drawRocketBodyStyled(playerColor(), '#9ee7ff');
+  }
+
+  function drawMotorNozzleLocalColored(hx, hy, dirX, dirY, active, fillActive, fillIdle) {
+    const perpX = -dirY;
+    const perpY = dirX;
+    ctx.fillStyle = active ? fillActive : fillIdle;
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(hx + dirX * 7, hy + dirY * 7);
+    ctx.lineTo(hx + perpX * 5, hy + perpY * 5);
+    ctx.lineTo(hx - dirX * 3, hy - dirY * 3);
+    ctx.lineTo(hx - perpX * 5, hy - perpY * 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  function drawBojShipMotors(motorState, fillActive, fillIdle) {
+    const mainDist = PLAYER_R * 0.58;
+    const sideX = PLAYER_R * 0.52;
+    const sideY = -PLAYER_R * 0.42;
+    drawMotorNozzleLocalColored(0, mainDist, 0, 1, motorState.thrust, fillActive, fillIdle);
+    drawMotorNozzleLocalColored(-sideX, sideY, -1, 0, motorState.right, fillActive, fillIdle);
+    drawMotorNozzleLocalColored(sideX, sideY, 1, 0, motorState.left, fillActive, fillIdle);
+    let seed = 0;
+    if (motorState.thrust) {
+      drawFlame(0, PLAYER_R + 4, 0, 1, seed, 1);
+      seed += 2.1;
+    }
+    if (motorState.left) {
+      drawFlame(sideX + 6, sideY, 1, 0, seed, 0.52);
+      seed += 2.1;
+    }
+    if (motorState.right) {
+      drawFlame(-sideX - 6, sideY, -1, 0, seed, 0.52);
+    }
+  }
+
+  function drawBojEnemy() {
+    if (!bojEnemy || !bojEnemy.alive) return;
+    const x = bojEnemy.x;
+    const y = bojEnemy.y;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(bojEnemy.angle);
+    ctx.shadowColor = 'rgba(229, 57, 53, 0.28)';
+    ctx.shadowBlur = 6;
+    drawRocketBodyStyled(bojEnemyHullColor(), BOJ_ENEMY_COCKPIT);
+    ctx.shadowBlur = 0;
+    drawBojShipMotors(bojEnemy.motors, bojEnemyHullColor(), bojEnemyHullColorDark());
+    ctx.restore();
+  }
+
+  function drawBojExplosionFx(fx) {
+    const { x, y, particles, time } = fx;
+    const sx = worldToScreenX(x);
+    const flash = Math.max(0, 1 - time / 0.12);
+    if (flash > 0) {
+      ctx.fillStyle = `rgba(255, 200, 180, ${flash * 0.75})`;
+      ctx.beginPath();
+      ctx.arc(sx, y, PLAYER_R + 20 + flash * 40, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (const p of particles) {
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = Math.max(0, p.life);
+      if (p.ring) {
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(sx, y, p.size, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(worldToScreenX(p.x), p.y, p.size * p.life, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBojEnemyFx() {
+    if (!bojEnemyFx) return;
+    drawBojExplosionFx(bojEnemyFx);
+  }
+
+  function drawBojTrainingBulletTrailPath(points, owner) {
+    if (points.length < 2) return;
+    const enemy = owner === 'enemy';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let i = 1; i < points.length; i++) {
+      const t = i / (points.length - 1);
+      const alpha = 0.14 + t * 0.32;
+      ctx.strokeStyle = enemy
+        ? `rgba(255, 120, 100, ${alpha})`
+        : `rgba(255, 196, 64, ${alpha})`;
+      ctx.lineWidth = 1.4 + t * 1.6;
+      ctx.beginPath();
+      ctx.moveTo(points[i - 1].x, points[i - 1].y);
+      ctx.lineTo(points[i].x, points[i].y);
+      ctx.stroke();
+    }
+  }
+
+  function drawBojTrainingBulletTrails() {
+    if (!bojTrainingTrajectoriesOn()) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PLAY.x, PLAY.y, PLAY.w, playH());
+    ctx.clip();
+    for (const trail of bojTrainingBulletTrails) {
+      drawBojTrainingBulletTrailPath(trail.points, trail.owner);
+    }
+    for (const b of bojProjectiles) {
+      if (!b.trail || b.trail.length === 0) continue;
+      const points = b.trail.slice();
+      const last = points[points.length - 1];
+      if (Math.hypot(b.x - last.x, b.y - last.y) > 0.5) {
+        points.push({ x: b.x, y: b.y });
+      }
+      drawBojTrainingBulletTrailPath(points, b.owner);
+    }
+    ctx.restore();
+  }
+
+  function drawBojTrainingTarget(target) {
+    ctx.save();
+    ctx.translate(target.x, target.y);
+    ctx.rotate(target.angle);
+    ctx.shadowColor = 'rgba(229, 57, 53, 0.22)';
+    ctx.shadowBlur = 6;
+    drawRocketBodyStyled(bojEnemyHullColor(), BOJ_ENEMY_COCKPIT);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawBojTrainingScene() {
+    if (!isBojTraining()) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PLAY.x, PLAY.y, PLAY.w, playH());
+    ctx.clip();
+    for (const target of bojTrainingTargets) {
+      if (target.alive) drawBojTrainingTarget(target);
+    }
+    for (const fx of bojTrainingExplosions) drawBojExplosionFx(fx);
+    ctx.restore();
   }
 
   function drawUfoBody() {
@@ -4285,8 +5994,52 @@
     return PLAYER_R * 1.05 + 4;
   }
 
+  function drawBojProjectile(b) {
+    const sx = worldToScreenX(b.x);
+    const tail = Math.min(1, b.life / 0.2);
+    const speed = Math.hypot(b.vx, b.vy) || 1;
+    const ux = b.vx / speed;
+    const uy = b.vy / speed;
+    const enemy = b.owner === 'enemy';
+
+    ctx.save();
+    ctx.strokeStyle = enemy ? 'rgba(255, 120, 100, 0.58)' : 'rgba(255, 196, 64, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(sx - ux * 14, b.y - uy * 14);
+    ctx.lineTo(sx, b.y);
+    ctx.stroke();
+
+    ctx.fillStyle = enemy
+      ? `rgba(255, 150, 140, ${0.55 + tail * 0.4})`
+      : `rgba(255, 240, 170, ${0.55 + tail * 0.4})`;
+    ctx.beginPath();
+    ctx.arc(sx, b.y, BOJ_BULLET_R, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = enemy ? '#ffe0dc' : '#fff8e1';
+    ctx.beginPath();
+    ctx.arc(sx, b.y, BOJ_BULLET_R * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBojProjectiles() {
+    if (!bojProjectiles.length) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PLAY.x, PLAY.y, PLAY.w, playH());
+    ctx.clip();
+    for (const b of bojProjectiles) drawBojProjectile(b);
+    if (bojTrainingVectorsOn() && gameplayVectorsVisible()) {
+      for (const b of bojProjectiles) drawBojProjectileVelocityVectors(b);
+    }
+    ctx.restore();
+  }
+
   function drawPlayer() {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' && gameState !== 'paused') return;
     const x = isZavod() ? raceScreenX() : player.x;
     const y = player.y;
     const motorDefs = [
@@ -4298,17 +6051,13 @@
     const nozzleDist = isBludiste() ? PLAYER_R * 0.92 : PLAYER_R * 0.78;
     const flameDist = PLAYER_R + 5;
 
-    const angle = shipAngle();
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.shadowColor = 'rgba(124, 58, 237, 0.22)';
-    ctx.shadowBlur = 6;
-    if (isBludiste()) drawUfoBody();
-    else drawRocketBody();
-    ctx.shadowBlur = 0;
-
     if (isBludiste()) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.shadowColor = 'rgba(124, 58, 237, 0.22)';
+      ctx.shadowBlur = 6;
+      drawUfoBody();
+      ctx.shadowBlur = 0;
       for (const m of motorDefs) {
         const hx = m.dirX * nozzleDist;
         const hy = m.dirY * nozzleDist;
@@ -4320,6 +6069,25 @@
         drawFlame(m.dirX * flameDist, m.dirY * flameDist, m.dirX, m.dirY, seed);
         seed += 2.1;
       }
+      ctx.restore();
+      return;
+    }
+
+    const angle = shipAngle();
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.shadowColor = 'rgba(124, 58, 237, 0.22)';
+    ctx.shadowBlur = 6;
+    drawRocketBody();
+    ctx.shadowBlur = 0;
+
+    if (isBoj()) {
+      drawBojShipMotors(
+        { thrust: motors.down, left: motors.left, right: motors.right },
+        playerColor(),
+        playerColorDark(false)
+      );
     }
 
     ctx.restore();
@@ -4396,13 +6164,86 @@
 
     if (isZavod()) drawRaceIntro();
     drawTrail();
+    if (bojTrainingTrajectoriesOn()) drawBojTrainingBulletTrails();
+    if (isBoj()) drawBojProjectiles();
+    if (isBojTraining()) drawBojTrainingScene();
     drawPlayer();
+    if (isBoj1v1()) drawBojEnemy();
     drawExplosion();
+    if (isBoj1v1()) drawBojEnemyFx();
 
     if (isZavod()) ctx.restore();
-    if (velocityVectorsVisible && gameState === 'playing') drawVelocityVectors();
+    if (gameplayVectorsVisible()) drawVelocityVectors();
+    if (isBojCountdownActive()) drawBojCountdown();
+    if (isBoj1v1AnnouncementActive()) drawBoj1v1RoundAnnouncement();
+    if (gameState === 'paused') drawPauseOverlay();
     if (isZavod()) drawRaceHud();
     if (isZavod()) drawRaceAxis();
+    ctx.restore();
+  }
+
+  function drawBoj1v1RoundAnnouncement() {
+    if (!isBoj1v1AnnouncementActive()) return;
+    const { title, subtitle } = boj1v1Announcement;
+    ctx.save();
+    ctx.fillStyle = 'rgba(7, 11, 28, 0.38)';
+    ctx.fillRect(PLAY.x, PLAY.y, PLAY.w, playH());
+    const cx = PLAY.x + PLAY.w / 2;
+    const cy = PLAY.y + playH() / 2;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 44px system-ui, sans-serif';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(7, 11, 28, 0.92)';
+    ctx.strokeText(title, cx, cy - 22);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(title, cx, cy - 22);
+    ctx.font = '600 24px system-ui, sans-serif';
+    ctx.strokeText(subtitle, cx, cy + 30);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.fillText(subtitle, cx, cy + 30);
+    ctx.restore();
+  }
+
+  function drawBojCountdown() {
+    if (!isBojCountdownActive()) return;
+    const n = Math.ceil(bojCountdownSecondsLeft);
+    if (n <= 0) return;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(7, 11, 28, 0.35)';
+    ctx.fillRect(PLAY.x, PLAY.y, PLAY.w, playH());
+    const cx = PLAY.x + PLAY.w / 2;
+    const cy = PLAY.y + playH() / 2;
+    ctx.font = '700 120px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = 'rgba(7, 11, 28, 0.92)';
+    ctx.strokeText(String(n), cx, cy);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(String(n), cx, cy);
+    ctx.restore();
+  }
+
+  function drawPauseOverlay() {
+    if (!isBojTraining() || gameState !== 'paused') return;
+    ctx.save();
+    ctx.fillStyle = 'rgba(7, 11, 28, 0.42)';
+    ctx.fillRect(PLAY.x, PLAY.y, PLAY.w, playH());
+    ctx.font = '700 52px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(7, 11, 28, 0.9)';
+    const cx = PLAY.x + PLAY.w / 2;
+    const cy = PLAY.y + playH() / 2;
+    ctx.strokeText('Pauza', cx, cy);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('Pauza', cx, cy);
+    ctx.font = '500 18px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+    ctx.fillText('Mezerník nebo tlačítko Pokračovat', cx, cy + 44);
     ctx.restore();
   }
 
@@ -4442,6 +6283,26 @@
   }
 
   window.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.code === 'Space') {
+      const typing =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement;
+      if (
+        !typing &&
+        !e.repeat &&
+        isBojTraining() &&
+        mobilePhase === 'playing' &&
+        appMode === 'playing' &&
+        !won &&
+        gameState !== 'exploding' &&
+        !isBojCountdownActive()
+      ) {
+        e.preventDefault();
+        toggleBojTrainingPause();
+        return;
+      }
+    }
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
       e.preventDefault();
       keys.add(e.key);
@@ -4455,6 +6316,10 @@
       return;
     }
       if (isZavod() && (dir === 'up' || dir === 'down')) {
+        return;
+      }
+      if (isBoj() && dir === 'up') {
+        if (active) tryBojFire();
         return;
       }
     if (active) pointerDir = dir;
@@ -4543,6 +6408,39 @@
 
   uiEls.modeBludiste.addEventListener('click', () => setPlayMode('bludiste'));
   uiEls.modeZavod.addEventListener('click', () => setPlayMode('zavod'));
+  uiEls.modeBoj.addEventListener('click', () => setPlayMode('boj'));
+  uiEls.bojScenario1.addEventListener('click', () => setBojScenario(1));
+  uiEls.bojScenario2.addEventListener('click', () => setBojScenario(2));
+  if (uiEls.bojTrainingCountRange) {
+    uiEls.bojTrainingCountRange.addEventListener('input', () => {
+      bojTrainingTargetCount = Math.max(
+        0,
+        Math.min(BOJ_TRAINING_TARGET_COUNT_MAX, Number(uiEls.bojTrainingCountRange.value) || 0)
+      );
+      syncHtmlControls();
+    });
+    uiEls.bojTrainingCountRange.addEventListener('change', () => {
+      if (isBojTraining() && playMode === 'boj') newGame();
+    });
+  }
+  if (uiEls.boj1v1WinsRange) {
+    uiEls.boj1v1WinsRange.addEventListener('input', () => {
+      boj1v1WinsRequired = Math.max(
+        1,
+        Math.min(BOJ_1V1_WINS_MAX, Number(uiEls.boj1v1WinsRange.value) || 1)
+      );
+      syncHtmlControls();
+    });
+    uiEls.boj1v1WinsRange.addEventListener('change', () => {
+      if (isBoj1v1() && playMode === 'boj') newGame();
+    });
+  }
+  if (uiEls.bojMassRange) {
+    uiEls.bojMassRange.addEventListener('input', () => {
+      applyBojShipMass(Number(uiEls.bojMassRange.value));
+      syncHtmlControls();
+    });
+  }
   uiEls.scenario1.addEventListener('click', () => setBludisteScenario(1));
   uiEls.scenario2.addEventListener('click', () => setBludisteScenario(2));
   uiEls.scenario3.addEventListener('click', () => setBludisteScenario(3));
@@ -4563,9 +6461,26 @@
   uiEls.frictionNormal.addEventListener('click', () => onFrictionControlClick('normal'));
   uiEls.frictionIce.addEventListener('click', () => onFrictionControlClick('ice'));
   uiEls.vectorsBtn.addEventListener('click', () => {
+    if (!isBludiste()) return;
     velocityVectorsVisible = !velocityVectorsVisible;
     syncHtmlControls();
   });
+  if (uiEls.bojTrainingVectorsBtn) {
+    uiEls.bojTrainingVectorsBtn.addEventListener('click', () => {
+      bojTrainingVectorsVisible = !bojTrainingVectorsVisible;
+      syncHtmlControls();
+    });
+  }
+  if (uiEls.bojTrainingTrajectoriesBtn) {
+    uiEls.bojTrainingTrajectoriesBtn.addEventListener('click', () => {
+      bojTrainingTrajectoriesVisible = !bojTrainingTrajectoriesVisible;
+      if (!bojTrainingTrajectoriesVisible) clearBojTrainingTrajectories();
+      syncHtmlControls();
+    });
+  }
+  if (uiEls.bojTrainingPauseBtn) {
+    uiEls.bojTrainingPauseBtn.addEventListener('click', () => toggleBojTrainingPause());
+  }
   uiEls.massRange.addEventListener('input', () => {
     if (!isBludiste() || !settingsEditable) return;
     playerMass = Number(uiEls.massRange.value);
@@ -4577,10 +6492,13 @@
     if (!(btn instanceof HTMLButtonElement)) return;
     if (btn.id === 'modeBludiste') setPlayMode('bludiste');
     if (btn.id === 'modeZavod') setPlayMode('zavod');
+    if (btn.id === 'modeBoj') setPlayMode('boj');
     if (btn.id === 'scenario1') setBludisteScenario(1);
     if (btn.id === 'scenario2') setBludisteScenario(2);
     if (btn.id === 'scenario3') setBludisteScenario(3);
     if (btn.id === 'scenario4') setBludisteScenario(4);
+    if (btn.id === 'bojScenario1') setBojScenario(1);
+    if (btn.id === 'bojScenario2') setBojScenario(2);
     const friction = btn.getAttribute('data-friction');
     if (friction === 'off' || friction === 'normal' || friction === 'ice') {
       onFrictionControlClick(friction);
@@ -4611,9 +6529,11 @@
   });
   window.addEventListener('resize', () => {
     resizeGameCanvas();
+    syncDraggableDpadPanels();
   });
 
   resizeGameCanvas();
+  initDraggableDpadPanels();
   setMobilePhase('setup');
   setupBludisteLevel();
   player.vx = 0;
