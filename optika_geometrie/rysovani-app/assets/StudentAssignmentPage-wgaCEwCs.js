@@ -1,5 +1,5 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./FreeGeometryEditor-BpPJHxgV.js?v=20260529-center-v2","./index-CirqRLh0.js?v=20260529-center-v2","./index-DgdolkM6.css","./slider-CRhdl_vq.js","./mouse-pointer-2-B0ODaAdM.js","./zoom-out-D3kbsEU6.js"])))=>i.map(i=>d[i]);
-var ye=Object.defineProperty;var je=(t,a,o)=>a in t?ye(t,a,{enumerable:!0,configurable:!0,writable:!0,value:o}):t[a]=o;var H=(t,a,o)=>je(t,typeof a!="symbol"?a+"":a,o);import{c as I,r as n,j as e,L as we,X as ke,C as Ne,a as Se,b as ze,u as Ce,g as J,d as _e,t as g,e as Pe,s as Ie,f as Ee,h as L,D as De,i as Ae,k as Te,l as Me,m as Re,n as Oe,B as Q,_ as Fe}from"./index-CirqRLh0.js?v=20260529-center-v2";import{f as Le}from"./geometrySubmissionCodec-DMXGC_dM.js";/**
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./FreeGeometryEditor-BpPJHxgV.js?v=20260529-center-v3","./index-CirqRLh0.js","./index-DgdolkM6.css","./slider-CRhdl_vq.js","./mouse-pointer-2-B0ODaAdM.js","./zoom-out-D3kbsEU6.js"])))=>i.map(i=>d[i]);
+var ye=Object.defineProperty;var je=(t,a,o)=>a in t?ye(t,a,{enumerable:!0,configurable:!0,writable:!0,value:o}):t[a]=o;var H=(t,a,o)=>je(t,typeof a!="symbol"?a+"":a,o);import{c as I,r as n,j as e,L as we,X as ke,C as Ne,a as Se,b as ze,u as Ce,g as J,d as _e,t as g,e as Pe,s as Ie,f as Ee,h as L,D as De,i as Ae,k as Te,l as Me,m as Re,n as Oe,B as Q,_ as Fe}from"./index-CirqRLh0.js";import{f as Le}from"./geometrySubmissionCodec-DMXGC_dM.js";/**
  * @license lucide-react v0.487.0 - ISC
  *
  * This source code is licensed under the ISC license.
