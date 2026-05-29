@@ -1276,7 +1276,7 @@
             </button>
           </div>
           <div class="button-row">
-            <button type="button" class="html-btn is-active" id="vectorsBtn">Vektory zapnuté</button>
+            <button type="button" class="html-btn" id="vectorsBtn">Vektory vypnuté</button>
           </div>
         </div>
         <div class="control-row" id="massControls">
@@ -1770,6 +1770,7 @@
   const BOJ_PLAYER_THRUST_ACCEL = 125;
   const BOJ_ANG_ACCEL = 7.5;
   const BOJ_MAX_ANG_VEL = 3.2;
+  const BOJ_PLAYER_MAX_ANG_VEL_MOTOR = 48;
   const BOJ_BULLET_SPEED = 620;
   const BOJ_BULLET_MASS = 0.22;
   const BOJ_BULLET_R = 5;
@@ -1846,7 +1847,7 @@
   let draggingMass = false;
   /** 'off' | 'normal' | 'ice' */
   let frictionMode = 'off';
-  let velocityVectorsVisible = true;
+  let velocityVectorsVisible = false;
   let settingsEditable = true;
   let trail = [];
 
@@ -1909,6 +1910,7 @@
   let raceIntroSecondsLeft = 0;
   let bludisteScenario = 1;
   let bludisteVehicle = 'ufo';
+  let bludistePresetPending = true;
   let pendingNewRecord = false;
   let lastUiSync = 0;
 
@@ -2709,6 +2711,23 @@
     saveLevelStart();
   }
 
+  function bludisteUsesPresetFirst() {
+    return bludisteScenario === 1 || bludisteScenario === 2;
+  }
+
+  function prepareBludisteLevelPreview() {
+    if (bludisteUsesPresetFirst()) {
+      setupBludisteLevel();
+      bludistePresetPending = true;
+    } else if (bludisteScenario === 3) {
+      setupBludisteScenarioLevel();
+      bludistePresetPending = false;
+    } else {
+      setupBludisteLevel();
+      bludistePresetPending = false;
+    }
+  }
+
   function resetBojAmmo() {
     bojAmmo = BOJ_AMMO_MAX;
   }
@@ -2793,6 +2812,10 @@
 
   function bojMaxAngularVel(mass = bojShipMass) {
     return BOJ_MAX_ANG_VEL * bojRotationMassFactor(mass);
+  }
+
+  function bojPlayerMaxAngularVel() {
+    return BOJ_PLAYER_MAX_ANG_VEL_MOTOR;
   }
 
   function bojRecoilImpulse(mass = bojShipMass) {
@@ -3372,7 +3395,7 @@
     bludisteScenario = num;
     if (appMode === 'editing') appMode = 'playing';
     clearTrail();
-    setupBludisteLevel();
+    prepareBludisteLevelPreview();
     resetPlayerState();
     syncHtmlControls();
   }
@@ -3743,7 +3766,7 @@
       msg.textContent = 'Rakety se srazily — nikdo nevyhrál.';
     } else if (kind === 'boj-training') {
       title.textContent = 'Trénink splněn!';
-      msg.textContent = 'Sestřelil jsi všech 5 červených raket.';
+      msg.textContent = '';
     } else if (kind === 'boj-training-fail-self') {
       title.textContent = 'Trénink neúspěšný';
       msg.textContent = 'Zasáhl tě vlastní střela.';
@@ -3818,7 +3841,7 @@
     hideRaceNewRecordForm();
     if (mode === 'zavod') setupZavodLevel();
     else if (mode === 'boj') setupBojLevel();
-    else setupBludisteLevel();
+    else prepareBludisteLevelPreview();
     resetPlayerState();
   }
 
@@ -4338,6 +4361,25 @@
     resetPlayerState();
   }
 
+  function playAgainAfterWin() {
+    if (isBludiste() && bludisteScenario === 4) {
+      resetPlayerState();
+      return;
+    }
+    if (
+      isBludiste() &&
+      (bludisteScenario === 1 || bludisteScenario === 2 || bludisteScenario === 3)
+    ) {
+      startGeneratedMission();
+      return;
+    }
+    if (isZavod() || isBoj()) {
+      newGame();
+      return;
+    }
+    resetGame();
+  }
+
   function returnToMenu() {
     keys.clear();
     pointerDir = null;
@@ -4345,21 +4387,27 @@
     document.getElementById('winOverlay').classList.remove('show');
     clearWinCelebration();
     hideRaceNewRecordForm();
+    if (isBludiste()) prepareBludisteLevelPreview();
     setMobilePhase('setup');
     syncHtmlControls();
+  }
+
+  function setupBludisteScenarioLevel() {
+    if (bludisteScenario === 1) generateRandomLevel();
+    else if (bludisteScenario === 2) generateRandomCorridorLevel();
+    else if (bludisteScenario === 3) generateRandomOpenFieldLevel();
+    raceGoal = null;
+    gameState = 'playing';
   }
 
   function startGeneratedMission() {
     if (!isBludiste() || (bludisteScenario !== 1 && bludisteScenario !== 2 && bludisteScenario !== 3)) {
       return;
     }
+    bludistePresetPending = false;
     clearTrail();
     resetAllDpadPanelsToDefault();
-    if (bludisteScenario === 1) generateRandomLevel();
-    else if (bludisteScenario === 2) generateRandomCorridorLevel();
-    else generateRandomOpenFieldLevel();
-    raceGoal = null;
-    gameState = 'playing';
+    setupBludisteScenarioLevel();
     resetPlayerState();
     document.getElementById('winOverlay').classList.remove('show');
     hideRaceNewRecordForm();
@@ -4369,10 +4417,31 @@
   function newGame() {
     clearTrail();
     resetAllDpadPanelsToDefault();
-    if (isZavod()) setupZavodLevel();
-    else if (isBoj()) setupBojLevel();
-    else if (bludisteScenario === 4) startEditor();
-    else setupBludisteLevel();
+    if (isZavod()) {
+      setupZavodLevel();
+      resetPlayerState();
+      return;
+    }
+    if (isBoj()) {
+      setupBojLevel();
+      resetPlayerState();
+      return;
+    }
+    if (bludisteScenario === 4) {
+      startEditor();
+      resetPlayerState();
+      return;
+    }
+    if (bludisteScenario === 1 || bludisteScenario === 2 || bludisteScenario === 3) {
+      if (bludistePresetPending && bludisteUsesPresetFirst()) {
+        bludistePresetPending = false;
+        resetPlayerState();
+        return;
+      }
+      startGeneratedMission();
+      return;
+    }
+    setupBludisteLevel();
     resetPlayerState();
   }
 
@@ -4879,7 +4948,7 @@
 
       const rocketMass = isBludisteRocket() ? playerMass : bojShipMass;
       const angAccel = bojAngularAccel(rocketMass);
-      const angVelMax = bojMaxAngularVel(rocketMass);
+      const angVelMax = bojPlayerMaxAngularVel();
       if (motors.left) shipAngularVel -= angAccel * dt;
       if (motors.right) shipAngularVel += angAccel * dt;
       shipAngularVel = Math.max(-angVelMax, Math.min(angVelMax, shipAngularVel));
@@ -6967,7 +7036,7 @@
     btn.addEventListener('touchcancel', () => setDirection(dir, false));
   });
 
-  document.getElementById('restartBtn').addEventListener('click', resetGame);
+  document.getElementById('restartBtn').addEventListener('click', playAgainAfterWin);
   document.getElementById('menuReturnBtn').addEventListener('click', returnToMenu);
   uiEls.gameBackBtn.addEventListener('click', returnToMenu);
   uiEls.gameNewGameBtn.addEventListener('click', startGeneratedMission);
@@ -6984,7 +7053,7 @@
   resizeGameCanvas();
   initDraggableDpadPanels();
   setMobilePhase('setup');
-  setupBludisteLevel();
+  prepareBludisteLevelPreview();
   player.vx = 0;
   player.vy = 0;
   resetGame();
