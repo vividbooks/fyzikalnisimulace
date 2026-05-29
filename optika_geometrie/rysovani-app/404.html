@@ -73,7 +73,8 @@
             var hubNav = document.getElementById("optika-hub-nav");
             if (!hubNav) return;
 
-            var afterApp = path
+            var currentPath = window.location.pathname.replace(/\/index\.html$/i, "");
+            var afterApp = currentPath
               .slice(appRoot.length)
               .replace(/^\//, "")
               .split("?")[0]
@@ -85,8 +86,8 @@
               return;
             }
 
-            var hubIdx = path.indexOf("/optika_geometrie/");
-            var hubHref = (hubIdx >= 0 ? path.slice(0, hubIdx) : "") + "/index.html";
+            var hubIdx = currentPath.indexOf("/optika_geometrie/");
+            var hubHref = (hubIdx >= 0 ? currentPath.slice(0, hubIdx) : "") + "/index.html";
             var hubLink = document.getElementById("optika-hub-back");
             if (hubLink) hubLink.setAttribute("href", hubHref);
 
