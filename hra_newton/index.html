@@ -305,6 +305,55 @@
       min-height: 68px;
     }
 
+    .friction-segmented {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .friction-segmented button {
+      display: grid;
+      gap: 6px;
+      justify-items: stretch;
+      min-width: 0;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 0.82rem;
+      line-height: 1.2;
+    }
+
+    .friction-swatch {
+      display: block;
+      width: 100%;
+      height: 24px;
+      border-radius: 8px;
+      border: 1px solid rgba(61, 90, 154, 0.22);
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    .friction-swatch-space {
+      background: #0b1020;
+    }
+
+    .friction-swatch-normal {
+      background: #e2e2e2;
+    }
+
+    .friction-swatch-ice {
+      background: #c3dffd;
+    }
+
+    .friction-segmented button[aria-pressed="true"] {
+      border-color: var(--accent);
+      background: var(--panel-bg);
+      color: var(--text);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .friction-segmented button[aria-pressed="true"] .friction-swatch {
+      border-color: rgba(61, 90, 154, 0.35);
+    }
+
     .option-icon {
       position: relative;
       width: 34px;
@@ -622,12 +671,23 @@
       height: 48px;
     }
 
-    .game-back-btn {
+    .game-play-actions {
       display: none;
       position: fixed;
-      z-index: 9;
+      z-index: 11;
       top: max(12px, env(safe-area-inset-top, 0px) + 10px);
       left: max(12px, env(safe-area-inset-left, 0px) + 10px);
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .game-play-actions:not([hidden]) {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    .game-play-actions .html-btn {
       flex: none;
       min-width: auto;
       padding: 0.55rem 1.15rem;
@@ -636,10 +696,10 @@
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
     }
 
-    .game-back-btn:not([hidden]) {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+    .game-play-actions .html-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
     }
 
     .win-overlay {
@@ -886,7 +946,10 @@
 </head>
 <body>
   <main class="app">
-    <button type="button" class="html-btn game-back-btn" id="gameBackBtn" hidden>Zpět</button>
+    <div class="game-play-actions" id="gamePlayActions" hidden>
+      <button type="button" class="html-btn" id="gameBackBtn">Zpět</button>
+      <button type="button" class="html-btn primary" id="gameNewGameBtn">Nová hra</button>
+    </div>
     <header class="sim-topbar">
       <div class="sim-topbar-intro">
         <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
@@ -903,7 +966,7 @@
                 <span class="option-icon mode-icon-maze" aria-hidden="true"></span>
                 <span class="option-copy">
                   <span class="option-title">Mise v poli</span>
-                  <span class="option-desc">sbírej energii mezi překážkami</span>
+                  <span class="option-desc">sbírej mince mezi překážkami</span>
                 </span>
               </button>
               <button type="button" id="modeZavod" aria-pressed="false">
@@ -953,8 +1016,22 @@
           <button type="button" class="html-btn" id="raceObstacles">Překážky vypnuté</button>
         </div>
         <div class="control-row" id="physicsControls">
+          <span class="control-label">Tření</span>
+          <div class="segmented friction-segmented" role="group" aria-label="Tření">
+            <button type="button" class="html-btn" id="frictionOff" data-friction="off" aria-pressed="true">
+              <span class="friction-swatch friction-swatch-space" aria-hidden="true"></span>
+              <span>Vesmír</span>
+            </button>
+            <button type="button" class="html-btn" id="frictionNormal" data-friction="normal" aria-pressed="false">
+              <span class="friction-swatch friction-swatch-normal" aria-hidden="true"></span>
+              <span>Běžné</span>
+            </button>
+            <button type="button" class="html-btn" id="frictionIce" data-friction="ice" aria-pressed="false">
+              <span class="friction-swatch friction-swatch-ice" aria-hidden="true"></span>
+              <span>Led</span>
+            </button>
+          </div>
           <div class="button-row">
-            <button type="button" class="html-btn" id="frictionBtn">Tření vypnuto</button>
             <button type="button" class="html-btn is-active" id="vectorsBtn">Vektory zapnuté</button>
           </div>
         </div>
@@ -1284,7 +1361,9 @@
   };
   const BORDER_LINE_WIDTH = 6;
   const FRICTION_COEF = 0.96;
+  const FRICTION_COEF_ICE = 0.9985;
   const FRICTION_FLOOR = '#e2e2e2';
+  const FRICTION_FLOOR_ICE = '#C3DFFD';
   const MASS_MIN = 1;
   const MASS_MAX = 8;
   const MASS_MID = 3;
@@ -1327,7 +1406,8 @@
 
   let playerMass = MASS_MID;
   let draggingMass = false;
-  let frictionEnabled = false;
+  /** 'off' | 'normal' | 'ice' */
+  let frictionMode = 'off';
   let velocityVectorsVisible = true;
   let settingsEditable = true;
   let trail = [];
@@ -1379,14 +1459,18 @@
     physicsControls: document.getElementById('physicsControls'),
     massControls: document.getElementById('massControls'),
     raceObstacles: document.getElementById('raceObstacles'),
-    frictionBtn: document.getElementById('frictionBtn'),
+    frictionOff: document.getElementById('frictionOff'),
+    frictionNormal: document.getElementById('frictionNormal'),
+    frictionIce: document.getElementById('frictionIce'),
     vectorsBtn: document.getElementById('vectorsBtn'),
     massRange: document.getElementById('massRange'),
     massValue: document.getElementById('massValue'),
     newGameHtml: document.getElementById('newGameHtml'),
     speedValue: document.getElementById('speedValue'),
     mobileSpeedValue: document.getElementById('mobileSpeedValue'),
-    gameBackBtn: document.getElementById('gameBackBtn')
+    gamePlayActions: document.getElementById('gamePlayActions'),
+    gameBackBtn: document.getElementById('gameBackBtn'),
+    gameNewGameBtn: document.getElementById('gameNewGameBtn')
   };
 
   let mobilePhase = 'setup';
@@ -1508,9 +1592,49 @@
     drawUiCard(p.x, p.y, p.w, p.h, { radius: p.radius, fill: 'rgba(255,255,255,0.96)' });
   }
 
+  function frictionIsOn() {
+    return frictionMode !== 'off';
+  }
+
+  function frictionCoef() {
+    if (frictionMode === 'ice') return FRICTION_COEF_ICE;
+    if (frictionMode === 'normal') return FRICTION_COEF;
+    return 1;
+  }
+
+  function frictionFloorColor() {
+    if (frictionMode === 'ice') return FRICTION_FLOOR_ICE;
+    if (frictionMode === 'normal') return FRICTION_FLOOR;
+    return null;
+  }
+
+  function setFrictionMode(mode) {
+    if (mode !== 'off' && mode !== 'normal' && mode !== 'ice') return;
+    if (frictionMode === mode) return;
+    frictionMode = mode;
+    if (isBludiste()) clearTrail();
+  }
+
+  function syncFrictionControls() {
+    const disabled = !settingsEditable || !isBludiste();
+    const modes = ['off', 'normal', 'ice'];
+    const buttons = {
+      off: uiEls.frictionOff,
+      normal: uiEls.frictionNormal,
+      ice: uiEls.frictionIce
+    };
+    for (const mode of modes) {
+      const btn = buttons[mode];
+      btn.setAttribute('aria-pressed', String(frictionMode === mode));
+      btn.disabled = disabled;
+      btn.classList.toggle('is-active', frictionMode === mode);
+    }
+  }
+
   function drawPlaySurface(x, y, w, h) {
-    const frictionFloor = isBludiste() && frictionEnabled;
-    ctx.fillStyle = frictionFloor ? FRICTION_FLOOR : '#0b1020';
+    const floorColor = isBludiste() ? frictionFloorColor() : null;
+    const frictionFloor = !!floorColor;
+    ctx.fillStyle = floorColor || '#0b1020';
     ctx.fillRect(x, y, w, h);
 
     ctx.save();
@@ -1604,9 +1728,7 @@
     uiEls.massControls.hidden = isZavod();
     uiEls.raceObstacles.textContent = raceObstaclesEnabled ? 'Překážky zapnuté' : 'Překážky vypnuté';
     uiEls.raceObstacles.classList.toggle('is-active', raceObstaclesEnabled);
-    uiEls.frictionBtn.textContent = frictionEnabled ? 'Tření zapnuto' : 'Tření vypnuto';
-    uiEls.frictionBtn.classList.toggle('is-active', frictionEnabled);
-    uiEls.frictionBtn.disabled = !settingsEditable || !isBludiste();
+    syncFrictionControls();
     uiEls.vectorsBtn.textContent = velocityVectorsVisible ? 'Vektory zapnuté' : 'Vektory vypnuté';
     uiEls.vectorsBtn.classList.toggle('is-active', velocityVectorsVisible);
     uiEls.massRange.value = playerMass.toFixed(1);
@@ -1615,11 +1737,11 @@
     const speedText = String(Math.round(playerSpeed()));
     uiEls.speedValue.textContent = speedText;
     uiEls.mobileSpeedValue.textContent = speedText;
-    uiEls.gameBackBtn.hidden = !(
-      isBludiste() &&
-      mobilePhase === 'playing' &&
-      appMode === 'playing'
-    );
+    const showPlayActions =
+      isBludiste() && mobilePhase === 'playing' && appMode === 'playing';
+    uiEls.gamePlayActions.hidden = !showPlayActions;
+    uiEls.gameNewGameBtn.hidden =
+      !showPlayActions || (bludisteScenario !== 1 && bludisteScenario !== 2 && bludisteScenario !== 3);
   }
 
   function setupBludisteLevel() {
@@ -1878,7 +2000,7 @@
     playMode = mode;
     setMobilePhase('setup');
     if (appMode === 'editing') appMode = 'playing';
-    frictionEnabled = false;
+    frictionMode = 'off';
     clearTrail();
     hideRaceNewRecordForm();
     if (mode === 'zavod') setupZavodLevel();
@@ -2121,6 +2243,215 @@
     return false;
   }
 
+  function pathToKeySet(path) {
+    return new Set(path.map(([c, r]) => `${c},${r}`));
+  }
+
+  /** Úzký lomený koridor jako ve scénáři 2 – v každém řádku průchod 1–2 pole, cesta stoupá a klikatí. */
+  function buildSerpentineCorridorPath(cols, rows) {
+    const startR = rows - 1;
+    const goalC = cols - 1;
+    const gapStart = new Array(rows);
+    const gapWidth = new Array(rows);
+
+    for (let r = 0; r < rows; r++) {
+      const w = Math.random() < 0.22 ? 2 : 1;
+      gapWidth[r] = w;
+      gapStart[r] = 1 + Math.floor(Math.random() * Math.max(1, cols - 1 - w));
+    }
+
+    gapStart[startR] = Math.min(gapStart[startR], 1);
+    gapStart[0] = Math.max(gapStart[0], cols - 2 - gapWidth[0]);
+
+    const path = [];
+    const visited = new Set();
+    const step = (nc, nr) => {
+      const key = `${nc},${nr}`;
+      if (visited.has(key)) return false;
+      visited.add(key);
+      path.push([nc, nr]);
+      return true;
+    };
+
+    let c = 0;
+    let r = startR;
+    step(c, r);
+
+    const moveHoriz = targetC => {
+      while (c < targetC) {
+        c++;
+        step(c, r);
+      }
+      while (c > targetC) {
+        c--;
+        step(c, r);
+      }
+    };
+
+    const alignToRowGap = row => {
+      const target = gapStart[row];
+      moveHoriz(target);
+      if (gapWidth[row] === 2 && c === target && target + 1 < cols) {
+        c++;
+        step(c, r);
+      }
+    };
+
+    alignToRowGap(startR);
+
+    while (r > 0) {
+      r--;
+      step(c, r);
+      alignToRowGap(r);
+    }
+
+    while (c < goalC) {
+      c++;
+      step(c, r);
+    }
+
+    return path.length > 0 ? path : null;
+  }
+
+  /** Dvě sousední „stěny“ s mezerou 2 pole – levý žebřík jako v úvodním levelu. */
+  function buildChannelCorridorPath(cols, rows) {
+    const startR = rows - 1;
+    const goalC = cols - 1;
+    const laneLo = 1 + Math.floor(Math.random() * Math.max(1, cols - 4));
+    const laneHi = laneLo + 1;
+    const path = [];
+    const visited = new Set();
+
+    const step = (nc, nr) => {
+      const key = `${nc},${nr}`;
+      if (visited.has(key)) return;
+      visited.add(key);
+      path.push([nc, nr]);
+    };
+
+    let c = 0;
+    let r = startR;
+    step(c, r);
+
+    while (c < laneLo) {
+      c++;
+      step(c, r);
+    }
+
+    let laneCol = laneLo;
+    while (r > 0 || c < goalC) {
+      if (r > 0) {
+        r--;
+        step(laneCol, r);
+        if (Math.random() < 0.35 && laneCol === laneLo) {
+          laneCol = laneHi;
+          step(laneCol, r);
+        } else if (Math.random() < 0.35 && laneCol === laneHi) {
+          laneCol = laneLo;
+          step(laneCol, r);
+        }
+      } else if (c < goalC) {
+        c++;
+        step(c, r);
+      } else {
+        break;
+      }
+    }
+
+    return path;
+  }
+
+  function buildRandomCorridorPath(cols, rows) {
+    const builders = [
+      () => buildSerpentineCorridorPath(cols, rows),
+      () => buildSerpentineCorridorPath(cols, rows),
+      () => buildChannelCorridorPath(cols, rows)
+    ];
+
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const path = builders[Math.floor(Math.random() * builders.length)]();
+      if (path && path.length >= cols + rows - 4) {
+        return pathToKeySet(path);
+      }
+    }
+
+    const path = buildSerpentineCorridorPath(cols, rows);
+    if (path) return pathToKeySet(path);
+    return pathToKeySet([[0, rows - 1], [cols - 1, 0]]);
+  }
+
+  function generateRandomOpenFieldLevel() {
+    const sc = BLUDISTE_SCENARIOS[3];
+    walls = [];
+    borderLines = [];
+    player.x = sc.player.x;
+    player.y = sc.player.y;
+
+    const { cells } = wallGrid();
+    const freeSpots = cells
+      .map(cell => ({ x: cell.wx + WALL_SIZE / 2, y: cell.wy + WALL_SIZE / 2 }))
+      .filter(spot => Math.hypot(spot.x - player.x, spot.y - player.y) > PLAYER_R + COIN_R + 24);
+
+    shuffle(freeSpots);
+    const coinList = [];
+    for (const spot of freeSpots) {
+      if (coinList.length >= COIN_COUNT) break;
+      if (coinList.every(c => Math.hypot(c.x - spot.x, c.y - spot.y) > 110)) {
+        coinList.push({ x: spot.x, y: spot.y });
+      }
+    }
+
+    if (coinList.length < COIN_COUNT) {
+      for (const spot of freeSpots) {
+        if (coinList.length >= COIN_COUNT) break;
+        if (coinList.every(c => Math.hypot(c.x - spot.x, c.y - spot.y) > 70)) {
+          coinList.push({ x: spot.x, y: spot.y });
+        }
+      }
+    }
+
+    if (coinList.length < COIN_COUNT) {
+      coins = sc.coins.map(c => ({ x: c[0], y: c[1], taken: false }));
+    } else {
+      coins = coinList.map(c => ({ x: c.x, y: c.y, taken: false }));
+    }
+    saveLevelStart();
+    return coinList.length === COIN_COUNT;
+  }
+
+  function generateRandomCorridorLevel() {
+    borderLines = buildFullPerimeterLines();
+    const { cells, cols, rows } = wallGrid();
+    const startPos = playCellCenter(0, rows - 1);
+    const coinPos = playCellCenter(cols - 1, 0);
+    const coinList = [{ x: coinPos.x, y: coinPos.y }];
+    const pathKeys = buildRandomCorridorPath(cols, rows);
+    const nextWalls = cells
+      .filter(cell => !pathKeys.has(cell.key))
+      .map(cell => [cell.wx, cell.wy]);
+
+    if (
+      hitRectAt(startPos.x, startPos.y, PLAYER_R, nextWalls) ||
+      hitRectAt(coinPos.x, coinPos.y, COIN_R, nextWalls) ||
+      !allCoinsReachable(startPos.x, startPos.y, coinList, nextWalls)
+    ) {
+      walls = SCENARIO_2_WALLS.map(w => [...w]);
+      coins = SCENARIO_2_COINS.map(c => ({ x: c[0], y: c[1], taken: false }));
+      borderLines = buildFullPerimeterLines();
+      player.x = SCENARIO_2_PLAYER.x;
+      player.y = SCENARIO_2_PLAYER.y;
+      saveLevelStart();
+      return false;
+    }
+
+    walls = nextWalls;
+    coins = [{ x: coinPos.x, y: coinPos.y, taken: false }];
+    player.x = startPos.x;
+    player.y = startPos.y;
+    saveLevelStart();
+    return true;
+  }
+
   function hitRectAt(px, py, r, wallList) {
     for (const [wx, wy] of wallList) {
       const cx = Math.max(wx, Math.min(px, wx + WALL_SIZE));
@@ -2177,6 +2508,22 @@
     document.getElementById('winOverlay').classList.remove('show');
     hideRaceNewRecordForm();
     setMobilePhase('setup');
+    syncHtmlControls();
+  }
+
+  function startGeneratedMission() {
+    if (!isBludiste() || (bludisteScenario !== 1 && bludisteScenario !== 2 && bludisteScenario !== 3)) {
+      return;
+    }
+    clearTrail();
+    if (bludisteScenario === 1) generateRandomLevel();
+    else if (bludisteScenario === 2) generateRandomCorridorLevel();
+    else generateRandomOpenFieldLevel();
+    raceGoal = null;
+    gameState = 'playing';
+    resetPlayerState();
+    document.getElementById('winOverlay').classList.remove('show');
+    hideRaceNewRecordForm();
     syncHtmlControls();
   }
 
@@ -2316,7 +2663,14 @@
   }
 
   function frictionStrength() {
-    return frictionEnabled ? (1 - FRICTION_COEF) : 0;
+    return frictionIsOn() ? (1 - frictionCoef()) : 0;
+  }
+
+  function trailIntensity() {
+    if (!frictionIsOn()) return 0;
+    const base = frictionStrength();
+    if (frictionMode === 'ice') return base * 0.08;
+    return base;
   }
 
   function clearTrail() {
@@ -2324,11 +2678,13 @@
   }
 
   function updateTrail() {
-    if (!isBludiste() || gameState !== 'playing' || !frictionEnabled) return;
+    if (!isBludiste() || gameState !== 'playing' || !frictionIsOn()) return;
     const speed = Math.hypot(player.vx, player.vy);
-    if (speed < 0.5) return;
+    const minSpeed = frictionMode === 'ice' ? 2.5 : 0.5;
+    const minDist = frictionMode === 'ice' ? 7 : 2;
+    if (speed < minSpeed) return;
 
-    const intensity = frictionStrength();
+    const intensity = trailIntensity();
     if (trail.length > 0) {
       const last = trail[trail.length - 1];
       const dist = Math.hypot(player.x - last.x, player.y - last.y);
@@ -2336,7 +2692,7 @@
         trail.push({ x: player.x, y: player.y, intensity, speed, break: true });
         return;
       }
-      if (dist < 2) return;
+      if (dist < minDist) return;
     }
     trail.push({ x: player.x, y: player.y, intensity, speed });
   }
@@ -2347,6 +2703,9 @@
 
   function drawTrail() {
     if (trail.length < 2) return;
+
+    const iceTrail = frictionMode === 'ice';
+    const trailVis = iceTrail ? 0.22 : 1;
 
     ctx.save();
     ctx.beginPath();
@@ -2360,9 +2719,9 @@
       if (p1.break) continue;
       const t = i / trail.length;
       const vis = trailSpeedVis(p1.speed || 0);
-      const alpha = Math.min(0.65, Math.max(0.16, (0.14 + p1.intensity * 14 * (0.3 + t * 0.7)) * vis));
+      const alpha = Math.min(0.65, Math.max(0.16, (0.14 + p1.intensity * 14 * (0.3 + t * 0.7)) * vis)) * trailVis;
       ctx.strokeStyle = playerTrailColorAlpha(alpha);
-      ctx.lineWidth = PLAYER_R * 1.5 * (0.35 + t * 0.65) * Math.max(0.45, vis);
+      ctx.lineWidth = PLAYER_R * 1.5 * (0.35 + t * 0.65) * Math.max(0.45, vis) * (iceTrail ? 0.55 : 1);
       ctx.beginPath();
       ctx.moveTo(worldToScreenX(p0.x), p0.y);
       ctx.lineTo(worldToScreenX(p1.x), p1.y);
@@ -2372,10 +2731,10 @@
       const p = trail[i];
       const t = i / trail.length;
       const vis = trailSpeedVis(p.speed || 0);
-      const alpha = Math.min(0.5, Math.max(0.12, (0.1 + p.intensity * 14 * 0.35 * (0.3 + t * 0.7)) * vis));
+      const alpha = Math.min(0.5, Math.max(0.12, (0.1 + p.intensity * 14 * 0.35 * (0.3 + t * 0.7)) * vis)) * trailVis;
       ctx.fillStyle = playerTrailColorAlpha(alpha);
       ctx.beginPath();
-      ctx.arc(worldToScreenX(p.x), p.y, PLAYER_R * (0.5 + t * 0.45), 0, Math.PI * 2);
+      ctx.arc(worldToScreenX(p.x), p.y, PLAYER_R * (0.5 + t * 0.45) * (iceTrail ? 0.6 : 1), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -2612,8 +2971,8 @@
     if (motors.left) player.vx += accel * dt;
     if (motors.right) player.vx -= accel * dt;
 
-    if (isBludiste() && frictionEnabled) {
-      const f = Math.pow(FRICTION_COEF, dt * 60);
+    if (isBludiste() && frictionIsOn()) {
+      const f = Math.pow(frictionCoef(), dt * 60);
       player.vx *= f;
       player.vy *= f;
     }
@@ -3150,7 +3509,7 @@
     ctx.beginPath();
     ctx.rect(ox, oy, gridW, gridH);
     ctx.clip();
-    ctx.strokeStyle = frictionEnabled ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.32)';
+    ctx.strokeStyle = frictionIsOn() ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.32)';
     ctx.lineWidth = 1;
     for (let c = 0; c <= cols; c++) {
       const x = ox + 1 + c * cell;
@@ -3207,8 +3566,8 @@
       b.y,
       b.w,
       b.h,
-      frictionEnabled ? 'Zapnuto' : 'Vypnuto',
-      { active: frictionEnabled, disabled: locked, fontSize: 14, radius: 10 }
+      frictionMode === 'ice' ? 'Led' : frictionMode === 'normal' ? 'Zapnuto' : 'Vypnuto',
+      { active: frictionIsOn(), disabled: locked, fontSize: 14, radius: 10 }
     );
   }
 
@@ -4194,11 +4553,15 @@
     applyZavodWalls();
     syncHtmlControls();
   });
-  uiEls.frictionBtn.addEventListener('click', () => {
+  function onFrictionControlClick(mode) {
     if (!isBludiste() || !settingsEditable) return;
-    frictionEnabled = !frictionEnabled;
+    setFrictionMode(mode);
     syncHtmlControls();
-  });
+  }
+
+  uiEls.frictionOff.addEventListener('click', () => onFrictionControlClick('off'));
+  uiEls.frictionNormal.addEventListener('click', () => onFrictionControlClick('normal'));
+  uiEls.frictionIce.addEventListener('click', () => onFrictionControlClick('ice'));
   uiEls.vectorsBtn.addEventListener('click', () => {
     velocityVectorsVisible = !velocityVectorsVisible;
     syncHtmlControls();
@@ -4218,6 +4581,11 @@
     if (btn.id === 'scenario2') setBludisteScenario(2);
     if (btn.id === 'scenario3') setBludisteScenario(3);
     if (btn.id === 'scenario4') setBludisteScenario(4);
+    const friction = btn.getAttribute('data-friction');
+    if (friction === 'off' || friction === 'normal' || friction === 'ice') {
+      onFrictionControlClick(friction);
+      return;
+    }
     syncHtmlControls();
   });
   document.querySelectorAll('.dpad button[data-dir]').forEach(btn => {
@@ -4236,6 +4604,7 @@
   document.getElementById('restartBtn').addEventListener('click', resetGame);
   document.getElementById('menuReturnBtn').addEventListener('click', returnToMenu);
   uiEls.gameBackBtn.addEventListener('click', returnToMenu);
+  uiEls.gameNewGameBtn.addEventListener('click', startGeneratedMission);
   document.getElementById('raceNicknameSubmit').addEventListener('click', submitRaceNickname);
   document.getElementById('raceNickname').addEventListener('keydown', e => {
     if (e.key === 'Enter') submitRaceNickname();
@@ -4250,6 +4619,7 @@
   player.vx = 0;
   player.vy = 0;
   resetGame();
+  syncHtmlControls();
   requestAnimationFrame(loop);
 })();
   </script>
