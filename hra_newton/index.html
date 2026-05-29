@@ -1201,6 +1201,13 @@
               </button>
             </div>
           </div>
+          <div class="control-row" id="bludisteVehicleControls" hidden>
+            <span class="control-label">Vozidlo</span>
+            <div class="button-row">
+              <button type="button" class="html-btn is-active" id="bludisteVehicleUfo" aria-pressed="true">UFO</button>
+              <button type="button" class="html-btn" id="bludisteVehicleRocket" aria-pressed="false">Raketa</button>
+            </div>
+          </div>
           <div class="control-row" id="bojScenarioControls" hidden>
             <span class="control-label">Scénář</span>
             <div class="segmented scenario-cards">
@@ -1750,6 +1757,8 @@
   const BORDER_LINE_WIDTH = 6;
   const FRICTION_COEF = 0.96;
   const FRICTION_COEF_ICE = 0.9985;
+  /** Podíl tření ve směru dopředu u rakety v misi (0 = bez brzdění vpřed, 1 = jako UFO). */
+  const BLUDISTE_ROCKET_FORWARD_FRICTION = 0.28;
   const FRICTION_FLOOR = '#e2e2e2';
   const FRICTION_FLOOR_ICE = '#C3DFFD';
   const MASS_MIN = 1;
@@ -1899,6 +1908,7 @@
   let raceObstacleWalls = [];
   let raceIntroSecondsLeft = 0;
   let bludisteScenario = 1;
+  let bludisteVehicle = 'ufo';
   let pendingNewRecord = false;
   let lastUiSync = 0;
 
@@ -1913,6 +1923,9 @@
     scenario3: document.getElementById('scenario3'),
     scenario4: document.getElementById('scenario4'),
     scenarioControls: document.getElementById('scenarioControls'),
+    bludisteVehicleControls: document.getElementById('bludisteVehicleControls'),
+    bludisteVehicleUfo: document.getElementById('bludisteVehicleUfo'),
+    bludisteVehicleRocket: document.getElementById('bludisteVehicleRocket'),
     bojScenarioControls: document.getElementById('bojScenarioControls'),
     bojScenario1: document.getElementById('bojScenario1'),
     bojScenario2: document.getElementById('bojScenario2'),
@@ -2176,6 +2189,14 @@
 
   function isBludiste() {
     return playMode === 'bludiste';
+  }
+
+  function isBludisteRocket() {
+    return isBludiste() && bludisteVehicle === 'rocket' && appMode !== 'editing';
+  }
+
+  function isBattleRocketStyle() {
+    return isBoj() || isBludisteRocket();
   }
 
   function isZavod() {
@@ -2554,6 +2575,7 @@
     document.body.classList.toggle('is-editing', appMode === 'editing');
     document.body.classList.toggle('is-zavod', isZavod());
     document.body.classList.toggle('is-boj', isBoj());
+    document.body.classList.toggle('is-bludiste-rocket', isBludisteRocket());
     layoutMobileRaceDpad();
     syncDraggableDpadPanels();
     uiEls.modeBludiste.setAttribute('aria-pressed', String(isBludiste()));
@@ -2564,6 +2586,17 @@
     uiEls.scenario3.setAttribute('aria-pressed', String(bludisteScenario === 3));
     uiEls.scenario4.setAttribute('aria-pressed', String(bludisteScenario === 4 || appMode === 'editing'));
     uiEls.scenarioControls.hidden = !isBludiste();
+    if (uiEls.bludisteVehicleControls) {
+      uiEls.bludisteVehicleControls.hidden = !isBludiste() || appMode === 'editing';
+    }
+    if (uiEls.bludisteVehicleUfo) {
+      uiEls.bludisteVehicleUfo.setAttribute('aria-pressed', String(bludisteVehicle === 'ufo'));
+      uiEls.bludisteVehicleUfo.classList.toggle('is-active', bludisteVehicle === 'ufo');
+    }
+    if (uiEls.bludisteVehicleRocket) {
+      uiEls.bludisteVehicleRocket.setAttribute('aria-pressed', String(bludisteVehicle === 'rocket'));
+      uiEls.bludisteVehicleRocket.classList.toggle('is-active', bludisteVehicle === 'rocket');
+    }
     if (uiEls.bojScenarioControls) uiEls.bojScenarioControls.hidden = !isBoj();
     if (uiEls.bojScenario1) uiEls.bojScenario1.setAttribute('aria-pressed', String(bojScenario === 1));
     if (uiEls.bojScenario2) uiEls.bojScenario2.setAttribute('aria-pressed', String(bojScenario === 2));
@@ -2593,12 +2626,14 @@
     uiEls.physicsControls.hidden = isZavod() || isBoj();
     uiEls.massControls.hidden = isZavod() || isBoj();
     if (uiEls.motorControlLabel) {
-      uiEls.motorControlLabel.textContent = isBoj() ? 'Pohon a otáčení' : 'Motory';
+      uiEls.motorControlLabel.textContent = isBattleRocketStyle() ? 'Pohon a otáčení' : 'Motory';
     }
     if (uiEls.motorDpad) {
       uiEls.motorDpad.setAttribute(
         'aria-label',
-        isBoj() ? 'Nahoru střela, dolů hlavní motor, vlevo a vpravo otáčení' : 'Směr motoru'
+        isBattleRocketStyle()
+          ? 'Nahoru střela, dolů hlavní motor, vlevo a vpravo otáčení'
+          : 'Směr motoru'
       );
     }
     uiEls.raceObstacles.textContent = raceObstaclesEnabled ? 'Překážky zapnuté' : 'Překážky vypnuté';
@@ -2734,6 +2769,10 @@
 
   function bojPlayerThrustAccel() {
     return BOJ_PLAYER_THRUST_ACCEL * bojThrustMassFactor();
+  }
+
+  function bludisteRocketThrustAccel() {
+    return BOJ_PLAYER_THRUST_ACCEL * bojThrustMassFactor(playerMass);
   }
 
   function bojEnemyThrustAccel() {
@@ -2957,6 +2996,33 @@
       { x: player.x, y: player.y, angle: shipAngleHold, vx: player.vx, vy: player.vy },
       'player'
     );
+  }
+
+  function fireBludisteRocketProjectile() {
+    if (!isBludisteRocket() || gameState !== 'playing' || won || bojFireCooldown > 0) return;
+    bojFireCooldown = BOJ_FIRE_COOLDOWN;
+    const ship = { x: player.x, y: player.y, angle: shipAngleHold, vx: player.vx, vy: player.vy };
+    const { fx, fy } = bojShipForward(ship.angle);
+    const tip = bojShipTip(ship);
+    const shipVx = ship.vx || 0;
+    const shipVy = ship.vy || 0;
+    const vLaunchX = BOJ_BULLET_SPEED * fx;
+    const vLaunchY = BOJ_BULLET_SPEED * fy;
+    bojProjectiles.push({
+      x: tip.x,
+      y: tip.y,
+      vx: vLaunchX + shipVx,
+      vy: vLaunchY + shipVy,
+      vLaunchX,
+      vLaunchY,
+      vShipX: shipVx,
+      vShipY: shipVy,
+      life: BOJ_BULLET_LIFE,
+      owner: 'field'
+    });
+    const recoil = bojRecoilImpulse(playerMass);
+    player.vx -= recoil * fx;
+    player.vy -= recoil * fy;
   }
 
   function fireBojEnemyProjectile() {
@@ -3187,15 +3253,52 @@
   }
 
   function tryBojFire() {
+    if (isBludisteRocket()) {
+      fireBludisteRocketProjectile();
+      return;
+    }
     if (!isBoj() || gameState !== 'playing' || won || bojFireCooldown > 0 || isBoj1v1RoundBlocked()) return;
     if (!isBojTraining() && bojAmmo <= 0) return;
     fireBojProjectile();
   }
 
   function updateBojFireInput() {
+    if (!isBoj() && !isBludisteRocket()) return;
     const up = keys.has('ArrowUp') || pointerDir === 'up';
     if (up && !bojUpWasPressed) tryBojFire();
     bojUpWasPressed = up;
+  }
+
+  function updateBludisteRocketProjectiles(dt) {
+    if (!isBludisteRocket() || gameState !== 'playing') return;
+    for (let i = bojProjectiles.length - 1; i >= 0; i--) {
+      const b = bojProjectiles[i];
+      if (b.owner !== 'field') continue;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.life -= dt;
+      if (b.life <= 0 || bojProjectileOutOfPlay(b.x, b.y)) {
+        bojProjectiles.splice(i, 1);
+        continue;
+      }
+      if (
+        hitRect(b.x, b.y, BOJ_BULLET_R, walls) ||
+        hitBorderLines(b.x, b.y, BOJ_BULLET_R, borderLines)
+      ) {
+        bojProjectiles.splice(i, 1);
+        continue;
+      }
+      let hitCoin = false;
+      for (const coin of coins) {
+        if (coin.taken) continue;
+        if (Math.hypot(b.x - coin.x, b.y - coin.y) < COIN_R + BOJ_BULLET_R) {
+          coin.taken = true;
+          hitCoin = true;
+          break;
+        }
+      }
+      if (hitCoin) bojProjectiles.splice(i, 1);
+    }
   }
 
   function bojProjectileOutOfPlay(x, y) {
@@ -3271,6 +3374,17 @@
     clearTrail();
     setupBludisteLevel();
     resetPlayerState();
+    syncHtmlControls();
+  }
+
+  function setBludisteVehicle(vehicle) {
+    if (!isBludiste() || (vehicle !== 'ufo' && vehicle !== 'rocket')) return;
+    if (bludisteVehicle === vehicle) return;
+    bludisteVehicle = vehicle;
+    clearBojProjectiles();
+    if (mobilePhase === 'playing' && appMode === 'playing') {
+      resetPlayerState();
+    }
     syncHtmlControls();
   }
 
@@ -4210,6 +4324,10 @@
         setupBojTrainingTargets();
         bojCountdownSecondsLeft = 0;
       }
+    } else if (isBludisteRocket()) {
+      shipAngularVel = 0;
+      shipAngleHold = 0;
+      clearBojProjectiles();
     }
     document.getElementById('winOverlay').classList.remove('show');
     clearWinCelebration();
@@ -4357,8 +4475,8 @@
 
   function massColorRgb(t) {
     const u = Math.max(0, Math.min(1, t));
-    const min = isBoj() ? BOJ_MASS_COLOR_MIN : MASS_COLOR_MIN;
-    const max = isBoj() ? BOJ_MASS_COLOR_MAX : MASS_COLOR_MAX;
+    const min = isBattleRocketStyle() ? BOJ_MASS_COLOR_MIN : MASS_COLOR_MIN;
+    const max = isBattleRocketStyle() ? BOJ_MASS_COLOR_MAX : MASS_COLOR_MAX;
     return {
       r: Math.round(min.r + (max.r - min.r) * u),
       g: Math.round(min.g + (max.g - min.g) * u),
@@ -4396,7 +4514,10 @@
   }
 
   function shipAngle() {
-    if (isBludiste()) return 0;
+    if (isBludiste()) {
+      if (isBludisteRocket()) return shipAngleHold;
+      return 0;
+    }
     if (isBoj()) return shipAngleHold;
 
     const speed = playerSpeed();
@@ -4753,11 +4874,12 @@
 
     bojFireCooldown = Math.max(0, bojFireCooldown - dt);
 
-    if (isBoj()) {
+    if (isBoj() || isBludisteRocket()) {
       updateBojFireInput();
 
-      const angAccel = bojAngularAccel();
-      const angVelMax = bojMaxAngularVel();
+      const rocketMass = isBludisteRocket() ? playerMass : bojShipMass;
+      const angAccel = bojAngularAccel(rocketMass);
+      const angVelMax = bojMaxAngularVel(rocketMass);
       if (motors.left) shipAngularVel -= angAccel * dt;
       if (motors.right) shipAngularVel += angAccel * dt;
       shipAngularVel = Math.max(-angVelMax, Math.min(angVelMax, shipAngularVel));
@@ -4766,7 +4888,7 @@
       if (motors.down) {
         const sinA = Math.sin(shipAngleHold);
         const cosA = Math.cos(shipAngleHold);
-        const thrust = bojPlayerThrustAccel();
+        const thrust = isBludisteRocket() ? bludisteRocketThrustAccel() : bojPlayerThrustAccel();
         player.vx += thrust * sinA * dt;
         player.vy += -thrust * cosA * dt;
       }
@@ -4783,8 +4905,23 @@
 
     if (isBludiste() && frictionIsOn()) {
       const f = Math.pow(frictionCoef(), dt * 60);
-      player.vx *= f;
-      player.vy *= f;
+      if (isBludisteRocket()) {
+        const loss = 1 - f;
+        const fForward = 1 - loss * BLUDISTE_ROCKET_FORWARD_FRICTION;
+        const { fx, fy } = bojShipForward(shipAngleHold);
+        const vForward = player.vx * fx + player.vy * fy;
+        const vLateralX = player.vx - vForward * fx;
+        const vLateralY = player.vy - vForward * fy;
+        const forwardAfter = vForward * fForward;
+        const lateralAfterX = vLateralX * f;
+        const lateralAfterY = vLateralY * f;
+        player.vx = forwardAfter * fx + lateralAfterX;
+        player.vy = forwardAfter * fy + lateralAfterY;
+        shipAngularVel *= f;
+      } else {
+        player.vx *= f;
+        player.vy *= f;
+      }
     }
 
     const sp = Math.hypot(player.vx, player.vy);
@@ -4827,6 +4964,8 @@
         if (gameState === 'exploding') return;
         updateBojTrainingExplosions(dt);
       }
+    } else if (isBludisteRocket()) {
+      updateBludisteRocketProjectiles(dt);
     }
 
     for (const coin of coins) {
@@ -6094,7 +6233,7 @@
   }
 
   function drawRocketBody() {
-    drawRocketBodyStyled(playerColor(), isBoj() ? BOJ_PLAYER_COCKPIT : '#9ee7ff');
+    drawRocketBodyStyled(playerColor(), isBattleRocketStyle() ? BOJ_PLAYER_COCKPIT : '#9ee7ff');
   }
 
   function drawMotorNozzleLocalColored(hx, hy, dirX, dirY, active, fillActive, fillIdle) {
@@ -6351,7 +6490,7 @@
     const nozzleDist = isBludiste() ? PLAYER_R * 0.92 : PLAYER_R * 0.78;
     const flameDist = PLAYER_R + 5;
 
-    if (isBludiste()) {
+    if (isBludiste() && !isBludisteRocket()) {
       ctx.save();
       ctx.translate(x, y);
       ctx.shadowColor = 'rgba(124, 58, 237, 0.22)';
@@ -6377,12 +6516,14 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
-    ctx.shadowColor = isBoj() ? 'rgba(34, 197, 94, 0.22)' : 'rgba(124, 58, 237, 0.22)';
+    ctx.shadowColor = isBattleRocketStyle()
+      ? 'rgba(34, 197, 94, 0.22)'
+      : 'rgba(124, 58, 237, 0.22)';
     ctx.shadowBlur = 6;
     drawRocketBody();
     ctx.shadowBlur = 0;
 
-    if (isBoj()) {
+    if (isBattleRocketStyle()) {
       drawBojShipMotors(
         { thrust: motors.down, left: motors.left, right: motors.right },
         playerColor(),
@@ -6465,7 +6606,7 @@
     if (isZavod()) drawRaceIntro();
     drawTrail();
     if (bojTrainingTrajectoriesOn()) drawBojTrainingBulletTrails();
-    if (isBoj()) drawBojProjectiles();
+    if (isBoj() || isBludisteRocket()) drawBojProjectiles();
     if (isBojTraining()) drawBojTrainingScene();
     drawPlayer();
     if (isBoj1v1()) drawBojEnemy();
@@ -6746,6 +6887,12 @@
   uiEls.scenario2.addEventListener('click', () => setBludisteScenario(2));
   uiEls.scenario3.addEventListener('click', () => setBludisteScenario(3));
   uiEls.scenario4.addEventListener('click', () => setBludisteScenario(4));
+  if (uiEls.bludisteVehicleUfo) {
+    uiEls.bludisteVehicleUfo.addEventListener('click', () => setBludisteVehicle('ufo'));
+  }
+  if (uiEls.bludisteVehicleRocket) {
+    uiEls.bludisteVehicleRocket.addEventListener('click', () => setBludisteVehicle('rocket'));
+  }
   uiEls.raceObstacles.addEventListener('click', () => {
     if (!isZavod()) return;
     raceObstaclesEnabled = !raceObstaclesEnabled;
