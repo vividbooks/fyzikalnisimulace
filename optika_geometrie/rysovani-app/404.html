@@ -14,6 +14,7 @@
           margin: 0;
         }
         #optika-hub-nav {
+          display: none;
           padding: 24px 24px 0;
           max-width: 1320px;
           margin: 0 auto;
@@ -46,16 +47,6 @@
           var appRoot =
             idx >= 0 ? path.slice(0, idx + marker.length) : path.replace(/\/$/, "") || "/";
 
-          var key = "optika_geometrie_spa_redirect";
-          var redirect = sessionStorage.getItem(key);
-          if (redirect) {
-            sessionStorage.removeItem(key);
-            var target = appRoot + (redirect.charAt(0) === "/" ? redirect : "/" + redirect);
-            if (window.location.pathname + window.location.search + window.location.hash !== target) {
-              history.replaceState(null, "", target);
-            }
-          }
-
           var css = document.createElement("link");
           css.rel = "stylesheet";
           css.crossOrigin = "anonymous";
@@ -69,48 +60,87 @@
           js.src = appRoot + "/assets/index-CirqRLh0.js";
           document.head.appendChild(js);
 
-          function setupOptikaHubNav() {
-            var hubNav = document.getElementById("optika-hub-nav");
-            if (!hubNav) return;
+          var hubObserverStarted = false;
 
+          function isOptikaMenuRoute() {
             var currentPath = window.location.pathname.replace(/\/index\.html$/i, "");
             var afterApp = currentPath
               .slice(appRoot.length)
               .replace(/^\//, "")
               .split("?")[0]
               .replace(/\/$/, "");
-            var isMenuRoute = !afterApp || afterApp === "menu-rysovani";
+            return !afterApp || afterApp === "menu-rysovani";
+          }
 
-            if (!isMenuRoute) {
+          function syncOptikaHubNav() {
+            var hubNav = document.getElementById("optika-hub-nav");
+            if (!hubNav) return;
+
+            if (!isOptikaMenuRoute()) {
               hubNav.style.display = "none";
               return;
             }
 
+            var currentPath = window.location.pathname.replace(/\/index\.html$/i, "");
             var hubIdx = currentPath.indexOf("/optika_geometrie/");
             var hubHref = (hubIdx >= 0 ? currentPath.slice(0, hubIdx) : "") + "/index.html";
             var hubLink = document.getElementById("optika-hub-back");
             if (hubLink) hubLink.setAttribute("href", hubHref);
 
             var root = document.getElementById("root");
-            if (!root) return;
+            var reactHub =
+              root && root.querySelector("a[href*='index.html']");
+            if (reactHub && (reactHub.textContent || "").indexOf("Přehled") >= 0) {
+              hubNav.style.display = "none";
+              return;
+            }
 
-            var hideHubNavIfReactRendered = function () {
-              var reactHub = root.querySelector("a[href*='index.html']");
-              if (reactHub && (reactHub.textContent || "").indexOf("Přehled") >= 0) {
-                hubNav.style.display = "none";
-              }
-            };
-            hideHubNavIfReactRendered();
-            new MutationObserver(hideHubNavIfReactRendered).observe(root, {
-              childList: true,
-              subtree: true,
-            });
+            hubNav.style.display = "block";
+          }
+
+          function watchOptikaHubNav() {
+            syncOptikaHubNav();
+            if (hubObserverStarted) return;
+            hubObserverStarted = true;
+
+            var root = document.getElementById("root");
+            if (root) {
+              new MutationObserver(syncOptikaHubNav).observe(root, {
+                childList: true,
+                subtree: true,
+              });
+            }
+
+            window.addEventListener("popstate", syncOptikaHubNav);
+          }
+
+          var pushState = history.pushState;
+          history.pushState = function () {
+            var result = pushState.apply(this, arguments);
+            syncOptikaHubNav();
+            return result;
+          };
+          var replaceState = history.replaceState;
+          history.replaceState = function () {
+            var result = replaceState.apply(this, arguments);
+            syncOptikaHubNav();
+            return result;
+          };
+
+          var key = "optika_geometrie_spa_redirect";
+          var redirect = sessionStorage.getItem(key);
+          if (redirect) {
+            sessionStorage.removeItem(key);
+            var target = appRoot + (redirect.charAt(0) === "/" ? redirect : "/" + redirect);
+            if (window.location.pathname + window.location.search + window.location.hash !== target) {
+              history.replaceState(null, "", target);
+            }
           }
 
           if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", setupOptikaHubNav);
+            document.addEventListener("DOMContentLoaded", watchOptikaHubNav);
           } else {
-            setupOptikaHubNav();
+            watchOptikaHubNav();
           }
         })();
       </script>
