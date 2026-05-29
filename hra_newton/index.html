@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Zákon setrvačnosti</title>
+  <title>Newtonovy pohybové zákony</title>
   <style>
     @font-face {
       font-family: "Fenomen Sans";
@@ -649,7 +649,7 @@
       cursor: grabbing;
     }
 
-    body.mobile-playing:not(.is-zavod) .dpad-float-panel .dpad-drag-handle {
+    body.mobile-playing .dpad-float-panel .dpad-drag-handle {
       display: grid;
     }
 
@@ -772,6 +772,13 @@
       pointer-events: auto;
     }
 
+    .game-play-readouts {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      pointer-events: none;
+    }
+
     .game-play-readout {
       pointer-events: none;
       display: grid;
@@ -788,6 +795,27 @@
       font-size: 1.65rem;
       line-height: 1;
       font-variant-numeric: tabular-nums;
+    }
+
+    .boj-score-value {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.28em;
+    }
+
+    #bojPlayerScoreValue,
+    #bojPlayerAmmoValue {
+      color: #00805B;
+    }
+
+    #bojEnemyScoreValue,
+    #bojEnemyAmmoValue {
+      color: #FF184A;
+    }
+
+    #bojScoreSep,
+    #bojAmmoSep {
+      color: #111827;
     }
 
     body.is-boj.mobile-playing .mobile-game-hud .mobile-speed {
@@ -848,6 +876,23 @@
       box-sizing: border-box;
     }
     .win-box h2 { margin-bottom: 0.75rem; color: var(--accent); }
+    .win-overlay.win-celebrate .win-box {
+      animation: winBoxPop 0.85s ease-out;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.22), 0 0 0 0 rgba(251, 191, 36, 0.45);
+    }
+    .win-overlay.win-celebrate .win-box h2 {
+      animation: winTitlePop 0.85s ease-out;
+    }
+    @keyframes winBoxPop {
+      0% { transform: scale(0.88); opacity: 0.5; }
+      45% { transform: scale(1.06); box-shadow: 0 22px 56px rgba(0,0,0,0.28), 0 0 48px rgba(251, 191, 36, 0.55); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes winTitlePop {
+      0% { transform: scale(0.7); opacity: 0.2; }
+      50% { transform: scale(1.18); }
+      100% { transform: scale(1); opacity: 1; }
+    }
     .win-actions {
       display: flex;
       flex-wrap: wrap;
@@ -1068,11 +1113,23 @@
         <button type="button" class="html-btn" id="gameBackBtn">Zpět</button>
         <button type="button" class="html-btn primary" id="gameNewGameBtn">Nová hra</button>
       </div>
-      <div class="game-play-readout readout" id="bojAmmoPanel" hidden>
-        <span class="control-label">Skóre</span>
-        <strong id="bojScoreValue">0 : 0</strong>
-        <span class="control-label" id="bojAmmoLabel">Zásobník</span>
-        <strong id="bojAmmoValue">30</strong>
+      <div class="game-play-readouts" id="boj1v1Readouts" hidden>
+        <div class="game-play-readout readout" id="bojScorePanel">
+          <span class="control-label">Skóre</span>
+          <strong id="bojScoreValue" class="boj-score-value">
+            <span id="bojPlayerScoreValue">0</span>
+            <span id="bojScoreSep" aria-hidden="true">:</span>
+            <span id="bojEnemyScoreValue">0</span>
+          </strong>
+        </div>
+        <div class="game-play-readout readout" id="bojAmmoPanel">
+          <span class="control-label" id="bojAmmoLabel">Zásobník</span>
+          <strong id="bojAmmoValue" class="boj-score-value">
+            <span id="bojPlayerAmmoValue">30</span>
+            <span id="bojAmmoSep" aria-hidden="true">/</span>
+            <span id="bojEnemyAmmoValue">30</span>
+          </strong>
+        </div>
       </div>
       <button type="button" class="html-btn game-play-pause-btn" id="bojTrainingPauseBtn" hidden>Pauza</button>
     </div>
@@ -1080,10 +1137,10 @@
       <div class="sim-topbar-intro">
         <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
         <div>
-          <h1 class="panel-title">Zákon setrvačnosti</h1>
+          <h1 class="panel-title">Newtonovy pohybové zákony</h1>
         </div>
       </div>
-      <div class="html-controls" aria-label="Ovládání simulace Zákon setrvačnosti">
+      <div class="html-controls" aria-label="Ovládání simulace Newtonovy pohybové zákony">
         <div class="mode-setup">
           <div class="control-row">
             <span class="control-label">Režim</span>
@@ -1098,7 +1155,7 @@
               <button type="button" id="modeZavod" aria-pressed="false">
                 <span class="option-icon mode-icon-race" aria-hidden="true"></span>
                 <span class="option-copy">
-                  <span class="option-title">Orbitální závod</span>
+                  <span class="option-title">Vesmírný závod</span>
                   <span class="option-desc">leť na čas ke značce a zpět</span>
                 </span>
               </button>
@@ -1174,7 +1231,7 @@
             <span class="control-label">Zobrazení</span>
             <div class="button-row">
               <button type="button" class="html-btn" id="bojTrainingVectorsBtn">Vektory vypnuté</button>
-              <button type="button" class="html-btn" id="bojTrainingTrajectoriesBtn">Trajektorie vypnuté</button>
+              <button type="button" class="html-btn" id="bojTrainingTrajectoriesBtn">Trajektorie střel vypnuté</button>
             </div>
           </div>
           <div class="control-row" id="boj1v1WinsControls" hidden>
@@ -1202,13 +1259,13 @@
               <span class="friction-swatch friction-swatch-space" aria-hidden="true"></span>
               <span>Vesmír</span>
             </button>
-            <button type="button" class="html-btn" id="frictionNormal" data-friction="normal" aria-pressed="false">
-              <span class="friction-swatch friction-swatch-normal" aria-hidden="true"></span>
-              <span>Běžné</span>
-            </button>
             <button type="button" class="html-btn" id="frictionIce" data-friction="ice" aria-pressed="false">
               <span class="friction-swatch friction-swatch-ice" aria-hidden="true"></span>
               <span>Led</span>
+            </button>
+            <button type="button" class="html-btn" id="frictionNormal" data-friction="normal" aria-pressed="false">
+              <span class="friction-swatch friction-swatch-normal" aria-hidden="true"></span>
+              <span>Podlaha</span>
             </button>
           </div>
           <div class="button-row">
@@ -1405,14 +1462,11 @@
   }
 
   function applyDpadPanelPosition(panel) {
-    if (isZavod()) {
-      resetDpadPanelPosition(panel);
-      return;
-    }
     const pos = loadDpadPanelPosition(panel.dataset.dragId);
     if (!pos) return;
     const maxLeft = Math.max(0, window.innerWidth - panel.offsetWidth);
     const maxTop = Math.max(0, window.innerHeight - panel.offsetHeight);
+    panel.classList.remove('is-axis-aligned');
     panel.classList.add('is-drag-positioned');
     panel.style.left = `${Math.min(Math.max(0, pos.left), maxLeft)}px`;
     panel.style.top = `${Math.min(Math.max(0, pos.top), maxTop)}px`;
@@ -1423,9 +1477,8 @@
   function syncDraggableDpadPanels() {
     if (dpadPanelDragState) return;
     document.querySelectorAll('.dpad-float-panel').forEach(panel => {
-      if (panel.classList.contains('is-panel-dragging')) return;
-      if (isZavod()) resetDpadPanelPosition(panel);
-      else applyDpadPanelPosition(panel);
+      if (panel.classList.contains('is-panel-dragging') || panel.classList.contains('is-axis-aligned')) return;
+      applyDpadPanelPosition(panel);
     });
   }
 
@@ -1459,11 +1512,11 @@
   }
 
   function startDpadPanelDrag(e, panel) {
-    if (isZavod()) return;
     e.preventDefault();
     e.stopPropagation();
     const { x, y } = dpadPanelPointerPos(e);
     const rect = panel.getBoundingClientRect();
+    panel.classList.remove('is-axis-aligned');
     panel.classList.add('is-drag-positioned', 'is-panel-dragging');
     panel.style.left = `${rect.left}px`;
     panel.style.top = `${rect.top}px`;
@@ -1478,7 +1531,7 @@
       const panel = handle.closest('.dpad-float-panel');
       if (!panel) return;
       handle.addEventListener('pointerdown', e => {
-        if (isZavod() || mobilePhase !== 'playing' || appMode === 'editing') return;
+        if (mobilePhase !== 'playing' || appMode === 'editing') return;
         if (e.button !== 0 && e.pointerType === 'mouse') return;
         startDpadPanelDrag(e, panel);
         handle.setPointerCapture(e.pointerId);
@@ -1512,14 +1565,20 @@
       }
       return;
     }
-    resetDpadPanelPosition(dpad);
+    if (loadDpadPanelPosition(dpad.dataset.dragId) || dpad.classList.contains('is-drag-positioned')) {
+      applyDpadPanelPosition(dpad);
+      return;
+    }
+    dpad.classList.remove('is-drag-positioned', 'is-panel-dragging');
+    dpad.style.top = '';
+    dpad.style.right = '';
+    dpad.style.bottom = '';
     const rect = canvas.getBoundingClientRect();
     const scale = rect.width / canvas.width;
     const axisRightCanvas = PLAY.w * viewScale + viewOffsetX;
     const axisRightScreen = rect.left + axisRightCanvas * scale;
     dpad.classList.add('is-axis-aligned');
     dpad.style.left = `${Math.round(axisRightScreen - dpad.offsetWidth)}px`;
-    dpad.style.right = 'auto';
   }
 
   const DEFAULT_WALLS = [
@@ -1701,7 +1760,6 @@
   const MAX_SPEED = 10000;
   const BOJ_PLAYER_THRUST_ACCEL = 125;
   const BOJ_ANG_ACCEL = 7.5;
-  const BOJ_ANG_DAMP = 0.9;
   const BOJ_MAX_ANG_VEL = 3.2;
   const BOJ_BULLET_SPEED = 620;
   const BOJ_BULLET_MASS = 0.22;
@@ -1710,6 +1768,9 @@
   const BOJ_FIRE_COOLDOWN = 0.26;
   const BOJ_NOSE_OFFSET = PLAYER_R + 6;
   const BOJ_AMMO_MAX = 30;
+  const BOJ_MASS_COLOR_MIN = { r: 0x86, g: 0xef, b: 0xac };
+  const BOJ_MASS_COLOR_MAX = { r: 0x05, g: 0x7a, b: 0x35 };
+  const BOJ_PLAYER_COCKPIT = '#d1fae5';
   const BOJ_ENEMY_COLOR = '#e53935';
   const BOJ_ENEMY_COLOR_DARK = '#b71c1c';
   const BOJ_ENEMY_COCKPIT = '#ffc9c9';
@@ -1721,6 +1782,9 @@
   const BOJ_MASS_CURVE = 1.12;
   const BOJ_MASS_THRUST_CURVE = 1.28;
   const BOJ_MASS_MOVE_FLOOR = 0.15;
+  const BOJ_ROTATION_INERTIA_EXP = 1.55;
+  const BOJ_ROTATION_MASS_FLOOR = 0.04;
+  const BOJ_ROTATION_MASS_CEIL = 1;
   const BOJ_ENEMY_HP = 1;
   const BOJ_ENEMY_HIT_R = PLAYER_R;
   const BOJ_AI_AIM_TOLERANCE = 0.14;
@@ -1813,6 +1877,7 @@
   let boj1v1Announcement = null;
   let boj1v1AmmoDrawHandled = false;
   let won = false;
+  let winCelebration = null;
   let gameState = 'playing';
   let explosion = null;
   let levelStart = { playerX: 742.5, playerY: 676, coins: [] };
@@ -1883,10 +1948,18 @@
     gamePlayActions: document.getElementById('gamePlayActions'),
     gameBackBtn: document.getElementById('gameBackBtn'),
     gameNewGameBtn: document.getElementById('gameNewGameBtn'),
+    boj1v1Readouts: document.getElementById('boj1v1Readouts'),
+    bojScorePanel: document.getElementById('bojScorePanel'),
     bojAmmoPanel: document.getElementById('bojAmmoPanel'),
     bojScoreValue: document.getElementById('bojScoreValue'),
+    bojPlayerScoreValue: document.getElementById('bojPlayerScoreValue'),
+    bojScoreSep: document.getElementById('bojScoreSep'),
+    bojEnemyScoreValue: document.getElementById('bojEnemyScoreValue'),
     bojAmmoLabel: document.getElementById('bojAmmoLabel'),
     bojAmmoValue: document.getElementById('bojAmmoValue'),
+    bojPlayerAmmoValue: document.getElementById('bojPlayerAmmoValue'),
+    bojAmmoSep: document.getElementById('bojAmmoSep'),
+    bojEnemyAmmoValue: document.getElementById('bojEnemyAmmoValue'),
     bojTrainingPauseBtn: document.getElementById('bojTrainingPauseBtn')
   };
 
@@ -2148,6 +2221,26 @@
     if (bojEnemy) bojEnemy.angularVel = 0;
   }
 
+  function boj1v1EnemyAmmo() {
+    return bojEnemy ? bojEnemy.ammo : BOJ_AMMO_MAX;
+  }
+
+  function boj1v1AmmoText() {
+    return `${bojAmmo}/${boj1v1EnemyAmmo()}`;
+  }
+
+  function syncBoj1v1ScoreDisplay() {
+    if (!uiEls.bojPlayerScoreValue || !uiEls.bojEnemyScoreValue) return;
+    uiEls.bojPlayerScoreValue.textContent = String(bojPlayerWins);
+    uiEls.bojEnemyScoreValue.textContent = String(bojEnemyWins);
+  }
+
+  function syncBoj1v1AmmoDisplay() {
+    if (!uiEls.bojPlayerAmmoValue || !uiEls.bojEnemyAmmoValue) return;
+    uiEls.bojPlayerAmmoValue.textContent = String(bojAmmo);
+    uiEls.bojEnemyAmmoValue.textContent = String(boj1v1EnemyAmmo());
+  }
+
   function boj1v1ScoreText() {
     return `${bojPlayerWins} : ${bojEnemyWins}`;
   }
@@ -2328,11 +2421,11 @@
     player.vy = 0;
     gameState = 'exploding';
     explosion = makeBojExplosionFx(cx, cy, [
-      PLAYER_COLOR,
+      playerColor(),
       BOJ_ENEMY_COLOR,
       '#ff8a65',
       '#ffd54a',
-      '#6b63ff',
+      '#16a34a',
       '#7f1d1d'
     ]);
     explosion.bojTrainingFail = true;
@@ -2406,11 +2499,11 @@
     player.vy = 0;
     gameState = 'exploding';
     explosion = makeBojExplosionFx(player.x, player.y, [
-      PLAYER_COLOR,
+      playerColor(),
       BOJ_ENEMY_COLOR,
       '#ff8a65',
       '#ffd54a',
-      '#6b63ff',
+      '#16a34a',
       '#7f1d1d'
     ]);
     explosion.bojTrainingFail = true;
@@ -2462,6 +2555,7 @@
     document.body.classList.toggle('is-zavod', isZavod());
     document.body.classList.toggle('is-boj', isBoj());
     layoutMobileRaceDpad();
+    syncDraggableDpadPanels();
     uiEls.modeBludiste.setAttribute('aria-pressed', String(isBludiste()));
     uiEls.modeZavod.setAttribute('aria-pressed', String(isZavod()));
     uiEls.modeBoj.setAttribute('aria-pressed', String(isBoj()));
@@ -2491,8 +2585,8 @@
     }
     if (uiEls.bojTrainingTrajectoriesBtn) {
       uiEls.bojTrainingTrajectoriesBtn.textContent = bojTrainingTrajectoriesVisible
-        ? 'Trajektorie zapnuté'
-        : 'Trajektorie vypnuté';
+        ? 'Trajektorie střel zapnuté'
+        : 'Trajektorie střel vypnuté';
       uiEls.bojTrainingTrajectoriesBtn.classList.toggle('is-active', bojTrainingTrajectoriesVisible);
     }
     uiEls.raceControls.hidden = true;
@@ -2521,19 +2615,21 @@
     const showBojTrainingPause =
       isBojTraining() && showPlayActions && !won && gameState !== 'exploding';
     const readoutLabel = isBoj1v1() ? 'Zásobník' : 'Rychlost';
-    const readoutText = isBoj1v1() ? String(bojAmmo) : String(Math.round(playerSpeed()));
+    const readoutText = isBoj1v1() ? boj1v1AmmoText() : String(Math.round(playerSpeed()));
     if (uiEls.speedReadoutLabel) uiEls.speedReadoutLabel.textContent = readoutLabel;
     if (uiEls.mobileSpeedLabel) uiEls.mobileSpeedLabel.textContent = readoutLabel;
     uiEls.speedValue.textContent = readoutText;
     uiEls.mobileSpeedValue.textContent = readoutText;
-    if (uiEls.bojAmmoPanel) uiEls.bojAmmoPanel.hidden = !showBojAmmoPanel;
-    if (uiEls.bojScoreValue) uiEls.bojScoreValue.textContent = boj1v1ScoreText();
-    if (uiEls.bojAmmoValue) uiEls.bojAmmoValue.textContent = String(bojAmmo);
+    if (uiEls.boj1v1Readouts) uiEls.boj1v1Readouts.hidden = !showBojAmmoPanel;
+    if (isBoj1v1()) {
+      syncBoj1v1ScoreDisplay();
+      syncBoj1v1AmmoDisplay();
+    }
+    if (showBojAmmoPanel && uiEls.bojScorePanel) {
+      uiEls.bojScorePanel.setAttribute('aria-label', `Skóre ${boj1v1ScoreText()}`);
+    }
     if (showBojAmmoPanel && uiEls.bojAmmoPanel) {
-      uiEls.bojAmmoPanel.setAttribute(
-        'aria-label',
-        `Skóre ${boj1v1ScoreText()}, zásobník ${bojAmmo} střel`
-      );
+      uiEls.bojAmmoPanel.setAttribute('aria-label', `Zásobník ${boj1v1AmmoText()} střel`);
     }
     if (uiEls.bojTrainingPauseBtn) {
       uiEls.bojTrainingPauseBtn.hidden = !showBojTrainingPause;
@@ -2548,13 +2644,13 @@
       uiEls.speedReadout.hidden = isBojTraining();
       uiEls.speedReadout.setAttribute(
         'aria-label',
-        isBoj1v1() ? `Zásobník: ${bojAmmo} střel` : `Rychlost: ${readoutText}`
+        isBoj1v1() ? `Zásobník: ${boj1v1AmmoText()} střel` : `Rychlost: ${readoutText}`
       );
     }
     if (uiEls.mobileSpeedPanel) {
       uiEls.mobileSpeedPanel.setAttribute(
         'aria-label',
-        isBoj1v1() ? `Zásobník: ${bojAmmo} střel` : `Rychlost: ${readoutText}`
+        isBoj1v1() ? `Zásobník: ${boj1v1AmmoText()} střel` : `Rychlost: ${readoutText}`
       );
     }
     uiEls.gamePlayActions.hidden = !showPlayActions;
@@ -2642,6 +2738,22 @@
 
   function bojEnemyThrustAccel() {
     return bojPlayerThrustAccel();
+  }
+
+  function bojRotationMassFactor(mass = bojShipMass) {
+    mass = Math.max(MASS_MIN, Math.min(BOJ_MASS_MAX, mass));
+    const control = bojShipMassFactor(mass);
+    const inertia = Math.pow(mass / BOJ_REF_MASS, BOJ_ROTATION_INERTIA_EXP);
+    const factor = control / inertia;
+    return Math.max(BOJ_ROTATION_MASS_FLOOR, Math.min(BOJ_ROTATION_MASS_CEIL, factor));
+  }
+
+  function bojAngularAccel(mass = bojShipMass) {
+    return BOJ_ANG_ACCEL * bojRotationMassFactor(mass);
+  }
+
+  function bojMaxAngularVel(mass = bojShipMass) {
+    return BOJ_MAX_ANG_VEL * bojRotationMassFactor(mass);
   }
 
   function bojRecoilImpulse(mass = bojShipMass) {
@@ -2934,21 +3046,20 @@
 
     const angleDiff = bojAngleDiff(bojEnemy.angle, desiredAngle);
     const leadDiff = bojAngleDiff(bojEnemy.angle, leadAngle);
-    const turnRate = BOJ_ANG_ACCEL;
+    const turnRate = bojAngularAccel();
 
     bojEnemy.motors = { thrust: false, left: false, right: false };
     bojEnemy.fireCooldown = Math.max(0, bojEnemy.fireCooldown - dt);
 
     if (angleDiff > BOJ_AI_TURN_TOLERANCE) {
       bojEnemy.angularVel += turnRate * dt;
-      bojEnemy.motors.left = true;
+      bojEnemy.motors.right = true;
     } else if (angleDiff < -BOJ_AI_TURN_TOLERANCE) {
       bojEnemy.angularVel -= turnRate * dt;
-      bojEnemy.motors.right = true;
+      bojEnemy.motors.left = true;
     }
 
-    bojEnemy.angularVel *= Math.pow(BOJ_ANG_DAMP, dt * 60);
-    bojEnemy.angularVel = Math.max(-BOJ_MAX_ANG_VEL, Math.min(BOJ_MAX_ANG_VEL, bojEnemy.angularVel));
+    bojEnemy.angularVel = Math.max(-bojMaxAngularVel(), Math.min(bojMaxAngularVel(), bojEnemy.angularVel));
     bojEnemy.angle += bojEnemy.angularVel * dt;
 
     const sinA = Math.sin(bojEnemy.angle);
@@ -3029,11 +3140,11 @@
     bojEnemy.vy = 0;
     gameState = 'exploding';
     explosion = makeBojExplosionFx(cx, cy, [
-      PLAYER_COLOR,
+      playerColor(),
       BOJ_ENEMY_COLOR,
       '#ff8a65',
       '#ffd54a',
-      '#6b63ff',
+      '#16a34a',
       '#7f1d1d'
     ]);
     explosion.bojDraw = true;
@@ -3334,6 +3445,179 @@
     } catch (_) {}
   }
 
+  function shouldCelebrateWin(kind) {
+    if (
+      kind === 'boj-match-lose' ||
+      kind === 'boj-draw' ||
+      kind === 'boj-training-fail' ||
+      kind === 'boj-training-fail-self'
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  function clearWinCelebration() {
+    winCelebration = null;
+    document.getElementById('winOverlay').classList.remove('win-celebrate');
+  }
+
+  function winCelebrationCenter() {
+    return {
+      x: PLAY.x + PLAY.w / 2,
+      y: PLAY.y + playH() / 2
+    };
+  }
+
+  function spawnWinCelebrationBurst(particles, cx, cy, colors, strength) {
+    const count = Math.round(58 * strength);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (220 + Math.random() * 480) * strength;
+      const kind = Math.random() < 0.22 ? 'star' : 'rect';
+      particles.push({
+        x: cx + (Math.random() - 0.5) * 36 * strength,
+        y: cy + (Math.random() - 0.5) * 36 * strength,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 60 * strength,
+        rot: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 14,
+        life: 2.4 + Math.random() * 1.8,
+        w: (8 + Math.random() * 12) * strength,
+        h: (5 + Math.random() * 8) * strength,
+        kind,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
+    }
+  }
+
+  function startWinCelebration() {
+    const { x: cx, y: cy } = winCelebrationCenter();
+    const colors = isBoj()
+      ? ['#22c55e', '#86efac', '#fbbf24', '#fde047', '#ffffff', '#16a34a', '#4ade80', '#f97316']
+      : ['#8b7cff', '#a78bfa', '#fbbf24', '#fde047', '#22c55e', '#ffffff', '#c4b5fd', '#f97316'];
+    const particles = [];
+    spawnWinCelebrationBurst(particles, cx, cy, colors, 1);
+    winCelebration = {
+      particles,
+      rings: [
+        { r: 0, life: 1, speed: 520, width: 5 },
+        { r: 0, life: 1, speed: 380, width: 3, delay: 0.08 }
+      ],
+      pendingBursts: [
+        { at: 0.14, strength: 0.9 },
+        { at: 0.32, strength: 0.75 }
+      ],
+      cx,
+      cy,
+      colors,
+      time: 0,
+      duration: 4.8,
+      flash: 1.35
+    };
+  }
+
+  function updateWinCelebration(dt) {
+    if (!winCelebration) return;
+    winCelebration.time += dt;
+    winCelebration.flash = Math.max(0, winCelebration.flash - dt * 1.6);
+    winCelebration.pendingBursts = winCelebration.pendingBursts.filter(b => {
+      if (winCelebration.time >= b.at) {
+        spawnWinCelebrationBurst(
+          winCelebration.particles,
+          winCelebration.cx,
+          winCelebration.cy,
+          winCelebration.colors,
+          b.strength
+        );
+        return false;
+      }
+      return true;
+    });
+    for (const ring of winCelebration.rings) {
+      if (ring.delay > 0) {
+        ring.delay -= dt;
+        continue;
+      }
+      ring.r += ring.speed * dt;
+      ring.life -= dt * 0.95;
+    }
+    winCelebration.rings = winCelebration.rings.filter(r => r.life > 0);
+    for (const p of winCelebration.particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 320 * dt;
+      p.vx *= 0.988;
+      p.rot += p.spin * dt;
+      p.life -= dt;
+    }
+    winCelebration.particles = winCelebration.particles.filter(p => p.life > 0);
+    if (winCelebration.time >= winCelebration.duration && winCelebration.particles.length === 0) {
+      winCelebration = null;
+    }
+  }
+
+  function drawWinCelebrationParticle(p) {
+    const alpha = Math.min(1, p.life);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 10;
+    if (p.kind === 'star') {
+      const r = p.w * 0.55;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = p.rot + (i * Math.PI * 2) / 5 - Math.PI / 2;
+        const bx = Math.cos(a) * r;
+        const by = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(bx, by);
+        else ctx.lineTo(bx, by);
+        const ia = a + Math.PI / 5;
+        ctx.lineTo(Math.cos(ia) * r * 0.42, Math.sin(ia) * r * 0.42);
+      }
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  function drawWinCelebration() {
+    if (!winCelebration) return;
+    const { particles, rings, flash, cx, cy } = winCelebration;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PLAY.x, PLAY.y, PLAY.w, playH());
+    ctx.clip();
+    if (flash > 0) {
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(PLAY.w, playH()) * 0.55);
+      glow.addColorStop(0, `rgba(255, 255, 255, ${flash * 0.55})`);
+      glow.addColorStop(0.35, `rgba(251, 191, 36, ${flash * 0.35})`);
+      glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(PLAY.x, PLAY.y, PLAY.w, playH());
+    }
+    for (const ring of rings) {
+      if (ring.delay > 0 || ring.life <= 0) continue;
+      ctx.beginPath();
+      ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(251, 191, 36, ${ring.life * 0.75})`;
+      ctx.lineWidth = ring.width * ring.life;
+      ctx.stroke();
+    }
+    for (const p of particles) {
+      if (p.life <= 0) continue;
+      const sx = worldToScreenX(p.x);
+      ctx.save();
+      ctx.translate(sx, p.y);
+      ctx.rotate(p.rot);
+      drawWinCelebrationParticle(p);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
   function showWinOverlay(kind) {
     const title = document.getElementById('winTitle');
     const msg = document.getElementById('winMessage');
@@ -3354,10 +3638,10 @@
       msg.textContent = 'Narazil jsi do červené rakety.';
     } else if (kind === 'boj-match-win') {
       title.textContent = 'Vítězství!';
-      msg.textContent = `Vyhrál jsi souboj ${bojPlayerWins}:${bojEnemyWins} — první k ${boj1v1WinsRequired} vítězstvím.`;
+      msg.textContent = `Vyhrál jsi souboj ${bojPlayerWins}:${bojEnemyWins}.`;
     } else if (kind === 'boj-match-lose') {
       title.textContent = 'Prohra';
-      msg.textContent = `Prohrál jsi souboj ${bojPlayerWins}:${bojEnemyWins} — soupeř dosáhl ${boj1v1WinsRequired} vítězství.`;
+      msg.textContent = `Prohrál jsi souboj ${bojPlayerWins}:${bojEnemyWins}.`;
     } else if (kind === 'boj') {
       title.textContent = 'Nepřítel zničen!';
       msg.textContent = 'Zničil jsi červenou raketu.';
@@ -3365,7 +3649,14 @@
       title.textContent = 'Všechny mince sebrány!';
       msg.textContent = 'Gratulujeme, vyhráváš.';
     }
-    document.getElementById('winOverlay').classList.add('show');
+    const overlay = document.getElementById('winOverlay');
+    if (shouldCelebrateWin(kind)) {
+      startWinCelebration();
+      overlay.classList.add('win-celebrate');
+    } else {
+      clearWinCelebration();
+    }
+    overlay.classList.add('show');
   }
 
   function updateRaceStopwatch(dt) {
@@ -3921,6 +4212,7 @@
       }
     }
     document.getElementById('winOverlay').classList.remove('show');
+    clearWinCelebration();
     hideRaceNewRecordForm();
   }
 
@@ -3933,6 +4225,7 @@
     pointerDir = null;
     if (appMode === 'editing') appMode = 'playing';
     document.getElementById('winOverlay').classList.remove('show');
+    clearWinCelebration();
     hideRaceNewRecordForm();
     setMobilePhase('setup');
     syncHtmlControls();
@@ -3969,7 +4262,9 @@
     clearTrail();
     gameState = 'exploding';
     explosion = { x, y, time: 0, duration: 0.85, particles: [] };
-    const colors = [PLAYER_COLOR, '#6b63ff', '#ff6f00', '#ff4500', '#ffd54a', '#222'];
+    const colors = isBoj()
+      ? [playerColor(), '#16a34a', '#ff6f00', '#ff4500', '#ffd54a', '#222']
+      : [PLAYER_COLOR, '#6b63ff', '#ff6f00', '#ff4500', '#ffd54a', '#222'];
     for (let i = 0; i < 36; i++) {
       const angle = (Math.PI * 2 * i) / 36 + Math.random() * 0.4;
       const speed = 140 + Math.random() * 320;
@@ -4062,10 +4357,12 @@
 
   function massColorRgb(t) {
     const u = Math.max(0, Math.min(1, t));
+    const min = isBoj() ? BOJ_MASS_COLOR_MIN : MASS_COLOR_MIN;
+    const max = isBoj() ? BOJ_MASS_COLOR_MAX : MASS_COLOR_MAX;
     return {
-      r: Math.round(MASS_COLOR_MIN.r + (MASS_COLOR_MAX.r - MASS_COLOR_MIN.r) * u),
-      g: Math.round(MASS_COLOR_MIN.g + (MASS_COLOR_MAX.g - MASS_COLOR_MIN.g) * u),
-      b: Math.round(MASS_COLOR_MIN.b + (MASS_COLOR_MAX.b - MASS_COLOR_MIN.b) * u)
+      r: Math.round(min.r + (max.r - min.r) * u),
+      g: Math.round(min.g + (max.g - min.g) * u),
+      b: Math.round(min.b + (max.b - min.b) * u)
     };
   }
 
@@ -4416,6 +4713,7 @@
   }
 
   function update(dt) {
+    updateWinCelebration(dt);
     if (appMode === 'editing') return;
     if (gameState === 'exploding') {
       updateExplosion(dt);
@@ -4458,10 +4756,11 @@
     if (isBoj()) {
       updateBojFireInput();
 
-      if (motors.left) shipAngularVel -= BOJ_ANG_ACCEL * dt;
-      if (motors.right) shipAngularVel += BOJ_ANG_ACCEL * dt;
-      shipAngularVel *= Math.pow(BOJ_ANG_DAMP, dt * 60);
-      shipAngularVel = Math.max(-BOJ_MAX_ANG_VEL, Math.min(BOJ_MAX_ANG_VEL, shipAngularVel));
+      const angAccel = bojAngularAccel();
+      const angVelMax = bojMaxAngularVel();
+      if (motors.left) shipAngularVel -= angAccel * dt;
+      if (motors.right) shipAngularVel += angAccel * dt;
+      shipAngularVel = Math.max(-angVelMax, Math.min(angVelMax, shipAngularVel));
       shipAngleHold += shipAngularVel * dt;
 
       if (motors.down) {
@@ -4997,6 +5296,7 @@
     draggingMass = false;
     clearTrail();
     document.getElementById('winOverlay').classList.remove('show');
+    clearWinCelebration();
     setMobilePhase('playing');
     resizeGameCanvas();
     syncHtmlControls();
@@ -5096,7 +5396,7 @@
       b.y,
       b.w,
       b.h,
-      frictionMode === 'ice' ? 'Led' : frictionMode === 'normal' ? 'Zapnuto' : 'Vypnuto',
+      frictionMode === 'ice' ? 'Led' : frictionMode === 'normal' ? 'Podlaha' : 'Vypnuto',
       { active: frictionIsOn(), disabled: locked, fontSize: 14, radius: 10 }
     );
   }
@@ -5138,7 +5438,7 @@
 
   function drawModeSelector() {
     drawModeButton('bludiste', 'Bludiště');
-    drawModeButton('zavod', 'Závod');
+    drawModeButton('zavod', 'Vesmírný závod');
   }
 
   function drawNewGameButton() {
@@ -5293,7 +5593,7 @@
 
   function playerVelocityVectorsVisible() {
     if (isBojTraining()) return bojTrainingVectorsVisible;
-    if (isBludiste()) return velocityVectorsVisible;
+    if (isBludiste() || isZavod()) return velocityVectorsVisible;
     return false;
   }
 
@@ -5794,7 +6094,7 @@
   }
 
   function drawRocketBody() {
-    drawRocketBodyStyled(playerColor(), '#9ee7ff');
+    drawRocketBodyStyled(playerColor(), isBoj() ? BOJ_PLAYER_COCKPIT : '#9ee7ff');
   }
 
   function drawMotorNozzleLocalColored(hx, hy, dirX, dirY, active, fillActive, fillIdle) {
@@ -6077,7 +6377,7 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
-    ctx.shadowColor = 'rgba(124, 58, 237, 0.22)';
+    ctx.shadowColor = isBoj() ? 'rgba(34, 197, 94, 0.22)' : 'rgba(124, 58, 237, 0.22)';
     ctx.shadowBlur = 6;
     drawRocketBody();
     ctx.shadowBlur = 0;
@@ -6179,6 +6479,7 @@
     if (gameState === 'paused') drawPauseOverlay();
     if (isZavod()) drawRaceHud();
     if (isZavod()) drawRaceAxis();
+    drawWinCelebration();
     ctx.restore();
   }
 
@@ -6529,6 +6830,7 @@
   });
   window.addEventListener('resize', () => {
     resizeGameCanvas();
+    layoutMobileRaceDpad();
     syncDraggableDpadPanels();
   });
 
