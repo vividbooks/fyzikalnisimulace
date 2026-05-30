@@ -1816,13 +1816,16 @@
   const BOJ_ENEMY_HP = 1;
   const BOJ_ENEMY_HIT_R = PLAYER_R;
   const BOJ_AI_AIM_TOLERANCE = 0.14;
+  const BOJ_AI_AIM_TOLERANCE_STILL = 0.22;
   const BOJ_AI_TURN_TOLERANCE = 0.1;
   const BOJ_AI_FIRE_RANGE = 820;
   const BOJ_AI_MIN_FIRE_RANGE = 110;
+  const BOJ_AI_MIN_FIRE_RANGE_STILL = 80;
   const BOJ_AI_PREFER_DIST_MIN = 170;
   const BOJ_AI_PREFER_DIST_MAX = 440;
   const BOJ_AI_THREAT_DIST = 540;
   const BOJ_AI_LEAD_TIME = 0.38;
+  const BOJ_AI_STATIONARY_SPEED = 28;
   const BOJ_TRAINING_TARGET_COUNT_MAX = 5;
   const BOJ_1V1_WINS_MAX = 5;
   const BOJ_AI_EVADE_DURATION = 0.7;
@@ -1896,9 +1899,8 @@
   let bojTrainingVectorsVisible = false;
   let bojTrainingTrajectoriesVisible = false;
   let bojAutoStopRotation = false;
-  let bojAutoStopSideMotor = null;
-  let bojAutoStopTimeLeft = 0;
-  let bojPlayerTurnPrev = { left: false, right: false };
+  let bojPlayerAutoStop = { sideMotor: null, timeLeft: 0, turnPrev: { left: false, right: false } };
+  let bojEnemyAutoStop = { sideMotor: null, timeLeft: 0, turnPrev: { left: false, right: false } };
   let bojPlayBorderEnabled = true;
   let bojTrainingTargets = [];
   let bojTrainingExplosions = [];
@@ -2770,14 +2772,16 @@
     }
   }
 
-  function clearBojAutoStopActive() {
-    bojAutoStopSideMotor = null;
-    bojAutoStopTimeLeft = 0;
+  function clearBojAutoStopActive(state) {
+    state.sideMotor = null;
+    state.timeLeft = 0;
   }
 
   function resetBojAutoStopRotationState() {
-    clearBojAutoStopActive();
-    bojPlayerTurnPrev = { left: false, right: false };
+    clearBojAutoStopActive(bojPlayerAutoStop);
+    bojPlayerAutoStop.turnPrev = { left: false, right: false };
+    clearBojAutoStopActive(bojEnemyAutoStop);
+    bojEnemyAutoStop.turnPrev = { left: false, right: false };
   }
 
   function battlePlayerTurnInput() {
@@ -2791,53 +2795,85 @@
     return { left: playerRight, right: playerLeft };
   }
 
-  function resolveBojTurnMotors(angAccel) {
-    const playerTurn = battlePlayerTurnInput();
+  function bojAutoStopMotors(state, turnInput, angularVel, angAccel, toMotors, oppositeLeft, oppositeRight) {
     if (!isBoj() || !bojAutoStopRotation) {
-      clearBojAutoStopActive();
-      bojPlayerTurnPrev = { ...playerTurn };
-      return battleTurnMotorsFromPlayer(playerTurn.left, playerTurn.right);
+      clearBojAutoStopActive(state);
+      state.turnPrev = { ...turnInput };
+      return toMotors(turnInput);
     }
 
-    if (playerTurn.left || playerTurn.right) {
-      clearBojAutoStopActive();
-    } else if (bojPlayerTurnPrev.left && !playerTurn.left && Math.abs(shipAngularVel) > 1e-4) {
-      bojAutoStopSideMotor = 'left';
-      bojAutoStopTimeLeft = Math.abs(shipAngularVel) / angAccel;
-    } else if (bojPlayerTurnPrev.right && !playerTurn.right && Math.abs(shipAngularVel) > 1e-4) {
-      bojAutoStopSideMotor = 'right';
-      bojAutoStopTimeLeft = Math.abs(shipAngularVel) / angAccel;
+    if (turnInput.left || turnInput.right) {
+      clearBojAutoStopActive(state);
+    } else if (state.turnPrev.left && !turnInput.left && Math.abs(angularVel) > 1e-4) {
+      state.sideMotor = oppositeLeft;
+      state.timeLeft = Math.abs(angularVel) / angAccel;
+    } else if (state.turnPrev.right && !turnInput.right && Math.abs(angularVel) > 1e-4) {
+      state.sideMotor = oppositeRight;
+      state.timeLeft = Math.abs(angularVel) / angAccel;
     }
 
-    bojPlayerTurnPrev = { ...playerTurn };
+    state.turnPrev = { ...turnInput };
 
-    if (bojAutoStopSideMotor && bojAutoStopTimeLeft > 0) {
+    if (state.sideMotor && state.timeLeft > 0) {
       return {
-        left: bojAutoStopSideMotor === 'left',
-        right: bojAutoStopSideMotor === 'right'
+        left: state.sideMotor === 'left',
+        right: state.sideMotor === 'right'
       };
     }
 
-    return battleTurnMotorsFromPlayer(playerTurn.left, playerTurn.right);
+    return toMotors(turnInput);
   }
 
-  function tickBojAutoStopRotation(dt) {
-    if (!isBoj() || !bojAutoStopRotation || !bojAutoStopSideMotor || bojAutoStopTimeLeft <= 0) return;
-    if (bojAutoStopSideMotor === 'right' && shipAngularVel >= 0) {
-      shipAngularVel = 0;
-      clearBojAutoStopActive();
+  function tickBojAutoStop(state, getAngularVel, setAngularVel, dt) {
+    if (!isBoj() || !bojAutoStopRotation || !state.sideMotor || state.timeLeft <= 0) return;
+    const angularVel = getAngularVel();
+    if (state.sideMotor === 'right' && angularVel >= 0) {
+      setAngularVel(0);
+      clearBojAutoStopActive(state);
       return;
     }
-    if (bojAutoStopSideMotor === 'left' && shipAngularVel <= 0) {
-      shipAngularVel = 0;
-      clearBojAutoStopActive();
+    if (state.sideMotor === 'left' && angularVel <= 0) {
+      setAngularVel(0);
+      clearBojAutoStopActive(state);
       return;
     }
-    bojAutoStopTimeLeft -= dt;
-    if (bojAutoStopTimeLeft <= 0) {
-      shipAngularVel = 0;
-      clearBojAutoStopActive();
+    state.timeLeft -= dt;
+    if (state.timeLeft <= 0) {
+      setAngularVel(0);
+      clearBojAutoStopActive(state);
     }
+  }
+
+  function resolveBojTurnMotors(angAccel) {
+    const playerTurn = battlePlayerTurnInput();
+    return bojAutoStopMotors(
+      bojPlayerAutoStop,
+      playerTurn,
+      shipAngularVel,
+      angAccel,
+      t => battleTurnMotorsFromPlayer(t.left, t.right),
+      'left',
+      'right'
+    );
+  }
+
+  function tickBojPlayerAutoStopRotation(dt) {
+    tickBojAutoStop(
+      bojPlayerAutoStop,
+      () => shipAngularVel,
+      v => { shipAngularVel = v; },
+      dt
+    );
+  }
+
+  function tickBojEnemyAutoStopRotation(dt) {
+    if (!bojEnemy) return;
+    tickBojAutoStop(
+      bojEnemyAutoStop,
+      () => bojEnemy.angularVel,
+      v => { bojEnemy.angularVel = v; },
+      dt
+    );
   }
 
   function resetBojAmmo() {
@@ -3263,6 +3299,8 @@
     const leadY = player.y + player.vy * BOJ_AI_LEAD_TIME;
     const leadAngle = bojAngleToward(bojEnemy.x, bojEnemy.y, leadX, leadY);
     const fleeAngle = bojAngleToward(bojEnemy.x, bojEnemy.y, bojEnemy.x - dx, bojEnemy.y - dy);
+    const playerSpeed = Math.hypot(player.vx, player.vy);
+    const playerStill = playerSpeed < BOJ_AI_STATIONARY_SPEED;
 
     bojEnemy.evadeTimer += dt;
     if (bojEnemy.evadeUntil > 0) bojEnemy.evadeUntil = Math.max(0, bojEnemy.evadeUntil - dt);
@@ -3276,49 +3314,73 @@
 
     const playerAimingAtUs =
       Math.abs(bojAngleDiff(shipAngleHold, bojAngleToward(player.x, player.y, bojEnemy.x, bojEnemy.y))) < 0.45;
-    const threatened = (playerAimingAtUs && dist < BOJ_AI_THREAT_DIST) || evading;
+    const threatened =
+      (!playerStill && playerAimingAtUs && dist < BOJ_AI_THREAT_DIST) || (evading && !!bulletThreat);
     const tooClose = dist < BOJ_AI_PREFER_DIST_MIN;
     const tooFar = dist > BOJ_AI_PREFER_DIST_MAX;
+    const leadDiff = bojAngleDiff(bojEnemy.angle, leadAngle);
+    const wellAimed = Math.abs(leadDiff) < BOJ_AI_AIM_TOLERANCE * 1.35;
 
     let desiredAngle;
-    if (evading) {
-      desiredAngle = bulletThreat
-        ? Math.atan2(bulletThreat.perpX * bulletThreat.side, -bulletThreat.perpY * bulletThreat.side)
-        : strafeAngle;
+    if (evading && bulletThreat) {
+      desiredAngle = Math.atan2(bulletThreat.perpX * bulletThreat.side, -bulletThreat.perpY * bulletThreat.side);
+    } else if (playerStill) {
+      desiredAngle = tooClose && dist < BOJ_AI_MIN_FIRE_RANGE_STILL ? fleeAngle : leadAngle;
     } else if (threatened || tooClose) {
       desiredAngle = threatened ? strafeAngle : fleeAngle;
     } else if (tooFar) {
       desiredAngle = leadAngle;
     } else {
-      desiredAngle = strafeAngle;
+      desiredAngle = Math.abs(leadDiff) > 0.28 ? leadAngle : strafeAngle;
     }
 
     const angleDiff = bojAngleDiff(bojEnemy.angle, desiredAngle);
-    const leadDiff = bojAngleDiff(bojEnemy.angle, leadAngle);
     const turnRate = bojAngularAccel();
 
     bojEnemy.motors = { thrust: false, left: false, right: false };
     bojEnemy.fireCooldown = Math.max(0, bojEnemy.fireCooldown - dt);
 
+    const aiTurn = { left: false, right: false };
     if (angleDiff > BOJ_AI_TURN_TOLERANCE) {
-      bojEnemy.angularVel += turnRate * dt;
-      bojEnemy.motors.right = true;
+      aiTurn.right = true;
     } else if (angleDiff < -BOJ_AI_TURN_TOLERANCE) {
-      bojEnemy.angularVel -= turnRate * dt;
-      bojEnemy.motors.left = true;
+      aiTurn.left = true;
     }
+
+    const turnMotors = bojAutoStopMotors(
+      bojEnemyAutoStop,
+      aiTurn,
+      bojEnemy.angularVel,
+      turnRate,
+      t => t,
+      'right',
+      'left'
+    );
+    bojEnemy.motors.left = turnMotors.left;
+    bojEnemy.motors.right = turnMotors.right;
+
+    if (turnMotors.left) bojEnemy.angularVel -= turnRate * dt;
+    if (turnMotors.right) bojEnemy.angularVel += turnRate * dt;
 
     bojEnemy.angularVel = Math.max(-bojMaxAngularVel(), Math.min(bojMaxAngularVel(), bojEnemy.angularVel));
     bojEnemy.angle += bojEnemy.angularVel * dt;
+    tickBojEnemyAutoStopRotation(dt);
 
     const sinA = Math.sin(bojEnemy.angle);
     const cosA = Math.cos(bojEnemy.angle);
-    const wantThrust =
+    const holdToShoot =
+      playerStill &&
+      dist >= BOJ_AI_MIN_FIRE_RANGE_STILL &&
+      dist <= BOJ_AI_FIRE_RANGE &&
+      wellAimed &&
+      !evading;
+    const wantThrust = !holdToShoot && (
       tooFar ||
       tooClose ||
       threatened ||
       evading ||
-      (dist >= BOJ_AI_MIN_FIRE_RANGE && Math.abs(angleDiff) < 0.55);
+      (dist >= BOJ_AI_MIN_FIRE_RANGE && Math.abs(angleDiff) < 0.55)
+    );
     if (wantThrust) {
       const thrust = bojEnemyThrustAccel();
       bojEnemy.vx += thrust * sinA * dt;
@@ -3326,11 +3388,13 @@
       bojEnemy.motors.thrust = true;
     }
 
+    const aimTolerance = playerStill ? BOJ_AI_AIM_TOLERANCE_STILL : BOJ_AI_AIM_TOLERANCE;
+    const minFireRange = playerStill ? BOJ_AI_MIN_FIRE_RANGE_STILL : BOJ_AI_MIN_FIRE_RANGE;
     if (
       bojEnemy.ammo > 0 &&
       bojEnemy.fireCooldown <= 0 &&
-      Math.abs(leadDiff) < BOJ_AI_AIM_TOLERANCE &&
-      dist >= BOJ_AI_MIN_FIRE_RANGE &&
+      Math.abs(leadDiff) < aimTolerance &&
+      dist >= minFireRange &&
       dist <= BOJ_AI_FIRE_RANGE
     ) {
       fireBojEnemyProjectile();
@@ -5133,7 +5197,7 @@
       if (motors.right) shipAngularVel += angAccel * dt;
       shipAngularVel = Math.max(-angVelMax, Math.min(angVelMax, shipAngularVel));
       shipAngleHold += shipAngularVel * dt;
-      if (isBoj()) tickBojAutoStopRotation(dt);
+      if (isBoj()) tickBojPlayerAutoStopRotation(dt);
 
       if (motors.down) {
         const sinA = Math.sin(shipAngleHold);
