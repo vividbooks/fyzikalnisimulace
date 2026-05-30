@@ -1257,6 +1257,12 @@
               <button type="button" class="html-btn" id="bojAutoStopRotationBtn">Automatické zastavení rotace vypnuté</button>
             </div>
           </div>
+          <div class="control-row" id="bojPlayBorderControls" hidden>
+            <span class="control-label">Hranice</span>
+            <div class="button-row">
+              <button type="button" class="html-btn" id="bojPlayBorderBtn">Ohraničení plochy zapnuté</button>
+            </div>
+          </div>
           <div class="control-row" id="bojMassControls" hidden>
             <div class="mass-head">
               <label for="bojMassRange">Hmotnost raket</label>
@@ -1793,6 +1799,9 @@
   const BOJ_ENEMY_COLOR = '#e53935';
   const BOJ_ENEMY_COLOR_DARK = '#b71c1c';
   const BOJ_ENEMY_COCKPIT = '#ffc9c9';
+  const BOJ_PLAY_BORDER = '#5b9cff';
+  const BOJ_PLAY_BORDER_GLOW = 'rgba(91, 156, 255, 0.44)';
+  const BOJ_PLAY_BORDER_HIGHLIGHT = 'rgba(180, 220, 255, 0.82)';
   const BOJ_REF_MASS = 3;
   const BOJ_MASS_MAX = 10;
   const BOJ_MASS_EFFECT_AT_8 = 0.42;
@@ -1890,6 +1899,7 @@
   let bojAutoStopSideMotor = null;
   let bojAutoStopTimeLeft = 0;
   let bojPlayerTurnPrev = { left: false, right: false };
+  let bojPlayBorderEnabled = true;
   let bojTrainingTargets = [];
   let bojTrainingExplosions = [];
   let bojTrainingBulletTrails = [];
@@ -1955,6 +1965,8 @@
     boj1v1WinsValue: document.getElementById('boj1v1WinsValue'),
     bojAutoStopControls: document.getElementById('bojAutoStopControls'),
     bojAutoStopRotationBtn: document.getElementById('bojAutoStopRotationBtn'),
+    bojPlayBorderControls: document.getElementById('bojPlayBorderControls'),
+    bojPlayBorderBtn: document.getElementById('bojPlayBorderBtn'),
     bojMassControls: document.getElementById('bojMassControls'),
     bojMassRange: document.getElementById('bojMassRange'),
     bojMassValue: document.getElementById('bojMassValue'),
@@ -2629,6 +2641,13 @@
         : 'Automatické zastavení rotace vypnuté';
       uiEls.bojAutoStopRotationBtn.classList.toggle('is-active', bojAutoStopRotation);
     }
+    if (uiEls.bojPlayBorderControls) uiEls.bojPlayBorderControls.hidden = !isBoj();
+    if (uiEls.bojPlayBorderBtn) {
+      uiEls.bojPlayBorderBtn.textContent = bojPlayBorderEnabled
+        ? 'Ohraničení plochy zapnuté'
+        : 'Ohraničení plochy vypnuté';
+      uiEls.bojPlayBorderBtn.classList.toggle('is-active', bojPlayBorderEnabled);
+    }
     if (uiEls.bojMassControls) uiEls.bojMassControls.hidden = !isBoj();
     if (uiEls.bojMassRange) uiEls.bojMassRange.value = String(bojShipMass);
     if (uiEls.bojMassValue) uiEls.bojMassValue.textContent = formatBojMass(bojShipMass);
@@ -2980,6 +2999,54 @@
     return PLAYER_R + 56;
   }
 
+  function bojPlayBounds(r = PLAYER_R) {
+    return {
+      minX: PLAY.x + r,
+      maxX: PLAY.x + PLAY.w - r,
+      minY: PLAY.y + r,
+      maxY: playBottomY() - r
+    };
+  }
+
+  function applyBojPlayBounds(x, y, vx, vy, r = PLAYER_R) {
+    const b = bojPlayBounds(r);
+    let nx = x;
+    let ny = y;
+    let nvx = vx;
+    let nvy = vy;
+    if (nx < b.minX) {
+      nx = b.minX;
+      if (nvx < 0) nvx = 0;
+    } else if (nx > b.maxX) {
+      nx = b.maxX;
+      if (nvx > 0) nvx = 0;
+    }
+    if (ny < b.minY) {
+      ny = b.minY;
+      if (nvy < 0) nvy = 0;
+    } else if (ny > b.maxY) {
+      ny = b.maxY;
+      if (nvy > 0) nvy = 0;
+    }
+    return { x: nx, y: ny, vx: nvx, vy: nvy };
+  }
+
+  function drawBojPlayBorder() {
+    const left = PLAY.x;
+    const top = PLAY.y;
+    const right = PLAY.x + PLAY.w;
+    const bottom = playBottomY();
+    const style = {
+      fill: BOJ_PLAY_BORDER,
+      glow: BOJ_PLAY_BORDER_GLOW,
+      highlight: BOJ_PLAY_BORDER_HIGHLIGHT
+    };
+    strokeBorderSegment(left, top, right, top, style);
+    strokeBorderSegment(left, bottom, right, bottom, style);
+    strokeBorderSegment(left, top, left, bottom, style);
+    strokeBorderSegment(right, top, right, bottom, style);
+  }
+
   function bojPlayerSpawnPos() {
     const m = bojSpawnMargin();
     return { x: PLAY.x + m, y: playBottomY() - m };
@@ -3277,9 +3344,17 @@
 
     const nx = bojEnemy.x + bojEnemy.vx * dt;
     const ny = bojEnemy.y + bojEnemy.vy * dt;
-    const wrapped = wrapPosition(nx, ny);
-    bojEnemy.x = wrapped.x;
-    bojEnemy.y = wrapped.y;
+    if (bojPlayBorderEnabled) {
+      const bounded = applyBojPlayBounds(nx, ny, bojEnemy.vx, bojEnemy.vy, BOJ_ENEMY_HIT_R);
+      bojEnemy.x = bounded.x;
+      bojEnemy.y = bounded.y;
+      bojEnemy.vx = bounded.vx;
+      bojEnemy.vy = bounded.vy;
+    } else {
+      const wrapped = wrapPosition(nx, ny);
+      bojEnemy.x = wrapped.x;
+      bojEnemy.y = wrapped.y;
+    }
   }
 
   function checkBoj1v1AmmoDraw() {
@@ -4895,11 +4970,14 @@
     return false;
   }
 
-  function strokeBorderSegment(x1, y1, x2, y2) {
+  function strokeBorderSegment(x1, y1, x2, y2, style) {
+    const fill = style?.fill ?? WALL_FILL;
+    const glow = style?.glow ?? 'rgba(37, 243, 194, 0.44)';
+    const highlight = style?.highlight ?? 'rgba(180, 255, 239, 0.82)';
     ctx.save();
-    ctx.shadowColor = 'rgba(37, 243, 194, 0.44)';
+    ctx.shadowColor = glow;
     ctx.shadowBlur = 12;
-    ctx.strokeStyle = WALL_FILL;
+    ctx.strokeStyle = fill;
     ctx.lineWidth = BORDER_LINE_WIDTH;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -4907,7 +4985,7 @@
     ctx.lineTo(x2, y2);
     ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(180, 255, 239, 0.82)';
+    ctx.strokeStyle = highlight;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -5105,9 +5183,23 @@
     let nx = player.x + player.vx * dt;
     let ny = player.y + player.vy * dt;
 
-    const wrapped = wrapPosition(nx, ny);
-    nx = wrapped.x;
-    ny = wrapped.y;
+    if (isBoj()) {
+      if (bojPlayBorderEnabled) {
+        const bounded = applyBojPlayBounds(nx, ny, player.vx, player.vy);
+        nx = bounded.x;
+        ny = bounded.y;
+        player.vx = bounded.vx;
+        player.vy = bounded.vy;
+      } else {
+        const wrapped = wrapPosition(nx, ny);
+        nx = wrapped.x;
+        ny = wrapped.y;
+      }
+    } else {
+      const wrapped = wrapPosition(nx, ny);
+      nx = wrapped.x;
+      ny = wrapped.y;
+    }
 
     const borderX = isZavod() ? worldToScreenX(nx) : nx;
     if (hitRect(nx, ny, PLAYER_R) || hitBorderLines(borderX, ny, PLAYER_R, borderLines)) {
@@ -6765,6 +6857,7 @@
     }
 
     for (const seg of borderLines) drawBorderLine(seg);
+    if (isBoj() && bojPlayBorderEnabled) drawBojPlayBorder();
 
     for (const coin of coins) {
       if (!coin.taken) drawCoin(worldToScreenX(coin.x), coin.y);
@@ -7106,6 +7199,13 @@
       if (!isBoj()) return;
       bojAutoStopRotation = !bojAutoStopRotation;
       resetBojAutoStopRotationState();
+      syncHtmlControls();
+    });
+  }
+  if (uiEls.bojPlayBorderBtn) {
+    uiEls.bojPlayBorderBtn.addEventListener('click', () => {
+      if (!isBoj()) return;
+      bojPlayBorderEnabled = !bojPlayBorderEnabled;
       syncHtmlControls();
     });
   }
