@@ -614,6 +614,9 @@
       padding: 0;
       font-size: 1.35rem;
       line-height: 1;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .dpad button[data-dir="up"] { grid-column: 2; grid-row: 1; }
@@ -1248,6 +1251,12 @@
               <span class="mass-value" id="boj1v1WinsValue">1</span>
             </div>
           </div>
+          <div class="control-row" id="bojAutoStopControls" hidden>
+            <span class="control-label">Rotace</span>
+            <div class="button-row">
+              <button type="button" class="html-btn" id="bojAutoStopRotationBtn">Automatické zastavení rotace vypnuté</button>
+            </div>
+          </div>
           <div class="control-row" id="bojMassControls" hidden>
             <div class="mass-head">
               <label for="bojMassRange">Hmotnost raket</label>
@@ -1877,6 +1886,10 @@
   let bojEnemyWins = 0;
   let bojTrainingVectorsVisible = false;
   let bojTrainingTrajectoriesVisible = false;
+  let bojAutoStopRotation = false;
+  let bojAutoStopSideMotor = null;
+  let bojAutoStopTimeLeft = 0;
+  let bojPlayerTurnPrev = { left: false, right: false };
   let bojTrainingTargets = [];
   let bojTrainingExplosions = [];
   let bojTrainingBulletTrails = [];
@@ -1940,6 +1953,8 @@
     boj1v1WinsControls: document.getElementById('boj1v1WinsControls'),
     boj1v1WinsRange: document.getElementById('boj1v1WinsRange'),
     boj1v1WinsValue: document.getElementById('boj1v1WinsValue'),
+    bojAutoStopControls: document.getElementById('bojAutoStopControls'),
+    bojAutoStopRotationBtn: document.getElementById('bojAutoStopRotationBtn'),
     bojMassControls: document.getElementById('bojMassControls'),
     bojMassRange: document.getElementById('bojMassRange'),
     bojMassValue: document.getElementById('bojMassValue'),
@@ -2287,6 +2302,7 @@
     shipAngularVel = 0;
     keys.clear();
     pointerDir = null;
+    resetBojAutoStopRotationState();
     const playerSpawn = bojPlayerSpawnPos();
     player.x = playerSpawn.x;
     player.y = playerSpawn.y;
@@ -2606,6 +2622,13 @@
     if (uiEls.bojTrainingCountRange) uiEls.bojTrainingCountRange.value = String(bojTrainingTargetCount);
     if (uiEls.bojTrainingCountValue) uiEls.bojTrainingCountValue.textContent = String(bojTrainingTargetCount);
     if (uiEls.boj1v1WinsControls) uiEls.boj1v1WinsControls.hidden = !isBoj1v1();
+    if (uiEls.bojAutoStopControls) uiEls.bojAutoStopControls.hidden = !isBoj();
+    if (uiEls.bojAutoStopRotationBtn) {
+      uiEls.bojAutoStopRotationBtn.textContent = bojAutoStopRotation
+        ? 'Automatické zastavení rotace zapnuté'
+        : 'Automatické zastavení rotace vypnuté';
+      uiEls.bojAutoStopRotationBtn.classList.toggle('is-active', bojAutoStopRotation);
+    }
     if (uiEls.bojMassControls) uiEls.bojMassControls.hidden = !isBoj();
     if (uiEls.bojMassRange) uiEls.bojMassRange.value = String(bojShipMass);
     if (uiEls.bojMassValue) uiEls.bojMassValue.textContent = formatBojMass(bojShipMass);
@@ -2634,7 +2657,7 @@
       uiEls.motorDpad.setAttribute(
         'aria-label',
         isBattleRocketStyle()
-          ? 'Nahoru střela, dolů hlavní motor, vlevo a vpravo otáčení'
+          ? 'Nahoru střela, dolů hlavní motor, vlevo levý motor, vpravo pravý motor'
           : 'Směr motoru'
       );
     }
@@ -2725,6 +2748,76 @@
     } else {
       setupBludisteLevel();
       bludistePresetPending = false;
+    }
+  }
+
+  function clearBojAutoStopActive() {
+    bojAutoStopSideMotor = null;
+    bojAutoStopTimeLeft = 0;
+  }
+
+  function resetBojAutoStopRotationState() {
+    clearBojAutoStopActive();
+    bojPlayerTurnPrev = { left: false, right: false };
+  }
+
+  function battlePlayerTurnInput() {
+    return {
+      left: keys.has('ArrowLeft') || pointerDir === 'left',
+      right: keys.has('ArrowRight') || pointerDir === 'right'
+    };
+  }
+
+  function battleTurnMotorsFromPlayer(playerLeft, playerRight) {
+    return { left: playerRight, right: playerLeft };
+  }
+
+  function resolveBojTurnMotors(angAccel) {
+    const playerTurn = battlePlayerTurnInput();
+    if (!isBoj() || !bojAutoStopRotation) {
+      clearBojAutoStopActive();
+      bojPlayerTurnPrev = { ...playerTurn };
+      return battleTurnMotorsFromPlayer(playerTurn.left, playerTurn.right);
+    }
+
+    if (playerTurn.left || playerTurn.right) {
+      clearBojAutoStopActive();
+    } else if (bojPlayerTurnPrev.left && !playerTurn.left && Math.abs(shipAngularVel) > 1e-4) {
+      bojAutoStopSideMotor = 'left';
+      bojAutoStopTimeLeft = Math.abs(shipAngularVel) / angAccel;
+    } else if (bojPlayerTurnPrev.right && !playerTurn.right && Math.abs(shipAngularVel) > 1e-4) {
+      bojAutoStopSideMotor = 'right';
+      bojAutoStopTimeLeft = Math.abs(shipAngularVel) / angAccel;
+    }
+
+    bojPlayerTurnPrev = { ...playerTurn };
+
+    if (bojAutoStopSideMotor && bojAutoStopTimeLeft > 0) {
+      return {
+        left: bojAutoStopSideMotor === 'left',
+        right: bojAutoStopSideMotor === 'right'
+      };
+    }
+
+    return battleTurnMotorsFromPlayer(playerTurn.left, playerTurn.right);
+  }
+
+  function tickBojAutoStopRotation(dt) {
+    if (!isBoj() || !bojAutoStopRotation || !bojAutoStopSideMotor || bojAutoStopTimeLeft <= 0) return;
+    if (bojAutoStopSideMotor === 'right' && shipAngularVel >= 0) {
+      shipAngularVel = 0;
+      clearBojAutoStopActive();
+      return;
+    }
+    if (bojAutoStopSideMotor === 'left' && shipAngularVel <= 0) {
+      shipAngularVel = 0;
+      clearBojAutoStopActive();
+      return;
+    }
+    bojAutoStopTimeLeft -= dt;
+    if (bojAutoStopTimeLeft <= 0) {
+      shipAngularVel = 0;
+      clearBojAutoStopActive();
     }
   }
 
@@ -4333,6 +4426,7 @@
     if (isBoj()) {
       playerMass = bojShipMass;
       shipAngularVel = 0;
+      resetBojAutoStopRotationState();
       clearBojProjectiles();
       resetBojAmmo();
       if (isBoj1v1()) {
@@ -4741,8 +4835,10 @@
       return { up: false, down: false, left, right };
     }
 
-    if (isBoj()) {
-      return { up: false, down, left, right };
+    if (isBoj() || isBludisteRocket()) {
+      const leftKey = keys.has('ArrowLeft') || pointerDir === 'left';
+      const rightKey = keys.has('ArrowRight') || pointerDir === 'right';
+      return { up: false, down, left: rightKey, right: leftKey };
     }
 
     return { up, down, left, right };
@@ -4936,6 +5032,12 @@
 
     motors = motorActive();
 
+    if (isBoj()) {
+      const turnMotors = resolveBojTurnMotors(bojAngularAccel(bojShipMass));
+      motors.left = turnMotors.left;
+      motors.right = turnMotors.right;
+    }
+
     if (isBludiste() && settingsEditable) {
       const moving = motors.up || motors.down || motors.left || motors.right;
       if (moving || Math.hypot(player.vx, player.vy) > 1) lockSettings();
@@ -4953,6 +5055,7 @@
       if (motors.right) shipAngularVel += angAccel * dt;
       shipAngularVel = Math.max(-angVelMax, Math.min(angVelMax, shipAngularVel));
       shipAngleHold += shipAngularVel * dt;
+      if (isBoj()) tickBojAutoStopRotation(dt);
 
       if (motors.down) {
         const sinA = Math.sin(shipAngleHold);
@@ -6997,6 +7100,14 @@
   }
   if (uiEls.bojTrainingPauseBtn) {
     uiEls.bojTrainingPauseBtn.addEventListener('click', () => toggleBojTrainingPause());
+  }
+  if (uiEls.bojAutoStopRotationBtn) {
+    uiEls.bojAutoStopRotationBtn.addEventListener('click', () => {
+      if (!isBoj()) return;
+      bojAutoStopRotation = !bojAutoStopRotation;
+      resetBojAutoStopRotationState();
+      syncHtmlControls();
+    });
   }
   uiEls.massRange.addEventListener('input', () => {
     if (!isBludiste() || !settingsEditable) return;
