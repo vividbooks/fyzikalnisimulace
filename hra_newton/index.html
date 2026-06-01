@@ -1746,8 +1746,8 @@
   const HUD_RECORD_H = 24;
   const HUD_ACTION_H = 38;
 
-  const RACE_RECORD_SEC = 40.28;
-  const RACE_RECORD_NAME = 'František';
+  const RACE_RECORD_SEC = 22.95;
+  const RACE_RECORD_NAME = 'anonym';
 
   const MODE_BTN = {
     bludiste: { x: 6, y: 8, w: 90, h: 36 },
@@ -3747,8 +3747,9 @@
 
   function formatStopwatch(sec) {
     const total = Math.max(0, sec);
-    const whole = Math.floor(total);
-    const cs = Math.floor((total % 1) * 100);
+    const roundedCs = Math.round(total * 100);
+    const whole = Math.floor(roundedCs / 100);
+    const cs = roundedCs % 100;
     const cc = cs.toString().padStart(2, '0');
     return `${whole},${cc} s`;
   }
