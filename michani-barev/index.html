@@ -1438,6 +1438,71 @@
           return intensityUsesByte() ? pctToByte(pct) : int(pct);
         }
 
+        let activeScrubDragStop = null;
+
+        function bindChannelScrubDrag(scrubEl, getStartValue, applyDragValue) {
+          let dragging = false;
+          let startX = 0;
+          let startV = 0;
+          let activePointerId = null;
+
+          const applyFromDrag = (clientX) => {
+            const delta = Math.round((clientX - startX) / 2);
+            applyDragValue(startV + delta);
+          };
+
+          const stopDragging = () => {
+            if (!dragging) return;
+            dragging = false;
+            activePointerId = null;
+            if (activeScrubDragStop === stopDragging) {
+              activeScrubDragStop = null;
+            }
+            window.removeEventListener("pointermove", onPointerMove, true);
+            window.removeEventListener("pointerup", onPointerUp, true);
+            window.removeEventListener("pointercancel", onPointerUp, true);
+            document.removeEventListener("mouseup", onMouseUp, true);
+            window.removeEventListener("blur", stopDragging);
+          };
+
+          const onPointerMove = (e) => {
+            if (!dragging || e.pointerId !== activePointerId) return;
+            if (e.pointerType === "mouse" && !(e.buttons & 1)) {
+              stopDragging();
+              return;
+            }
+            applyFromDrag(e.clientX);
+          };
+
+          const onPointerUp = (e) => {
+            if (!dragging || e.pointerId !== activePointerId) return;
+            stopDragging();
+          };
+
+          const onMouseUp = () => stopDragging();
+
+          scrubEl.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            if (e.target.closest(".channel-scrub-arrow")) return;
+
+            if (activeScrubDragStop) {
+              activeScrubDragStop();
+            }
+            activeScrubDragStop = stopDragging;
+
+            dragging = true;
+            activePointerId = e.pointerId;
+            startX = e.clientX;
+            startV = getStartValue();
+
+            window.addEventListener("pointermove", onPointerMove, true);
+            window.addEventListener("pointerup", onPointerUp, true);
+            window.addEventListener("pointercancel", onPointerUp, true);
+            document.addEventListener("mouseup", onMouseUp, true);
+            window.addEventListener("blur", stopDragging);
+          });
+        }
+
         /**
          * Řádek „C: 42“ / „C: 42 %“ — horizontální táhnutí u čísla (~2 px ≈ 1 krok v aktivní soustavě).
          * @param {HTMLElement} scrubEl
@@ -1445,10 +1510,6 @@
          * @param {number} index
          */
         function bindChannelScrub(scrubEl, valSpan, index) {
-          let dragging = false;
-          let startX = 0;
-          let startDisplay = 0;
-
           function applyValue(displayValue) {
             let nextPct;
             if (intensityUsesByte()) {
@@ -1463,11 +1524,6 @@
             applyIntensityToScrub(scrubEl, valSpan, nextPct);
             resetEval();
             render();
-          }
-
-          function applyFromDrag(clientX) {
-            const delta = Math.round((clientX - startX) / 2);
-            applyValue(startDisplay + delta);
           }
 
           function stepByArrow(delta) {
@@ -1496,33 +1552,11 @@
           bindScrubArrow(scrubEl.querySelector(".channel-scrub-arrow-dec"), -1);
           bindScrubArrow(scrubEl.querySelector(".channel-scrub-arrow-inc"), 1);
 
-          scrubEl.addEventListener("pointerdown", (e) => {
-            if (e.button !== 0) return;
-            if (e.target.closest(".channel-scrub-arrow")) return;
-            scrubEl.setPointerCapture(e.pointerId);
-            dragging = true;
-            startX = e.clientX;
-            startDisplay = pctToDisplayValue(state.v[index]);
-            e.preventDefault();
-          });
-
-          scrubEl.addEventListener("pointermove", (e) => {
-            if (!dragging) return;
-            applyFromDrag(e.clientX);
-          });
-
-          function endDrag(e) {
-            if (!dragging) return;
-            dragging = false;
-            try {
-              scrubEl.releasePointerCapture(e.pointerId);
-            } catch (_) {}
-          }
-
-          scrubEl.addEventListener("pointerup", endDrag);
-          scrubEl.addEventListener("pointercancel", () => {
-            dragging = false;
-          });
+          bindChannelScrubDrag(
+            scrubEl,
+            () => pctToDisplayValue(state.v[index]),
+            (displayValue) => applyValue(displayValue)
+          );
 
           scrubEl.addEventListener("keydown", (e) => {
             const max = intensityUsesByte() ? 255 : 100;
