@@ -345,6 +345,166 @@
       cursor: not-allowed;
     }
 
+    .graph-mode-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .graph-mode-wrap label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .graph-mode-wrap input {
+      margin-right: 8px;
+      vertical-align: middle;
+      accent-color: var(--accent);
+    }
+
+    .custom-graph-panel {
+      flex: 0 0 auto;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      display: grid;
+      gap: 10px;
+    }
+
+    .custom-graph-panel[hidden] {
+      display: none !important;
+    }
+
+    .custom-graph-panel .row-label {
+      margin: 0;
+    }
+
+    .custom-axis-settings {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 699.98px) {
+      .custom-axis-settings {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .custom-axis-block {
+      margin: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--readout-bg);
+      display: grid;
+      gap: 8px;
+    }
+
+    .custom-axis-block legend {
+      font-size: 0.8125rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+
+    .custom-axis-inline-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    @media (max-width: 479.98px) {
+      .custom-axis-inline-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .custom-field {
+      display: grid;
+      gap: 4px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .custom-field > input,
+    .custom-step-input input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .custom-step-input {
+      position: relative;
+      display: block;
+    }
+
+    .custom-step-input input {
+      padding-right: 2.1rem;
+    }
+
+    .custom-step-spin {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      bottom: 1px;
+      width: 1.65rem;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-radius: 0 7px 7px 0;
+      overflow: hidden;
+    }
+
+    .custom-step-btn {
+      flex: 1 1 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: var(--readout-bg);
+      color: var(--muted);
+      padding: 0;
+      font-size: 0.62rem;
+      line-height: 1;
+      cursor: pointer;
+      min-height: 0;
+    }
+
+    .custom-step-btn:hover {
+      background: var(--area-muted);
+      color: var(--text);
+    }
+
+    .custom-step-btn:active {
+      background: var(--border);
+    }
+
+    .custom-step-btn + .custom-step-btn {
+      border-top: 1px solid var(--border);
+    }
+
+    .custom-field > input:focus,
+    .custom-step-input input:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: 1px;
+    }
+
+    .track-section[hidden] {
+      display: none !important;
+    }
+
     @media (max-width: 899.98px) {
       .app {
         flex-direction: column;
@@ -438,12 +598,20 @@
           </div>
         </div>
 
-        <div class="row" aria-label="Časomíra">
+        <div id="timerRow" class="row" aria-label="Časomíra">
           <span class="row-label">Čas</span>
           <span class="timer" id="timer" aria-live="polite">00 : 00</span>
         </div>
 
-        <div class="row graph-axis-y-panel">
+        <div class="row">
+          <span class="row-label">Režim</span>
+          <div class="graph-mode-wrap">
+            <label><input type="radio" name="graphMode" value="cyclist" checked /> Cyklista</label>
+            <label><input type="radio" name="graphMode" value="custom" /> Vlastní graf</label>
+          </div>
+        </div>
+
+        <div id="axisYCyclistPanel" class="row graph-axis-y-panel">
           <span class="graph-target-wrap axis-y-wrap">
             <span class="graph-target-label">Osa Y</span>
             <label><input type="radio" name="axisY" value="start" checked /> Vzdálenost od startu</label>
@@ -452,7 +620,7 @@
           </span>
         </div>
 
-        <div class="row">
+        <div id="dualGraphRow" class="row">
           <span class="row-label">Grafy</span>
           <div class="dual-graph-block">
             <label class="dual-check">
@@ -473,7 +641,58 @@
       <div class="chart-wrap">
         <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
       </div>
-      <div class="track-section">
+      <div id="customGraphPanel" class="custom-graph-panel" hidden aria-label="Nastavení vlastních os">
+        <span class="row-label">Vlastní osy</span>
+        <div class="custom-axis-settings">
+          <fieldset class="custom-axis-block">
+            <legend>Osa X</legend>
+            <label class="custom-field">
+              Název
+              <input type="text" id="customXName" value="Čas" maxlength="40" />
+            </label>
+            <div class="custom-axis-inline-row">
+              <label class="custom-field">
+                Jednotka
+                <input type="text" id="customXUnit" value="s" maxlength="16" />
+              </label>
+              <label class="custom-field">
+                Velikost dílku
+                <div class="custom-step-input">
+                  <input type="text" id="customXStep" value="1" inputmode="decimal" autocomplete="off" />
+                  <span class="custom-step-spin">
+                    <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose X">▲</button>
+                    <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose X">▼</button>
+                  </span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset class="custom-axis-block">
+            <legend>Osa Y</legend>
+            <label class="custom-field">
+              Název
+              <input type="text" id="customYName" value="Hodnota" maxlength="40" />
+            </label>
+            <div class="custom-axis-inline-row">
+              <label class="custom-field">
+                Jednotka
+                <input type="text" id="customYUnit" value="" maxlength="16" placeholder="např. m, kg, °C" />
+              </label>
+              <label class="custom-field">
+                Velikost dílku
+                <div class="custom-step-input">
+                  <input type="text" id="customYStep" value="1" inputmode="decimal" autocomplete="off" />
+                  <span class="custom-step-spin">
+                    <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose Y">▲</button>
+                    <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose Y">▼</button>
+                  </span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+      <div id="trackSection" class="track-section">
         <svg id="track" class="track-svg" viewBox="0 -34 648 116" preserveAspectRatio="xMidYMin meet" aria-label="Dráha"></svg>
       </div>
     </div>
@@ -508,6 +727,17 @@
 
   const chartEl = document.getElementById("chart");
   const trackEl = document.getElementById("track");
+  const trackSection = document.getElementById("trackSection");
+  const timerRow = document.getElementById("timerRow");
+  const axisYCyclistPanel = document.getElementById("axisYCyclistPanel");
+  const customGraphPanel = document.getElementById("customGraphPanel");
+  const dualGraphRow = document.getElementById("dualGraphRow");
+  const customXName = document.getElementById("customXName");
+  const customXUnit = document.getElementById("customXUnit");
+  const customXStep = document.getElementById("customXStep");
+  const customYName = document.getElementById("customYName");
+  const customYUnit = document.getElementById("customYUnit");
+  const customYStep = document.getElementById("customYStep");
   const btnRun = document.getElementById("btnRun");
   const btnReset = document.getElementById("btnReset");
   const btnHelp = document.getElementById("btnHelp");
@@ -568,7 +798,14 @@
   /** Svislé čáry drawGrid — vzdálenost / dílek na ose případně rychlost / 2 m·s⁻¹. */
   function snapChartYToValueGrid(y) {
     const yP = Math.min(mt + ph, Math.max(mt, y));
-    if (yAxisMode === "velocity") {
+    if (isCustomGraphMode()) {
+      const sRaw = yToS(yP);
+      const sSn = Math.min(S_MAX, Math.max(0, Math.round(sRaw)));
+      const yGrid = sToY(sSn);
+      if (Math.abs(yGrid - yP) <= CHART_GRID_SNAP_PX) return yGrid;
+      return yP;
+    }
+    if (usesVelocityAxisMode()) {
       const vRaw = yToV(yP);
       const vGrid =
         Math.round(vRaw / VELOCITY_AXIS_MPS_PER_DIV) *
@@ -616,8 +853,243 @@
   /** Zobrazení a simulace druhého grafu (checkbox). */
   let dualGraph = false;
 
+  /** Režim vlastního grafu bez cyklisty — uživatel nastaví osy ručně. */
+  let customGraphMode = false;
+
+  /** @type {{ xName: string, xUnit: string, xStep: number, yName: string, yUnit: string, yStep: number }} */
+  const customAxis = {
+    xName: "Čas",
+    xUnit: "s",
+    xStep: 1,
+    yName: "Hodnota",
+    yUnit: "",
+    yStep: 1,
+  };
+
   /** @type {"start"|"cumulative"|"velocity"} zobrazení svislé osy a křivky. */
   let yAxisMode = "start";
+
+  function isCustomGraphMode() {
+    return customGraphMode;
+  }
+
+  function usesVelocityAxisMode() {
+    return !isCustomGraphMode() && yAxisMode === "velocity";
+  }
+
+  function usesCumulativeAxisMode() {
+    return !isCustomGraphMode() && yAxisMode === "cumulative";
+  }
+
+  const CUSTOM_STEP_SPIN_DELTA = 0.1;
+  const CUSTOM_STEP_MIN = 0.1;
+
+  function stepCustomAxisInput(input, axisKey, direction) {
+    const current = customAxisStepPositive(input.value, customAxis[axisKey]);
+    const next = Math.max(
+      CUSTOM_STEP_MIN,
+      Number((current + direction * CUSTOM_STEP_SPIN_DELTA).toFixed(4))
+    );
+    customAxis[axisKey] = next;
+    input.value = formatDecimalCs(next);
+    redrawChart();
+  }
+
+  function bindCustomStepSpinner(input, axisKey) {
+    const wrap = input.closest(".custom-step-input");
+    if (!wrap) return;
+    const up = wrap.querySelector(".custom-step-up");
+    const down = wrap.querySelector(".custom-step-down");
+    if (up) {
+      up.addEventListener("click", function () {
+        if (!customGraphMode) return;
+        stepCustomAxisInput(input, axisKey, 1);
+      });
+    }
+    if (down) {
+      down.addEventListener("click", function () {
+        if (!customGraphMode) return;
+        stepCustomAxisInput(input, axisKey, -1);
+      });
+    }
+  }
+
+  function parseDecimalCs(raw) {
+    const normalized = String(raw ?? "")
+      .trim()
+      .replace(/\s/g, "")
+      .replace(",", ".");
+    if (normalized === "" || normalized === "." || normalized === "-") return NaN;
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function customAxisStepPositive(raw, fallback) {
+    const n = parseDecimalCs(raw);
+    if (!Number.isFinite(n) || n <= 0) return fallback;
+    return n;
+  }
+
+  function syncCustomAxisFromInputs(options) {
+    const formatInputs = !options || options.formatInputs !== false;
+    customAxis.xName = (customXName.value || "Osa X").trim() || "Osa X";
+    customAxis.xUnit = (customXUnit.value || "").trim();
+    customAxis.xStep = customAxisStepPositive(customXStep.value, customAxis.xStep);
+    customAxis.yName = (customYName.value || "Osa Y").trim() || "Osa Y";
+    customAxis.yUnit = (customYUnit.value || "").trim();
+    customAxis.yStep = customAxisStepPositive(customYStep.value, customAxis.yStep);
+    if (formatInputs) {
+      customXStep.value = formatDecimalCs(customAxis.xStep);
+      customYStep.value = formatDecimalCs(customAxis.yStep);
+    }
+  }
+
+  function syncGraphModeFromRadios() {
+    const r = document.querySelector('input[name="graphMode"]:checked');
+    customGraphMode = !!(r && r.value === "custom");
+  }
+
+  function updateModePanelsVisibility() {
+    axisYCyclistPanel.hidden = customGraphMode;
+    customGraphPanel.hidden = !customGraphMode;
+    dualGraphRow.hidden = customGraphMode;
+    trackSection.hidden = customGraphMode;
+    timerRow.hidden = customGraphMode;
+    chartEl.setAttribute(
+      "aria-label",
+      customGraphMode ? "Vlastní graf" : "Graf vzdálenost–čas"
+    );
+    if (customGraphMode) {
+      running = false;
+      cancelAnimationFrame(raf);
+      lastFrame = 0;
+    }
+    if (customGraphMode && dualGraph) {
+      dualGraph = false;
+      chkDualGraph.checked = false;
+      graphTargetWrap.hidden = true;
+      const r1 = document.querySelector('input[name="graphTarget"][value="1"]');
+      if (r1) r1.checked = true;
+      syncGraphTargetRadios();
+    }
+    updateActionButton();
+  }
+
+  function sanitizeFilenamePart(value) {
+    return (
+      String(value || "graf")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "graf"
+    );
+  }
+
+  function inlineSvgPresentationStyles(sourceEl, cloneEl) {
+    const props = [
+      "fill",
+      "stroke",
+      "stroke-width",
+      "stroke-dasharray",
+      "stroke-linecap",
+      "stroke-linejoin",
+      "opacity",
+      "font-size",
+      "font-family",
+      "font-weight",
+      "text-anchor",
+      "dominant-baseline",
+    ];
+    const cs = getComputedStyle(sourceEl);
+    props.forEach(function (prop) {
+      const val = cs.getPropertyValue(prop);
+      if (val) cloneEl.setAttribute(prop, val);
+    });
+  }
+
+  function saveChartAsImage() {
+    const svg = chartEl;
+    const clone = svg.cloneNode(true);
+    const srcEls = [svg].concat(Array.from(svg.querySelectorAll("*")));
+    const cloneEls = [clone].concat(Array.from(clone.querySelectorAll("*")));
+    for (let i = 0; i < srcEls.length && i < cloneEls.length; i++) {
+      inlineSvgPresentationStyles(srcEls[i], cloneEls[i]);
+    }
+
+    ["plot-hit-layer", "chart-time-indicator", "chart-time-indicator-2"].forEach(function (id) {
+      const el = clone.querySelector("#" + id);
+      if (el) el.remove();
+    });
+    const preview = clone.querySelector(".chart-click-preview");
+    if (preview) preview.remove();
+
+    const NS = "http://www.w3.org/2000/svg";
+    const bg = document.createElementNS(NS, "rect");
+    bg.setAttribute("x", "0");
+    bg.setAttribute("y", "0");
+    bg.setAttribute("width", String(W));
+    bg.setAttribute("height", String(H));
+    bg.setAttribute("fill", "#ffffff");
+    clone.insertBefore(bg, clone.firstChild);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+    const svgString = new XMLSerializer().serializeToString(clone);
+    const scale = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+
+    const img = new Image();
+    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0, W, H);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (pngBlob) {
+        if (!pngBlob) return;
+        const pngUrl = URL.createObjectURL(pngBlob);
+        const a = document.createElement("a");
+        a.href = pngUrl;
+        a.download =
+          "graf-" +
+          sanitizeFilenamePart(customAxis.xName) +
+          "-" +
+          sanitizeFilenamePart(customAxis.yName) +
+          ".png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(pngUrl);
+      }, "image/png");
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+
+  function formatDecimalCs(value) {
+    const rounded = Math.abs(value - Math.round(value)) < 1e-6 ? Math.round(value) : value;
+    if (typeof rounded === "number" && Number.isInteger(rounded)) {
+      return String(rounded);
+    }
+    const num = String(Number(rounded.toFixed(2))).replace(/\.?0+$/, "");
+    return num.replace(".", ",");
+  }
+
+  function formatAxisTickValue(value, unit) {
+    const num = formatDecimalCs(value);
+    return unit ? num + " " + unit : num;
+  }
 
   function syncYAxisModeFromRadios() {
     const r = document.querySelector('input[name="axisY"]:checked');
@@ -648,12 +1120,12 @@
       const lo = arr[i - 1].t + eps;
       if (arr[i].t < lo) arr[i].t = lo;
       arr[i].t = Math.min(T_MAX, arr[i].t);
-      const smax = yAxisMode === "velocity" ? velocityGraphMaxMps() : S_MAX;
+      const smax = isCustomGraphMode() || !usesVelocityAxisMode() ? S_MAX : velocityGraphMaxMps();
       arr[i].s = Math.min(smax, Math.max(0, arr[i].s));
     }
     if (arr.length && arr[0].t < eps) arr[0].t = eps;
 
-    if (yAxisMode === "cumulative") {
+    if (usesCumulativeAxisMode()) {
       let minS = 0;
       for (let i = 0; i < arr.length; i++) {
         if (arr[i].s < minS) arr[i].s = minS;
@@ -669,8 +1141,8 @@
   /** Stejné zamítnutí jako při přidávání bodu (příliš blízko počátku / existujícímu uzlu). */
   function wouldRejectNewPoint(targetArr, g, t, val) {
     const nt = t / T_MAX;
-    const nScale = yAxisMode === "velocity" ? velocityGraphMaxMps() : S_MAX;
-    const oriSpeed = yAxisMode === "velocity" ? velocityV0ForGraph(g) : 0;
+    const nScale = isCustomGraphMode() || !usesVelocityAxisMode() ? S_MAX : velocityGraphMaxMps();
+    const oriSpeed = !isCustomGraphMode() && usesVelocityAxisMode() ? velocityV0ForGraph(g) : 0;
     const nearOrigin =
       targetArr.length > 0 &&
       nt * nt + Math.pow((val - oriSpeed) / nScale, 2) < 0.03 * 0.03;
@@ -813,7 +1285,7 @@
    */
   function trackDisplayMetersFromAxis(distAxis) {
     const m = trackMetersFromDistanceAxis(distAxis);
-    if (yAxisMode !== "velocity") {
+    if (!usesVelocityAxisMode()) {
       return Math.min(TRACK_SEGMENT_METERS, Math.max(0, m));
     }
     if (m <= TRACK_SEGMENT_METERS + 1e-9) {
@@ -830,7 +1302,7 @@
 
   /** Posun popisků na trati (0, 80, 160 … m) podle ujeté dráhy daného grafu. */
   function trackLabelBaseMetersForArr(arr, t) {
-    if (yAxisMode !== "velocity") return 0;
+    if (!usesVelocityAxisMode()) return 0;
     const m = trackMetersFromDistanceAxis(distanceAtFrom(arr, t));
     if (m <= TRACK_SEGMENT_METERS + 1e-9) return 0;
     return Math.floor(m / TRACK_SEGMENT_METERS) * TRACK_SEGMENT_METERS;
@@ -838,7 +1310,7 @@
 
   /** Po částech lineární s(t) mezi uzly; režim rychlosti = s z integrovaného v(t). */
   function distanceAtFrom(arr, t) {
-    if (yAxisMode === "velocity")
+    if (usesVelocityAxisMode())
       return distanceAtFromVelocityUser(arr, t, graphIdFromPointsArr(arr));
     const v = verticesFrom(arr);
     if (v.length === 0) return 0;
@@ -857,7 +1329,7 @@
   }
 
   function simEndTimeFrom(arr) {
-    if (yAxisMode === "velocity") {
+    if (usesVelocityAxisMode()) {
       sortPointsArr(arr);
       if (arr.length < 1) return 0;
       return Math.min(T_MAX, arr[arr.length - 1].t);
@@ -875,7 +1347,7 @@
 
   /** Režim vzdálenost: ds/dt v jednotkách osy / s. Režim rychlost: v v m/s. Pro t ≥ konec grafu → 0 v režimu rychlosti. */
   function derivativeSignedAtFrom(arr, t) {
-    if (yAxisMode === "velocity")
+    if (usesVelocityAxisMode())
       return vGraphAtVelocityUser(arr, t, graphIdFromPointsArr(arr));
     const v = verticesFrom(arr);
     if (v.length < 2) return 0;
@@ -905,7 +1377,7 @@
   }
 
   function speedDisplayAtFrom(arr, t) {
-    if (yAxisMode === "velocity") {
+    if (usesVelocityAxisMode()) {
       if (!arr.length) return 0;
       return Math.abs(derivativeSignedAtFrom(arr, t));
     }
@@ -960,7 +1432,18 @@
     }
   }
 
-  function updateRunButton() {
+  function updateActionButton() {
+    if (isCustomGraphMode()) {
+      btnRun.textContent = "Uložit";
+      btnRun.disabled = false;
+      return;
+    }
+    if (running) {
+      btnRun.textContent = "Pozastavit";
+      btnRun.disabled = false;
+      return;
+    }
+    btnRun.textContent = "Spustit";
     const ok = points.length >= 1 || (dualGraph && points2.length >= 1);
     btnRun.disabled = !ok;
   }
@@ -971,7 +1454,7 @@
   }
 
   function chartIndicatorVerticalValue(arr, tDraw) {
-    if (yAxisMode === "velocity") {
+    if (usesVelocityAxisMode()) {
       const dm = derivativeSignedAtFrom(arr, tDraw);
       return Math.min(velocityGraphMaxMps(), Math.max(0, dm));
     }
@@ -982,7 +1465,7 @@
   function chartPlaybackUpperBoundT(arr) {
     sortPointsArr(arr);
     if (!arr.length) return 0;
-    if (yAxisMode === "velocity") {
+    if (usesVelocityAxisMode()) {
       return Math.min(T_MAX, arr[arr.length - 1].t);
     }
     const v = verticesFrom(arr);
@@ -1000,7 +1483,7 @@
     const tWant = Math.min(simTClampedGlobal, tLim);
     const epsT = 5e-7;
     if (tWant >= tLim - epsT) {
-      if (yAxisMode === "velocity") {
+      if (usesVelocityAxisMode()) {
         const vm = Math.min(
           velocityGraphMaxMps(),
           Math.max(0, arr[arr.length - 1].s)
@@ -1048,7 +1531,7 @@
       d.setAttribute("cx", String(coords.cx));
       d.setAttribute(
         "cy",
-        String(yAxisMode === "velocity" ? vToY(coords.cyPlot) : sToY(coords.cyPlot))
+        String(usesVelocityAxisMode() ? vToY(coords.cyPlot) : sToY(coords.cyPlot))
       );
     }
 
@@ -1160,7 +1643,7 @@
     xl.setAttribute("text-anchor", "middle");
     xl.setAttribute("fill", axisColor);
     xl.setAttribute("font-size", "14");
-    xl.textContent = "Čas";
+    xl.textContent = isCustomGraphMode() ? customAxis.xName : "Čas";
     ax.appendChild(xl);
 
     /** Střed šipky Y osy (od špičky mt−4 po základ mt+ph); popisek vycentrovaný a vlevo od dílků. */
@@ -1177,10 +1660,11 @@
       "transform",
       "rotate(-90 " + yAxisLabelX + " " + yAxisLabelCy + ")"
     );
-    yl.textContent =
-      yAxisMode === "cumulative"
+    yl.textContent = isCustomGraphMode()
+      ? customAxis.yName
+      : usesCumulativeAxisMode()
         ? "Celkově ujetá vzdálenost"
-        : yAxisMode === "velocity"
+        : usesVelocityAxisMode()
           ? "Rychlost"
           : "Vzdálenost od startu";
     ax.appendChild(yl);
@@ -1200,7 +1684,9 @@
       lab.setAttribute("text-anchor", "middle");
       lab.setAttribute("font-size", "11");
       lab.setAttribute("fill", "#444");
-      lab.textContent = String(t) + " s";
+      lab.textContent = isCustomGraphMode()
+        ? formatAxisTickValue(t * customAxis.xStep, customAxis.xUnit)
+        : String(t) + " s";
       ax.appendChild(lab);
     }
 
@@ -1219,8 +1705,9 @@
       lab.setAttribute("text-anchor", "end");
       lab.setAttribute("font-size", "11");
       lab.setAttribute("fill", "#444");
-      lab.textContent =
-        yAxisMode === "velocity"
+      lab.textContent = isCustomGraphMode()
+        ? formatAxisTickValue(si * customAxis.yStep, customAxis.yUnit)
+        : usesVelocityAxisMode()
           ? String(si * VELOCITY_AXIS_MPS_PER_DIV) + " m/s"
           : si * 10 + " m";
       ax.appendChild(lab);
@@ -1253,14 +1740,14 @@
     sortPointsArr(points2);
     const v1 = verticesFrom(points);
     const d1 =
-      yAxisMode === "velocity"
+      !isCustomGraphMode() && usesVelocityAxisMode()
         ? velocityUserPolylinePointsString(points, 1)
         : v1.length >= 2
           ? v1.map((p) => tToX(p.t).toFixed(2) + "," + sToY(p.s).toFixed(2)).join(" ")
           : "";
     const v2dual = dualGraph ? verticesFrom(points2) : [];
     const d2 =
-      dualGraph && yAxisMode === "velocity"
+      dualGraph && !isCustomGraphMode() && usesVelocityAxisMode()
         ? velocityUserPolylinePointsString(points2, 2)
         : dualGraph && v2dual.length >= 2
           ? v2dual.map((p) => tToX(p.t).toFixed(2) + "," + sToY(p.s).toFixed(2)).join(" ")
@@ -1281,7 +1768,7 @@
 
     bindPlotHit(plotHit);
 
-    if (yAxisMode === "velocity") {
+    if (usesVelocityAxisMode()) {
       const axisPick = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       axisPick.setAttribute("x", String(ml - AXIS_PICK_W));
       axisPick.setAttribute("y", String(mt));
@@ -1314,7 +1801,7 @@
 
     handlesLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
     handlesLayer.setAttribute("class", "handles");
-    if (yAxisMode !== "velocity") {
+    if (!usesVelocityAxisMode()) {
       const origin = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       origin.setAttribute("cx", tToX(0));
       origin.setAttribute("cy", sToY(0));
@@ -1328,7 +1815,7 @@
       origin.dataset.role = "origin";
       handlesLayer.appendChild(origin);
     }
-    if (yAxisMode === "velocity") {
+    if (usesVelocityAxisMode()) {
       if (velocityV0[1] != null) {
         const o1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         o1.setAttribute("cx", tToX(0));
@@ -1367,7 +1854,7 @@
       c.setAttribute("cx", tToX(p.t));
       c.setAttribute(
         "cy",
-        yAxisMode === "velocity"
+        usesVelocityAxisMode()
           ? vToY(Math.min(velocityGraphMaxMps(), Math.max(0, p.s)))
           : sToY(p.s)
       );
@@ -1390,7 +1877,7 @@
         c.setAttribute("cx", tToX(p.t));
         c.setAttribute(
           "cy",
-          yAxisMode === "velocity"
+          usesVelocityAxisMode()
             ? vToY(Math.min(velocityGraphMaxMps(), Math.max(0, p.s)))
             : sToY(p.s)
         );
@@ -1448,7 +1935,7 @@
     chartEl.appendChild(chartClickPreviewGroup);
 
     updateChartTimeIndicator();
-    updateRunButton();
+    updateActionButton();
     drawTrack();
   }
 
@@ -1806,6 +2293,12 @@
   }
 
   function drawTrack() {
+    if (isCustomGraphMode()) {
+      trackEl.innerHTML = "";
+      trackRider = null;
+      trackRider2 = null;
+      return;
+    }
     trackEl.innerHTML = "";
     trackEl.setAttribute("viewBox", "0 " + TRACK_VIEW_Y_MIN + " " + TW + " " + TRACK_VIEW_HEIGHT);
     trackRider2 = null;
@@ -1955,7 +2448,7 @@
 
     const g = getActiveGraph();
     const arr = g === 2 ? points2 : points;
-    const v0Unset = yAxisMode === "velocity" && arr.length === 0 && velocityV0[g] == null;
+    const v0Unset = usesVelocityAxisMode() && arr.length === 0 && velocityV0[g] == null;
 
     if (v0Unset && (inPlot || inAxisStrip)) {
       const ys = snapChartYToValueGrid(y);
@@ -1975,7 +2468,7 @@
     const snapped = snapChartXYToGrid(x, y);
     const xClamped = snapped.x;
     const t = xToT(xClamped);
-    const val = yAxisMode === "velocity" ? yToV(snapped.y) : yToS(snapped.y);
+    const val = usesVelocityAxisMode() ? yToV(snapped.y) : yToS(snapped.y);
 
     if (wouldRejectNewPoint(arr, g, t, val)) {
       hideChartClickPreview();
@@ -1985,7 +2478,7 @@
     const fin = finalCoordsAfterHypotheticalAdd(arr, t, val);
     const cx = tToX(fin.t);
     const cy =
-      yAxisMode === "velocity"
+      usesVelocityAxisMode()
         ? vToY(fin.s)
         : sToY(fin.s);
 
@@ -1996,7 +2489,7 @@
   }
 
   function pickVelocityV0FromEvent(ev) {
-    if (running || yAxisMode !== "velocity") return;
+    if (running || !usesVelocityAxisMode()) return;
     const g = getActiveGraph();
     const arr = g === 2 ? points2 : points;
     if (arr.length > 0) return;
@@ -2017,7 +2510,7 @@
     const targetArr = getActiveGraph() === 2 ? points2 : points;
     const g = graphIdFromPointsArr(targetArr);
 
-    if (yAxisMode === "velocity" && targetArr.length === 0 && velocityV0[g] == null) {
+    if (usesVelocityAxisMode() && targetArr.length === 0 && velocityV0[g] == null) {
       velocityV0[g] = yToV(snapChartYToValueGrid(y));
       hideChartClickPreview();
       redrawChart();
@@ -2025,7 +2518,7 @@
     }
 
     const val =
-      yAxisMode === "velocity" ? yToV(snapped.y) : yToS(snapped.y);
+      usesVelocityAxisMode() ? yToV(snapped.y) : yToS(snapped.y);
 
     if (wouldRejectNewPoint(targetArr, g, t, val)) return;
 
@@ -2076,20 +2569,20 @@
 
     const prev =
       dragIdx === 0
-        ? { t: 0, s: yAxisMode === "velocity" ? velocityV0ForGraph(dragGraph) : 0 }
+        ? { t: 0, s: usesVelocityAxisMode() ? velocityV0ForGraph(dragGraph) : 0 }
         : arr[dragIdx - 1];
     const next = arr[dragIdx + 1];
     const eps = 0.03;
     if (prev) t = Math.max(prev.t + eps, t);
     if (next) t = Math.min(next.t - eps, t);
 
-    if (yAxisMode === "velocity") {
+    if (usesVelocityAxisMode()) {
       p.t = t;
       p.s = yToV(yAdj);
     } else {
       p.t = t;
       p.s = yToS(yAdj);
-      if (yAxisMode === "cumulative") {
+      if (usesCumulativeAxisMode()) {
         const hi = next ? next.s : S_MAX;
         p.s = Math.max(prev.s, Math.min(hi, p.s));
       }
@@ -2202,7 +2695,7 @@
     const graph = parseInt(gRaw, 10);
     const arr = graph === 2 ? points2 : points;
     arr.splice(idx, 1);
-    if (yAxisMode === "velocity" && !arr.length) velocityV0[graph] = null;
+    if (usesVelocityAxisMode() && !arr.length) velocityV0[graph] = null;
     redrawChart();
     ev.preventDefault();
   });
@@ -2217,8 +2710,8 @@
     if (endT <= 0 || simT >= endT) {
       simT = endT;
       running = false;
-      btnRun.textContent = "Spustit";
       lastFrame = 0;
+      updateActionButton();
     }
     timerEl.textContent = formatTimer(simT);
     if (dt > 0 && (points.length >= 1 || (dualGraph && points2.length >= 1))) {
@@ -2238,8 +2731,8 @@
           k;
       }
     }
-    if (yAxisMode === "velocity") drawTrack();
-    else {
+    if (usesVelocityAxisMode()) drawTrack();
+    else if (!isCustomGraphMode()) {
       updateTrackRiderPosition();
       refreshTrackRiderWheelAngles();
       refreshTrackRiderLegPhases();
@@ -2249,12 +2742,16 @@
   }
 
   btnRun.addEventListener("click", function () {
+    if (isCustomGraphMode()) {
+      saveChartAsImage();
+      return;
+    }
     if (running) {
       running = false;
-      btnRun.textContent = "Spustit";
+      updateActionButton();
       cancelAnimationFrame(raf);
       lastFrame = 0;
-      if (yAxisMode === "velocity") drawTrack();
+      if (usesVelocityAxisMode()) drawTrack();
       else updateTrackRiderPosition();
       updateChartTimeIndicator();
       return;
@@ -2268,17 +2765,17 @@
     }
     lastFrame = 0;
     running = true;
-    btnRun.textContent = "Pozastavit";
+    updateActionButton();
     timerEl.textContent = formatTimer(simT);
     updateChartTimeIndicator();
-    if (yAxisMode === "velocity") drawTrack();
-    else updateTrackRiderPosition();
+    if (usesVelocityAxisMode()) drawTrack();
+    else if (!isCustomGraphMode()) updateTrackRiderPosition();
     raf = requestAnimationFrame(tick);
   });
 
   function resetGraphDataAndPlayback() {
     running = false;
-    btnRun.textContent = "Spustit";
+    updateActionButton();
     cancelAnimationFrame(raf);
     lastFrame = 0;
     simT = 0;
@@ -2326,11 +2823,53 @@
 
   document.querySelectorAll('input[name="axisY"]').forEach(function (el) {
     el.addEventListener("change", function () {
+      if (customGraphMode) return;
       const prev = yAxisMode;
       syncYAxisModeFromRadios();
       const next = yAxisMode;
       if (prev !== next) resetGraphDataAndPlayback();
       redrawChart();
+    });
+  });
+
+  document.querySelectorAll('input[name="graphMode"]').forEach(function (el) {
+    el.addEventListener("change", function () {
+      const prevCustom = customGraphMode;
+      syncGraphModeFromRadios();
+      syncCustomAxisFromInputs();
+      updateModePanelsVisibility();
+      if (prevCustom !== customGraphMode) resetGraphDataAndPlayback();
+      redrawChart();
+    });
+  });
+
+  [customXName, customXUnit, customYName, customYUnit].forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("input", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+  });
+
+  [customXStep, customYStep].forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("input", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+    input.addEventListener("blur", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs();
     });
   });
 
@@ -2344,8 +2883,14 @@
     if (ev.target === helpDialog) helpDialog.close();
   });
 
+  bindCustomStepSpinner(customXStep, "xStep");
+  bindCustomStepSpinner(customYStep, "yStep");
+
   syncGraphTargetRadios();
   syncYAxisModeFromRadios();
+  syncGraphModeFromRadios();
+  syncCustomAxisFromInputs();
+  updateModePanelsVisibility();
 
   chartEl.addEventListener("mousemove", updateChartClickPreviewFromEvent);
   chartEl.addEventListener("mouseleave", hideChartClickPreview);
