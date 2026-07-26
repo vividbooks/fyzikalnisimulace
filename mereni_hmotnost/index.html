@@ -369,6 +369,17 @@
       align-items: center;
       justify-content: center;
       background: var(--panel-bg);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .mass-verify-panel.mass-verify-panel--correct {
+      border-color: rgba(5, 150, 105, 0.55);
+      background-color: rgb(236 253 245 / 0.92);
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
+    }
+    .mass-verify-panel.mass-verify-panel--wrong {
+      border-color: rgba(220, 38, 38, 0.35);
+      background-color: rgb(254 242 242 / 0.92);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.06);
     }
     .mass-verify-object-readout {
       width: 100%;
@@ -1694,6 +1705,27 @@
       const verifyObjectLabel = document.getElementById("verify-object-label");
       const verifyMassInput = document.getElementById("verify-mass-input");
       const verifyMassResult = document.getElementById("verify-mass-result");
+      const massVerifyPanels = Array.from(
+        document.querySelectorAll(".mass-verify .mass-verify-panel")
+      );
+
+      function applyMassVerifyPanelClasses(clsName) {
+        massVerifyPanels.forEach((panel) => {
+          panel.classList.remove(
+            "mass-verify-panel--correct",
+            "mass-verify-panel--wrong"
+          );
+          if (clsName) panel.classList.add(clsName);
+        });
+      }
+
+      function clearMassVerifyFeedback() {
+        if (verifyMassResult) {
+          verifyMassResult.textContent = "";
+          verifyMassResult.removeAttribute("data-status");
+        }
+        applyMassVerifyPanelClasses(null);
+      }
 
       function truthMassForVerification(which) {
         if (which === "rohlik") return ROHLIK_MASS_G;
@@ -1724,10 +1756,7 @@
         const [, nextKey, labelCs] = hit;
         if (nextKey !== verifySelectedObject) {
           if (verifyMassInput) verifyMassInput.value = "";
-          if (verifyMassResult) {
-            verifyMassResult.textContent = "";
-            verifyMassResult.removeAttribute("data-status");
-          }
+          clearMassVerifyFeedback();
         }
         verifySelectedObject = nextKey;
         verifyObjectLabel.textContent = labelCs;
@@ -1737,12 +1766,14 @@
         if (!verifyMassResult) return;
         const g = verifyMassInput ? parseUserGrams(verifyMassInput.value) : NaN;
         if (!verifySelectedObject) {
+          applyMassVerifyPanelClasses("mass-verify-panel--wrong");
           verifyMassResult.dataset.status = "error";
           verifyMassResult.textContent =
             "Nejdřív klikni na jablko, rohlík, sklenici okurek, bonbón nebo zlatou cihlu (nebo jej přesuň).";
           return;
         }
         if (!Number.isFinite(g)) {
+          applyMassVerifyPanelClasses("mass-verify-panel--wrong");
           verifyMassResult.dataset.status = "error";
           verifyMassResult.textContent =
             "Zadej hmotnost jako číslo (např. 112,84).";
@@ -1751,6 +1782,9 @@
         const truth = truthMassForVerification(verifySelectedObject);
         const diff = Math.abs(g - truth);
         const ok = diff <= VERIFY_TOLERANCE_G + 1e-9;
+        applyMassVerifyPanelClasses(
+          ok ? "mass-verify-panel--correct" : "mass-verify-panel--wrong"
+        );
         verifyMassResult.dataset.status = ok ? "ok" : "wrong";
         verifyMassResult.textContent = ok
           ? `Správně — jsi v toleranci ± ${VERIFY_TOLERANCE_G.toLocaleString("cs-CZ")} g.`
