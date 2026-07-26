@@ -23,7 +23,8 @@
       src:
         local("Fenomen Sans Book"),
         local("FenomenSans-Book"),
-        url("fonts/FenomenSans/FenomenSans-Book.otf") format("opentype");
+        url("fonts/FenomenSans/FenomenSans-Book.otf") format("opentype"),
+        url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
     }
 
     @font-face {
@@ -34,7 +35,8 @@
       src:
         local("Fenomen Sans Medium"),
         local("FenomenSans-Medium"),
-        url("fonts/FenomenSans/FenomenSans-Book.otf") format("opentype");
+        url("fonts/FenomenSans/FenomenSans-Book.otf") format("opentype"),
+        url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
     }
 
     @font-face {
@@ -46,7 +48,8 @@
         local("Fenomen Sans Semi Bold"),
         local("Fenomen Sans SemiBold"),
         local("FenomenSans-SemiBold"),
-        url("fonts/FenomenSans/FenomenSans-SemiBold.otf") format("opentype");
+        url("fonts/FenomenSans/FenomenSans-SemiBold.otf") format("opentype"),
+        url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
     }
 
     @font-face {
@@ -57,7 +60,8 @@
       src:
         local("Fenomen Sans Bold"),
         local("FenomenSans-Bold"),
-        url("fonts/FenomenSans/FenomenSans-Bold.otf") format("opentype");
+        url("fonts/FenomenSans/FenomenSans-Bold.otf") format("opentype"),
+        url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
     }
 
     :root {
@@ -214,9 +218,16 @@
       transition: background 0.15s, border-color 0.15s, transform 0.08s;
     }
 
+    .zoom-bar-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .zoom-bar-left button.zoom-button-text {
-      grid-column: 1 / span 1;
-      justify-self: start;
+      flex: 0 0 auto;
       min-width: 5rem;
       padding-inline: 14px;
       font-size: 0.85rem;
@@ -296,29 +307,24 @@
       padding: 18px;
     }
 
-    .guide-pan-toolbar {
-      width: 100%;
-      max-width: none;
-      margin: 0;
-      padding-top: 0;
-    }
-
     .canvas-pan-toggle {
       box-sizing: border-box;
-      width: 100%;
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       min-height: 40px;
-      padding: 10px 16px;
+      padding: 8px 10px;
       border-radius: 10px;
       border: 1px solid var(--border);
       background: var(--panel-bg);
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.9rem;
-      line-height: 1.2;
+      font-size: 0.8rem;
+      line-height: 1.15;
       color: var(--text);
       -webkit-tap-highlight-color: transparent;
       transition: background 0.15s, border-color 0.15s, transform 0.08s;
@@ -350,9 +356,13 @@
 
     .canvas-pan-toggle__icon {
       flex-shrink: 0;
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       display: block;
+    }
+
+    .canvas-pan-toggle__label {
+      min-width: 0;
     }
 
     .guide-card {
@@ -396,12 +406,15 @@
 
     .measure-list {
       display: grid;
-      gap: 18px;
+      gap: 14px;
     }
 
     .measure-group {
       display: grid;
-      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) minmax(112px, 148px);
+      column-gap: 10px;
+      row-gap: 4px;
+      align-items: center;
     }
 
     .measure-label {
@@ -409,20 +422,14 @@
       font-size: 0.95rem;
       font-weight: 500;
       color: var(--text);
-    }
-
-    .measure-input-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 132px;
-      gap: 10px;
-      align-items: start;
+      line-height: 1.3;
     }
 
     .meas-slot {
       position: relative;
       box-sizing: border-box;
       display: grid;
-      gap: 6px;
+      gap: 4px;
       padding: 0;
       pointer-events: auto;
       border: none;
@@ -516,81 +523,6 @@
       box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.06);
     }
 
-    .meas-slot.meas-slot--verify {
-      display: flex;
-      align-items: stretch;
-      background: transparent;
-      min-height: 46px;
-      gap: 0;
-    }
-
-    .meas-verify-btn {
-      appearance: none;
-      box-sizing: border-box;
-      flex: 1 1 auto;
-      width: 100%;
-      height: 100%;
-      min-width: 0;
-      min-height: 46px;
-      margin: 0;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: clamp(11px, 3vw, 12px);
-      font-weight: 600;
-      color: #ffffff;
-      line-height: 1.05;
-      border: 1px solid var(--accent);
-      border-radius: 10px;
-      background: var(--accent);
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    @media (max-width: 420px) {
-      .measure-input-row {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .meas-verify-btn:hover {
-      border-color: var(--accent-hover);
-      background: var(--accent-hover);
-    }
-
-    .meas-verify-btn:active {
-      transform: translateY(1px);
-    }
-
-    .meas-verify-btn:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
-    }
-
-    .meas-slot--correct.meas-slot--verify .meas-verify-btn {
-      border-color: var(--success);
-      background: var(--success);
-      color: #ffffff;
-    }
-
-    .meas-slot--correct.meas-slot--verify .meas-verify-btn:hover {
-      border-color: #047857;
-      background: #047857;
-    }
-
-    .meas-slot--wrong.meas-slot--verify .meas-verify-btn {
-      border-color: var(--danger);
-      color: var(--danger);
-      background: #ffffff;
-    }
-
-    .meas-slot--wrong.meas-slot--verify .meas-verify-btn:hover {
-      border-color: var(--danger);
-      background: #fef2f2;
-    }
-
     .workspace {
       box-sizing: border-box;
       position: relative;
@@ -642,6 +574,7 @@
       transform: translate(var(--board-pan-x, 0px), var(--board-pan-y, 0px)) scale(var(--board-zoom, 1));
       transform-origin: var(--zoom-origin-x, 50%) var(--zoom-origin-y, 50%);
       will-change: transform;
+      touch-action: none;
     }
 
     .board-pan-catch {
@@ -768,6 +701,9 @@
       pointer-events: auto;
       box-sizing: border-box;
       appearance: none;
+      -webkit-appearance: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .hit-rotate::before {
@@ -811,6 +747,23 @@
     .hit-rotate:focus-visible {
       outline: none;
       box-shadow: none;
+    }
+
+    @media (pointer: coarse) {
+      .hit-rotate {
+        width: clamp(104px, 24vmin, 136px);
+        height: clamp(88px, 20vmin, 120px);
+        right: clamp(-22px, -3.2vmin, -10px);
+        bottom: clamp(-20px, -2.8vmin, -8px);
+      }
+
+      .hit-rotate::before {
+        width: 44px;
+        height: 44px;
+        right: 12px;
+        bottom: 12px;
+        font-size: 1.2rem;
+      }
     }
 
     .pencil-shell {
@@ -914,6 +867,184 @@
         padding: 0;
       }
     }
+
+    .meas-slot input.app-numeric-input[readonly] {
+      cursor: pointer;
+    }
+
+    .table-keypad-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .table-keypad-overlay[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel {
+      width: min(100%, 300px);
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 42px rgba(15, 23, 42, 0.22);
+      display: grid;
+      gap: 12px;
+    }
+
+    .table-keypad-panel__title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-keypad-panel__display {
+      box-sizing: border-box;
+      height: 64px;
+      min-height: 64px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      font-size: 1.5rem;
+      font-weight: 650;
+      line-height: 1.2;
+      text-align: center;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .table-keypad-panel__display.is-invalid {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .table-keypad-panel__error {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 650;
+      color: var(--danger);
+      text-align: center;
+    }
+
+    .table-keypad-panel__error[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel__actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .table-keypad-panel__action {
+      appearance: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
+      width: 56px;
+      height: 56px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .table-keypad-panel__action svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-keypad-panel__confirm {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(61, 90, 154, 0.35);
+    }
+
+    .table-keypad-panel__cancel {
+      background: var(--readout-bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .table-keypad-panel__action:hover {
+      filter: brightness(1.05);
+    }
+
+    .table-keypad-panel__cancel:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .table-keypad-panel__action:active {
+      transform: scale(0.97);
+    }
+
+    .table-math-keypad {
+      width: 100%;
+    }
+
+    .table-math-keypad__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .table-math-keypad__key {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1.125rem;
+      font-weight: 650;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .table-math-keypad__key svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-math-keypad__key:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--area-muted);
+    }
+
+    .table-math-keypad__key:active:not(:disabled) {
+      background: rgba(61, 90, 154, 0.12);
+    }
+
+    .table-math-keypad__key:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .table-math-keypad__key--wide {
+      grid-column: 1 / -1;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -922,7 +1053,6 @@
     <div class="panel-copy">
       <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
       <h1 class="panel-title">Měření délek</h1>
-      <p class="hint">Posouvej předměty po ploše, přikládej pravítko a ověřuj naměřené délky v levém panelu.</p>
     </div>
     <div class="zoom-bar-left" role="toolbar" aria-label="Přiblížení pracovní plochy">
       <p class="zoom-heading-left" id="zoomBarHeadingLeft">Přiblížení plátna</p>
@@ -942,13 +1072,10 @@
         aria-valuetext="100 procent"
       />
       <button type="button" id="zoomInBtn" aria-label="Přiblížit plátno">+</button>
-      <button type="button" id="zoomResetBtn" class="zoom-button-text" aria-label="Obnovit měřítko na 100 procent">
-        100&nbsp;%
-      </button>
-    </div>
-
-    <div class="guide-scroll">
-      <div class="guide-pan-toolbar">
+      <div class="zoom-bar-actions">
+        <button type="button" id="zoomResetBtn" class="zoom-button-text" aria-label="Obnovit měřítko na 100 procent">
+          100&nbsp;%
+        </button>
         <button
           type="button"
           id="canvasPanToggleBtn"
@@ -958,8 +1085,8 @@
         >
           <svg
             class="canvas-pan-toggle__icon"
-            width="20"
-            height="20"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -973,9 +1100,12 @@
               stroke-linejoin="round"
             />
           </svg>
-          <span>Pohybovat s plátnem</span>
+          <span class="canvas-pan-toggle__label">Pohybovat s plátnem</span>
         </button>
       </div>
+    </div>
+
+    <div class="guide-scroll">
       <div class="guide-card">
         <svg class="measure-guide-svg" width="299" height="442" viewBox="0 0 299 442" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Návod k měření" draggable="false" focusable="false">
         <rect x="155.5" y="81.5" width="143" height="33" rx="5.5" fill="#C9C9C9" stroke="black"/>
@@ -1004,40 +1134,20 @@
 <!-- Položení podle rámečků návodu (viewBox 299×442; levý sloupec x=0,5, pravý x=155,5, šířka 143) -->
         <div class="guide-input-layer">
           <div class="meas-slot meas-slot--neutral" data-meas-pair-id="pencil" style="left: calc(100% * 0.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 81.5 / 442); height: calc(100% * 33 / 442)">
-            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="pencil" aria-label="Tužka — naměřená délka v cm (levý box)" />
+            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="pencil" aria-label="Tužka — naměřená délka v cm" />
             <span class="meas-tolerance-hint" aria-hidden="true">±0,5&nbsp;mm</span>
-          </div>
-          <div class="meas-slot meas-slot--neutral meas-slot--verify" data-meas-pair-id="pencil" style="left: calc(100% * 155.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 81.5 / 442); height: calc(100% * 33 / 442)">
-            <button type="button" class="meas-verify-btn" aria-label="Ověřit řádek — tužka">
-              Ověřit
-            </button>
           </div>
           <div class="meas-slot meas-slot--neutral" data-meas-pair-id="jar" style="left: calc(100% * 0.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 190.5 / 442); height: calc(100% * 33 / 442)">
-            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="jar" aria-label="Výška skleničky s okurkami — cm (levý box)" />
+            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="jar" aria-label="Výška skleničky s okurkami — cm" />
             <span class="meas-tolerance-hint" aria-hidden="true">±0,5&nbsp;mm</span>
-          </div>
-          <div class="meas-slot meas-slot--neutral meas-slot--verify" data-meas-pair-id="jar" style="left: calc(100% * 155.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 190.5 / 442); height: calc(100% * 33 / 442)">
-            <button type="button" class="meas-verify-btn" aria-label="Ověřit řádek — sklenička">
-              Ověřit
-            </button>
           </div>
           <div class="meas-slot meas-slot--neutral" data-meas-pair-id="creditShort" style="left: calc(100% * 0.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 299.5 / 442); height: calc(100% * 33 / 442)">
-            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="creditShort" aria-label="Kratší rozměr kreditní karty — cm (levý box)" />
+            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="creditShort" aria-label="Kratší rozměr kreditní karty — cm" />
             <span class="meas-tolerance-hint" aria-hidden="true">±0,5&nbsp;mm</span>
-          </div>
-          <div class="meas-slot meas-slot--neutral meas-slot--verify" data-meas-pair-id="creditShort" style="left: calc(100% * 155.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 299.5 / 442); height: calc(100% * 33 / 442)">
-            <button type="button" class="meas-verify-btn" aria-label="Ověřit řádek — kratší strana karty">
-              Ověřit
-            </button>
           </div>
           <div class="meas-slot meas-slot--neutral" data-meas-pair-id="creditLong" style="left: calc(100% * 0.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 408.5 / 442); height: calc(100% * 33 / 442)">
-            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="creditLong" aria-label="Delší rozměr kreditní karty — cm (levý box)" />
+            <input type="text" inputmode="decimal" maxlength="12" autocomplete="off" data-measure-key="creditLong" aria-label="Delší rozměr kreditní karty — cm" />
             <span class="meas-tolerance-hint" aria-hidden="true">±0,5&nbsp;mm</span>
-          </div>
-          <div class="meas-slot meas-slot--neutral meas-slot--verify" data-meas-pair-id="creditLong" style="left: calc(100% * 155.5 / 299); width: calc(100% * 143 / 299); top: calc(100% * 408.5 / 442); height: calc(100% * 33 / 442)">
-            <button type="button" class="meas-verify-btn" aria-label="Ověřit řádek — delší strana karty">
-              Ověřit
-            </button>
           </div>
         </div>
       </div>
@@ -1063,18 +1173,18 @@
       class="ruler-shell"
       id="rulerShell"
       tabindex="0"
-      aria-label="Pravítko: je vždy nad ostatními předměty a je zobrazeno napůl průhledně. Táhněte tělem. Zelenou šipku v pravém dolním rohu potáhněte pro otáčení kolem levého dolního rohu. Tužku, platební kartu nebo skleničku s okurkami přetahujte tam, kde pravítko nepokrývá plochu (sklenička leží nejníže). Bez modifikátorů pohyb šipkami, s klávesou Alt plus šipkami vpravo nebo doleva se pravítko jemně natáčí kolem levého dolního rohu."
+      aria-label="Pravítko: je vždy nad ostatními předměty a je zobrazeno napůl průhledně. Táhněte tělem. Úchop v pravém dolním rohu potáhněte pro otáčení kolem levého dolního rohu. Tužku, platební kartu nebo skleničku s okurkami přetahujte tam, kde pravítko nepokrývá plochu (sklenička leží nejníže). Bez modifikátorů pohyb šipkami, s klávesou Alt plus šipkami vpravo nebo doleva se pravítko jemně natáčí kolem levého dolního rohu."
           >
             <div class="ruler-outer" id="rulerOuter">
               <div class="ruler-visual" id="rulerVisual">
                 <img src="ruler.svg" width="520" height="68" alt="" draggable="false" />
 
-                <button
+                <div
                   class="hit-rotate"
+                  role="button"
                   tabindex="-1"
-                  type="button"
-                  aria-label="Otočit kolem levého spodního rohu pravítka (uchop zelené šipky vpravo dole)."
-                ></button>
+                  aria-label="Otočit pravítko (úchop vpravo dole)."
+                ></div>
               </div>
             </div>
           </div>
@@ -1108,6 +1218,66 @@
           aria-hidden="true"
         ></div>
       </main>
+    </div>
+  </div>
+</div>
+
+<div id="tableKeypadOverlay" class="table-keypad-overlay" hidden>
+  <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="tableKeypadTitle">
+    <p id="tableKeypadTitle" class="table-keypad-panel__title">Délka</p>
+    <div id="tableKeypadDisplay" class="table-keypad-panel__display" aria-live="polite"></div>
+    <p id="tableKeypadError" class="table-keypad-panel__error" hidden></p>
+    <div class="table-math-keypad" id="tableMathKeypad" aria-label="Matematická klávesnice">
+      <div class="table-math-keypad__grid">
+        <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+        <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+        <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+        <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+        <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+        <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+        <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+        <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+        <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+        <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+        <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+        <button class="table-math-keypad__key" type="button" data-action="clear" aria-label="Smazat vše">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path
+              d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="table-keypad-panel__actions">
+      <button type="button" id="tableKeypadCancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+      <button type="button" id="tableKeypadConfirm" class="table-keypad-panel__action table-keypad-panel__confirm" aria-label="Vložit hodnotu">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path
+            d="M5 12.5l5 5L19 7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
     </div>
   </div>
 </div>
@@ -1178,19 +1348,15 @@
 
         defs.forEach(function (def) {
           var inputSlot = /** @type {HTMLElement | null} */ (
-            guideCard.querySelector('.meas-slot[data-meas-pair-id="' + def.pairId + '"]:not(.meas-slot--verify)')
+            guideCard.querySelector('.meas-slot[data-meas-pair-id="' + def.pairId + '"]')
           );
-          var verifySlot = /** @type {HTMLElement | null} */ (
-            guideCard.querySelector('.meas-slot[data-meas-pair-id="' + def.pairId + '"].meas-slot--verify')
-          );
-          if (!inputSlot || !verifySlot) return;
+          if (!inputSlot) return;
 
           var input = /** @type {HTMLInputElement | null} */ (inputSlot.querySelector("input[data-measure-key]"));
           var hint = /** @type {HTMLElement | null} */ (inputSlot.querySelector(".meas-tolerance-hint"));
           if (!input) return;
 
           inputSlot.removeAttribute("style");
-          verifySlot.removeAttribute("style");
 
           var inputShell = document.createElement("div");
           inputShell.className = "input-shell";
@@ -1215,13 +1381,8 @@
           label.className = "measure-label";
           label.textContent = def.label;
 
-          var row = document.createElement("div");
-          row.className = "measure-input-row";
-          row.appendChild(inputSlot);
-          row.appendChild(verifySlot);
-
           group.appendChild(label);
-          group.appendChild(row);
+          group.appendChild(inputSlot);
           list.appendChild(group);
         });
 
@@ -1362,39 +1523,20 @@
       function applyMeasClasses(inp, clsName) {
         var slot = /** @type {HTMLElement | null} */ (inp.closest(".meas-slot"));
         if (!slot) return;
-        var pairId = slot.getAttribute("data-meas-pair-id");
-
-        /** @type {HTMLElement} */
-        function applyOne(/** @type {HTMLElement} */ el) {
-          el.classList.remove("meas-slot--neutral", "meas-slot--correct", "meas-slot--wrong");
-          el.classList.add(clsName);
-        }
-
-        if (!pairId) {
-          applyOne(slot);
-          return;
-        }
-        var paired = document.querySelectorAll(".meas-slot[data-meas-pair-id=\"" + pairId + "\"]");
-        var pj;
-        for (pj = 0; pj < paired.length; pj++) {
-          applyOne(/** @type {HTMLElement} */ (paired[pj]));
-        }
+        slot.classList.remove("meas-slot--neutral", "meas-slot--correct", "meas-slot--wrong");
+        slot.classList.add(clsName);
       }
 
       function verifyAllMeasures() {
         var inputs = document.querySelectorAll(".meas-slot input[data-measure-key]");
-        var inputsArray = inputs;
         var i;
-        var total = inputsArray.length;
-        for (i = 0; i < total; i++) {
+        for (i = 0; i < inputs.length; i++) {
           /** @type {HTMLInputElement} */
-          var inp = /** @type {HTMLInputElement} */ (inputsArray[i]);
+          var inp = /** @type {HTMLInputElement} */ (inputs[i]);
           var st = measJudgementForInput(inp);
           if (st === "empty") {
             applyMeasClasses(inp, "meas-slot--neutral");
-            continue;
-          }
-          if (st === "invalid") {
+          } else if (st === "invalid") {
             applyMeasClasses(inp, "meas-slot--wrong");
           } else if (st === "ok") {
             applyMeasClasses(inp, "meas-slot--correct");
@@ -1404,23 +1546,220 @@
         }
       }
 
-      /** Ověří jeden řádek (jeden vstup napravo od tlačítka Ověřit má stejný data-meas-pair-id). */
-      function verifyMeasuresForPairId(pairId) {
-        /** @type {HTMLInputElement | null} */
-        var inpElem = /** @type {HTMLInputElement | null} */ (
-          document.querySelector(".meas-slot[data-meas-pair-id=\"" + pairId + "\"] input[data-measure-key]")
-        );
-        if (!inpElem) return;
-        var st = measJudgementForInput(inpElem);
-        if (st === "empty") {
-          applyMeasClasses(inpElem, "meas-slot--neutral");
-        } else if (st === "invalid") {
-          applyMeasClasses(inpElem, "meas-slot--wrong");
-        } else if (st === "ok") {
-          applyMeasClasses(inpElem, "meas-slot--correct");
-        } else {
-          applyMeasClasses(inpElem, "meas-slot--wrong");
+      var tableKeypadOverlay = document.getElementById("tableKeypadOverlay");
+      var tableKeypadTitle = document.getElementById("tableKeypadTitle");
+      var tableKeypadDisplay = document.getElementById("tableKeypadDisplay");
+      var tableKeypadError = document.getElementById("tableKeypadError");
+      var tableKeypadConfirm = document.getElementById("tableKeypadConfirm");
+      var tableKeypadCancel = document.getElementById("tableKeypadCancel");
+      var tableMathKeypad = document.getElementById("tableMathKeypad");
+      var tableMathKeypadKeys = tableMathKeypad
+        ? tableMathKeypad.querySelectorAll(".table-math-keypad__key")
+        : [];
+
+      /** @type {HTMLInputElement | null} */
+      var tableKeypadTarget = null;
+      var tableKeypadDraft = "";
+
+      function prefersAppNumericKeypad() {
+        try {
+          if (window.matchMedia("(pointer: coarse)").matches) return true;
+          if (
+            typeof navigator.maxTouchPoints === "number" &&
+            navigator.maxTouchPoints > 0 &&
+            window.matchMedia("(hover: none)").matches
+          ) {
+            return true;
+          }
+        } catch (_err) {
+          /* ignore */
         }
+        return false;
+      }
+
+      var useAppNumericKeypad = prefersAppNumericKeypad();
+
+      function isMeasureNumericInput(el) {
+        return (
+          el instanceof HTMLInputElement &&
+          el.hasAttribute("data-measure-key")
+        );
+      }
+
+      function applyNumericKeypadMode(input) {
+        if (!input) return;
+        input.classList.add("app-numeric-input");
+        /* Na tabletu/touch potlač systémovou klávesnici; desktop může psát i přes overlay. */
+        if (useAppNumericKeypad) {
+          input.readOnly = true;
+          input.setAttribute("inputmode", "none");
+        } else {
+          input.readOnly = false;
+          input.setAttribute("inputmode", "decimal");
+        }
+      }
+
+      function clearTableKeypadError() {
+        if (tableKeypadError) {
+          tableKeypadError.hidden = true;
+          tableKeypadError.textContent = "";
+        }
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.classList.remove("is-invalid");
+        }
+      }
+
+      function showTableKeypadError(message) {
+        if (tableKeypadError) {
+          tableKeypadError.hidden = false;
+          tableKeypadError.textContent = message;
+        }
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.classList.add("is-invalid");
+        }
+      }
+
+      function validateTableKeypadValue() {
+        var raw = tableKeypadDraft.trim();
+        if (raw === "") return { ok: true };
+        var n = parseCmInput(raw);
+        if (!Number.isFinite(n)) {
+          return { ok: false, message: "Zadej platné číslo." };
+        }
+        if (n < 0) {
+          return { ok: false, message: "Délka nemůže být záporná." };
+        }
+        return { ok: true };
+      }
+
+      function updateTableKeypadValidation() {
+        var result = validateTableKeypadValue();
+        if (!result.ok) {
+          showTableKeypadError(result.message);
+          return;
+        }
+        clearTableKeypadError();
+      }
+
+      function updateTableKeypadDisplay() {
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.textContent = tableKeypadDraft;
+        }
+        updateTableKeypadValidation();
+      }
+
+      function measureKeypadTitle(input) {
+        var group = input.closest(".measure-group");
+        var label = group ? group.querySelector(".measure-label") : null;
+        if (label && label.textContent) return String(label.textContent).trim();
+        return input.getAttribute("aria-label") || "Délka";
+      }
+
+      function showTableMathKeypad(input) {
+        if (!tableKeypadOverlay || !input) return;
+        tableKeypadTarget = input;
+        tableKeypadDraft = input.value;
+        clearTableKeypadError();
+        if (tableKeypadTitle) {
+          tableKeypadTitle.textContent = measureKeypadTitle(input);
+        }
+        updateTableKeypadDisplay();
+        tableKeypadOverlay.hidden = false;
+        try {
+          input.blur();
+        } catch (_e) {
+          /* ignore */
+        }
+      }
+
+      function hideTableMathKeypad() {
+        tableKeypadTarget = null;
+        tableKeypadDraft = "";
+        clearTableKeypadError();
+        if (tableKeypadOverlay) tableKeypadOverlay.hidden = true;
+        if (tableKeypadDisplay) tableKeypadDisplay.textContent = "";
+      }
+
+      function insertIntoTableKeypadDraft(value) {
+        if (value === "," || value === ".") {
+          if (tableKeypadDraft.indexOf(",") !== -1 || tableKeypadDraft.indexOf(".") !== -1) {
+            return;
+          }
+        }
+        if (tableKeypadDraft.length >= 12) return;
+        tableKeypadDraft += value;
+        updateTableKeypadDisplay();
+      }
+
+      function clearTableKeypadDraft() {
+        tableKeypadDraft = "";
+        updateTableKeypadDisplay();
+      }
+
+      function backspaceTableKeypadDraft() {
+        tableKeypadDraft = tableKeypadDraft.slice(0, -1);
+        updateTableKeypadDisplay();
+      }
+
+      function cancelTableKeypad() {
+        hideTableMathKeypad();
+      }
+
+      function formatMeasureDraft(raw) {
+        var trimmed = String(raw || "").trim();
+        if (!trimmed) return "";
+        var n = parseCmInput(trimmed);
+        if (!Number.isFinite(n)) return trimmed;
+        var s = String(n);
+        /* Zachovej čárku v UI jako v Grafu (české desetinné). */
+        return s.replace(".", ",");
+      }
+
+      function confirmTableKeypad() {
+        var input = tableKeypadTarget;
+        if (!input) return;
+
+        var result = validateTableKeypadValue();
+        if (!result.ok) {
+          showTableKeypadError(result.message);
+          return;
+        }
+
+        input.value = formatMeasureDraft(tableKeypadDraft);
+        hideTableMathKeypad();
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        verifyAllMeasures();
+      }
+
+      function handleTableMathKeypadClick(event) {
+        var key = event.currentTarget;
+        if (!(key instanceof HTMLButtonElement) || key.disabled) return;
+
+        var action = key.getAttribute("data-action");
+        var value = key.getAttribute("data-value");
+
+        if (action === "clear") {
+          clearTableKeypadDraft();
+          return;
+        }
+
+        if (action === "backspace") {
+          backspaceTableKeypadDraft();
+          return;
+        }
+
+        if (value) {
+          insertIntoTableKeypadDraft(value);
+        }
+      }
+
+      function openNumericKeypadFromEvent(ev) {
+        var input = ev.target;
+        if (!isMeasureNumericInput(input)) return false;
+        ev.preventDefault();
+        showTableMathKeypad(/** @type {HTMLInputElement} */ (input));
+        return true;
       }
 
       var measureInputsAll = document.querySelectorAll(".meas-slot input[data-measure-key]");
@@ -1428,6 +1767,7 @@
         (function (inpLike) {
           /** @type {HTMLInputElement} */
           var inpElem = /** @type {HTMLInputElement} */ (inpLike);
+          applyNumericKeypadMode(inpElem);
           inpElem.addEventListener("blur", verifyAllMeasures);
           inpElem.addEventListener("keydown", function (e) {
             if (e.key === "Enter") {
@@ -1438,18 +1778,61 @@
         })(measureInputsAll[mi]);
       }
 
-      var verifyBtnAll = document.querySelectorAll(".meas-verify-btn");
-      var vbi;
-      for (vbi = 0; vbi < verifyBtnAll.length; vbi++) {
-        /** @type {HTMLButtonElement} */
-        var bBtn = /** @type {HTMLButtonElement} */ (verifyBtnAll[vbi]);
-        bBtn.addEventListener("click", function (ev) {
-          /** @type {HTMLElement | null} */
-          var pSlot = /** @type {HTMLElement | null} */ ((/** @type {HTMLElement} */ (ev.currentTarget)).closest(".meas-slot"));
-          var pid = pSlot ? pSlot.getAttribute("data-meas-pair-id") : null;
-          if (pid) verifyMeasuresForPairId(pid);
+      var leftPanel = document.querySelector(".left-panel");
+      if (leftPanel) {
+        leftPanel.addEventListener("pointerdown", function (ev) {
+          openNumericKeypadFromEvent(ev);
         });
       }
+
+      if (tableKeypadConfirm) {
+        tableKeypadConfirm.addEventListener("click", confirmTableKeypad);
+      }
+      if (tableKeypadCancel) {
+        tableKeypadCancel.addEventListener("click", cancelTableKeypad);
+      }
+      if (tableKeypadOverlay) {
+        tableKeypadOverlay.addEventListener("click", function (ev) {
+          if (ev.target === tableKeypadOverlay) cancelTableKeypad();
+        });
+      }
+
+      for (var ki = 0; ki < tableMathKeypadKeys.length; ki++) {
+        (function (keyBtn) {
+          keyBtn.addEventListener("mousedown", function (ev) {
+            ev.preventDefault();
+          });
+          keyBtn.addEventListener("click", handleTableMathKeypadClick);
+        })(tableMathKeypadKeys[ki]);
+      }
+
+      document.addEventListener("keydown", function (ev) {
+        if (!tableKeypadTarget) return;
+        if (ev.key === "Escape") {
+          ev.preventDefault();
+          cancelTableKeypad();
+          return;
+        }
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          confirmTableKeypad();
+          return;
+        }
+        if (ev.key === "Backspace") {
+          ev.preventDefault();
+          backspaceTableKeypadDraft();
+          return;
+        }
+        if (/^[0-9]$/.test(ev.key)) {
+          ev.preventDefault();
+          insertIntoTableKeypadDraft(ev.key);
+          return;
+        }
+        if (ev.key === "," || ev.key === ".") {
+          ev.preventDefault();
+          insertIntoTableKeypadDraft(",");
+        }
+      });
 
       function focusNoScroll(el) {
         try {
@@ -1474,6 +1857,9 @@
       var activePointerId = null;
       /** @type {HTMLElement|null} */
       var rotateGripEl = null;
+      /** @type {{ fx: number, fy: number } | null} */
+      var rotateStartFinger = null;
+      var rotateGestureArmed = false;
 
       var bx = 0;
       var by = 0;
@@ -1530,7 +1916,11 @@
         var vy = clientY - br.top;
         var ox = zoomFocalOx;
         var oy = zoomFocalOy;
-        return { fx: ox + (vx - ox) / z, fy: oy + (vy - oy) / z };
+        /* Invertuj CSS: translate(pan) scale(z) s originem (ox, oy). */
+        return {
+          fx: ox + (vx - boardPanX - ox) / z,
+          fy: oy + (vy - boardPanY - oy) / z,
+        };
       }
 
       function angleTowardPivot(px, py, vx, vy) {
@@ -1709,7 +2099,7 @@
 
       /** @returns {HTMLElement|null} */
       function gestureCaptureElement() {
-        if (mode === "rotate") return rotateGripEl;
+        if (mode === "rotate") return board;
         if (mode === "move") return rulerOuter;
         if (mode === "pencil-move") return pencilOuter;
         if (mode === "creditcard-move") return creditCardOuter;
@@ -1733,6 +2123,8 @@
         cucumbersDragBase = null;
         boardPanDragBase = null;
         rotateGripEl = null;
+        rotateStartFinger = null;
+        rotateGestureArmed = false;
         lastAngleAgainstPivotRad = null;
         applyLayout();
         applyPencilLayout();
@@ -1749,16 +2141,20 @@
         /** @type {Node | null} */
         var tgt = /** @type {Node | null} */ (ev.target);
 
-        if (hitRotate.contains(tgt)) {
+        if (hitRotate.contains(tgt) || tgt === hitRotate) {
           mode = "rotate";
           rotateGripEl = hitRotate;
           activePointerId = ev.pointerId;
           shell.classList.add("is-dragging-corner");
           lastAngleAgainstPivotRad = null;
-          accumulateRotationAroundCenter(finger);
-          hitRotate.setPointerCapture(ev.pointerId);
+          rotateStartFinger = { fx: finger.fx, fy: finger.fy };
+          rotateGestureArmed = false;
+          /* Capture na board — stabilní cíl i když se úchop pod prstem otáčí (tablet/iOS). */
+          board.setPointerCapture(ev.pointerId);
           ev.preventDefault();
-          focusNoScroll(hitRotate);
+          if (ev.pointerType !== "touch") {
+            focusNoScroll(hitRotate);
+          }
           return;
         }
 
@@ -1833,7 +2229,22 @@
 
         var finger = boardXYFromClient(ev.clientX, ev.clientY);
         if (mode === "move") accumulateMoveFinger(finger);
-        if (mode === "rotate") accumulateRotationAroundCenter(finger);
+        if (mode === "rotate") {
+          if (!rotateGestureArmed) {
+            if (
+              rotateStartFinger &&
+              Math.hypot(finger.fx - rotateStartFinger.fx, finger.fy - rotateStartFinger.fy) < 10
+            ) {
+              ev.preventDefault();
+              return;
+            }
+            rotateGestureArmed = true;
+            lastAngleAgainstPivotRad = null;
+            accumulateRotationAroundCenter(finger);
+          } else {
+            accumulateRotationAroundCenter(finger);
+          }
+        }
         if (mode === "pencil-move") accumulatePencilMoveFinger(finger);
         if (mode === "creditcard-move") accumulateCreditMoveFinger(finger);
         if (mode === "cucumbers-move") accumulateCucumbersMoveFinger(finger);
@@ -1855,7 +2266,7 @@
         resetGesture(ev);
       }
 
-      [hitRotate, rulerOuter, pencilOuter, creditCardOuter, cucumbersOuter, boardPanCatch].forEach(function (element) {
+      [board, hitRotate, rulerOuter, pencilOuter, creditCardOuter, cucumbersOuter, boardPanCatch].forEach(function (element) {
         element.addEventListener(
           "lostpointercapture",
           function (lostEv) {
