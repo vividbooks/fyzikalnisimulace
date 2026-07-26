@@ -174,6 +174,298 @@
       color: var(--text);
     }
 
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 12px;
+      background: var(--area-muted);
+    }
+
+    .mode-switch__btn {
+      appearance: none;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .mode-switch__btn:hover {
+      color: var(--text);
+    }
+
+    .mode-switch__btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .mode-switch__btn.is-active {
+      background: var(--panel-bg);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgb(23 25 35 / 0.1);
+    }
+
+    .plant-panel {
+      display: none;
+      gap: 14px;
+    }
+
+    .app-root[data-app-mode="plant"] .plant-panel {
+      display: grid;
+    }
+
+    .app-root[data-app-mode="plant"] .measure-panel {
+      display: none;
+    }
+
+    .app-root[data-app-mode="plant"] .zoom-bar-left {
+      display: none;
+    }
+
+    .plant-panel-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .plant-panel-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .plant-panel-actions {
+      display: grid;
+      gap: 8px;
+    }
+
+    .plant-panel-actions button {
+      appearance: none;
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+
+    .plant-panel-actions button:hover {
+      border-color: var(--accent);
+    }
+
+    .plant-panel-actions button:active {
+      transform: translateY(1px);
+    }
+
+    .plant-panel-actions button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .plant-panel-actions button.plant-grow-btn {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .plant-panel-actions button.plant-grow-btn:hover {
+      border-color: var(--accent-hover);
+      background: var(--accent-hover);
+    }
+
+    .plant-panel-actions button.plant-grow-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .plant-panel-actions button.plant-grow-btn:disabled:hover {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .plant-stopwatch {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      text-align: center;
+      margin-top: 4px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f7f8fb;
+    }
+
+    .plant-stopwatch-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .plant-stopwatch-time {
+      font-size: 1.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .plant-panel-actions button.plant-graph-btn.is-active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .plant-panel-actions button.plant-graph-btn.is-active:hover {
+      border-color: var(--accent-hover);
+      background: var(--accent-hover);
+    }
+
+    .plant-graph-tools {
+      display: none;
+      gap: 8px;
+    }
+
+    .app-root[data-app-mode="plant"][data-plant-view="graph"] .plant-graph-tools {
+      display: grid;
+    }
+
+    .plant-graph-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .plant-graph-actions button {
+      flex: 1 1 auto;
+      min-width: min(100%, 6.5rem);
+    }
+
+    .plant-graph-actions button.plant-graph-secondary {
+      background: var(--panel-bg);
+      color: var(--accent);
+      border-color: var(--border);
+    }
+
+    .plant-graph-actions button.plant-graph-secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: #f7f8fb;
+    }
+
+    .plant-graph-tools button.plant-graph-secondary {
+      background: var(--panel-bg);
+      color: var(--accent);
+      border-color: var(--border);
+    }
+
+    .plant-graph-tools button.plant-graph-secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: #f7f8fb;
+    }
+
+    .plant-graph-tools button.plant-graph-secondary.is-active {
+      border-color: var(--accent);
+      background: #eef2f8;
+      color: var(--accent);
+    }
+
+    .plant-graph-actions button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .plant-fit-mode-row {
+      display: none;
+      gap: 8px;
+    }
+
+    .plant-fit-mode-row.is-visible {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .plant-fit-mode-row button {
+      flex: 1 1 auto;
+      min-width: min(100%, 6.5rem);
+    }
+
+    .plant-chart-wrap {
+      display: none;
+      width: min(100%, 920px);
+      height: min(100%, 560px);
+      min-height: 280px;
+      flex: 1 1 auto;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px 8px;
+      box-sizing: border-box;
+      --plant-grid: rgba(30, 107, 184, 0.22);
+      pointer-events: auto;
+    }
+
+    .app-root[data-app-mode="plant"][data-plant-view="graph"] .plant-stage-anim {
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .app-root[data-app-mode="plant"][data-plant-view="graph"] .plant-chart-wrap {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-height: none;
+    }
+
+    .app-root[data-app-mode="plant"][data-plant-view="graph"] .plant-anim-wrap {
+      display: none;
+    }
+
+    .app-root[data-app-mode="plant"][data-plant-view="graph"] .ruler-shell {
+      display: none !important;
+    }
+
+    .plant-chart-svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      cursor: crosshair;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .plant-chart-svg.is-holding-point {
+      cursor: grabbing;
+    }
+
+    .plant-chart-svg text {
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .plant-chart-svg .chart-cross-marker {
+      cursor: grab;
+    }
+
     .hint {
       margin: 0;
       color: var(--muted);
@@ -593,6 +885,140 @@
 
     .board-pan-catch.is-dragging-pan {
       cursor: grabbing;
+    }
+
+    .plant-stage {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px;
+      pointer-events: none;
+      background: #ffffff;
+    }
+
+    .app-root[data-app-mode="plant"] .plant-stage {
+      display: flex;
+    }
+
+    .app-root[data-app-mode="plant"] .cucumbers-shell,
+    .app-root[data-app-mode="plant"] .pencil-shell,
+    .app-root[data-app-mode="plant"] .creditcard-shell {
+      display: none !important;
+    }
+
+    .plant-stage-anim {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Stejný poměr a vnoření jako v projektu Rostlina (#anim-wrap / #anim). */
+    .plant-anim-wrap {
+      position: relative;
+      width: min(100%, 820px);
+      aspect-ratio: 1;
+      flex-shrink: 0;
+      transform: translate(-100px, 250px) scale(1.5);
+      transform-origin: center bottom;
+    }
+
+    .plant-anim {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .plant-anim svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Tabulka jako v projektu Graf: popisek + 10 hodnot. */
+    .plant-points-table-section {
+      flex: 0 0 auto;
+      width: min(100%, 920px);
+      z-index: 4;
+      pointer-events: auto;
+      background: var(--panel-bg);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      box-shadow: 0 1px 3px rgb(23 25 35 / 0.08);
+    }
+
+    .plant-points-table-wrap {
+      overflow-x: auto;
+      min-width: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .plant-points-table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    .plant-points-table th,
+    .plant-points-table td {
+      border: 1px solid var(--border);
+      padding: 0;
+      vertical-align: middle;
+    }
+
+    .plant-points-table td {
+      min-width: 0;
+      height: 1px;
+    }
+
+    .plant-points-table th {
+      width: clamp(7.5rem, 18vw, 11rem);
+      background: #f7f8fb;
+      font-size: 0.8125rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: left;
+      white-space: nowrap;
+      line-height: 1.2;
+      padding: 8px 10px;
+      overflow: hidden;
+    }
+
+    .plant-points-table td input {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 1.625rem;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
+      padding: 3px 2px;
+      margin: 0;
+      font: inherit;
+      font-size: clamp(0.6875rem, 1.6vw, 0.8125rem);
+      color: var(--text);
+      text-align: center;
+      border-radius: 0;
+      appearance: none;
+    }
+
+    .plant-points-table td input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+      background: #fff;
+    }
+
+    .plant-points-table td input.app-numeric-input[readonly] {
+      cursor: pointer;
     }
 
     .cucumbers-shell {
@@ -1048,11 +1474,33 @@
   </style>
 </head>
 <body>
-<div class="app-root">
+<div class="app-root" data-app-mode="measure">
   <aside class="left-panel">
     <div class="panel-copy">
       <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
       <h1 class="panel-title">Měření délek</h1>
+      <div class="mode-switch" role="tablist" aria-label="Režim simulace">
+        <button
+          type="button"
+          class="mode-switch__btn is-active"
+          id="modeMeasureBtn"
+          role="tab"
+          aria-selected="true"
+          data-app-mode="measure"
+        >
+          Měření
+        </button>
+        <button
+          type="button"
+          class="mode-switch__btn"
+          id="modePlantBtn"
+          role="tab"
+          aria-selected="false"
+          data-app-mode="plant"
+        >
+          Rostlina
+        </button>
+      </div>
     </div>
     <div class="zoom-bar-left" role="toolbar" aria-label="Přiblížení pracovní plochy">
       <p class="zoom-heading-left" id="zoomBarHeadingLeft">Přiblížení plátna</p>
@@ -1151,6 +1599,55 @@
           </div>
         </div>
       </div>
+
+      <section class="plant-panel" id="plantPanel" aria-labelledby="plantPanelTitle">
+        <h2 id="plantPanelTitle" class="plant-panel-title">Rostlina</h2>
+        <p class="plant-panel-text">
+          Sleduj růst kouzelné rostliny a zapisuj do tabulky její délku v konkrétních časech. Z&nbsp;naměřených hodnot vytvoř graf.
+        </p>
+        <div class="plant-panel-actions">
+          <button type="button" class="plant-grow-btn" id="plantGrowBtn">Nechat vyrůst</button>
+        </div>
+        <div class="plant-stopwatch" aria-live="polite">
+          <span class="plant-stopwatch-label">Stopky</span>
+          <time class="plant-stopwatch-time" id="plantStopwatch" datetime="PT0S">00,0 s</time>
+        </div>
+        <div class="plant-panel-actions">
+          <button
+            type="button"
+            class="plant-graph-btn"
+            id="plantGraphBtn"
+            aria-pressed="false"
+          >
+            Zobrazit graf
+          </button>
+        </div>
+        <div class="plant-graph-tools" id="plantGraphTools" aria-label="Nástroje grafu">
+          <div class="plant-panel-actions plant-graph-actions">
+            <button type="button" id="plantChartSaveBtn">Uložit</button>
+            <button type="button" class="plant-graph-secondary" id="plantChartResetBtn">
+              Reset
+            </button>
+            <button
+              type="button"
+              class="plant-graph-secondary"
+              id="plantChartFitBtn"
+              aria-pressed="false"
+              disabled
+            >
+              Proložit
+            </button>
+          </div>
+          <div class="plant-panel-actions plant-fit-mode-row" id="plantFitModeRow" aria-label="Typ proložení">
+            <button type="button" id="plantFitModeCurveBtn" class="plant-graph-secondary is-active" aria-pressed="true">
+              Křivka
+            </button>
+            <button type="button" id="plantFitModePolylineBtn" class="plant-graph-secondary" aria-pressed="false">
+              Lomená čára
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   </aside>
 
@@ -1158,6 +1655,64 @@
     <div class="board-stage" id="boardStage">
       <main id="board" aria-label="Pracovní plocha">
         <div id="boardZoomLayer">
+          <div class="plant-stage" id="plantStage" aria-hidden="true">
+            <div class="plant-stage-anim">
+              <div class="plant-anim-wrap">
+                <div
+                  class="plant-anim"
+                  id="plantAnim"
+                  role="img"
+                  aria-label="Animace sázení a růstu rostliny"
+                ></div>
+              </div>
+              <div class="plant-chart-wrap" id="plantChartWrap">
+                <svg
+                  id="plantChart"
+                  class="plant-chart-svg"
+                  role="img"
+                  aria-label="Graf závislosti délky rostliny na čase"
+                ></svg>
+              </div>
+            </div>
+            <section
+              class="plant-points-table-section"
+              id="plantPointsTableSection"
+              aria-label="Tabulka měření růstu rostliny"
+            >
+              <div class="plant-points-table-wrap">
+                <table class="plant-points-table">
+                  <tbody id="plantPointsTableBody">
+                    <tr>
+                      <th scope="row">čas (s)</th>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="1" aria-label="čas (s), sloupec 1" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="2" aria-label="čas (s), sloupec 2" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="3" aria-label="čas (s), sloupec 3" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="4" aria-label="čas (s), sloupec 4" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="5" aria-label="čas (s), sloupec 5" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="6" aria-label="čas (s), sloupec 6" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="7" aria-label="čas (s), sloupec 7" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="8" aria-label="čas (s), sloupec 8" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="9" aria-label="čas (s), sloupec 9" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="time" data-plant-col="10" aria-label="čas (s), sloupec 10" /></td>
+                    </tr>
+                    <tr>
+                      <th scope="row">délka rostliny (cm)</th>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="1" aria-label="délka rostliny (cm), sloupec 1" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="2" aria-label="délka rostliny (cm), sloupec 2" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="3" aria-label="délka rostliny (cm), sloupec 3" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="4" aria-label="délka rostliny (cm), sloupec 4" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="5" aria-label="délka rostliny (cm), sloupec 5" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="6" aria-label="délka rostliny (cm), sloupec 6" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="7" aria-label="délka rostliny (cm), sloupec 7" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="8" aria-label="délka rostliny (cm), sloupec 8" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="9" aria-label="délka rostliny (cm), sloupec 9" /></td>
+                      <td><input type="text" inputmode="decimal" autocomplete="off" data-plant-cell="length" data-plant-col="10" aria-label="délka rostliny (cm), sloupec 10" /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
           <div
             class="cucumbers-shell"
             id="cucumbersShell"
@@ -1282,6 +1837,7 @@
   </div>
 </div>
 
+<script src="lottie.min.js"></script>
 <script>
     (function () {
       var board = document.getElementById("board");
@@ -1340,7 +1896,7 @@
         var title = document.createElement("h2");
         title.id = "measurePanelTitle";
         title.className = "measure-panel-title";
-        title.textContent = "Změř";
+        title.textContent = "Měření";
         section.appendChild(title);
 
         var list = document.createElement("div");
@@ -1392,6 +1948,1413 @@
       }
 
       rebuildMeasurePanel();
+
+      var appRoot = document.querySelector(".app-root");
+      var modeMeasureBtn = document.getElementById("modeMeasureBtn");
+      var modePlantBtn = document.getElementById("modePlantBtn");
+      var plantStage = document.getElementById("plantStage");
+      var plantAnimEl = document.getElementById("plantAnim");
+      var plantGrowBtn = document.getElementById("plantGrowBtn");
+      var plantStopwatchEl = document.getElementById("plantStopwatch");
+      var plantGraphBtn = document.getElementById("plantGraphBtn");
+      var plantChartEl = document.getElementById("plantChart");
+      var plantChartWrap = document.getElementById("plantChartWrap");
+      var plantChartSaveBtn = document.getElementById("plantChartSaveBtn");
+      var plantChartFitBtn = document.getElementById("plantChartFitBtn");
+      var plantChartResetBtn = document.getElementById("plantChartResetBtn");
+      var plantFitModeRow = document.getElementById("plantFitModeRow");
+      var plantFitModeCurveBtn = document.getElementById("plantFitModeCurveBtn");
+      var plantFitModePolylineBtn = document.getElementById("plantFitModePolylineBtn");
+      var plantGraphVisible = false;
+      /** @type {{ t: number, s: number }[]} */
+      var plantChartPoints = [];
+      var plantChartShowFit = false;
+      /** @type {'curve' | 'polyline'} */
+      var plantChartFitMode = "curve";
+      /** @type {{ mode: 'new' | 'existing', index: number | null, t: number, s: number, pointerId?: number } | null} */
+      var plantChartHold = null;
+      /** @type {number | null} */
+      var plantChartResizeRaf = null;
+      var PLANT_CHART_MAX_POINTS = 10;
+
+      // Keep-ranges: přeskočí 76–125 a plateau bez růstu výhonku 211–345.
+      var PLANT_KEEP_SEGMENTS = [
+        { srcStart: 0, srcEnd: 75 },
+        { srcStart: 126, srcEnd: 210 },
+        { srcStart: 346, srcEnd: 434 }
+      ];
+      var PLANT_SEEDS_SRC = 75;
+      // Po „Nechat vyrůst“ přeskočí ~2 s úvodu bez růstu (dříve od 126).
+      var PLANT_GROW_SRC = 170;
+      var PLANT_SLOW_FROM_SRC = 150;
+      // Od snímku 150 trvá úsek o 80 % déle → rychlost 1/1,8.
+      var PLANT_SLOW_SPEED = 1 / 1.8;
+      // Mezi ~2. a ~6. s stopek (snímky 203–405) ještě o 1 s delší → 4/5 pomalé rychlosti.
+      var PLANT_STRETCH_FROM_SRC = 203;
+      var PLANT_STRETCH_TO_SRC = 405;
+      var PLANT_STRETCH_SPEED = PLANT_SLOW_SPEED * (4 / 5);
+
+      var plantDisplayToSource = [];
+      PLANT_KEEP_SEGMENTS.forEach(function (seg) {
+        for (var s = seg.srcStart; s <= seg.srcEnd; s++) plantDisplayToSource.push(s);
+      });
+      var plantDisplayLast = plantDisplayToSource.length - 1;
+      var plantSourceToDisplay = {};
+      plantDisplayToSource.forEach(function (src, d) {
+        plantSourceToDisplay[src] = d;
+      });
+
+      /** @type {any} */
+      var plantAnim = null;
+      /** @type {Promise<any> | null} */
+      var plantAnimReady = null;
+      var plantJumping = false;
+      /** @type {'idle' | 'sowing' | 'awaitingGrow' | 'growing' | 'pausedGrow' | 'done'} */
+      var plantPhase = "idle";
+
+      var plantSwAccumMs = 0;
+      /** @type {number | null} */
+      var plantSwStartedAt = null;
+      /** @type {number | null} */
+      var plantSwRaf = null;
+
+      function formatPlantStopwatch(ms) {
+        var totalTenths = Math.floor(Math.max(0, ms) / 100);
+        var tenths = totalTenths % 10;
+        var secs = Math.floor(totalTenths / 10);
+        var secsStr = String(secs);
+        if (secsStr.length < 2) secsStr = ("00" + secsStr).slice(-2);
+        return secsStr + "," + tenths + " s";
+      }
+
+      function plantStopwatchElapsedMs() {
+        var ms = plantSwAccumMs;
+        if (plantSwStartedAt != null) ms += performance.now() - plantSwStartedAt;
+        return ms;
+      }
+
+      function renderPlantStopwatch() {
+        if (!plantStopwatchEl) return;
+        var ms = plantStopwatchElapsedMs();
+        plantStopwatchEl.textContent = formatPlantStopwatch(ms);
+        plantStopwatchEl.setAttribute("datetime", "PT" + (ms / 1000).toFixed(1) + "S");
+      }
+
+      function tickPlantStopwatch() {
+        renderPlantStopwatch();
+        if (plantSwStartedAt != null) {
+          plantSwRaf = window.requestAnimationFrame(tickPlantStopwatch);
+        } else {
+          plantSwRaf = null;
+        }
+      }
+
+      function resetPlantStopwatch() {
+        if (plantSwRaf != null) {
+          window.cancelAnimationFrame(plantSwRaf);
+          plantSwRaf = null;
+        }
+        plantSwAccumMs = 0;
+        plantSwStartedAt = null;
+        renderPlantStopwatch();
+      }
+
+      function startPlantStopwatch() {
+        if (plantSwStartedAt != null) return;
+        plantSwStartedAt = performance.now();
+        if (plantSwRaf == null) {
+          plantSwRaf = window.requestAnimationFrame(tickPlantStopwatch);
+        }
+      }
+
+      function pausePlantStopwatch() {
+        if (plantSwStartedAt == null) {
+          renderPlantStopwatch();
+          return;
+        }
+        plantSwAccumMs += performance.now() - plantSwStartedAt;
+        plantSwStartedAt = null;
+        if (plantSwRaf != null) {
+          window.cancelAnimationFrame(plantSwRaf);
+          plantSwRaf = null;
+        }
+        renderPlantStopwatch();
+      }
+
+      function plantNextKeepStart(src) {
+        for (var i = 0; i < PLANT_KEEP_SEGMENTS.length; i++) {
+          var seg = PLANT_KEEP_SEGMENTS[i];
+          if (src < seg.srcStart) return seg.srcStart;
+          if (src <= seg.srcEnd) return src;
+        }
+        return null;
+      }
+
+      function plantDisplayFrameFromSrc(src) {
+        if (Object.prototype.hasOwnProperty.call(plantSourceToDisplay, src)) {
+          return plantSourceToDisplay[src];
+        }
+        for (var i = src; i >= 0; i--) {
+          if (Object.prototype.hasOwnProperty.call(plantSourceToDisplay, i)) {
+            return plantSourceToDisplay[i];
+          }
+        }
+        return 0;
+      }
+
+      function plantSyncSpeed(srcFrame) {
+        if (!plantAnim) return;
+        var speed = 1;
+        if (
+          srcFrame >= PLANT_STRETCH_FROM_SRC &&
+          srcFrame <= PLANT_STRETCH_TO_SRC
+        ) {
+          speed = PLANT_STRETCH_SPEED;
+        } else if (srcFrame >= PLANT_SLOW_FROM_SRC) {
+          speed = PLANT_SLOW_SPEED;
+        }
+        plantAnim.setSpeed(speed);
+      }
+
+      function syncPlantGrowButton() {
+        if (!plantGrowBtn) return;
+        var label = "Nechat vyrůst";
+        var enabled = false;
+
+        if (plantPhase === "done") {
+          label = "Reset";
+          enabled = true;
+        } else if (plantPhase === "awaitingGrow") {
+          label = "Nechat vyrůst";
+          enabled = true;
+        } else if (plantPhase === "growing") {
+          label = "Pauza";
+          enabled = true;
+        } else if (plantPhase === "pausedGrow") {
+          label = "Pokračovat";
+          enabled = true;
+        }
+
+        plantGrowBtn.textContent = label;
+        plantGrowBtn.disabled = !enabled;
+        plantGrowBtn.setAttribute("aria-disabled", enabled ? "false" : "true");
+        plantGrowBtn.setAttribute(
+          "aria-pressed",
+          plantPhase === "pausedGrow" ? "true" : "false"
+        );
+      }
+
+      function stopPlantAtSeeds() {
+        if (!plantAnim) return;
+        plantJumping = true;
+        plantAnim.pause();
+        plantAnim.goToAndStop(PLANT_SEEDS_SRC, true);
+        plantJumping = false;
+        plantPhase = "awaitingGrow";
+        syncPlantGrowButton();
+      }
+
+      function stopPlantAtEnd() {
+        if (!plantAnim) return;
+        plantJumping = true;
+        plantAnim.pause();
+        plantAnim.goToAndStop(plantDisplayToSource[plantDisplayLast], true);
+        plantJumping = false;
+        plantPhase = "done";
+        pausePlantStopwatch();
+        syncPlantGrowButton();
+      }
+
+      function ensurePlantAnimation() {
+        if (plantAnimReady) return plantAnimReady;
+        if (!plantAnimEl || typeof lottie === "undefined") {
+          plantAnimReady = Promise.reject(new Error("Lottie není dostupný"));
+          return plantAnimReady;
+        }
+
+        plantAnimReady = fetch("animation.json?v=rostlina")
+          .then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
+          .then(function (data) {
+            plantAnim = lottie.loadAnimation({
+              container: plantAnimEl,
+              renderer: "svg",
+              loop: false,
+              autoplay: false,
+              animationData: data,
+              rendererSettings: {
+                preserveAspectRatio: "xMidYMid meet",
+                clearCanvas: true,
+                progressiveLoad: false,
+                hideOnTransparent: true
+              }
+            });
+
+            plantAnim.addEventListener("enterFrame", function () {
+              if (!plantAnim || plantJumping) return;
+              var src = Math.round(plantAnim.currentFrame);
+
+              // Po nasypání semínek (snímek 75) pauza — dál až po „Nechat vyrůst“.
+              if (plantPhase === "sowing" && !plantAnim.isPaused && src >= PLANT_SEEDS_SRC) {
+                stopPlantAtSeeds();
+                return;
+              }
+
+              if (
+                plantPhase === "growing" &&
+                !Object.prototype.hasOwnProperty.call(plantSourceToDisplay, src) &&
+                !plantAnim.isPaused
+              ) {
+                var next = plantNextKeepStart(src);
+                plantJumping = true;
+                if (next == null) {
+                  plantJumping = false;
+                  stopPlantAtEnd();
+                } else {
+                  plantAnim.goToAndPlay(next, true);
+                  plantJumping = false;
+                }
+              }
+
+              if (!plantAnim.isPaused) plantSyncSpeed(src);
+            });
+
+            plantAnim.addEventListener("complete", function () {
+              if (plantPhase === "growing") stopPlantAtEnd();
+              else if (plantPhase === "sowing") stopPlantAtSeeds();
+            });
+
+            return new Promise(function (resolve) {
+              plantAnim.addEventListener("DOMLoaded", function () {
+                resolve(plantAnim);
+              });
+            });
+          });
+
+        return plantAnimReady;
+      }
+
+      function pausePlantPlayback() {
+        if (plantAnim && !plantAnim.isPaused) plantAnim.pause();
+        pausePlantStopwatch();
+        if (
+          plantPhase === "sowing" ||
+          plantPhase === "growing" ||
+          plantPhase === "pausedGrow"
+        ) {
+          plantPhase = "idle";
+          syncPlantGrowButton();
+        }
+      }
+
+      var plantSuspendedForGraph = false;
+      var plantWasPlayingBeforeGraph = false;
+      var plantStopwatchWasRunningBeforeGraph = false;
+
+      /** Pozastaví animaci kvůli grafu, ale zachová fázi a snímek. */
+      function suspendPlantForGraph() {
+        if (plantSuspendedForGraph) return;
+        plantSuspendedForGraph = true;
+        plantWasPlayingBeforeGraph =
+          plantPhase === "sowing" || plantPhase === "growing";
+        plantStopwatchWasRunningBeforeGraph = plantSwStartedAt != null;
+        if (plantAnim && !plantAnim.isPaused) plantAnim.pause();
+        pausePlantStopwatch();
+      }
+
+      /** Pokračuje animací od místa, kde byla při zobrazení grafu. */
+      function resumePlantAfterGraph() {
+        if (!plantSuspendedForGraph) return;
+        plantSuspendedForGraph = false;
+        var shouldPlay = plantWasPlayingBeforeGraph;
+        var shouldRunStopwatch = plantStopwatchWasRunningBeforeGraph;
+        plantWasPlayingBeforeGraph = false;
+        plantStopwatchWasRunningBeforeGraph = false;
+
+        ensurePlantAnimation()
+          .then(function () {
+            if (!plantAnim) return;
+            syncPlantGrowButton();
+            if (!shouldPlay) return;
+            if (plantPhase !== "sowing" && plantPhase !== "growing") return;
+            plantSyncSpeed(Math.round(plantAnim.currentFrame));
+            plantAnim.play();
+            if (plantPhase === "growing" && shouldRunStopwatch) {
+              startPlantStopwatch();
+            }
+          })
+          .catch(function () {
+            /* ignore */
+          });
+      }
+
+      function prefersReducedPlantMotion() {
+        return (
+          typeof window.matchMedia === "function" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+      }
+
+      /** Spustí sázení od začátku a zastaví se na snímku 75. */
+      function startPlantSowing() {
+        resetPlantStopwatch();
+        ensurePlantAnimation()
+          .then(function () {
+            if (!plantAnim) return;
+            if (prefersReducedPlantMotion()) {
+              plantAnim.setSpeed(1);
+              plantAnim.goToAndStop(PLANT_SEEDS_SRC, true);
+              plantPhase = "awaitingGrow";
+              syncPlantGrowButton();
+              return;
+            }
+            plantPhase = "sowing";
+            syncPlantGrowButton();
+            plantAnim.setSpeed(1);
+            plantAnim.goToAndPlay(0, true);
+          })
+          .catch(function () {
+            /* animace se nenačetla — panel zůstane prázdný */
+          });
+      }
+
+      function pausePlantGrowth() {
+        if (!plantAnim || plantPhase !== "growing") return;
+        plantAnim.pause();
+        plantPhase = "pausedGrow";
+        pausePlantStopwatch();
+        syncPlantGrowButton();
+      }
+
+      function resumePlantGrowth() {
+        if (!plantAnim || plantPhase !== "pausedGrow") return;
+        plantPhase = "growing";
+        syncPlantGrowButton();
+        plantSyncSpeed(Math.round(plantAnim.currentFrame));
+        startPlantStopwatch();
+        plantAnim.play();
+      }
+
+      /** Pokračuje růstem po semínkách (od PLANT_GROW_SRC). */
+      function startPlantGrowth() {
+        ensurePlantAnimation()
+          .then(function () {
+            if (!plantAnim) return;
+            if (plantPhase !== "awaitingGrow") return;
+
+            if (prefersReducedPlantMotion()) {
+              stopPlantAtEnd();
+              return;
+            }
+            plantPhase = "growing";
+            syncPlantGrowButton();
+            resetPlantStopwatch();
+            startPlantStopwatch();
+            plantAnim.setSpeed(1);
+            plantAnim.goToAndPlay(PLANT_GROW_SRC, true);
+          })
+          .catch(function () {
+            /* animace se nenačetla */
+          });
+      }
+
+      /** Vrátí režim Rostlina na úplný začátek (animace, stopky, tabulka, graf). */
+      function resetPlantSituationToStart() {
+        plantSuspendedForGraph = false;
+        plantWasPlayingBeforeGraph = false;
+        plantStopwatchWasRunningBeforeGraph = false;
+
+        plantChartHold = null;
+        plantChartEndHoldListeners();
+        if (plantChartEl) plantChartEl.classList.remove("is-holding-point");
+        plantChartPoints = [];
+        plantChartShowFit = false;
+        plantChartFitMode = "curve";
+
+        var tableInputs = document.querySelectorAll(
+          ".plant-points-table input[data-plant-cell]"
+        );
+        for (var i = 0; i < tableInputs.length; i++) {
+          /** @type {HTMLInputElement} */ (tableInputs[i]).value = "";
+        }
+
+        if (plantGraphVisible) {
+          plantGraphVisible = false;
+          if (appRoot) appRoot.removeAttribute("data-plant-view");
+          if (plantGraphBtn) {
+            plantGraphBtn.classList.remove("is-active");
+            plantGraphBtn.setAttribute("aria-pressed", "false");
+            plantGraphBtn.textContent = "Zobrazit graf";
+          }
+        }
+
+        startPlantSowing();
+        schedulePlaceRulerAbovePlantTable();
+      }
+
+      function onPlantGrowBtnClick() {
+        if (plantPhase === "done") {
+          resetPlantSituationToStart();
+          return;
+        }
+        if (plantPhase === "growing") {
+          pausePlantGrowth();
+          return;
+        }
+        if (plantPhase === "pausedGrow") {
+          resumePlantGrowth();
+          return;
+        }
+        startPlantGrowth();
+      }
+
+      /* Graf jako v projektu Graf: mřížka + osy se šipkami, body z tabulky. */
+      var PLANT_CHART_T_MIN = 0;
+      var PLANT_CHART_T_MAX = 9;
+      var PLANT_CHART_S_MIN = 0;
+      var PLANT_CHART_S_MAX = 6;
+      var PLANT_CHART_STEP = 0.5;
+      var PLANT_CHART_AXIS = "#1e6bb8";
+      var PLANT_CHART_CROSS_HALF = 7;
+      var plantChartLayout = {
+        W: 640,
+        H: 420,
+        ml: 56,
+        mr: 24,
+        mt: 28,
+        mb: 54,
+        pw: 560,
+        ph: 338,
+        yAxisLabelX: 16
+      };
+
+      function plantChartNs() {
+        return "http://www.w3.org/2000/svg";
+      }
+
+      function plantChartTToX(t) {
+        return (
+          plantChartLayout.ml +
+          ((t - PLANT_CHART_T_MIN) / (PLANT_CHART_T_MAX - PLANT_CHART_T_MIN)) *
+            plantChartLayout.pw
+        );
+      }
+
+      function plantChartSToY(s) {
+        return (
+          plantChartLayout.mt +
+          plantChartLayout.ph -
+          ((s - PLANT_CHART_S_MIN) / (PLANT_CHART_S_MAX - PLANT_CHART_S_MIN)) *
+            plantChartLayout.ph
+        );
+      }
+
+      function plantChartFormatTick(value, unit) {
+        var num =
+          Math.abs(value - Math.round(value)) < 1e-6
+            ? String(Math.round(value))
+            : String(Number(value.toFixed(2))).replace(".", ",");
+        return unit ? num + " " + unit : num;
+      }
+
+      /** Projde dílky osy s krokem PLANT_CHART_STEP (bez float chyb). */
+      function plantChartEachTick(min, max, fn) {
+        var n = Math.round((max - min) / PLANT_CHART_STEP);
+        for (var i = 0; i <= n; i++) {
+          fn(Number((min + i * PLANT_CHART_STEP).toFixed(6)), i, n);
+        }
+      }
+
+      function plantChartMeasureText(text, fontSize) {
+        try {
+          var canvas = document.createElement("canvas");
+          var ctx = canvas.getContext("2d");
+          if (!ctx) return String(text || "").length * fontSize * 0.58;
+          ctx.font =
+            fontSize + 'px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
+          return ctx.measureText(String(text || "")).width;
+        } catch (_e) {
+          return String(text || "").length * fontSize * 0.58;
+        }
+      }
+
+      function computePlantChartLayout() {
+        if (!plantChartWrap) return;
+        var rect = plantChartWrap.getBoundingClientRect();
+        var style = window.getComputedStyle(plantChartWrap);
+        var padL = parseFloat(style.paddingLeft) || 0;
+        var padR = parseFloat(style.paddingRight) || 0;
+        var padT = parseFloat(style.paddingTop) || 0;
+        var padB = parseFloat(style.paddingBottom) || 0;
+        var W = Math.max(280, Math.round(rect.width - padL - padR));
+        var H = Math.max(200, Math.round(rect.height - padT - padB));
+
+        var maxYTickW = 0;
+        plantChartEachTick(PLANT_CHART_S_MIN, PLANT_CHART_S_MAX, function (si) {
+          maxYTickW = Math.max(
+            maxYTickW,
+            plantChartMeasureText(plantChartFormatTick(si, "cm"), 11)
+          );
+        });
+
+        var yTitleCol = Math.max(18, Math.min(30, 18));
+        plantChartLayout.yAxisLabelX = Math.max(12, Math.round(yTitleCol * 0.75));
+        plantChartLayout.W = W;
+        plantChartLayout.H = H;
+        plantChartLayout.ml = Math.ceil(plantChartLayout.yAxisLabelX + maxYTickW + 18);
+        plantChartLayout.mb = Math.ceil(6 + 11 + 10 + 14 + 10);
+        plantChartLayout.mt = 28;
+        plantChartLayout.mr = 24;
+        plantChartLayout.ml = Math.min(plantChartLayout.ml, Math.max(44, W - plantChartLayout.mr - 140));
+        plantChartLayout.mb = Math.min(plantChartLayout.mb, Math.max(40, H - plantChartLayout.mt - 100));
+        plantChartLayout.pw = plantChartLayout.W - plantChartLayout.ml - plantChartLayout.mr;
+        plantChartLayout.ph = plantChartLayout.H - plantChartLayout.mt - plantChartLayout.mb;
+      }
+
+      function plantChartBuildDefs(svg) {
+        var defs = document.createElementNS(plantChartNs(), "defs");
+        defs.innerHTML =
+          '<marker id="plantArrowBlue" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">' +
+          '<path d="M0.6,1 L4.4,3 L0.6,5" fill="none" stroke="#1e6bb8" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" /></marker>';
+        svg.appendChild(defs);
+      }
+
+      function plantChartDrawGrid(parent) {
+        var g = document.createElementNS(plantChartNs(), "g");
+        g.setAttribute("class", "grid");
+        g.setAttribute("pointer-events", "none");
+        plantChartEachTick(PLANT_CHART_T_MIN, PLANT_CHART_T_MAX, function (t) {
+          var x = plantChartTToX(t);
+          var vline = document.createElementNS(plantChartNs(), "line");
+          vline.setAttribute("x1", String(x));
+          vline.setAttribute("x2", String(x));
+          vline.setAttribute("y1", String(plantChartLayout.mt));
+          vline.setAttribute("y2", String(plantChartLayout.mt + plantChartLayout.ph));
+          vline.setAttribute("stroke", "var(--plant-grid)");
+          vline.setAttribute("stroke-width", "1");
+          vline.setAttribute("stroke-dasharray", "3 5");
+          g.appendChild(vline);
+        });
+        plantChartEachTick(PLANT_CHART_S_MIN, PLANT_CHART_S_MAX, function (si) {
+          var y = plantChartSToY(si);
+          var hline = document.createElementNS(plantChartNs(), "line");
+          hline.setAttribute("x1", String(plantChartLayout.ml));
+          hline.setAttribute("x2", String(plantChartLayout.ml + plantChartLayout.pw));
+          hline.setAttribute("y1", String(y));
+          hline.setAttribute("y2", String(y));
+          hline.setAttribute("stroke", "var(--plant-grid)");
+          hline.setAttribute("stroke-width", "1");
+          hline.setAttribute("stroke-dasharray", "3 5");
+          g.appendChild(hline);
+        });
+        parent.appendChild(g);
+      }
+
+      function plantChartDrawAxes(parent) {
+        var ax = document.createElementNS(plantChartNs(), "g");
+        ax.setAttribute("pointer-events", "none");
+        var yAxisX = plantChartLayout.ml;
+        var xAxisY = plantChartLayout.mt + plantChartLayout.ph;
+
+        var yAxis = document.createElementNS(plantChartNs(), "line");
+        yAxis.setAttribute("x1", String(yAxisX));
+        yAxis.setAttribute("y1", String(xAxisY));
+        yAxis.setAttribute("x2", String(yAxisX));
+        yAxis.setAttribute("y2", String(plantChartLayout.mt - 4));
+        yAxis.setAttribute("stroke", PLANT_CHART_AXIS);
+        yAxis.setAttribute("stroke-width", "2");
+        yAxis.setAttribute("marker-end", "url(#plantArrowBlue)");
+        ax.appendChild(yAxis);
+
+        var xAxis = document.createElementNS(plantChartNs(), "line");
+        xAxis.setAttribute("x1", String(plantChartLayout.ml));
+        xAxis.setAttribute("y1", String(xAxisY));
+        xAxis.setAttribute("x2", String(plantChartLayout.ml + plantChartLayout.pw + 6));
+        xAxis.setAttribute("y2", String(xAxisY));
+        xAxis.setAttribute("stroke", PLANT_CHART_AXIS);
+        xAxis.setAttribute("stroke-width", "2");
+        xAxis.setAttribute("marker-end", "url(#plantArrowBlue)");
+        ax.appendChild(xAxis);
+
+        var xl = document.createElementNS(plantChartNs(), "text");
+        xl.setAttribute("x", String(plantChartLayout.ml + plantChartLayout.pw / 2));
+        xl.setAttribute("y", String(plantChartLayout.H - 6));
+        xl.setAttribute("text-anchor", "middle");
+        xl.setAttribute("fill", PLANT_CHART_AXIS);
+        xl.setAttribute("font-size", "14");
+        xl.textContent = "čas";
+        ax.appendChild(xl);
+
+        var yAxisLabelCy =
+          (plantChartLayout.mt - 4 + plantChartLayout.mt + plantChartLayout.ph) / 2;
+        var yAxisLabelX = plantChartLayout.yAxisLabelX;
+        var yl = document.createElementNS(plantChartNs(), "text");
+        yl.setAttribute("x", String(yAxisLabelX));
+        yl.setAttribute("y", String(yAxisLabelCy));
+        yl.setAttribute("text-anchor", "middle");
+        yl.setAttribute("dominant-baseline", "middle");
+        yl.setAttribute("fill", PLANT_CHART_AXIS);
+        yl.setAttribute("font-size", "14");
+        yl.setAttribute(
+          "transform",
+          "rotate(-90 " + yAxisLabelX + " " + yAxisLabelCy + ")"
+        );
+        yl.textContent = "délka rostliny";
+        ax.appendChild(yl);
+
+        var maxXTickW = 0;
+        plantChartEachTick(PLANT_CHART_T_MIN, PLANT_CHART_T_MAX, function (t) {
+          maxXTickW = Math.max(
+            maxXTickW,
+            plantChartMeasureText(plantChartFormatTick(t, "s"), 11)
+          );
+        });
+        var xTickCount = Math.round(
+          (PLANT_CHART_T_MAX - PLANT_CHART_T_MIN) / PLANT_CHART_STEP
+        );
+        var xTickSpacing = plantChartLayout.pw / Math.max(1, xTickCount);
+        var xLabelEvery = Math.max(
+          1,
+          Math.ceil((maxXTickW + 6) / Math.max(1, xTickSpacing))
+        );
+
+        plantChartEachTick(PLANT_CHART_T_MIN, PLANT_CHART_T_MAX, function (t, tIndex, tLast) {
+          var x = plantChartTToX(t);
+          var tick = document.createElementNS(plantChartNs(), "line");
+          tick.setAttribute("x1", String(x));
+          tick.setAttribute("x2", String(x));
+          tick.setAttribute("y1", String(xAxisY));
+          tick.setAttribute("y2", String(xAxisY + 6));
+          tick.setAttribute("stroke", PLANT_CHART_AXIS);
+          ax.appendChild(tick);
+          if (tIndex % xLabelEvery !== 0 && tIndex !== tLast) return;
+          var lab = document.createElementNS(plantChartNs(), "text");
+          lab.setAttribute("x", String(x));
+          lab.setAttribute("y", String(xAxisY + 22));
+          lab.setAttribute("text-anchor", "middle");
+          lab.setAttribute("font-size", "11");
+          lab.setAttribute("fill", "#444");
+          lab.textContent = plantChartFormatTick(t, "s");
+          ax.appendChild(lab);
+        });
+
+        plantChartEachTick(PLANT_CHART_S_MIN, PLANT_CHART_S_MAX, function (si) {
+          var y = plantChartSToY(si);
+          var yTick = document.createElementNS(plantChartNs(), "line");
+          yTick.setAttribute("x1", String(yAxisX - 6));
+          yTick.setAttribute("x2", String(yAxisX));
+          yTick.setAttribute("y1", String(y));
+          yTick.setAttribute("y2", String(y));
+          yTick.setAttribute("stroke", PLANT_CHART_AXIS);
+          ax.appendChild(yTick);
+          var yLab = document.createElementNS(plantChartNs(), "text");
+          yLab.setAttribute("x", String(yAxisX - 10));
+          yLab.setAttribute("y", String(y + 4));
+          yLab.setAttribute("text-anchor", "end");
+          yLab.setAttribute("font-size", "11");
+          yLab.setAttribute("fill", "#444");
+          yLab.textContent = plantChartFormatTick(si, "cm");
+          ax.appendChild(yLab);
+        });
+
+        parent.appendChild(ax);
+      }
+
+      function plantChartCreateCross(cx, cy, index) {
+        var g = document.createElementNS(plantChartNs(), "g");
+        g.setAttribute("class", "chart-cross-marker");
+        g.setAttribute("transform", "translate(" + cx + "," + cy + ")");
+        if (index != null) g.setAttribute("data-index", String(index));
+        function addLine(x1, y1, x2, y2) {
+          var line = document.createElementNS(plantChartNs(), "line");
+          line.setAttribute("x1", String(x1));
+          line.setAttribute("y1", String(y1));
+          line.setAttribute("x2", String(x2));
+          line.setAttribute("y2", String(y2));
+          line.setAttribute("stroke", PLANT_CHART_AXIS);
+          line.setAttribute("stroke-width", "2");
+          line.setAttribute("stroke-linecap", "round");
+          line.setAttribute("pointer-events", "none");
+          g.appendChild(line);
+        }
+        var hit = document.createElementNS(plantChartNs(), "circle");
+        hit.setAttribute("r", "14");
+        hit.setAttribute("fill", "transparent");
+        hit.setAttribute("stroke", "none");
+        hit.setAttribute("pointer-events", "all");
+        g.appendChild(hit);
+        addLine(-PLANT_CHART_CROSS_HALF, 0, PLANT_CHART_CROSS_HALF, 0);
+        addLine(0, -PLANT_CHART_CROSS_HALF, 0, PLANT_CHART_CROSS_HALF);
+        return g;
+      }
+
+      function plantChartClampPoint(t, s) {
+        return {
+          t: Math.min(PLANT_CHART_T_MAX, Math.max(PLANT_CHART_T_MIN, t)),
+          s: Math.min(PLANT_CHART_S_MAX, Math.max(PLANT_CHART_S_MIN, s))
+        };
+      }
+
+      function plantChartSnap(t, s) {
+        return plantChartClampPoint(t, s);
+      }
+
+      function plantChartWouldReject(t, s, ignoreIndex) {
+        return plantChartPoints.some(function (p, i) {
+          if (ignoreIndex != null && i === ignoreIndex) return false;
+          var dx = (p.t - t) / (PLANT_CHART_T_MAX - PLANT_CHART_T_MIN || 1);
+          var dy = (p.s - s) / (PLANT_CHART_S_MAX - PLANT_CHART_S_MIN || 1);
+          return dx * dx + dy * dy < 0.02 * 0.02;
+        });
+      }
+
+      function plantChartCoordsFromEvent(ev) {
+        if (!plantChartEl) return null;
+        var rect = plantChartEl.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return null;
+        var x = ((ev.clientX - rect.left) / rect.width) * plantChartLayout.W;
+        var y = ((ev.clientY - rect.top) / rect.height) * plantChartLayout.H;
+        return { x: x, y: y };
+      }
+
+      function plantChartPlotCoordsFromEvent(ev) {
+        var xy = plantChartCoordsFromEvent(ev);
+        if (!xy) return null;
+        var minX = plantChartLayout.ml;
+        var maxX = plantChartLayout.ml + plantChartLayout.pw;
+        var minY = plantChartLayout.mt;
+        var maxY = plantChartLayout.mt + plantChartLayout.ph;
+        var x = Math.min(maxX, Math.max(minX, xy.x));
+        var y = Math.min(maxY, Math.max(minY, xy.y));
+        var t =
+          PLANT_CHART_T_MIN +
+          ((x - plantChartLayout.ml) / plantChartLayout.pw) *
+            (PLANT_CHART_T_MAX - PLANT_CHART_T_MIN);
+        var s =
+          PLANT_CHART_S_MIN +
+          ((plantChartLayout.mt + plantChartLayout.ph - y) / plantChartLayout.ph) *
+            (PLANT_CHART_S_MAX - PLANT_CHART_S_MIN);
+        return plantChartSnap(t, s);
+      }
+
+      function plantChartPointsSortedForCurve(pts) {
+        var copy = pts.map(function (p) {
+          return { t: p.t, s: p.s };
+        });
+        copy.sort(function (a, b) {
+          return a.t - b.t || a.s - b.s;
+        });
+        var deduped = [];
+        copy.forEach(function (p) {
+          var last = deduped[deduped.length - 1];
+          if (last && Math.abs(last.t - p.t) < 1e-5) {
+            last.s = (last.s + p.s) / 2;
+            return;
+          }
+          deduped.push({ t: p.t, s: p.s });
+        });
+        return deduped;
+      }
+
+      function plantChartBuildNaturalCubicSpline(xs, ys) {
+        var n = xs.length;
+        if (n < 2) return null;
+        if (n === 2) {
+          var x0 = xs[0];
+          var x1 = xs[1];
+          var y0 = ys[0];
+          var y1 = ys[1];
+          var slope = x1 === x0 ? 0 : (y1 - y0) / (x1 - x0);
+          return {
+            eval: function (x) {
+              return y0 + slope * (x - x0);
+            }
+          };
+        }
+        var h = new Array(n - 1);
+        var i;
+        for (i = 0; i < n - 1; i++) {
+          h[i] = xs[i + 1] - xs[i];
+          if (h[i] <= 0) return null;
+        }
+        var alpha = new Array(n);
+        for (i = 0; i < n; i++) alpha[i] = 0;
+        for (i = 1; i < n - 1; i++) {
+          alpha[i] =
+            (3 / h[i]) * (ys[i + 1] - ys[i]) -
+            (3 / h[i - 1]) * (ys[i] - ys[i - 1]);
+        }
+        var l = new Array(n);
+        var mu = new Array(n);
+        var z = new Array(n);
+        for (i = 0; i < n; i++) {
+          l[i] = 1;
+          mu[i] = 0;
+          z[i] = 0;
+        }
+        for (i = 1; i < n - 1; i++) {
+          l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1];
+          mu[i] = h[i] / l[i];
+          z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
+        }
+        var c = new Array(n);
+        for (i = 0; i < n; i++) c[i] = 0;
+        var b = new Array(n - 1);
+        var d = new Array(n - 1);
+        for (var j = n - 2; j >= 0; j--) {
+          c[j] = z[j] - mu[j] * c[j + 1];
+          b[j] = (ys[j + 1] - ys[j]) / h[j] - (h[j] * (c[j + 1] + 2 * c[j])) / 3;
+          d[j] = (c[j + 1] - c[j]) / (3 * h[j]);
+        }
+        return {
+          xs: xs,
+          ys: ys,
+          b: b,
+          c: c,
+          d: d,
+          eval: function (x) {
+            var xsLocal = this.xs;
+            var ysLocal = this.ys;
+            var nLocal = xsLocal.length;
+            if (x <= xsLocal[0]) {
+              var dx0 = x - xsLocal[0];
+              return (
+                ysLocal[0] +
+                this.b[0] * dx0 +
+                this.c[0] * dx0 * dx0 +
+                this.d[0] * dx0 * dx0 * dx0
+              );
+            }
+            if (x >= xsLocal[nLocal - 1]) {
+              var ii = nLocal - 2;
+              var dx1 = x - xsLocal[ii];
+              return (
+                ysLocal[ii] +
+                this.b[ii] * dx1 +
+                this.c[ii] * dx1 * dx1 +
+                this.d[ii] * dx1 * dx1 * dx1
+              );
+            }
+            var k = 0;
+            while (k < nLocal - 2 && x > xsLocal[k + 1]) k++;
+            var dx = x - xsLocal[k];
+            return (
+              ysLocal[k] +
+              this.b[k] * dx +
+              this.c[k] * dx * dx +
+              this.d[k] * dx * dx * dx
+            );
+          }
+        };
+      }
+
+      function plantChartFittedCurvePathData(pts) {
+        var sorted = plantChartPointsSortedForCurve(pts);
+        if (sorted.length < 2) return "";
+        var xs = sorted.map(function (p) {
+          return p.t;
+        });
+        var ys = sorted.map(function (p) {
+          return p.s;
+        });
+        var spline = plantChartBuildNaturalCubicSpline(xs, ys);
+        if (!spline) return "";
+        var t0 = xs[0];
+        var t1 = xs[xs.length - 1];
+        var steps = Math.max(48, Math.ceil((t1 - t0) * 16));
+        var parts = [];
+        for (var i = 0; i <= steps; i++) {
+          var t = t0 + (i / steps) * (t1 - t0);
+          var s = Math.min(
+            PLANT_CHART_S_MAX,
+            Math.max(PLANT_CHART_S_MIN, spline.eval(t))
+          );
+          parts.push(
+            plantChartTToX(t).toFixed(2) + "," + plantChartSToY(s).toFixed(2)
+          );
+        }
+        return "M " + parts.join(" L ");
+      }
+
+      function plantChartPolylinePathData(pts) {
+        var sorted = plantChartPointsSortedForCurve(pts);
+        if (sorted.length < 2) return "";
+        return (
+          "M " +
+          sorted
+            .map(function (p) {
+              return (
+                plantChartTToX(p.t).toFixed(2) + "," + plantChartSToY(p.s).toFixed(2)
+              );
+            })
+            .join(" L ")
+        );
+      }
+
+      function plantChartDrawFittedCurve(parent, pts) {
+        var d =
+          plantChartFitMode === "polyline"
+            ? plantChartPolylinePathData(pts)
+            : plantChartFittedCurvePathData(pts);
+        if (!d) return;
+        var path = document.createElementNS(plantChartNs(), "path");
+        path.setAttribute("class", "fitted-curve");
+        path.setAttribute("d", d);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", PLANT_CHART_AXIS);
+        path.setAttribute("stroke-width", "2.5");
+        path.setAttribute("stroke-linejoin", "round");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("pointer-events", "none");
+        parent.appendChild(path);
+      }
+
+      function updatePlantFitControls() {
+        var canFit = plantChartPoints.length >= 2;
+        if (plantChartFitBtn) {
+          plantChartFitBtn.disabled = !canFit;
+          if (!canFit) plantChartShowFit = false;
+          plantChartFitBtn.classList.toggle("is-active", plantChartShowFit && canFit);
+          plantChartFitBtn.setAttribute(
+            "aria-pressed",
+            plantChartShowFit && canFit ? "true" : "false"
+          );
+        }
+        if (plantFitModeRow) {
+          plantFitModeRow.classList.toggle("is-visible", plantChartShowFit && canFit);
+        }
+        if (plantFitModeCurveBtn && plantFitModePolylineBtn) {
+          var isCurve = plantChartFitMode === "curve";
+          plantFitModeCurveBtn.classList.toggle("is-active", isCurve);
+          plantFitModePolylineBtn.classList.toggle("is-active", !isCurve);
+          plantFitModeCurveBtn.setAttribute("aria-pressed", isCurve ? "true" : "false");
+          plantFitModePolylineBtn.setAttribute(
+            "aria-pressed",
+            !isCurve ? "true" : "false"
+          );
+        }
+      }
+
+      function redrawPlantChart() {
+        if (!plantChartEl || !plantGraphVisible) return;
+        computePlantChartLayout();
+        plantChartEl.setAttribute(
+          "viewBox",
+          "0 0 " + plantChartLayout.W + " " + plantChartLayout.H
+        );
+        plantChartEl.innerHTML = "";
+        plantChartBuildDefs(plantChartEl);
+        var body = document.createElementNS(plantChartNs(), "g");
+        body.setAttribute("class", "plot-body");
+        plantChartDrawGrid(body);
+        plantChartDrawAxes(body);
+        if (plantChartShowFit && plantChartPoints.length >= 2) {
+          plantChartDrawFittedCurve(body, plantChartPoints);
+        }
+        var handles = document.createElementNS(plantChartNs(), "g");
+        handles.setAttribute("class", "handles");
+        for (var i = 0; i < plantChartPoints.length; i++) {
+          if (
+            plantChartHold &&
+            plantChartHold.mode === "existing" &&
+            plantChartHold.index === i
+          ) {
+            continue;
+          }
+          handles.appendChild(
+            plantChartCreateCross(
+              plantChartTToX(plantChartPoints[i].t),
+              plantChartSToY(plantChartPoints[i].s),
+              i
+            )
+          );
+        }
+        body.appendChild(handles);
+        if (plantChartHold) {
+          var preview = plantChartCreateCross(
+            plantChartTToX(plantChartHold.t),
+            plantChartSToY(plantChartHold.s),
+            null
+          );
+          preview.setAttribute("opacity", "0.85");
+          preview.style.pointerEvents = "none";
+          body.appendChild(preview);
+        }
+        plantChartEl.appendChild(body);
+        updatePlantFitControls();
+      }
+
+      function schedulePlantChartRedraw() {
+        if (!plantGraphVisible) return;
+        if (plantChartResizeRaf != null) window.cancelAnimationFrame(plantChartResizeRaf);
+        plantChartResizeRaf = window.requestAnimationFrame(function () {
+          plantChartResizeRaf = null;
+          redrawPlantChart();
+        });
+      }
+
+      function plantChartCommitHold() {
+        if (!plantChartHold) return;
+        var hold = plantChartHold;
+        var coords = plantChartClampPoint(hold.t, hold.s);
+        plantChartHold = null;
+        if (plantChartEl) plantChartEl.classList.remove("is-holding-point");
+        if (hold.mode === "new") {
+          if (
+            plantChartPoints.length < PLANT_CHART_MAX_POINTS &&
+            !plantChartWouldReject(coords.t, coords.s)
+          ) {
+            plantChartPoints.push({ t: coords.t, s: coords.s });
+          }
+        } else if (hold.mode === "existing" && hold.index != null) {
+          if (!plantChartWouldReject(coords.t, coords.s, hold.index)) {
+            plantChartPoints[hold.index] = { t: coords.t, s: coords.s };
+          }
+        }
+        plantChartPoints.sort(function (a, b) {
+          return a.t - b.t;
+        });
+        redrawPlantChart();
+      }
+
+      function plantChartEndHoldListeners() {
+        document.removeEventListener("pointermove", onPlantChartHoldMove);
+        document.removeEventListener("pointerup", onPlantChartHoldUp);
+        document.removeEventListener("pointercancel", onPlantChartHoldUp);
+      }
+
+      function onPlantChartHoldMove(ev) {
+        if (!plantChartHold) return;
+        if (
+          typeof plantChartHold.pointerId === "number" &&
+          typeof ev.pointerId === "number" &&
+          ev.pointerId !== plantChartHold.pointerId
+        ) {
+          return;
+        }
+        ev.preventDefault();
+        var coords = plantChartPlotCoordsFromEvent(ev);
+        if (!coords) return;
+        plantChartHold.t = coords.t;
+        plantChartHold.s = coords.s;
+        redrawPlantChart();
+      }
+
+      function onPlantChartHoldUp(ev) {
+        if (!plantChartHold) return;
+        if (
+          typeof plantChartHold.pointerId === "number" &&
+          typeof ev.pointerId === "number" &&
+          ev.pointerId !== plantChartHold.pointerId
+        ) {
+          return;
+        }
+        if (ev && ev.cancelable) ev.preventDefault();
+        var coords = plantChartPlotCoordsFromEvent(ev);
+        if (coords) {
+          plantChartHold.t = coords.t;
+          plantChartHold.s = coords.s;
+        }
+        if (
+          plantChartEl &&
+          typeof plantChartHold.pointerId === "number" &&
+          plantChartEl.releasePointerCapture
+        ) {
+          try {
+            plantChartEl.releasePointerCapture(plantChartHold.pointerId);
+          } catch (_e) {
+            /* ignore */
+          }
+        }
+        plantChartEndHoldListeners();
+        plantChartCommitHold();
+      }
+
+      function plantChartMarkerFromTarget(target) {
+        var el = /** @type {Element | null} */ (target instanceof Element ? target : null);
+        while (el && el !== plantChartEl) {
+          if (
+            el.getAttribute &&
+            el.getAttribute("class") &&
+            el.getAttribute("class").indexOf("chart-cross-marker") >= 0 &&
+            el.getAttribute("data-index") != null
+          ) {
+            return el;
+          }
+          el = el.parentElement;
+        }
+        return null;
+      }
+
+      function onPlantChartPointerDown(ev) {
+        if (!plantGraphVisible || !plantChartEl) return;
+        if (ev.button != null && ev.button !== 0) return;
+        var marker = plantChartMarkerFromTarget(ev.target);
+        var hold;
+        if (marker) {
+          var idx = parseInt(String(marker.getAttribute("data-index")), 10);
+          if (!Number.isFinite(idx) || idx < 0 || idx >= plantChartPoints.length) return;
+          hold = {
+            mode: "existing",
+            index: idx,
+            t: plantChartPoints[idx].t,
+            s: plantChartPoints[idx].s
+          };
+        } else {
+          var coords = plantChartPlotCoordsFromEvent(ev);
+          if (!coords) return;
+          if (
+            plantChartPoints.length >= PLANT_CHART_MAX_POINTS ||
+            plantChartWouldReject(coords.t, coords.s)
+          ) {
+            return;
+          }
+          hold = { mode: "new", index: null, t: coords.t, s: coords.s };
+        }
+        ev.preventDefault();
+        plantChartHold = hold;
+        plantChartEl.classList.add("is-holding-point");
+        if (typeof ev.pointerId === "number" && plantChartEl.setPointerCapture) {
+          try {
+            plantChartEl.setPointerCapture(ev.pointerId);
+            plantChartHold.pointerId = ev.pointerId;
+          } catch (_e2) {
+            /* ignore */
+          }
+        }
+        document.addEventListener("pointermove", onPlantChartHoldMove, { passive: false });
+        document.addEventListener("pointerup", onPlantChartHoldUp, { passive: false });
+        document.addEventListener("pointercancel", onPlantChartHoldUp, { passive: false });
+        redrawPlantChart();
+      }
+
+      function onPlantChartDblClick(ev) {
+        if (!plantGraphVisible) return;
+        var marker = plantChartMarkerFromTarget(ev.target);
+        if (!marker) return;
+        var idx = parseInt(String(marker.getAttribute("data-index")), 10);
+        if (!Number.isFinite(idx) || idx < 0 || idx >= plantChartPoints.length) return;
+        plantChartPoints.splice(idx, 1);
+        if (plantChartPoints.length < 2) plantChartShowFit = false;
+        redrawPlantChart();
+        ev.preventDefault();
+      }
+
+      function savePlantChartAsImage() {
+        if (!plantChartEl) return;
+        var svg = plantChartEl;
+        var clone = /** @type {SVGElement} */ (svg.cloneNode(true));
+        var srcEls = [svg].concat(Array.prototype.slice.call(svg.querySelectorAll("*")));
+        var cloneEls = [clone].concat(
+          Array.prototype.slice.call(clone.querySelectorAll("*"))
+        );
+        var props = [
+          "fill",
+          "stroke",
+          "stroke-width",
+          "stroke-dasharray",
+          "stroke-linecap",
+          "stroke-linejoin",
+          "opacity",
+          "font-size",
+          "font-family",
+          "font-weight",
+          "text-anchor",
+          "dominant-baseline"
+        ];
+        for (var i = 0; i < srcEls.length && i < cloneEls.length; i++) {
+          try {
+            var cs = window.getComputedStyle(srcEls[i]);
+            props.forEach(function (prop) {
+              var val = cs.getPropertyValue(prop);
+              if (val) cloneEls[i].setAttribute(prop, val);
+            });
+          } catch (_e) {
+            /* ignore */
+          }
+        }
+        var NS = plantChartNs();
+        var bg = document.createElementNS(NS, "rect");
+        bg.setAttribute("x", "0");
+        bg.setAttribute("y", "0");
+        bg.setAttribute("width", String(plantChartLayout.W));
+        bg.setAttribute("height", String(plantChartLayout.H));
+        bg.setAttribute("fill", "#ffffff");
+        clone.insertBefore(bg, clone.firstChild);
+        clone.setAttribute("xmlns", NS);
+        var gridLines = clone.querySelectorAll(".grid line");
+        for (var gi = 0; gi < gridLines.length; gi++) {
+          gridLines[gi].setAttribute("stroke", "rgba(30, 107, 184, 0.22)");
+        }
+        var svgString = new XMLSerializer().serializeToString(clone);
+        var scale = 2;
+        var canvas = document.createElement("canvas");
+        canvas.width = plantChartLayout.W * scale;
+        canvas.height = plantChartLayout.H * scale;
+        var ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.scale(scale, scale);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, plantChartLayout.W, plantChartLayout.H);
+        var img = new Image();
+        var blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        img.onload = function () {
+          ctx.drawImage(img, 0, 0, plantChartLayout.W, plantChartLayout.H);
+          URL.revokeObjectURL(url);
+          canvas.toBlob(function (pngBlob) {
+            if (!pngBlob) return;
+            var pngUrl = URL.createObjectURL(pngBlob);
+            var a = document.createElement("a");
+            a.href = pngUrl;
+            a.download = "graf-cas-delka-rostliny.png";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(pngUrl);
+          }, "image/png");
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+        };
+        img.src = url;
+      }
+
+      function resetPlantChart() {
+        plantChartHold = null;
+        plantChartEndHoldListeners();
+        if (plantChartEl) plantChartEl.classList.remove("is-holding-point");
+        plantChartPoints = [];
+        plantChartShowFit = false;
+        plantChartFitMode = "curve";
+        redrawPlantChart();
+      }
+
+      function setPlantGraphVisible(visible) {
+        plantGraphVisible = !!visible;
+        if (appRoot) {
+          if (plantGraphVisible) appRoot.setAttribute("data-plant-view", "graph");
+          else appRoot.removeAttribute("data-plant-view");
+        }
+        if (plantGraphBtn) {
+          plantGraphBtn.classList.toggle("is-active", plantGraphVisible);
+          plantGraphBtn.setAttribute("aria-pressed", plantGraphVisible ? "true" : "false");
+          plantGraphBtn.textContent = plantGraphVisible ? "Skrýt graf" : "Zobrazit graf";
+        }
+        if (plantGraphVisible) {
+          suspendPlantForGraph();
+          schedulePlantChartRedraw();
+        } else if (appRoot && appRoot.getAttribute("data-app-mode") === "plant") {
+          plantChartHold = null;
+          plantChartEndHoldListeners();
+          resumePlantAfterGraph();
+          schedulePlaceRulerAbovePlantTable();
+        }
+      }
+
+      function setAppMode(nextMode) {
+        var mode = nextMode === "plant" ? "plant" : "measure";
+        if (appRoot) appRoot.setAttribute("data-app-mode", mode);
+
+        if (modeMeasureBtn) {
+          var measureOn = mode === "measure";
+          modeMeasureBtn.classList.toggle("is-active", measureOn);
+          modeMeasureBtn.setAttribute("aria-selected", measureOn ? "true" : "false");
+        }
+        if (modePlantBtn) {
+          var plantOn = mode === "plant";
+          modePlantBtn.classList.toggle("is-active", plantOn);
+          modePlantBtn.setAttribute("aria-selected", plantOn ? "true" : "false");
+        }
+        if (plantStage) {
+          plantStage.setAttribute("aria-hidden", mode === "plant" ? "false" : "true");
+        }
+        if (board) {
+          board.setAttribute(
+            "aria-label",
+            mode === "plant" ? "Rostlina — růst rostliny" : "Pracovní plocha"
+          );
+        }
+
+        if (mode === "plant") {
+          if (canvasPanToggleBtn && canvasPanToggleBtn.classList.contains("is-pressed")) {
+            canvasPanToggleBtn.click();
+          }
+          if (!plantGraphVisible) {
+            startPlantSowing();
+            schedulePlaceRulerAbovePlantTable();
+          } else {
+            schedulePlantChartRedraw();
+          }
+        } else {
+          plantSuspendedForGraph = false;
+          plantWasPlayingBeforeGraph = false;
+          plantStopwatchWasRunningBeforeGraph = false;
+          pausePlantPlayback();
+          placeCenteredLandscape();
+        }
+      }
+
+      if (modeMeasureBtn) {
+        modeMeasureBtn.addEventListener("click", function () {
+          setAppMode("measure");
+        });
+      }
+      if (modePlantBtn) {
+        modePlantBtn.addEventListener("click", function () {
+          setAppMode("plant");
+        });
+      }
+      if (plantGrowBtn) {
+        plantGrowBtn.disabled = true;
+        plantGrowBtn.setAttribute("aria-disabled", "true");
+        plantGrowBtn.addEventListener("click", function () {
+          onPlantGrowBtnClick();
+        });
+      }
+      if (plantGraphBtn) {
+        plantGraphBtn.addEventListener("click", function () {
+          setPlantGraphVisible(!plantGraphVisible);
+        });
+      }
+      if (plantChartEl) {
+        plantChartEl.addEventListener("pointerdown", onPlantChartPointerDown);
+        plantChartEl.addEventListener("dblclick", onPlantChartDblClick);
+      }
+      if (plantChartSaveBtn) {
+        plantChartSaveBtn.addEventListener("click", savePlantChartAsImage);
+      }
+      if (plantChartFitBtn) {
+        plantChartFitBtn.addEventListener("click", function () {
+          if (plantChartPoints.length < 2) return;
+          plantChartShowFit = !plantChartShowFit;
+          redrawPlantChart();
+        });
+      }
+      if (plantChartResetBtn) {
+        plantChartResetBtn.addEventListener("click", resetPlantChart);
+      }
+      if (plantFitModeCurveBtn) {
+        plantFitModeCurveBtn.addEventListener("click", function () {
+          plantChartFitMode = "curve";
+          redrawPlantChart();
+        });
+      }
+      if (plantFitModePolylineBtn) {
+        plantFitModePolylineBtn.addEventListener("click", function () {
+          plantChartFitMode = "polyline";
+          redrawPlantChart();
+        });
+      }
+      if (typeof ResizeObserver !== "undefined" && plantChartWrap) {
+        var plantChartRo = new ResizeObserver(function () {
+          schedulePlantChartRedraw();
+        });
+        plantChartRo.observe(plantChartWrap);
+      }
+      window.addEventListener("resize", schedulePlantChartRedraw);
 
       /** Aktuální měřítko plátna (1 = 100 %). @type {number} */
       var boardZoom = 1;
@@ -1582,7 +3545,7 @@
       function isMeasureNumericInput(el) {
         return (
           el instanceof HTMLInputElement &&
-          el.hasAttribute("data-measure-key")
+          (el.hasAttribute("data-measure-key") || el.hasAttribute("data-plant-cell"))
         );
       }
 
@@ -1627,7 +3590,7 @@
           return { ok: false, message: "Zadej platné číslo." };
         }
         if (n < 0) {
-          return { ok: false, message: "Délka nemůže být záporná." };
+          return { ok: false, message: "Hodnota nemůže být záporná." };
         }
         return { ok: true };
       }
@@ -1649,6 +3612,9 @@
       }
 
       function measureKeypadTitle(input) {
+        if (input.hasAttribute("data-plant-cell")) {
+          return input.getAttribute("aria-label") || "Hodnota";
+        }
         var group = input.closest(".measure-group");
         var label = group ? group.querySelector(".measure-label") : null;
         if (label && label.textContent) return String(label.textContent).trim();
@@ -1729,7 +3695,7 @@
         hideTableMathKeypad();
         input.dispatchEvent(new Event("input", { bubbles: true }));
         input.dispatchEvent(new Event("change", { bubbles: true }));
-        verifyAllMeasures();
+        if (input.hasAttribute("data-measure-key")) verifyAllMeasures();
       }
 
       function handleTableMathKeypadClick(event) {
@@ -1778,9 +3744,23 @@
         })(measureInputsAll[mi]);
       }
 
+      var plantTableInputs = document.querySelectorAll(
+        ".plant-points-table input[data-plant-cell]"
+      );
+      for (var pi = 0; pi < plantTableInputs.length; pi++) {
+        applyNumericKeypadMode(/** @type {HTMLInputElement} */ (plantTableInputs[pi]));
+      }
+
       var leftPanel = document.querySelector(".left-panel");
       if (leftPanel) {
         leftPanel.addEventListener("pointerdown", function (ev) {
+          openNumericKeypadFromEvent(ev);
+        });
+      }
+
+      var plantPointsTableSection = document.getElementById("plantPointsTableSection");
+      if (plantPointsTableSection) {
+        plantPointsTableSection.addEventListener("pointerdown", function (ev) {
           openNumericKeypadFromEvent(ev);
         });
       }
@@ -2024,6 +4004,33 @@
         thetaDeg = 0;
 
         applyLayout();
+      }
+
+      /** V režimu Rostlina: pravítko vodorovně těsně nad tabulkou. */
+      function placeRulerAbovePlantTable() {
+        var tableSec = document.getElementById("plantPointsTableSection");
+        if (!tableSec || !board) {
+          placeCenteredLandscape();
+          return;
+        }
+        var rect = tableSec.getBoundingClientRect();
+        if (rect.width < 1 || rect.height < 1) {
+          placeCenteredLandscape();
+          return;
+        }
+        var w = rulerSize().w;
+        var gap = 6;
+        var topMid = boardXYFromClient(rect.left + rect.width / 2, rect.top);
+        bx = topMid.fx - w / 2;
+        by = topMid.fy - gap;
+        thetaDeg = 0;
+        applyLayout();
+      }
+
+      function schedulePlaceRulerAbovePlantTable() {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(placeRulerAbovePlantTable);
+        });
       }
 
       function placePencilInitial() {
@@ -2297,7 +4304,15 @@
       board.addEventListener("pointercancel", onPointerEnd, { passive: false });
 
       window.addEventListener("resize", function () {
-        applyLayout();
+        if (
+          appRoot &&
+          appRoot.getAttribute("data-app-mode") === "plant" &&
+          appRoot.getAttribute("data-plant-view") !== "graph"
+        ) {
+          placeRulerAbovePlantTable();
+        } else {
+          applyLayout();
+        }
         applyPencilLayout();
         applyCreditLayout();
         applyCucumbersLayout();
