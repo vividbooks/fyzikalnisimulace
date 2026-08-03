@@ -593,6 +593,7 @@
           <span class="row-label">Akce</span>
           <div class="actions-row" aria-label="Akce simulace">
             <button type="button" id="btnRun">Spustit</button>
+            <button type="button" id="btnUndo" class="secondary" disabled>Zpět</button>
             <button type="button" id="btnReset" class="secondary">Reset</button>
             <button type="button" id="btnHelp" class="secondary">Nápověda</button>
           </div>
@@ -703,6 +704,7 @@
       <h2 id="helpDialogTitle">Tvorba grafu</h2>
       <p>
         Kliknutím přidej bod grafu. Body je možné posunovat. Dvojklikem bod zrušíš.
+        Tlačítkem Zpět vrátíš poslední úpravu grafu.
         U čar mřížky se bod jemně přitahuje; dál od nich lze zadat hodnotu i mezi dílky.
       </p>
       <button type="button" id="helpDialogClose" class="secondary">Zavřít</button>
@@ -739,6 +741,7 @@
   const customYUnit = document.getElementById("customYUnit");
   const customYStep = document.getElementById("customYStep");
   const btnRun = document.getElementById("btnRun");
+  const btnUndo = document.getElementById("btnUndo");
   const btnReset = document.getElementById("btnReset");
   const btnHelp = document.getElementById("btnHelp");
   const chkDualGraph = document.getElementById("chkDualGraph");
@@ -756,6 +759,12 @@
   const H = 340;
   const pw = W - ml - mr;
   const ph = H - mt - mb;
+  /** Barvy grafů = barvy helem cyklistů. */
+  const GRAPH1_COLOR = "#FF184A";
+  const GRAPH2_COLOR = "#2563EB";
+  /** Druhý jezdec — modrá helma. */
+  const RIDER2_HELMET_FILL = GRAPH2_COLOR;
+  const RIDER2_HELMET_STROKE = "#1D4ED8";
 
   function tToX(t) {
     return ml + (t / T_MAX) * pw;
@@ -835,6 +844,82 @@
 
   /** Počáteční rychlost [m/s]; null = uživatel ji zvolí klikem na svislou osu. */
   let velocityV0 = { 1: null, 2: null };
+
+  /** Historie úprav grafu pro tlačítko Zpět. */
+  const UNDO_STACK_MAX = 40;
+  /** @type {{ points: { t: number, s: number }[], points2: { t: number, s: number }[], velocityV0: { 1: number|null, 2: number|null } }[]} */
+  const undoStack = [];
+  /** Snapshot před tažením — do historie se vloží až při skutečném posunu. */
+  let dragUndoSnapshot = null;
+
+  function cloneGraphPoints(arr) {
+    return arr.map(function (p) {
+      return { t: p.t, s: p.s };
+    });
+  }
+
+  function captureGraphSnapshot() {
+    return {
+      points: cloneGraphPoints(points),
+      points2: cloneGraphPoints(points2),
+      velocityV0: { 1: velocityV0[1], 2: velocityV0[2] },
+    };
+  }
+
+  function graphHasEditableState() {
+    return (
+      points.length > 0 ||
+      points2.length > 0 ||
+      velocityV0[1] != null ||
+      velocityV0[2] != null
+    );
+  }
+
+  function updateUndoButton() {
+    if (!btnUndo) return;
+    btnUndo.disabled = running || undoStack.length === 0;
+  }
+
+  function pushUndoSnapshot() {
+    undoStack.push(captureGraphSnapshot());
+    if (undoStack.length > UNDO_STACK_MAX) undoStack.shift();
+    updateUndoButton();
+  }
+
+  function clearUndoStack() {
+    undoStack.length = 0;
+    dragUndoSnapshot = null;
+    updateUndoButton();
+  }
+
+  function restoreGraphSnapshot(snap) {
+    points.length = 0;
+    points2.length = 0;
+    snap.points.forEach(function (p) {
+      points.push({ t: p.t, s: p.s });
+    });
+    snap.points2.forEach(function (p) {
+      points2.push({ t: p.t, s: p.s });
+    });
+    velocityV0[1] = snap.velocityV0[1];
+    velocityV0[2] = snap.velocityV0[2];
+  }
+
+  function undoLastGraphEdit() {
+    if (running || undoStack.length === 0) return;
+    const snap = undoStack.pop();
+    restoreGraphSnapshot(snap);
+    hideChartClickPreview();
+    simT = 0;
+    lastFrame = 0;
+    trackWheelPhaseDeg1 = 0;
+    trackWheelPhaseDeg2 = 0;
+    timerEl.textContent = formatTimer(0);
+    updateUndoButton();
+    updateActionButton();
+    redrawChart();
+  }
+
   /** Šířka klikacího pásu u svislé osy pro volbu počáteční rychlosti. */
   const AXIS_PICK_W = 36;
   let chartClickPreviewGroup = null;
@@ -1436,16 +1521,19 @@
     if (isCustomGraphMode()) {
       btnRun.textContent = "Uložit";
       btnRun.disabled = false;
+      updateUndoButton();
       return;
     }
     if (running) {
       btnRun.textContent = "Pozastavit";
       btnRun.disabled = false;
+      updateUndoButton();
       return;
     }
     btnRun.textContent = "Spustit";
     const ok = points.length >= 1 || (dualGraph && points2.length >= 1);
     btnRun.disabled = !ok;
+    updateUndoButton();
   }
 
   /** Červený bod na grafu během / po simulaci – (t, s) = časomíra + dráha z grafu. */
@@ -1540,7 +1628,7 @@
       placeIndicator(
         dot,
         "chart-time-indicator",
-        "#d92222",
+        GRAPH1_COLOR,
         "#ffffff",
         points
       );
@@ -1553,7 +1641,7 @@
       placeIndicator(
         dot2,
         "chart-time-indicator-2",
-        "#1565c0",
+        GRAPH2_COLOR,
         "#ffffff",
         points2
       );
@@ -1822,7 +1910,7 @@
         o1.setAttribute("cy", vToY(velocityV0ForGraph(1)));
         o1.setAttribute("r", "7");
         o1.setAttribute("fill", "#fff");
-        o1.setAttribute("stroke", "#1e6bb8");
+        o1.setAttribute("stroke", GRAPH1_COLOR);
         o1.setAttribute("stroke-width", "2");
         o1.setAttribute("opacity", "0.95");
         o1.style.cursor = dualGraph && editGraph !== 1 ? "default" : "ns-resize";
@@ -1838,7 +1926,7 @@
         o2.setAttribute("cy", vToY(velocityV0ForGraph(2)));
         o2.setAttribute("r", "7");
         o2.setAttribute("fill", "#fff");
-        o2.setAttribute("stroke", "#2e7d32");
+        o2.setAttribute("stroke", GRAPH2_COLOR);
         o2.setAttribute("stroke-width", "2");
         o2.setAttribute("opacity", "0.95");
         o2.style.cursor = editGraph !== 2 ? "default" : "ns-resize";
@@ -1860,7 +1948,7 @@
       );
       c.setAttribute("r", "7");
       c.setAttribute("fill", "#fff");
-      c.setAttribute("stroke", "#1e6bb8");
+      c.setAttribute("stroke", GRAPH1_COLOR);
       c.setAttribute("stroke-width", "2");
       c.style.cursor = dualGraph && editGraph !== 1 ? "default" : "grab";
       c.style.pointerEvents = dualGraph && editGraph !== 1 ? "none" : "auto";
@@ -1883,7 +1971,7 @@
         );
         c.setAttribute("r", "7");
         c.setAttribute("fill", "#fff");
-        c.setAttribute("stroke", "#2e7d32");
+        c.setAttribute("stroke", GRAPH2_COLOR);
         c.setAttribute("stroke-width", "2");
         c.style.cursor = editGraph !== 2 ? "default" : "grab";
         c.style.pointerEvents = editGraph !== 2 ? "none" : "auto";
@@ -1901,7 +1989,7 @@
     if (d1) {
       const pl = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
       pl.setAttribute("fill", "none");
-      pl.setAttribute("stroke", "#111");
+      pl.setAttribute("stroke", GRAPH1_COLOR);
       pl.setAttribute("stroke-width", "2.5");
       pl.setAttribute("stroke-linejoin", "round");
       pl.setAttribute("stroke-linecap", "round");
@@ -1912,7 +2000,7 @@
     if (d2) {
       const pl = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
       pl.setAttribute("fill", "none");
-      pl.setAttribute("stroke", "#1565c0");
+      pl.setAttribute("stroke", GRAPH2_COLOR);
       pl.setAttribute("stroke-width", "2.5");
       pl.setAttribute("stroke-linejoin", "round");
       pl.setAttribute("stroke-linecap", "round");
@@ -1928,7 +2016,7 @@
     chartClickPreviewCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     chartClickPreviewCircle.setAttribute("r", "7");
     chartClickPreviewCircle.setAttribute("fill", "rgba(255,255,255,0.92)");
-    chartClickPreviewCircle.setAttribute("stroke", "#1e6bb8");
+    chartClickPreviewCircle.setAttribute("stroke", GRAPH1_COLOR);
     chartClickPreviewCircle.setAttribute("stroke-width", "2");
     chartClickPreviewCircle.setAttribute("stroke-dasharray", "4 3");
     chartClickPreviewGroup.appendChild(chartClickPreviewCircle);
@@ -2119,10 +2207,6 @@
     if (dualGraph && trackRider2)
       applyCyclistLegMotion(trackRider2, trackWheelPhaseDeg2);
   }
-
-  /** Druhý jezdec — modrá helma (odlišení od červené grafu 2). */
-  const RIDER2_HELMET_FILL = "#2563EB";
-  const RIDER2_HELMET_STROKE = "#1D4ED8";
 
   function applyCyclistHelmetColors(riderOuterG, fill, stroke) {
     const sprite = riderOuterG && riderOuterG.querySelector("svg");
@@ -2455,7 +2539,7 @@
       const vm = yToV(ys);
       chartClickPreviewCircle.setAttribute("cx", String(tToX(0)));
       chartClickPreviewCircle.setAttribute("cy", String(vToY(vm)));
-      chartClickPreviewCircle.setAttribute("stroke", g === 2 ? "#2e7d32" : "#1e6bb8");
+      chartClickPreviewCircle.setAttribute("stroke", g === 2 ? GRAPH2_COLOR : GRAPH1_COLOR);
       chartClickPreviewGroup.style.display = "";
       return;
     }
@@ -2484,7 +2568,7 @@
 
     chartClickPreviewCircle.setAttribute("cx", String(cx));
     chartClickPreviewCircle.setAttribute("cy", String(cy));
-    chartClickPreviewCircle.setAttribute("stroke", g === 2 ? "#2e7d32" : "#1e6bb8");
+    chartClickPreviewCircle.setAttribute("stroke", g === 2 ? GRAPH2_COLOR : GRAPH1_COLOR);
     chartClickPreviewGroup.style.display = "";
   }
 
@@ -2496,6 +2580,7 @@
     const { x, y } = chartCoordsFromEvent(ev);
     if (x < ml - AXIS_PICK_W || x > ml || y < mt || y > mt + ph) return;
     const ys = snapChartYToValueGrid(y);
+    pushUndoSnapshot();
     velocityV0[g] = yToV(ys);
     hideChartClickPreview();
     redrawChart();
@@ -2511,6 +2596,7 @@
     const g = graphIdFromPointsArr(targetArr);
 
     if (usesVelocityAxisMode() && targetArr.length === 0 && velocityV0[g] == null) {
+      pushUndoSnapshot();
       velocityV0[g] = yToV(snapChartYToValueGrid(y));
       hideChartClickPreview();
       redrawChart();
@@ -2522,6 +2608,7 @@
 
     if (wouldRejectNewPoint(targetArr, g, t, val)) return;
 
+    pushUndoSnapshot();
     targetArr.push({ t, s: val });
     sortPointsArr(targetArr);
     redrawChart();
@@ -2548,6 +2635,12 @@
   function applyDrag(ev) {
     if (running) return;
     if (dragVelocityOrigin) {
+      if (!dragMoved && dragUndoSnapshot) {
+        undoStack.push(dragUndoSnapshot);
+        if (undoStack.length > UNDO_STACK_MAX) undoStack.shift();
+        dragUndoSnapshot = null;
+        updateUndoButton();
+      }
       dragMoved = true;
       const { y } = chartCoordsFromEvent(ev);
       velocityV0[dragGraph] = Math.min(
@@ -2558,6 +2651,12 @@
       return;
     }
     if (dragIdx < 0) return;
+    if (!dragMoved && dragUndoSnapshot) {
+      undoStack.push(dragUndoSnapshot);
+      if (undoStack.length > UNDO_STACK_MAX) undoStack.shift();
+      dragUndoSnapshot = null;
+      updateUndoButton();
+    }
     dragMoved = true;
     const arr = dragGraph === 2 ? points2 : points;
     const { x, y } = chartCoordsFromEvent(ev);
@@ -2596,6 +2695,7 @@
     dragIdx = -1;
     dragGraph = 1;
     dragVelocityOrigin = false;
+    dragUndoSnapshot = null;
     document.removeEventListener("mousemove", applyDrag);
     document.removeEventListener("mouseup", endDrag);
     document.removeEventListener("touchmove", applyDrag);
@@ -2608,6 +2708,7 @@
   function startCircleDrag(idx, graphId, ev) {
     dragMoved = false;
     dragVelocityOrigin = false;
+    dragUndoSnapshot = captureGraphSnapshot();
     dragIdx = idx;
     dragGraph = graphId;
     hideChartClickPreview();
@@ -2624,6 +2725,7 @@
   function startVelocityOriginDrag(graphId, ev) {
     dragMoved = false;
     dragVelocityOrigin = true;
+    dragUndoSnapshot = captureGraphSnapshot();
     dragIdx = -1;
     dragGraph = graphId;
     hideChartClickPreview();
@@ -2694,6 +2796,7 @@
     const gRaw = target.getAttribute("data-graph") || "1";
     const graph = parseInt(gRaw, 10);
     const arr = graph === 2 ? points2 : points;
+    pushUndoSnapshot();
     arr.splice(idx, 1);
     if (usesVelocityAxisMode() && !arr.length) velocityV0[graph] = null;
     redrawChart();
@@ -2791,6 +2894,7 @@
     dragMoved = false;
     dragGraph = 1;
     dragVelocityOrigin = false;
+    dragUndoSnapshot = null;
     points.length = 0;
     points2.length = 0;
     velocityV0[1] = null;
@@ -2799,7 +2903,12 @@
     trackWheelPhaseDeg2 = 0;
   }
 
+  btnUndo.addEventListener("click", function () {
+    undoLastGraphEdit();
+  });
+
   btnReset.addEventListener("click", function () {
+    if (graphHasEditableState()) pushUndoSnapshot();
     resetGraphDataAndPlayback();
     redrawChart();
   });
@@ -2827,7 +2936,10 @@
       const prev = yAxisMode;
       syncYAxisModeFromRadios();
       const next = yAxisMode;
-      if (prev !== next) resetGraphDataAndPlayback();
+      if (prev !== next) {
+        clearUndoStack();
+        resetGraphDataAndPlayback();
+      }
       redrawChart();
     });
   });
@@ -2838,7 +2950,10 @@
       syncGraphModeFromRadios();
       syncCustomAxisFromInputs();
       updateModePanelsVisibility();
-      if (prevCustom !== customGraphMode) resetGraphDataAndPlayback();
+      if (prevCustom !== customGraphMode) {
+        clearUndoStack();
+        resetGraphDataAndPlayback();
+      }
       redrawChart();
     });
   });
