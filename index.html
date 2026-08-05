@@ -1002,10 +1002,22 @@
             previewColor: "#e8fff4",
           },
           {
+            id: "graf",
+            title: "Graf",
+            hash: "#/sim/graf",
+            previewColor: "#eef2ff",
+          },
+          {
             id: "rychlost",
             title: "Rychlost",
             hash: "#/sim/rychlost",
             previewColor: "#fff0e8",
+          },
+          {
+            id: "stlacovani_latek",
+            title: "Stlačování látek",
+            hash: "#/sim/stlacovani_latek",
+            previewColor: "#e8f4ff",
           },
           {
             id: "mereni_delka",
@@ -1101,7 +1113,9 @@
       hra_newton: "sily",
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
+      graf: "zaklady",
       rychlost: "zaklady",
+      stlacovani_latek: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
       tepelna_kapacita_puvodni: "energie",
@@ -1309,6 +1323,26 @@
       </svg>`;
     }
 
+    function GrafCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <line x1="24" y1="68" x2="112" y2="68" stroke="#64748b" stroke-width="2" />
+        <line x1="24" y1="68" x2="24" y2="16" stroke="#64748b" stroke-width="2" />
+        <rect x="34" y="42" width="14" height="26" rx="2" fill="#6366f1" />
+        <rect x="56" y="28" width="14" height="40" rx="2" fill="#818cf8" />
+        <rect x="78" y="36" width="14" height="32" rx="2" fill="#4f46e5" />
+        <circle cx="40" cy="36" r="3.5" fill="#c7d2fe" stroke="#4338ca" stroke-width="2" />
+        <circle cx="62" cy="22" r="3.5" fill="#c7d2fe" stroke="#4338ca" stroke-width="2" />
+        <circle cx="84" cy="30" r="3.5" fill="#c7d2fe" stroke="#4338ca" stroke-width="2" />
+        <path d="M40 36 L62 22 L84 30" fill="none" stroke="#4338ca" stroke-width="2" />
+      </svg>`;
+    }
+
     function RychlostCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1327,6 +1361,25 @@
         <circle cx="36" cy="48" r="5" fill="#fbbf24" stroke="#b45309" stroke-width="2" />
         <path d="M96 28l10 4-10 4" fill="none" stroke="#ea580c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
         <path d="M108 22l10 4-10 4" fill="none" stroke="#f97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>`;
+    }
+
+    function StlacovaniLatekCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <rect x="40" y="18" width="52" height="10" rx="2" fill="#64748b" />
+        <rect x="58" y="28" width="16" height="18" rx="2" fill="#94a3b8" />
+        <rect x="44" y="46" width="44" height="28" rx="4" fill="#bae6fd" stroke="#0284c7" stroke-width="2" />
+        <circle cx="56" cy="58" r="3" fill="#38bdf8" />
+        <circle cx="72" cy="62" r="2.5" fill="#0ea5e9" />
+        <circle cx="64" cy="68" r="2" fill="#7dd3fc" />
+        <path d="M66 10v10" stroke="#334155" stroke-width="3" stroke-linecap="round" />
+        <path d="M60 14l6-6 6 6" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       </svg>`;
     }
 
@@ -1405,7 +1458,9 @@
       if (tileId === "cocky") return html`<${CockyCardIllustration} />`;
       if (tileId === "michani-barev") return html`<${MichaniBarevCardIllustration} />`;
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
+      if (tileId === "graf") return html`<${GrafCardIllustration} />`;
       if (tileId === "rychlost") return html`<${RychlostCardIllustration} />`;
+      if (tileId === "stlacovani_latek") return html`<${StlacovaniLatekCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
       if (tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
@@ -1561,11 +1616,27 @@
           }
           return;
         }
+        if (simId === "graf") {
+          try {
+            window.location.replace(new URL("graf/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("graf/");
+          }
+          return;
+        }
         if (simId === "rychlost") {
           try {
             window.location.replace(new URL("rychlost/", window.location.href).href);
           } catch (_) {
             window.location.replace("rychlost/");
+          }
+          return;
+        }
+        if (simId === "stlacovani_latek") {
+          try {
+            window.location.replace(new URL("stlacovani-latek/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("stlacovani-latek/");
           }
           return;
         }
@@ -1685,7 +1756,21 @@
           </div>
         `;
       }
+      if (simId === "graf") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
       if (simId === "rychlost") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "stlacovani_latek") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
