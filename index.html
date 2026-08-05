@@ -1002,6 +1002,12 @@
             previewColor: "#e8fff4",
           },
           {
+            id: "rychlost",
+            title: "Rychlost",
+            hash: "#/sim/rychlost",
+            previewColor: "#fff0e8",
+          },
+          {
             id: "mereni_delka",
             title: "Měření délek",
             hash: "#/sim/mereni_delka",
@@ -1095,6 +1101,7 @@
       hra_newton: "sily",
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
+      rychlost: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
       tepelna_kapacita_puvodni: "energie",
@@ -1302,6 +1309,27 @@
       </svg>`;
     }
 
+    function RychlostCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <path d="M18 62h96" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+        <ellipse cx="58" cy="54" rx="22" ry="12" fill="#d97706" stroke="#92400e" stroke-width="2" />
+        <circle cx="42" cy="62" r="7" fill="#1e293b" />
+        <circle cx="74" cy="62" r="7" fill="#1e293b" />
+        <circle cx="42" cy="62" r="2.5" fill="#f8fafc" />
+        <circle cx="74" cy="62" r="2.5" fill="#f8fafc" />
+        <path d="M78 48c8-2 14 2 18 8" fill="none" stroke="#92400e" stroke-width="3" stroke-linecap="round" />
+        <circle cx="36" cy="48" r="5" fill="#fbbf24" stroke="#b45309" stroke-width="2" />
+        <path d="M96 28l10 4-10 4" fill="none" stroke="#ea580c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M108 22l10 4-10 4" fill="none" stroke="#f97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>`;
+    }
+
     function MereniDelkyCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1377,6 +1405,7 @@
       if (tileId === "cocky") return html`<${CockyCardIllustration} />`;
       if (tileId === "michani-barev") return html`<${MichaniBarevCardIllustration} />`;
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
+      if (tileId === "rychlost") return html`<${RychlostCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
       if (tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
@@ -1532,6 +1561,14 @@
           }
           return;
         }
+        if (simId === "rychlost") {
+          try {
+            window.location.replace(new URL("rychlost/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("rychlost/");
+          }
+          return;
+        }
         if (simId === "skutecny_obraz") {
           try {
             window.location.replace(new URL("skutecny-obraz/", window.location.href).href);
@@ -1642,6 +1679,13 @@
         `;
       }
       if (simId === "graf_pohyb") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "rychlost") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

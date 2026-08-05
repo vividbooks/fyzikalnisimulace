@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rychlost</title>
+  <style>
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #f4f7fb;
+      --panel: #fff;
+      --panel-bg: #ffffff;
+      --accent: #3d5a9a;
+      --accent-hover: #334b81;
+      --text: #171923;
+      --muted: #6b7280;
+      --border: #e8eaef;
+      --focus: #3d5a9a;
+      --area-muted: #eceff5;
+      --readout-bg: #f4f5f8;
+      --danger: #c0392b;
+      --time: #d35400;
+      --axis: #1e6bb8;
+      --grid: rgba(30, 107, 184, 0.22);
+      --track: #111;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select, label {
+      font-family: inherit;
+    }
+
+    .app {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      align-content: stretch;
+      gap: clamp(10px, 1.8vw, 20px);
+      width: 100%;
+      margin: 0 auto;
+      padding: clamp(8px, 1.2vw, 14px);
+      min-height: 100dvh;
+      box-sizing: border-box;
+    }
+
+    .viz-column {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(10px, 1.5vh, 16px);
+    }
+
+    .track-section {
+      flex: 1 1 0;
+      min-height: 0;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 10px 14px 6px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .track-section > .track-svg {
+      display: block;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+      max-width: 100%;
+      user-select: none;
+    }
+
+    .track-section > .track-svg text {
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .chart-wrap {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: clamp(12px, 1.4vw, 18px) clamp(10px, 1.2vw, 14px) 8px;
+      border: 1px solid var(--border);
+    }
+
+    .chart-stage {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .chart-plot {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+    }
+
+    .chart-plot .chart-svg {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .chart-confetti-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .chart-tools {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: flex-start;
+      padding-top: 2px;
+    }
+
+    .chart-zoom-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-bg);
+      color: var(--accent);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .chart-zoom-btn:hover {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    .chart-zoom-btn .chart-zoom-icon--out {
+      display: none;
+    }
+
+    .chart-zoom-btn[aria-pressed="true"] .chart-zoom-icon--in {
+      display: none;
+    }
+
+    .chart-zoom-btn[aria-pressed="true"] .chart-zoom-icon--out {
+      display: block;
+    }
+
+    .viz-column.is-chart-expanded .track-section {
+      display: none;
+    }
+
+    .viz-column.is-chart-expanded .chart-wrap {
+      flex: 1 1 auto;
+    }
+
+    .chart-svg {
+      display: block;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+      max-height: 100%;
+      user-select: none;
+    }
+
+    .chart-svg text {
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .setup-panel {
+      flex: 0 0 min(248px, 100%);
+      align-self: stretch;
+      overflow: auto;
+      padding: 14px;
+      border-radius: 22px;
+      scrollbar-gutter: stable;
+      color-scheme: light;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      min-width: 0;
+    }
+
+    .panel-title {
+      margin: 0 0 6px;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .hub-back-to-sims {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--area-muted);
+      color: var(--text);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .hub-back-to-sims:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    .controls {
+      display: grid;
+      gap: 20px;
+    }
+
+    .row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .row-pair {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .row-pair .step-input {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .app.is-create-graph .row-pair {
+      display: none;
+    }
+
+    .row-label,
+    label.row-label {
+      font-weight: 650;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .actions-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .actions-row button {
+      width: 100%;
+      min-width: 0;
+      padding-inline: 10px;
+    }
+
+    .create-graph-btn {
+      width: 100%;
+    }
+
+    .graph-tools-row {
+      display: none;
+    }
+
+    .app.is-create-graph .graph-tools-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .graph-tools-row button {
+      width: 100%;
+    }
+
+    .graph-verify-message {
+      margin: 0;
+      font-size: 0.8125rem;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .graph-verify-message.is-ok {
+      color: #1f7a3f;
+    }
+
+    .graph-verify-message.is-error {
+      color: var(--danger);
+    }
+
+    .chart-svg.is-create-graph {
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .chart-svg.is-create-graph.is-holding-point {
+      cursor: grabbing;
+    }
+
+    .chart-cross-marker {
+      cursor: grab;
+    }
+
+    .chart-cross-marker line {
+      stroke: #FF8158;
+    }
+
+    .user-fitted-curve {
+      fill: none;
+      stroke: #FF8158;
+      stroke-width: 2.5;
+      pointer-events: none;
+    }
+
+    #fit-curve-btn.is-active {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+      color: var(--accent);
+    }
+
+    #create-graph-btn.is-active {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+      color: var(--accent);
+    }
+
+    .step-input {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      min-width: 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      overflow: hidden;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .step-input:focus-within {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 22%, transparent);
+    }
+
+    .step-input input[type="text"] {
+      flex: 0 0 auto;
+      width: 2.5ch;
+      padding: 10px 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.95rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+    }
+
+    .step-value {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding-right: 0.775rem;
+      gap: 0.25em;
+    }
+
+    .step-input .field-unit {
+      flex-shrink: 0;
+      font-weight: 400;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .step-spin {
+      position: static;
+      flex-shrink: 0;
+      width: 1.55rem;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .step-btn {
+      flex: 1 1 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: var(--readout-bg);
+      color: var(--muted);
+      padding: 0;
+      font-size: 0.62rem;
+      line-height: 1;
+      cursor: pointer;
+      min-height: 0;
+      border-radius: 0;
+      font-weight: 400;
+    }
+
+    .step-btn:hover:not(:disabled) {
+      background: var(--area-muted);
+      color: var(--text);
+      border-color: transparent;
+    }
+
+    .step-btn:active:not(:disabled) {
+      transform: none;
+      background: var(--border);
+    }
+
+    .step-btn + .step-btn {
+      border-top: 1px solid var(--border);
+    }
+
+    .step-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .step-input input[type="text"]:focus {
+      outline: none;
+    }
+
+    .setup-panel select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .setup-panel select:focus {
+      outline: none;
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 22%, transparent);
+    }
+
+    button {
+      font: inherit;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      background: var(--panel-bg);
+      color: var(--accent);
+      border-color: var(--border);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .variant-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .variant-btn {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      padding: 9px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      line-height: 1.25;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .variant-btn:hover:not(.is-active) {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+      color: var(--accent);
+    }
+
+    .variant-btn.is-active,
+    .variant-btn.is-active:hover {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      cursor: default;
+    }
+
+    .variant-btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .axis-line {
+      stroke: #333;
+      stroke-width: 2;
+    }
+    .axis-tick {
+      stroke: #999;
+      stroke-width: 1;
+    }
+    .axis-label {
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      fill: var(--muted);
+    }
+    .app.is-create-graph .axis-label {
+      visibility: hidden;
+    }
+    .app.is-create-graph .axis-label.is-visible {
+      visibility: visible;
+    }
+    .axis-time {
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      fill: var(--time);
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .axis-time.is-visible {
+      visibility: visible;
+    }
+
+    .table-keypad-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .table-keypad-overlay[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel {
+      width: min(100%, 300px);
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 42px rgba(15, 23, 42, 0.22);
+      display: grid;
+      gap: 12px;
+    }
+
+    .table-keypad-panel__title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-keypad-panel__display {
+      box-sizing: border-box;
+      height: 64px;
+      min-height: 64px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      font-size: 1.5rem;
+      font-weight: 650;
+      line-height: 1.2;
+      text-align: center;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .table-keypad-panel__display.is-invalid {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .table-keypad-panel__error {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 650;
+      color: var(--danger);
+      text-align: center;
+    }
+
+    .table-keypad-panel__error[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel__actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .table-keypad-panel__action {
+      appearance: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
+      width: 56px;
+      height: 56px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .table-keypad-panel__action svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-keypad-panel__confirm {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(61, 90, 154, 0.35);
+    }
+
+    .table-keypad-panel__cancel {
+      background: var(--readout-bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .table-keypad-panel__action:hover {
+      filter: brightness(1.05);
+    }
+
+    .table-keypad-panel__cancel:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .table-keypad-panel__action:active {
+      transform: scale(0.97);
+    }
+
+    .table-math-keypad {
+      width: 100%;
+    }
+
+    .table-math-keypad__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .table-math-keypad__key {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1.125rem;
+      font-weight: 650;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .table-math-keypad__key svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-math-keypad__key:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--area-muted);
+    }
+
+    .table-math-keypad__key:active:not(:disabled) {
+      background: rgba(61, 90, 154, 0.12);
+    }
+
+    .table-math-keypad__key:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 899.98px) {
+      .app {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding-left: max(8px, env(safe-area-inset-left, 0px));
+        padding-right: max(8px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        padding-top: max(8px, env(safe-area-inset-top, 0px));
+        gap: 12px;
+      }
+
+      .viz-column {
+        order: 1;
+        flex: 1 1 auto;
+        min-height: min(52vh, 560px);
+        width: 100%;
+      }
+
+      .chart-wrap,
+      .track-section {
+        flex: 1 1 0;
+        min-height: 0;
+      }
+
+      .setup-panel {
+        order: 2;
+        flex: 0 1 auto;
+        width: 100%;
+        max-height: min(46vh, 520px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        border-radius: 18px;
+        padding: 14px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="setup-panel" aria-label="Nastavení">
+      <div class="controls">
+        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <h1 class="panel-title">Rychlost</h1>
+
+        <div class="row">
+          <span class="row-label">Akce</span>
+          <div class="actions-row" aria-label="Akce simulace">
+            <button type="button" id="start-btn">Spustit</button>
+            <button type="button" id="reset-btn" class="secondary">Reset</button>
+          </div>
+          <button type="button" id="create-graph-btn" class="secondary create-graph-btn" aria-pressed="false">Vytvořit graf</button>
+        </div>
+
+        <div class="row graph-tools-row" id="graph-tools-row" hidden>
+          <button type="button" id="fit-curve-btn" class="secondary" disabled aria-pressed="false">Proložit</button>
+          <button type="button" id="verify-graph-btn" class="secondary" disabled>Ověřit</button>
+          <button type="button" id="clear-chart-points-btn" class="secondary" disabled>Smazat body</button>
+          <p id="graph-verify-message" class="graph-verify-message" role="status" aria-live="polite" hidden></p>
+        </div>
+
+        <div class="row-pair">
+          <div class="row">
+            <label class="row-label" for="axis-length">Dráha</label>
+            <div class="step-input">
+              <div class="step-value">
+                <input type="text" id="axis-length" inputmode="numeric" value="10">
+                <span class="field-unit">m</span>
+              </div>
+              <span class="step-spin">
+                <button type="button" class="step-btn step-up" aria-label="Zvětšit dráhu o 1 m">▲</button>
+                <button type="button" class="step-btn step-down" aria-label="Zmenšit dráhu o 1 m">▼</button>
+              </span>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="row-label" for="time" id="time-label">Čas</label>
+            <div class="step-input">
+              <div class="step-value">
+                <input type="text" id="time" inputmode="decimal" value="10">
+                <span class="field-unit">s</span>
+              </div>
+              <span class="step-spin">
+                <button type="button" class="step-btn step-up" aria-label="Zvětšit čas o 1 s">▲</button>
+                <button type="button" class="step-btn step-down" aria-label="Zmenšit čas o 1 s">▼</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <span class="row-label">Pohyb</span>
+          <div class="variant-toggle" role="group" aria-label="Pohyb">
+            <button type="button" class="variant-btn is-active" data-motion="uniform" aria-pressed="true">rovnoměrný</button>
+            <button type="button" class="variant-btn" data-motion="decelerated" aria-pressed="false">zpomalený</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <span class="row-label">Měřit po</span>
+          <div class="variant-toggle" role="group" aria-label="Měřit po">
+            <a class="variant-btn" href="./" data-measure-link>sekundách</a>
+            <span class="variant-btn is-active" aria-current="true">metrech</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="viz-column" aria-label="Simulace">
+      <div class="track-section">
+<svg id="track" class="track-svg" viewBox="0 0 648 220" preserveAspectRatio="xMidYMin meet" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Dráha psa">
+
+<g class="dog-mover" id="dog" transform="translate(-10.0539, 35)">
+  <use href="#dog-body"/>
+  <g class="wheel-spinner" transform="rotate(0 46.0539 86.054)">
+    <use href="#wheel"/>
+  </g>
+</g>
+
+<g class="axis" id="axis" transform="translate(36, 158)"></g>
+
+<defs>
+<g id="dog-body">
+<path d="M71.9908 9.1049L85.9052 8.59357L82.6294 18.105L67.5923 21.1767L71.9908 9.1049Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.352413" stroke-miterlimit="10"/>
+<path d="M63.4017 65.1586L66.2661 81.9176L71.302 90.5139L74.9483 88.602C74.9483 88.602 70.257 87.8202 71.4761 66.4592C72.6916 45.0982 63.4017 65.1549 63.4017 65.1549V65.1586Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.2054 69.8828L28.5134 62.5501L37.1585 58.6225L49.209 33.5636L56.8943 27.8019L65.4505 41.3373L66.777 64.8029C66.777 64.8029 66.9771 75.7075 47.6119 90.2285C28.2466 104.75 39.7005 70.8647 39.7005 70.8647L27.2017 69.8902L27.2054 69.8828Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.7162 65.1585L57.5806 81.9175L62.6165 90.5138L66.2628 88.6018C66.2628 88.6018 61.9198 86.6899 61.138 66.459C60.3116 45.0795 54.7125 65.1548 54.7125 65.1548L54.7162 65.1585Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74.1106 6.51866C74.1106 6.51866 69.8603 2.95417 66.5698 3.22836C63.2793 3.50255 53.2706 14.0589 53.2706 14.0589L51.881 38.6509L45.7816 53.5499L60.2963 80.6429L78.6388 42.1709L77.9533 26.8125L74.1143 6.51866H74.1106Z" fill="#FFDB00"/>
+<path d="M71.8168 87.1308C71.8168 87.1308 75.5038 85.8673 78.2682 88.2684C81.0325 90.6694 79.6503 93.0815 78.4794 93.793C77.3084 94.5044 68.0001 94.9749 67.1997 90.599C66.7142 87.9423 65.0949 80.2649 64.4353 72.3616" fill="#FFDB00"/>
+<path d="M71.8168 87.1308C71.8168 87.1308 75.5038 85.8673 78.2682 88.2684C81.0325 90.6694 79.6503 93.0815 78.4794 93.793C77.3084 94.5044 68.0001 94.9749 67.1997 90.599C66.7142 87.9423 65.0949 80.2649 64.4353 72.3616" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M77.1898 20.0689C77.1898 20.0689 85.1048 34.69 77.2194 51.6342C73.2656 60.1342 72.9432 71.3167 72.9432 71.3167C72.9432 71.3167 69.5637 68.245 69.5637 63.8135" fill="#FFDB00"/>
+<path d="M77.1898 20.0689C77.1898 20.0689 85.1048 34.69 77.2194 51.6342C73.2656 60.1342 72.9432 71.3167 72.9432 71.3167C72.9432 71.3167 69.5637 68.245 69.5637 63.8135" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M61.8225 76.4374C62.786 75.1332 63.6716 73.7659 64.4238 72.3579C65.7208 69.9236 66.6138 67.3669 66.7806 64.7954C66.7806 64.7954 65.3984 70.4719 67.1585 70.4719C68.9187 70.4719 70.4305 56.3437 73.9508 49.9446" fill="#FFDB00"/>
+<path d="M61.8225 76.4374C62.786 75.1332 63.6716 73.7659 64.4238 72.3579C65.7208 69.9236 66.6138 67.3669 66.7806 64.7954C66.7806 64.7954 65.3984 70.4719 67.1585 70.4719C68.9187 70.4719 70.4305 56.3437 73.9508 49.9446" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M49.1903 88.7315C49.1903 88.7315 52.5401 86.3712 56.3198 82.6771Z" fill="#FFDB00"/>
+<path d="M49.1903 88.7315C49.1903 88.7315 52.5401 86.3712 56.3198 82.6771" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M30.2295 88.9428C30.2295 88.9428 -5.9071 83.9 1.30392 38.9733C1.47438 37.9062 2.9529 37.8469 3.10482 38.9178C4.23132 46.8804 6.63252 58.7336 11.346 64.0544C18.7756 72.4321 4.0905 71.9096 9.11895 51.9344C13.5916 34.1639 16.4411 72.899 16.4411 72.899C16.4411 72.899 16.0446 60.6937 20.936 53.8278C25.831 46.9619 15.2183 71.6429 28.625 80.0946" fill="#FFDB00"/>
+<path d="M30.2295 88.9428C30.2295 88.9428 -5.9071 83.9 1.30392 38.9733C1.47438 37.9062 2.9529 37.8469 3.10482 38.9178C4.23132 46.8804 6.63252 58.7336 11.346 64.0544C18.7756 72.4321 4.0905 71.9096 9.11895 51.9344C13.5916 34.1639 16.4411 72.899 16.4411 72.899C16.4411 72.899 16.0446 60.6937 20.936 53.8278C25.831 46.9619 15.2183 71.6429 28.625 80.0946" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M63.1344 87.4051C63.1344 87.4051 66.8215 86.1416 69.5858 88.5426C72.3502 90.9436 70.968 93.3558 69.797 94.0672C68.6261 94.7786 59.3177 95.2492 58.5173 90.8732C57.7169 86.4936 50.454 64.0173 50.9246 52.3827" fill="#FFDB00"/>
+<path d="M63.1344 87.4051C63.1344 87.4051 66.8215 86.1416 69.5858 88.5426C72.3502 90.9436 70.968 93.3558 69.797 94.0672C68.6261 94.7786 59.3177 95.2492 58.5173 90.8732C57.7169 86.4936 50.454 64.0173 50.9246 52.3827" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M60.5444 65.6291C60.5444 65.6291 61.6783 81.7656 64.9948 87.268" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M71.3649 69.4752C71.3649 69.4752 70.357 81.4914 73.6772 86.9938" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.5616 66.385C26.5616 66.385 24.253 73.2694 23.9047 78.694C23.145 90.5175 31.0749 94.1858 33.7911 94.5711C36.5073 94.9565 59.7708 95.5456 60.2525 94.3784C61.2419 91.9885 59.1705 86.8864 51.3666 90.0025C51.3666 90.0025 50.4513 87.4496 43.5256 88.6464C43.5256 88.6464 59.0964 71.8651 45.4117 67.6744" fill="#FFDB00"/>
+<path d="M26.5616 66.385C26.5616 66.385 24.253 73.2694 23.9047 78.694C23.145 90.5175 31.0749 94.1858 33.7911 94.5711C36.5073 94.9565 59.7708 95.5456 60.2525 94.3784C61.2419 91.9885 59.1705 86.8864 51.3666 90.0025C51.3666 90.0025 50.4513 87.4496 43.5256 88.6464C43.5256 88.6464 59.0964 71.8651 45.4117 67.6744" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.3903 28.8431C54.3903 28.8431 34.699 37.8358 32.9796 47.5029C32.9796 47.5029 40.2499 43.2603 41.9471 43.9903C44.5187 45.0945 27.3657 51.8084 24.7533 57.4108C24.7533 57.4108 31.3899 55.6731 32.9982 56.5438C32.9982 56.5438 21.6517 68.5267 24.6088 69.7828C26.3319 70.5164 28.7442 63.0095 37.4189 63.0095" fill="#FFDB00"/>
+<path d="M54.3903 28.8431C54.3903 28.8431 34.699 37.8358 32.9796 47.5029C32.9796 47.5029 40.2499 43.2603 41.9471 43.9903C44.5187 45.0945 27.3657 51.8084 24.7533 57.4108C24.7533 57.4108 31.3899 55.6731 32.9982 56.5438C32.9982 56.5438 21.6517 68.5267 24.6088 69.7828C26.3319 70.5164 28.7442 63.0095 37.4189 63.0095" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M75.8349 6.5334C75.8349 6.5334 68.0532 -1.15137 62.0057 1.9092Z" fill="#FFDB00"/>
+<path d="M75.8349 6.5334C75.8349 6.5334 68.0532 -1.15137 62.0057 1.9092" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M55.8247 13.7661C55.3763 22.7255 48.7989 30.9957 48.7989 30.9957L48.3505 23.3961C48.3505 23.3961 43.0219 34.4675 40.832 28.8762C39.0273 24.2706 42.9367 16.8378 44.9822 19.4574C46.998 22.04 33.3949 25.0005 33.3949 25.0005C33.3949 25.0005 39.8129 21.3545 41.9214 12.4248C44.0299 3.49131 53.8496 0.386279 57.7293 0.352931C63.1098 0.304762 65.3924 3.65805 65.3924 3.65805" fill="#FFDB00"/>
+<path d="M55.8247 13.7661C55.3763 22.7255 48.7989 30.9957 48.7989 30.9957L48.3505 23.3961C48.3505 23.3961 43.0219 34.4675 40.832 28.8762C39.0273 24.2706 42.9367 16.8378 44.9822 19.4574C46.998 22.04 33.3949 25.0005 33.3949 25.0005C33.3949 25.0005 39.8129 21.3545 41.9214 12.4248C44.0299 3.49131 53.8496 0.386279 57.7293 0.352931C63.1098 0.304762 65.3924 3.65805 65.3924 3.65805" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M68.2135 8.90509C68.7419 8.32342 68.5427 7.28192 67.7686 6.57882C66.9945 5.87573 65.9386 5.7773 65.4102 6.35897C64.8818 6.94064 65.081 7.98214 65.8551 8.68523C66.6292 9.38832 67.6851 9.48676 68.2135 8.90509Z" fill="#FF8158"/>
+<path d="M74.3565 6.8269C74.7542 6.38913 74.6037 5.60482 74.0205 5.0751C73.4373 4.54537 72.6421 4.47082 72.2445 4.90859C71.8468 5.34635 71.9972 6.13066 72.5804 6.66039C73.1637 7.19011 73.9588 7.26466 74.3565 6.8269Z" fill="#FF8158"/>
+<path d="M71.5577 6.91872C71.5577 6.91872 85.6833 5.24393 88.0734 5.58853C90.4635 5.93312 91.1268 10.2127 90.0596 14.396C88.9924 18.5793 88.6441 21.0099 87.6362 20.7691C86.6283 20.5282 87.21 15.9189 85.9872 15.7114C84.7644 15.5002 83.9602 22.2179 82.667 21.9955C81.3738 21.7732 79.5766 17.5677 81.3256 13.0991" fill="#FFDB00"/>
+<path d="M71.5577 6.91872C71.5577 6.91872 85.6833 5.24393 88.0734 5.58853C90.4635 5.93312 91.1268 10.2127 90.0596 14.396C88.9924 18.5793 88.6441 21.0099 87.6362 20.7691C86.6283 20.5282 87.21 15.9189 85.9872 15.7114C84.7644 15.5002 83.9602 22.2179 82.667 21.9955C81.3738 21.7732 79.5766 17.5677 81.3256 13.0991" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M90.2708 8.51199C90.2708 8.51199 91.464 5.24022 88.4625 4.83635C85.461 4.43247 87.7066 9.46795 90.2708 8.51199Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M80.6219 17.7901C80.6219 17.7901 77.0238 22.4291 76.7533 23.9964C76.7533 23.9964 75.0895 21.2841 74.7338 18.1606C74.7338 18.1606 73.6295 18.7127 73.3331 23.7C73.0366 28.6873 68.149 21.3842 70.5391 15.2112" fill="#FFDB00"/>
+<path d="M80.6219 17.7901C80.6219 17.7901 77.0238 22.4291 76.7533 23.9964C76.7533 23.9964 75.0895 21.2841 74.7338 18.1606C74.7338 18.1606 73.6295 18.7127 73.3331 23.7C73.0366 28.6873 68.149 21.3842 70.5391 15.2112" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<g opacity="0.7">
+<path d="M40.509 41.2335C40.509 41.2335 49.1208 33.3004 62.1569 30.1287" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M44.4404 12.6546C44.4404 12.6546 46.1487 3.25797 59.2478 2.59473" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M71.9918 9.10496L85.2503 7.71918" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M32.972 53.6499C32.972 53.6499 39.8496 47.6992 48.6577 47.2361" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M38.1225 65.9848C38.1225 65.9848 25.8497 68.786 27.4505 82.9291" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+</g>
+</g>
+
+<g id="wheel">
+<path d="M46.0512 116.757C63.0078 116.757 76.7538 103.011 76.7538 86.054C76.7538 69.0974 63.0078 55.3514 46.0512 55.3514C29.0946 55.3514 15.3486 69.0974 15.3486 86.054C15.3486 103.011 29.0946 116.757 46.0512 116.757Z" stroke="#B1B1B1" stroke-width="7.69075" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M46.0539 121.756C65.7713 121.756 81.7555 105.771 81.7555 86.054C81.7555 66.3366 65.7713 50.3524 46.0539 50.3524C26.3364 50.3524 10.3523 66.3366 10.3523 86.054C10.3523 105.771 26.3364 121.756 46.0539 121.756Z" stroke="#1D1D1B" stroke-width="3.29604" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M78.5854 86.054C78.5854 104.017 64.0224 118.586 46.0535 118.586C28.0846 118.586 13.5216 104.023 13.5216 86.054C13.5216 68.0851 28.0846 53.5221 46.0535 53.5221" stroke="white" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M19.3036 86.0759H72.7269" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M46.0098 59.3615V112.785" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M27.129 67.1841L64.9071 104.962" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M64.9071 67.1841L27.129 104.962" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M21.2222 76.1165L70.7946 96.0301" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M55.9663 61.2898L36.0527 110.862" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M35.5214 61.5095L56.4951 110.642" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M70.5742 75.5891L21.4413 96.5629" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+</g>
+</defs>
+</svg>
+      </div>
+      <div class="chart-wrap" id="chart-wrap">
+        <div class="chart-stage" id="chart-stage">
+          <div class="chart-plot" id="chart-plot">
+            <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
+            <canvas id="chart-confetti" class="chart-confetti-canvas" aria-hidden="true"></canvas>
+          </div>
+          <div class="chart-tools">
+            <button type="button" id="chart-fullscreen-btn" class="chart-zoom-btn" aria-label="Zvětšit graf" aria-pressed="false">
+              <svg class="chart-zoom-icon chart-zoom-icon--in" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="M20 20l-4-4"></path>
+                <path d="M11 8v6"></path>
+                <path d="M8 11h6"></path>
+              </svg>
+              <svg class="chart-zoom-icon chart-zoom-icon--out" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="M20 20l-4-4"></path>
+                <path d="M8 11h6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div id="valueKeypadOverlay" class="table-keypad-overlay" hidden>
+  <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="valueKeypadTitle">
+    <p id="valueKeypadTitle" class="table-keypad-panel__title">Hodnota</p>
+    <div id="valueKeypadDisplay" class="table-keypad-panel__display" aria-live="polite"></div>
+    <p id="valueKeypadError" class="table-keypad-panel__error" hidden></p>
+    <div class="table-math-keypad" id="valueMathKeypad" aria-label="Matematická klávesnice">
+      <div class="table-math-keypad__grid">
+        <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+        <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+        <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+        <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+        <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+        <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+        <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+        <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+        <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+        <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+        <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+        <button class="table-math-keypad__key" type="button" data-action="clear" aria-label="Smazat vše">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="table-keypad-panel__actions">
+      <button type="button" id="valueKeypadCancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button type="button" id="valueKeypadConfirm" class="table-keypad-panel__action table-keypad-panel__confirm" aria-label="Vložit hodnotu">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M5 12.5l5 5L19 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const NS = 'http://www.w3.org/2000/svg';
+  const TW = 648;
+  const TRACK_X = 36;
+  const TRACK_LEN = TW - TRACK_X * 2;
+  const WHEEL_CX = 46.0539;
+  const WHEEL_CY = 86.054;
+  const WHEEL_RADIUS = 35.7;
+  const DOG_Y = 35;
+  const START_X = TRACK_X - WHEEL_CX;
+
+  const CHART_W = 648;
+  const CHART_H = 340;
+  const ml = 78;
+  const mr = 28;
+  const mt = 28;
+  const mb = 44;
+  const pw = CHART_W - ml - mr;
+  const ph = CHART_H - mt - mb;
+  const AXIS_COLOR = '#1e6bb8';
+  const GRAPH_COLOR = '#FF8158';
+  const CHART_DIST_MAX = 20;
+  const AXIS_LENGTH_MIN = 1;
+  const AXIS_LENGTH_MAX = CHART_DIST_MAX;
+  const CHART_TIME_MIN = 1;
+  const CHART_TIME_MAX = 10;
+  const CHART_CROSS_HALF = 7;
+  const SETTINGS_STORAGE_KEY = 'rychlost-panel-settings';
+  let pendingCreateGraphRestore = null;
+
+  function isPageReload() {
+    const entry = performance.getEntriesByType('navigation')[0];
+    if (entry) return entry.type === 'reload';
+    return typeof performance.navigation !== 'undefined' && performance.navigation.type === 1;
+  }
+
+  function persistPanelSettings() {
+    const data = {
+      motion: motionMode,
+      createGraphMode,
+    };
+    if (createGraphMode) {
+      data.axisLength = readAxisLength(axisLengthInput);
+      data.chartTime = readDuration(timeInput);
+      data.userChartPoints = userChartPoints;
+      data.userChartShowFit = userChartShowFit;
+    }
+    sessionStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function restorePanelSettings() {
+    try {
+      const raw = sessionStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data.motion === 'uniform' || data.motion === 'decelerated') motionMode = data.motion;
+      if (data.createGraphMode) {
+        pendingCreateGraphRestore = {
+          axisLength: data.axisLength,
+          chartTime: data.chartTime,
+          userChartPoints: data.userChartPoints,
+          userChartShowFit: data.userChartShowFit,
+        };
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  function applyRestoredCreateGraphMode() {
+    if (!pendingCreateGraphRestore) return;
+    const restored = pendingCreateGraphRestore;
+    pendingCreateGraphRestore = null;
+
+    axisLengthInput.value = Math.min(
+      AXIS_LENGTH_MAX,
+      Math.max(AXIS_LENGTH_MIN, Math.round(Number(restored.axisLength)) || 10)
+    );
+    timeInput.value = Math.min(
+      CHART_TIME_MAX,
+      Math.max(CHART_TIME_MIN, Math.round(Number(restored.chartTime)) || 10)
+    );
+    axisLengthM = readAxisLength(axisLengthInput);
+    readDuration(timeInput);
+    updateTimeStepButtons();
+    updateAxisStepButtons();
+
+    userChartPoints = Array.isArray(restored.userChartPoints)
+      ? restored.userChartPoints
+          .filter((p) => p && Number.isFinite(p.t) && Number.isFinite(p.s))
+          .map((p) => userChartClampPoint(p.t, p.s))
+      : [];
+    userChartShowFit = !!restored.userChartShowFit && userChartPoints.length >= 2;
+
+    setCreateGraphMode(true, { restore: true });
+  }
+
+  function applyDefaultTrackSettings() {
+    axisLengthInput.value = 10;
+    timeInput.value = 10;
+    axisLengthM = readAxisLength(axisLengthInput);
+    readDuration(timeInput);
+    updateTimeStepButtons();
+    updateAxisStepButtons();
+  }
+
+  function applyMotionModeUI() {
+    document.querySelectorAll('[data-motion]').forEach((btn) => {
+      const active = btn.dataset.motion === motionMode;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  const chartEl = document.getElementById('chart');
+  const vizColumn = document.querySelector('.viz-column');
+  const chartFullscreenBtn = document.getElementById('chart-fullscreen-btn');
+  let chartFullscreenOpen = false;
+  const axisTrack = { raf: null };
+  let axisLengthM = 10;
+  let chartProgressGroup = null;
+  let chartMarksGroup = null;
+  let motionMode = 'uniform';
+  let runId = 0;
+  let createGraphMode = false;
+  let userChartPoints = [];
+  let userChartShowFit = false;
+  let userChartHold = null;
+
+  // Podíl uražené dráhy v čase p (0–1). Zpomalený pohyb končí s nulovou rychlostí.
+  function motionFraction(p) {
+    const q = Math.min(1, Math.max(0, p));
+    return motionMode === 'decelerated' ? q * (2 - q) : q;
+  }
+
+  function motionTimeForFraction(f) {
+    const q = Math.min(1, Math.max(0, f));
+    return motionMode === 'decelerated' ? 1 - Math.sqrt(1 - q) : q;
+  }
+
+  function getWheelDeg() {
+    return (TRACK_LEN / (2 * Math.PI * WHEEL_RADIUS)) * 360 * (axisLengthM / 10);
+  }
+
+  function formatElapsed(sec) {
+    const s = Math.round(sec * 100) / 100;
+    const str = s.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+    return str + ' s';
+  }
+
+  function applyTimeChange() {
+    readDuration(timeInput);
+    redrawChart();
+    resetDog();
+    updateTimeStepButtons();
+    persistPanelSettings();
+  }
+
+  function stepTime(delta) {
+    const v = parseFloat(String(timeInput.value).replace(',', '.'));
+    const current = isNaN(v) ? CHART_TIME_MAX : v;
+    timeInput.value = Math.min(CHART_TIME_MAX, Math.max(CHART_TIME_MIN, current + delta));
+    applyTimeChange();
+  }
+
+  function updateTimeStepButtons() {
+    const current = readDuration(timeInput);
+    const container = timeInput.closest('.step-input');
+    container.querySelector('.step-up').disabled = current >= CHART_TIME_MAX;
+    container.querySelector('.step-down').disabled = current <= CHART_TIME_MIN;
+  }
+
+  function readAxisLength(input) {
+    const v = parseFloat(String(input.value).replace(',', '.'));
+    const m = Math.min(AXIS_LENGTH_MAX, Math.max(AXIS_LENGTH_MIN, isNaN(v) ? 10 : Math.round(v)));
+    input.value = m;
+    return m;
+  }
+
+  function applyAxisLengthChange() {
+    axisLengthM = readAxisLength(axisLengthInput);
+    resetDog();
+    rebuildAxis();
+    redrawChart();
+    updateAxisStepButtons();
+    persistPanelSettings();
+  }
+
+  function stepAxisLength(delta) {
+    const v = parseFloat(String(axisLengthInput.value).replace(',', '.'));
+    const current = isNaN(v) ? 10 : Math.round(v);
+    axisLengthInput.value = Math.min(AXIS_LENGTH_MAX, Math.max(AXIS_LENGTH_MIN, current + delta));
+    applyAxisLengthChange();
+  }
+
+  function updateAxisStepButtons() {
+    const current = readAxisLength(axisLengthInput);
+    const container = axisLengthInput.closest('.step-input');
+    container.querySelector('.step-up').disabled = current >= AXIS_LENGTH_MAX;
+    container.querySelector('.step-down').disabled = current <= AXIS_LENGTH_MIN;
+  }
+
+  function readDuration(input) {
+    const v = parseFloat(String(input.value).replace(',', '.'));
+    const sec = Math.min(CHART_TIME_MAX, Math.max(CHART_TIME_MIN, isNaN(v) ? CHART_TIME_MIN : v));
+    input.value = sec;
+    return sec;
+  }
+
+  function chartDuration() {
+    return readDuration(document.getElementById('time'));
+  }
+
+  const AXIS_DIVISIONS = 10;
+
+  function chartTimeStep() {
+    return CHART_TIME_MAX / AXIS_DIVISIONS;
+  }
+
+  function chartTimeMarks() {
+    return Array.from({ length: AXIS_DIVISIONS + 1 }, (_, i) => (i / AXIS_DIVISIONS) * CHART_TIME_MAX);
+  }
+
+  function chartDistStep() {
+    return CHART_DIST_MAX / AXIS_DIVISIONS;
+  }
+
+  function chartDistDivisions() {
+    return AXIS_DIVISIONS;
+  }
+
+  function tToX(t) {
+    return ml + (t / CHART_TIME_MAX) * pw;
+  }
+
+  function sToY(s) {
+    return mt + ph - (s / CHART_DIST_MAX) * ph;
+  }
+
+  function formatTick(value, unit) {
+    const s = Math.round(value * 100) / 100;
+    const str = s.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+    return unit ? `${str} ${unit}` : str;
+  }
+
+  function buildChartDefs(svg) {
+    const defs = document.createElementNS(NS, 'defs');
+    defs.innerHTML = '<marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1e6bb8" /></marker>';
+    svg.appendChild(defs);
+  }
+
+  function drawChartGrid(svg) {
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'grid');
+    g.setAttribute('pointer-events', 'none');
+
+    chartTimeMarks().forEach((t) => {
+      const x = tToX(t);
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', x);
+      line.setAttribute('x2', x);
+      line.setAttribute('y1', mt);
+      line.setAttribute('y2', mt + ph);
+      line.setAttribute('stroke', 'var(--grid)');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '3 5');
+      g.appendChild(line);
+    });
+
+    for (let i = 0; i <= AXIS_DIVISIONS; i++) {
+      const dist = (i / AXIS_DIVISIONS) * CHART_DIST_MAX;
+      const y = sToY(dist);
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', ml);
+      line.setAttribute('x2', ml + pw);
+      line.setAttribute('y1', y);
+      line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'var(--grid)');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '3 5');
+      g.appendChild(line);
+    }
+
+    svg.appendChild(g);
+  }
+
+  function drawChartAxes(svg) {
+    const ax = document.createElementNS(NS, 'g');
+    ax.setAttribute('pointer-events', 'none');
+
+    const yAxis = document.createElementNS(NS, 'line');
+    yAxis.setAttribute('x1', ml);
+    yAxis.setAttribute('y1', mt + ph);
+    yAxis.setAttribute('x2', ml);
+    yAxis.setAttribute('y2', mt - 4);
+    yAxis.setAttribute('stroke', AXIS_COLOR);
+    yAxis.setAttribute('stroke-width', '2');
+    yAxis.setAttribute('marker-end', 'url(#arrowBlue)');
+    ax.appendChild(yAxis);
+
+    const xAxis = document.createElementNS(NS, 'line');
+    xAxis.setAttribute('x1', ml);
+    xAxis.setAttribute('y1', mt + ph);
+    xAxis.setAttribute('x2', ml + pw + 6);
+    xAxis.setAttribute('y2', mt + ph);
+    xAxis.setAttribute('stroke', AXIS_COLOR);
+    xAxis.setAttribute('stroke-width', '2');
+    xAxis.setAttribute('marker-end', 'url(#arrowBlue)');
+    ax.appendChild(xAxis);
+
+    const xl = document.createElementNS(NS, 'text');
+    xl.setAttribute('x', ml + pw / 2);
+    xl.setAttribute('y', CHART_H - 6);
+    xl.setAttribute('text-anchor', 'middle');
+    xl.setAttribute('fill', AXIS_COLOR);
+    xl.setAttribute('font-size', '14');
+    xl.textContent = 'Čas';
+    ax.appendChild(xl);
+
+    const yAxisLabelCy = (mt - 4 + mt + ph) / 2;
+    const yl = document.createElementNS(NS, 'text');
+    yl.setAttribute('x', '16');
+    yl.setAttribute('y', String(yAxisLabelCy));
+    yl.setAttribute('text-anchor', 'middle');
+    yl.setAttribute('dominant-baseline', 'middle');
+    yl.setAttribute('fill', AXIS_COLOR);
+    yl.setAttribute('font-size', '14');
+    yl.setAttribute('transform', `rotate(-90 16 ${yAxisLabelCy})`);
+    yl.textContent = 'Vzdálenost od startu';
+    ax.appendChild(yl);
+
+    chartTimeMarks().forEach((t) => {
+      const x = tToX(t);
+      const tick = document.createElementNS(NS, 'line');
+      tick.setAttribute('x1', x);
+      tick.setAttribute('x2', x);
+      tick.setAttribute('y1', mt + ph);
+      tick.setAttribute('y2', mt + ph + 6);
+      tick.setAttribute('stroke', AXIS_COLOR);
+      ax.appendChild(tick);
+
+      const lab = document.createElementNS(NS, 'text');
+      lab.setAttribute('x', x);
+      lab.setAttribute('y', mt + ph + 22);
+      lab.setAttribute('text-anchor', 'middle');
+      lab.setAttribute('font-size', '11');
+      lab.setAttribute('fill', '#444');
+      lab.textContent = formatTick(t, 's');
+      ax.appendChild(lab);
+    });
+
+    for (let i = 0; i <= AXIS_DIVISIONS; i++) {
+      const dist = (i / AXIS_DIVISIONS) * CHART_DIST_MAX;
+      const y = sToY(dist);
+      const tick = document.createElementNS(NS, 'line');
+      tick.setAttribute('x1', ml - 6);
+      tick.setAttribute('x2', ml);
+      tick.setAttribute('y1', y);
+      tick.setAttribute('y2', y);
+      tick.setAttribute('stroke', AXIS_COLOR);
+      ax.appendChild(tick);
+
+      const lab = document.createElementNS(NS, 'text');
+      lab.setAttribute('x', ml - 10);
+      lab.setAttribute('y', y + 4);
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '11');
+      lab.setAttribute('fill', '#444');
+      lab.textContent = formatTick(dist, 'm');
+      ax.appendChild(lab);
+    }
+
+    svg.appendChild(ax);
+  }
+
+  function updateChartProgress(elapsedSec, durationSec) {
+    if (createGraphMode || !chartProgressGroup) return;
+    chartProgressGroup.innerHTML = '';
+    if (!(elapsedSec > 0) || !(durationSec > 0)) return;
+
+    const steps = 60;
+    const points = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * elapsedSec;
+      const s = axisLengthM * motionFraction(t / durationSec);
+      points.push(`${tToX(t)},${sToY(s)}`);
+    }
+
+    const line = document.createElementNS(NS, 'polyline');
+    line.setAttribute('points', points.join(' '));
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', GRAPH_COLOR);
+    line.setAttribute('stroke-width', '3');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('stroke-linejoin', 'round');
+    chartProgressGroup.appendChild(line);
+
+    const dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('cx', tToX(elapsedSec));
+    dot.setAttribute('cy', sToY(axisLengthM * motionFraction(elapsedSec / durationSec)));
+    dot.setAttribute('r', '5');
+    dot.setAttribute('fill', GRAPH_COLOR);
+    chartProgressGroup.appendChild(dot);
+  }
+
+  function addChartMark(t, s) {
+    if (createGraphMode || !chartMarksGroup) return;
+    const cx = tToX(t);
+    const cy = sToY(s);
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'chart-cross-marker');
+    g.setAttribute('pointer-events', 'none');
+
+    const addLine = (x1, y1, x2, y2) => {
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', cx + x1);
+      line.setAttribute('y1', cy + y1);
+      line.setAttribute('x2', cx + x2);
+      line.setAttribute('y2', cy + y2);
+      line.setAttribute('stroke', GRAPH_COLOR);
+      line.setAttribute('stroke-width', '2');
+      line.setAttribute('stroke-linecap', 'round');
+      g.appendChild(line);
+    };
+
+    addLine(-CHART_CROSS_HALF, 0, CHART_CROSS_HALF, 0);
+    addLine(0, -CHART_CROSS_HALF, 0, CHART_CROSS_HALF);
+    chartMarksGroup.appendChild(g);
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function userChartClampPoint(t, s) {
+    return {
+      t: Math.min(CHART_TIME_MAX, Math.max(0, t)),
+      s: Math.min(CHART_DIST_MAX, Math.max(0, s)),
+    };
+  }
+
+  function userChartWouldReject(t, s, ignoreIndex) {
+    return userChartPoints.some((p, i) => {
+      if (ignoreIndex != null && i === ignoreIndex) return false;
+      const dx = (p.t - t) / CHART_TIME_MAX;
+      const dy = (p.s - s) / CHART_DIST_MAX;
+      return dx * dx + dy * dy < 0.02 * 0.02;
+    });
+  }
+
+  function userChartSvgPointFromEvent(ev) {
+    const pt = chartEl.createSVGPoint();
+    pt.x = ev.clientX;
+    pt.y = ev.clientY;
+    const ctm = chartEl.getScreenCTM();
+    if (!ctm) return null;
+    return pt.matrixTransform(ctm.inverse());
+  }
+
+  function userChartPlotCoordsFromEvent(ev) {
+    const svgPt = userChartSvgPointFromEvent(ev);
+    if (!svgPt) return null;
+    const px = Math.min(ml + pw, Math.max(ml, svgPt.x));
+    const py = Math.min(mt + ph, Math.max(mt, svgPt.y));
+    const t = (px - ml) / pw * CHART_TIME_MAX;
+    const s = (mt + ph - py) / ph * CHART_DIST_MAX;
+    return userChartClampPoint(t, s);
+  }
+
+  function userChartCreateCross(cx, cy, index) {
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'chart-cross-marker');
+    g.setAttribute('transform', `translate(${cx},${cy})`);
+    if (index != null) g.setAttribute('data-index', String(index));
+
+    const hit = document.createElementNS(NS, 'circle');
+    hit.setAttribute('r', '14');
+    hit.setAttribute('fill', 'transparent');
+    hit.setAttribute('pointer-events', 'all');
+    g.appendChild(hit);
+
+    const addLine = (x1, y1, x2, y2) => {
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', x1);
+      line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2);
+      line.setAttribute('y2', y2);
+      line.setAttribute('stroke', GRAPH_COLOR);
+      line.setAttribute('stroke-width', '2');
+      line.setAttribute('stroke-linecap', 'round');
+      line.setAttribute('pointer-events', 'none');
+      g.appendChild(line);
+    };
+    addLine(-CHART_CROSS_HALF, 0, CHART_CROSS_HALF, 0);
+    addLine(0, -CHART_CROSS_HALF, 0, CHART_CROSS_HALF);
+    return g;
+  }
+
+  function userChartPointsSortedForCurve(pts) {
+    const copy = pts.map((p) => ({ t: p.t, s: p.s }));
+    copy.sort((a, b) => a.t - b.t || a.s - b.s);
+    const deduped = [];
+    copy.forEach((p) => {
+      const last = deduped[deduped.length - 1];
+      if (last && Math.abs(last.t - p.t) < 1e-5) {
+        last.s = (last.s + p.s) / 2;
+        return;
+      }
+      deduped.push(p);
+    });
+    return deduped;
+  }
+
+  function userChartBuildNaturalCubicSpline(xs, ys) {
+    const n = xs.length;
+    if (n < 2) return null;
+    if (n === 2) {
+      const [x0, x1] = xs;
+      const [y0, y1] = ys;
+      const slope = x1 === x0 ? 0 : (y1 - y0) / (x1 - x0);
+      return { eval: (x) => y0 + slope * (x - x0) };
+    }
+    const h = xs.slice(1).map((_, i) => xs[i + 1] - xs[i]);
+    if (h.some((v) => v <= 0)) return null;
+    const alpha = new Array(n).fill(0);
+    for (let i = 1; i < n - 1; i++) {
+      alpha[i] = (3 / h[i]) * (ys[i + 1] - ys[i]) - (3 / h[i - 1]) * (ys[i] - ys[i - 1]);
+    }
+    const l = new Array(n).fill(1);
+    const mu = new Array(n).fill(0);
+    const z = new Array(n).fill(0);
+    for (let i = 1; i < n - 1; i++) {
+      l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1];
+      mu[i] = h[i] / l[i];
+      z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
+    }
+    const c = new Array(n).fill(0);
+    const b = new Array(n - 1);
+    const d = new Array(n - 1);
+    for (let j = n - 2; j >= 0; j--) {
+      c[j] = z[j] - mu[j] * c[j + 1];
+      b[j] = (ys[j + 1] - ys[j]) / h[j] - (h[j] * (c[j + 1] + 2 * c[j])) / 3;
+      d[j] = (c[j + 1] - c[j]) / (3 * h[j]);
+    }
+    return {
+      xs, ys, b, c, d,
+      eval(x) {
+        if (x <= xs[0]) {
+          const dx = x - xs[0];
+          return ys[0] + b[0] * dx + c[0] * dx * dx + d[0] * dx * dx * dx;
+        }
+        if (x >= xs[n - 1]) {
+          const ii = n - 2;
+          const dx = x - xs[ii];
+          return ys[ii] + b[ii] * dx + c[ii] * dx * dx + d[ii] * dx * dx * dx;
+        }
+        let k = 0;
+        while (k < n - 2 && x > xs[k + 1]) k++;
+        const dx = x - xs[k];
+        return ys[k] + b[k] * dx + c[k] * dx * dx + d[k] * dx * dx * dx;
+      },
+    };
+  }
+
+  function userChartFittedCurvePathData(pts) {
+    const sorted = userChartPointsSortedForCurve(pts);
+    if (sorted.length < 2) return '';
+    const xs = sorted.map((p) => p.t);
+    const ys = sorted.map((p) => p.s);
+    const spline = userChartBuildNaturalCubicSpline(xs, ys);
+    if (!spline) return '';
+    const t0 = xs[0];
+    const t1 = xs[xs.length - 1];
+    const steps = Math.max(48, Math.ceil((t1 - t0) * 16));
+    const parts = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = t0 + (i / steps) * (t1 - t0);
+      const s = Math.min(CHART_DIST_MAX, Math.max(0, spline.eval(t)));
+      parts.push(`${tToX(t).toFixed(2)},${sToY(s).toFixed(2)}`);
+    }
+    return `M ${parts.join(' L ')}`;
+  }
+
+  function userChartDrawFittedCurve(parent) {
+    const d = userChartFittedCurvePathData(userChartPoints);
+    if (!d) return;
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('class', 'user-fitted-curve');
+    path.setAttribute('d', d);
+    parent.appendChild(path);
+  }
+
+  function userChartDrawHandles(parent) {
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'user-chart-handles');
+    userChartPoints.forEach((p, i) => {
+      if (userChartHold?.mode === 'existing' && userChartHold.index === i) return;
+      g.appendChild(userChartCreateCross(tToX(p.t), sToY(p.s), i));
+    });
+    if (userChartHold) {
+      const preview = userChartCreateCross(tToX(userChartHold.t), sToY(userChartHold.s), null);
+      preview.setAttribute('opacity', '0.75');
+      g.appendChild(preview);
+    }
+    parent.appendChild(g);
+  }
+
+  function clearGraphVerifyMessage() {
+    const el = document.getElementById('graph-verify-message');
+    if (!el) return;
+    el.hidden = true;
+    el.textContent = '';
+    el.classList.remove('is-ok', 'is-error');
+  }
+
+  let chartConfettiRaf = null;
+
+  function launchChartConfetti() {
+    const canvas = document.getElementById('chart-confetti');
+    const plot = document.getElementById('chart-plot');
+    if (!canvas || !plot) return;
+
+    if (chartConfettiRaf) {
+      cancelAnimationFrame(chartConfettiRaf);
+      chartConfettiRaf = null;
+    }
+
+    const w = plot.clientWidth;
+    const h = plot.clientHeight;
+    if (w <= 0 || h <= 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const colors = ['#1f7a3f', '#2ecc71', '#27ae60', '#58d68d', '#abebc6', '#145a32'];
+    const cx = w / 2;
+    const cy = h / 2;
+    const particles = Array.from({ length: 110 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 6;
+      return {
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2.5,
+        w: 4 + Math.random() * 6,
+        h: 3 + Math.random() * 5,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.32,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1,
+        decay: 0.011 + Math.random() * 0.012,
+      };
+    });
+
+    const start = performance.now();
+    const duration = 2500;
+
+    function frame(now) {
+      const elapsed = now - start;
+      ctx.clearRect(0, 0, w, h);
+      let alive = false;
+      for (const p of particles) {
+        if (p.life <= 0) continue;
+        alive = true;
+        p.vy += 0.13;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        p.life -= p.decay;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (alive && elapsed < duration) {
+        chartConfettiRaf = requestAnimationFrame(frame);
+      } else {
+        ctx.clearRect(0, 0, w, h);
+        chartConfettiRaf = null;
+      }
+    }
+
+    chartConfettiRaf = requestAnimationFrame(frame);
+  }
+
+  function showGraphVerifyMessage(text, ok) {
+    const el = document.getElementById('graph-verify-message');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = text;
+    el.classList.toggle('is-ok', ok);
+    el.classList.toggle('is-error', !ok);
+    if (ok) launchChartConfetti();
+  }
+
+  function expectedDistanceAt(t, duration) {
+    return axisLengthM * motionFraction(t / duration);
+  }
+
+  function userChartLinearDistanceAt(t) {
+    const sorted = userChartPointsSortedForCurve(userChartPoints);
+    if (sorted.length === 0) return null;
+    if (t <= sorted[0].t) return sorted[0].s;
+    if (t >= sorted[sorted.length - 1].t) return sorted[sorted.length - 1].s;
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const a = sorted[i];
+      const b = sorted[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const span = b.t - a.t;
+        const u = span === 0 ? 0 : (t - a.t) / span;
+        return a.s + u * (b.s - a.s);
+      }
+    }
+    return null;
+  }
+
+  function userChartDistanceAt(t) {
+    if (userChartShowFit && userChartPoints.length >= 2) {
+      const sorted = userChartPointsSortedForCurve(userChartPoints);
+      const spline = userChartBuildNaturalCubicSpline(
+        sorted.map((p) => p.t),
+        sorted.map((p) => p.s)
+      );
+      if (spline) {
+        return Math.min(CHART_DIST_MAX, Math.max(0, spline.eval(t)));
+      }
+    }
+    return userChartLinearDistanceAt(t);
+  }
+
+  function verifyUserChart() {
+    if (!createGraphMode || !userChartShowFit || userChartPoints.length < 2) return;
+    clearGraphVerifyMessage();
+
+    const duration = chartDuration();
+    const sorted = userChartPointsSortedForCurve(userChartPoints);
+    const tolerance = Math.max(0.5, axisLengthM * 0.06);
+    const coversStart = sorted[0].t <= duration * 0.08;
+    const coversEnd = sorted[sorted.length - 1].t >= duration * 0.92;
+
+    if (!coversStart || !coversEnd) {
+      showGraphVerifyMessage('Graf má pokrývat celý čas jízdy od startu do cíle.', false);
+      return;
+    }
+
+    let maxErr = 0;
+    const samples = 30;
+    for (let i = 0; i <= samples; i++) {
+      const t = (i / samples) * duration;
+      const actual = userChartDistanceAt(t);
+      if (actual == null) {
+        showGraphVerifyMessage('Graf se nepodařilo vyhodnotit.', false);
+        return;
+      }
+      maxErr = Math.max(maxErr, Math.abs(actual - expectedDistanceAt(t, duration)));
+    }
+
+    if (maxErr <= tolerance) {
+      showGraphVerifyMessage('Graf přibližně odpovídá pohybu psa.', true);
+    } else {
+      showGraphVerifyMessage('Graf zatím neodpovídá pohybu psa. Zkus body upravit.', false);
+    }
+  }
+
+  function updateFitCurveControls() {
+    const fitBtn = document.getElementById('fit-curve-btn');
+    const verifyBtn = document.getElementById('verify-graph-btn');
+    const clearBtn = document.getElementById('clear-chart-points-btn');
+    const canFit = userChartPoints.length >= 2;
+    const hasPoints = userChartPoints.length > 0;
+    if (!fitBtn) return;
+    fitBtn.disabled = !canFit;
+    if (!canFit) userChartShowFit = false;
+    fitBtn.classList.toggle('is-active', userChartShowFit && canFit);
+    fitBtn.setAttribute('aria-pressed', String(userChartShowFit && canFit));
+    if (verifyBtn) verifyBtn.disabled = !(userChartShowFit && canFit);
+    if (clearBtn) clearBtn.disabled = !hasPoints;
+  }
+
+  function clearUserChartPoints() {
+    if (!createGraphMode || userChartPoints.length === 0) return;
+    userChartPoints = [];
+    userChartShowFit = false;
+    userChartHold = null;
+    userChartEndHoldListeners();
+    chartEl.classList.remove('is-holding-point');
+    clearGraphVerifyMessage();
+    updateFitCurveControls();
+    redrawChart();
+    persistPanelSettings();
+  }
+
+  function userChartEndHoldListeners() {
+    document.removeEventListener('pointermove', onUserChartHoldMove);
+    document.removeEventListener('pointerup', onUserChartHoldUp);
+    document.removeEventListener('pointercancel', onUserChartHoldUp);
+  }
+
+  function userChartCommitHold() {
+    if (!userChartHold) return;
+    const hold = userChartHold;
+    const coords = userChartClampPoint(hold.t, hold.s);
+    userChartHold = null;
+    chartEl.classList.remove('is-holding-point');
+    if (hold.mode === 'new') {
+      if (!userChartWouldReject(coords.t, coords.s)) {
+        userChartPoints.push({ t: coords.t, s: coords.s });
+      }
+    } else if (hold.mode === 'existing' && hold.index != null) {
+      if (!userChartWouldReject(coords.t, coords.s, hold.index)) {
+        userChartPoints[hold.index] = { t: coords.t, s: coords.s };
+      }
+    }
+    userChartPoints.sort((a, b) => a.t - b.t);
+    updateFitCurveControls();
+    clearGraphVerifyMessage();
+    redrawChart();
+  }
+
+  function onUserChartHoldMove(ev) {
+    if (!userChartHold) return;
+    if (typeof userChartHold.pointerId === 'number' && ev.pointerId !== userChartHold.pointerId) return;
+    const coords = userChartPlotCoordsFromEvent(ev);
+    if (!coords) return;
+    userChartHold.t = coords.t;
+    userChartHold.s = coords.s;
+    redrawChart();
+  }
+
+  function onUserChartHoldUp(ev) {
+    if (!userChartHold) return;
+    if (typeof userChartHold.pointerId === 'number' && ev.pointerId !== userChartHold.pointerId) return;
+    const coords = userChartPlotCoordsFromEvent(ev);
+    if (coords) {
+      userChartHold.t = coords.t;
+      userChartHold.s = coords.s;
+    }
+    if (chartEl.releasePointerCapture && typeof userChartHold.pointerId === 'number') {
+      try { chartEl.releasePointerCapture(userChartHold.pointerId); } catch (_) { /* ignore */ }
+    }
+    userChartEndHoldListeners();
+    userChartCommitHold();
+  }
+
+  function userChartMarkerFromTarget(target) {
+    let el = target;
+    while (el && el !== chartEl) {
+      if (el.classList?.contains('chart-cross-marker') && el.hasAttribute('data-index')) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  function onUserChartPointerDown(ev) {
+    if (!createGraphMode) return;
+    if (ev.button != null && ev.button !== 0) return;
+    const marker = userChartMarkerFromTarget(ev.target);
+    let hold;
+    if (marker) {
+      const idx = parseInt(marker.getAttribute('data-index'), 10);
+      if (!Number.isFinite(idx) || idx < 0 || idx >= userChartPoints.length) return;
+      hold = { mode: 'existing', index: idx, t: userChartPoints[idx].t, s: userChartPoints[idx].s };
+    } else {
+      const coords = userChartPlotCoordsFromEvent(ev);
+      if (!coords || userChartWouldReject(coords.t, coords.s)) return;
+      hold = { mode: 'new', index: null, t: coords.t, s: coords.s };
+    }
+    userChartHold = hold;
+    chartEl.classList.add('is-holding-point');
+    if (typeof ev.pointerId === 'number' && chartEl.setPointerCapture) {
+      try {
+        chartEl.setPointerCapture(ev.pointerId);
+        userChartHold.pointerId = ev.pointerId;
+      } catch (_) { /* ignore */ }
+    }
+    document.addEventListener('pointermove', onUserChartHoldMove);
+    document.addEventListener('pointerup', onUserChartHoldUp);
+    document.addEventListener('pointercancel', onUserChartHoldUp);
+    redrawChart();
+  }
+
+  function onUserChartDblClick(ev) {
+    if (!createGraphMode) return;
+    const marker = userChartMarkerFromTarget(ev.target);
+    if (!marker) return;
+    ev.preventDefault();
+    const idx = parseInt(marker.getAttribute('data-index'), 10);
+    if (!Number.isFinite(idx) || idx < 0 || idx >= userChartPoints.length) return;
+    userChartPoints.splice(idx, 1);
+    if (userChartPoints.length < 2) userChartShowFit = false;
+    clearGraphVerifyMessage();
+    updateFitCurveControls();
+    redrawChart();
+  }
+
+  function createGraphUniformMeasurePairs() {
+    const pairs = [];
+    for (const axisLength of [10, 20]) {
+      for (const duration of [5, 10]) {
+        pairs.push({ axisLength, duration });
+      }
+    }
+    return pairs;
+  }
+
+  function applyRandomTrackSettings() {
+    const pairs = createGraphUniformMeasurePairs();
+    const { axisLength, duration } = pairs[randomInt(0, pairs.length - 1)];
+    axisLengthInput.value = axisLength;
+    timeInput.value = duration;
+    axisLengthM = readAxisLength(axisLengthInput);
+    readDuration(timeInput);
+    updateTimeStepButtons();
+    updateAxisStepButtons();
+  }
+
+  function setCreateGraphMode(active, options = {}) {
+    const { restore = false } = options;
+    createGraphMode = active;
+    document.querySelector('.app').classList.toggle('is-create-graph', active);
+    const createBtn = document.getElementById('create-graph-btn');
+    createBtn.classList.toggle('is-active', active);
+    createBtn.setAttribute('aria-pressed', String(active));
+    createBtn.textContent = active ? 'Ukončit graf' : 'Vytvořit graf';
+    document.getElementById('graph-tools-row').hidden = !active;
+    chartEl.classList.toggle('is-create-graph', active);
+
+    userChartHold = null;
+    userChartEndHoldListeners();
+    clearGraphVerifyMessage();
+
+    if (!restore) {
+      userChartPoints = [];
+      userChartShowFit = false;
+      if (active) {
+        applyRandomTrackSettings();
+      } else {
+        applyDefaultTrackSettings();
+      }
+    }
+
+    updateFitCurveControls();
+    resetDog();
+    rebuildAxis();
+    redrawChart();
+    persistPanelSettings();
+  }
+
+  function setChartFullscreen(open) {
+    chartFullscreenOpen = open;
+    vizColumn.classList.toggle('is-chart-expanded', open);
+    chartFullscreenBtn.setAttribute('aria-pressed', String(open));
+    chartFullscreenBtn.setAttribute('aria-label', open ? 'Zavřít zvětšený graf' : 'Zvětšit graf');
+  }
+
+  function redrawChart() {
+    chartEl.innerHTML = '';
+    buildChartDefs(chartEl);
+    drawChartGrid(chartEl);
+    drawChartAxes(chartEl);
+
+    if (createGraphMode) {
+      chartMarksGroup = null;
+      const body = document.createElementNS(NS, 'g');
+      if (userChartShowFit && userChartPoints.length >= 2) userChartDrawFittedCurve(body);
+      userChartDrawHandles(body);
+      chartEl.appendChild(body);
+      return;
+    }
+
+    chartProgressGroup = document.createElementNS(NS, 'g');
+    chartProgressGroup.setAttribute('class', 'chart-progress');
+    chartProgressGroup.setAttribute('pointer-events', 'none');
+    chartEl.appendChild(chartProgressGroup);
+    chartMarksGroup = document.createElementNS(NS, 'g');
+    chartMarksGroup.setAttribute('class', 'chart-marks');
+    chartMarksGroup.setAttribute('pointer-events', 'none');
+    chartEl.appendChild(chartMarksGroup);
+    updateChartProgress(0, 1);
+  }
+
+  function resetAxisTimes() {
+    if (axisTrack.raf) {
+      cancelAnimationFrame(axisTrack.raf);
+      axisTrack.raf = null;
+    }
+    document.getElementById('axis').querySelectorAll('.axis-time').forEach((el) => {
+      el.textContent = '';
+      el.classList.remove('is-visible');
+    });
+    if (createGraphMode) {
+      document.getElementById('axis').querySelectorAll('.axis-label').forEach((el) => {
+        el.classList.remove('is-visible');
+      });
+    }
+    if (chartMarksGroup) chartMarksGroup.innerHTML = '';
+    updateChartProgress(0, 1);
+  }
+
+  function showAxisTime(el, elapsed) {
+    el.textContent = formatElapsed(elapsed);
+    el.classList.add('is-visible');
+    if (createGraphMode) {
+      const label = document.getElementById('axis').querySelector(
+        `.axis-label[data-meter="${el.dataset.meter}"]`
+      );
+      if (label) label.classList.add('is-visible');
+    } else {
+      addChartMark(elapsed, Number(el.dataset.meter));
+    }
+  }
+
+  function axisMarks() {
+    return Array.from({ length: AXIS_DIVISIONS + 1 }, (_, i) => (i / AXIS_DIVISIONS) * axisLengthM);
+  }
+
+  function buildAxis(container) {
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('class', 'axis-line');
+    line.setAttribute('x1', '0');
+    line.setAttribute('y1', '0');
+    line.setAttribute('x2', TRACK_LEN);
+    line.setAttribute('y2', '0');
+    container.appendChild(line);
+
+    axisMarks().forEach((m, i) => {
+      const x = (m / axisLengthM) * TRACK_LEN;
+
+      if (i > 0) {
+        const tick = document.createElementNS(NS, 'line');
+        tick.setAttribute('class', 'axis-tick');
+        tick.setAttribute('x1', x);
+        tick.setAttribute('y1', -5);
+        tick.setAttribute('x2', x);
+        tick.setAttribute('y2', 5);
+        container.appendChild(tick);
+      }
+
+      const label = document.createElementNS(NS, 'text');
+      label.setAttribute('class', 'axis-label');
+      label.setAttribute('data-meter', m);
+      label.setAttribute('x', x);
+      label.setAttribute('y', '20');
+      if (i === 0) label.setAttribute('text-anchor', 'start');
+      else if (i === AXIS_DIVISIONS) label.setAttribute('text-anchor', 'end');
+      else label.setAttribute('text-anchor', 'middle');
+      label.textContent = formatTick(m, 'm');
+      container.appendChild(label);
+
+      const timeLabel = document.createElementNS(NS, 'text');
+      timeLabel.setAttribute('class', 'axis-time');
+      timeLabel.setAttribute('data-meter', m);
+      timeLabel.setAttribute('x', x);
+      timeLabel.setAttribute('y', '36');
+      if (i === 0) timeLabel.setAttribute('text-anchor', 'start');
+      else if (i === AXIS_DIVISIONS) timeLabel.setAttribute('text-anchor', 'end');
+      else timeLabel.setAttribute('text-anchor', 'middle');
+      container.appendChild(timeLabel);
+    });
+  }
+
+  function rebuildAxis() {
+    const axis = document.getElementById('axis');
+    axis.innerHTML = '';
+    buildAxis(axis);
+  }
+
+  function setDogProgress(f) {
+    const mover = document.getElementById('dog');
+    mover.setAttribute('transform', `translate(${START_X + f * TRACK_LEN}, ${DOG_Y})`);
+    mover.querySelector('.wheel-spinner').setAttribute(
+      'transform',
+      `rotate(${f * getWheelDeg()} ${WHEEL_CX} ${WHEEL_CY})`
+    );
+  }
+
+  function resetDog() {
+    runId++;
+    resetAxisTimes();
+    setDogProgress(0);
+  }
+
+  function runDog(timeInput) {
+    const myRun = ++runId;
+    const duration = readDuration(timeInput);
+    const axis = document.getElementById('axis');
+    const thresholds = [...axis.querySelectorAll('.axis-time')].map((el) => ({
+      el,
+      at: duration * motionTimeForFraction(Number(el.dataset.meter) / axisLengthM)
+    }));
+
+    if (thresholds[0]) showAxisTime(thresholds[0].el, 0);
+
+    return new Promise((resolve) => {
+      const start = performance.now();
+      function frame(now) {
+        if (myRun !== runId) {
+          resolve();
+          return;
+        }
+
+        const elapsed = Math.min((now - start) / 1000, duration);
+        setDogProgress(motionFraction(elapsed / duration));
+        updateChartProgress(elapsed, duration);
+        thresholds.forEach(({ el, at }) => {
+          if (elapsed >= at - 0.02 && !el.classList.contains('is-visible')) {
+            showAxisTime(el, at);
+          }
+        });
+
+        if (elapsed < duration) {
+          axisTrack.raf = requestAnimationFrame(frame);
+        } else {
+          axisTrack.raf = null;
+          resolve();
+        }
+      }
+      axisTrack.raf = requestAnimationFrame(frame);
+    });
+  }
+
+  const timeInput = document.getElementById('time');
+  const axisLengthInput = document.getElementById('axis-length');
+
+  const valueKeypadOverlay = document.getElementById('valueKeypadOverlay');
+  const valueKeypadTitle = document.getElementById('valueKeypadTitle');
+  const valueKeypadDisplay = document.getElementById('valueKeypadDisplay');
+  const valueKeypadError = document.getElementById('valueKeypadError');
+  const valueKeypadConfirm = document.getElementById('valueKeypadConfirm');
+  const valueKeypadCancel = document.getElementById('valueKeypadCancel');
+  const valueMathKeypad = document.getElementById('valueMathKeypad');
+  let valueKeypadTarget = null;
+  let valueKeypadDraft = '';
+
+  function prefersAppNumericKeypad() {
+    try {
+      if (window.matchMedia('(pointer: coarse)').matches) return true;
+      if (navigator.maxTouchPoints > 0 && window.matchMedia('(hover: none)').matches) return true;
+    } catch (_err) { /* ignore */ }
+    return false;
+  }
+
+  const useAppNumericKeypad = prefersAppNumericKeypad();
+
+  function applyNumericKeypadMode(input) {
+    if (useAppNumericKeypad) {
+      input.readOnly = true;
+      input.setAttribute('inputmode', 'none');
+    }
+  }
+
+  function keypadUnitFor(input) {
+    return input === axisLengthInput ? ' m' : ' s';
+  }
+
+  function keypadTitleFor(input) {
+    return input === axisLengthInput ? 'Dráha' : 'Čas';
+  }
+
+  function clearValueKeypadError() {
+    valueKeypadError.hidden = true;
+    valueKeypadError.textContent = '';
+    valueKeypadDisplay.classList.remove('is-invalid');
+  }
+
+  function showValueKeypadError(message) {
+    valueKeypadError.hidden = false;
+    valueKeypadError.textContent = message;
+    valueKeypadDisplay.classList.add('is-invalid');
+  }
+
+  function validateValueKeypadDraft(requireValue) {
+    const raw = valueKeypadDraft.trim();
+    if (raw === '') return requireValue ? { ok: false, message: 'Zadej hodnotu.' } : { ok: true };
+    const v = parseFloat(raw.replace(',', '.'));
+    if (!Number.isFinite(v)) return { ok: false, message: 'Zadej platné číslo.' };
+    if (valueKeypadTarget === axisLengthInput) {
+      const m = Math.round(v);
+      if (m < AXIS_LENGTH_MIN || m > AXIS_LENGTH_MAX) {
+        return { ok: false, message: `Hodnota musí být ${AXIS_LENGTH_MIN}–${AXIS_LENGTH_MAX} m.` };
+      }
+    } else if (v < CHART_TIME_MIN || v > CHART_TIME_MAX) {
+      return { ok: false, message: `Hodnota musí být ${CHART_TIME_MIN}–${CHART_TIME_MAX} s.` };
+    }
+    return { ok: true };
+  }
+
+  function updateValueKeypadDisplay() {
+    const suffix = valueKeypadDraft.trim() ? keypadUnitFor(valueKeypadTarget) : '';
+    valueKeypadDisplay.textContent = `${valueKeypadDraft}${suffix}`;
+    const result = validateValueKeypadDraft(false);
+    if (!result.ok) showValueKeypadError(result.message);
+    else clearValueKeypadError();
+  }
+
+  function showValueKeypad(input) {
+    valueKeypadTarget = input;
+    valueKeypadDraft = '';
+    clearValueKeypadError();
+    valueKeypadTitle.textContent = keypadTitleFor(input);
+    updateValueKeypadDisplay();
+    valueKeypadOverlay.hidden = false;
+    input.blur();
+  }
+
+  function hideValueKeypad() {
+    valueKeypadTarget = null;
+    valueKeypadDraft = '';
+    clearValueKeypadError();
+    valueKeypadOverlay.hidden = true;
+    valueKeypadDisplay.textContent = '';
+  }
+
+  function insertIntoValueKeypadDraft(value) {
+    if (value === ',' || value === '.') {
+      if (valueKeypadDraft.includes(',') || valueKeypadDraft.includes('.')) return;
+    }
+    if (valueKeypadDraft.length >= 8) return;
+    valueKeypadDraft += value;
+    updateValueKeypadDisplay();
+  }
+
+  function clearValueKeypadDraft() {
+    valueKeypadDraft = '';
+    updateValueKeypadDisplay();
+  }
+
+  function confirmValueKeypad() {
+    if (!valueKeypadTarget) return;
+    const result = validateValueKeypadDraft(true);
+    if (!result.ok) {
+      showValueKeypadError(result.message);
+      return;
+    }
+    const raw = valueKeypadDraft.trim();
+    if (valueKeypadTarget === axisLengthInput) {
+      const m = Math.round(parseFloat(raw.replace(',', '.')));
+      valueKeypadTarget.value = m;
+    } else {
+      valueKeypadTarget.value = raw.replace('.', ',');
+    }
+    const input = valueKeypadTarget;
+    hideValueKeypad();
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function handleValueKeypadClick(event) {
+    const key = event.currentTarget;
+    if (key.disabled) return;
+    const action = key.getAttribute('data-action');
+    const value = key.getAttribute('data-value');
+    if (action === 'clear') {
+      clearValueKeypadDraft();
+      return;
+    }
+    if (value) insertIntoValueKeypadDraft(value);
+  }
+
+  function openValueKeypadFromEvent(ev) {
+    if (ev.target.closest('.step-btn')) return;
+    const stepInput = ev.target.closest('.step-input');
+    if (!stepInput) return;
+    const input = stepInput.querySelector('input');
+    if (!input || (input !== timeInput && input !== axisLengthInput)) return;
+    ev.preventDefault();
+    showValueKeypad(input);
+  }
+
+  applyNumericKeypadMode(timeInput);
+  applyNumericKeypadMode(axisLengthInput);
+
+  document.querySelector('.setup-panel').addEventListener('pointerdown', openValueKeypadFromEvent);
+
+  valueKeypadConfirm.addEventListener('click', confirmValueKeypad);
+  valueKeypadCancel.addEventListener('click', hideValueKeypad);
+  valueKeypadOverlay.addEventListener('click', (ev) => {
+    if (ev.target === valueKeypadOverlay) hideValueKeypad();
+  });
+  valueMathKeypad.querySelectorAll('.table-math-keypad__key').forEach((keyBtn) => {
+    keyBtn.addEventListener('mousedown', (ev) => ev.preventDefault());
+    keyBtn.addEventListener('click', handleValueKeypadClick);
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (!valueKeypadTarget) return;
+    if (ev.key === 'Escape') {
+      ev.preventDefault();
+      hideValueKeypad();
+      return;
+    }
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      confirmValueKeypad();
+      return;
+    }
+    if (ev.key === 'Backspace') {
+      ev.preventDefault();
+      valueKeypadDraft = valueKeypadDraft.slice(0, -1);
+      updateValueKeypadDisplay();
+      return;
+    }
+    if (/^[0-9]$/.test(ev.key)) {
+      ev.preventDefault();
+      insertIntoValueKeypadDraft(ev.key);
+      return;
+    }
+    if (ev.key === ',' || ev.key === '.') {
+      ev.preventDefault();
+      insertIntoValueKeypadDraft(',');
+    }
+  });
+
+  document.getElementById('start-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('start-btn');
+    btn.disabled = true;
+    resetDog();
+    await runDog(timeInput);
+    btn.disabled = false;
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    document.getElementById('start-btn').disabled = false;
+    resetDog();
+  });
+
+  timeInput.closest('.step-input').querySelector('.step-up').addEventListener('click', () => stepTime(1));
+  timeInput.closest('.step-input').querySelector('.step-down').addEventListener('click', () => stepTime(-1));
+
+  axisLengthInput.closest('.step-input').querySelector('.step-up').addEventListener('click', () => stepAxisLength(1));
+  axisLengthInput.closest('.step-input').querySelector('.step-down').addEventListener('click', () => stepAxisLength(-1));
+
+  timeInput.addEventListener('change', applyTimeChange);
+
+  axisLengthInput.addEventListener('change', applyAxisLengthChange);
+
+  const motionButtons = [...document.querySelectorAll('[data-motion]')];
+  motionButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (motionMode === btn.dataset.motion) return;
+      motionMode = btn.dataset.motion;
+      motionButtons.forEach((other) => {
+        const active = other === btn;
+        other.classList.toggle('is-active', active);
+        other.setAttribute('aria-pressed', String(active));
+      });
+      document.getElementById('start-btn').disabled = false;
+      persistPanelSettings();
+      resetDog();
+    });
+  });
+
+  document.querySelectorAll('[data-measure-link]').forEach((link) => {
+    link.addEventListener('click', persistPanelSettings);
+  });
+
+  document.getElementById('create-graph-btn').addEventListener('click', () => {
+    setCreateGraphMode(!createGraphMode);
+  });
+
+  document.getElementById('fit-curve-btn').addEventListener('click', () => {
+    if (userChartPoints.length < 2) return;
+    userChartShowFit = !userChartShowFit;
+    clearGraphVerifyMessage();
+    updateFitCurveControls();
+    redrawChart();
+  });
+
+  document.getElementById('verify-graph-btn').addEventListener('click', verifyUserChart);
+
+  document.getElementById('clear-chart-points-btn').addEventListener('click', clearUserChartPoints);
+
+  chartEl.addEventListener('pointerdown', onUserChartPointerDown);
+  chartEl.addEventListener('dblclick', onUserChartDblClick);
+
+  chartFullscreenBtn.addEventListener('click', () => setChartFullscreen(!chartFullscreenOpen));
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && chartFullscreenOpen) setChartFullscreen(false);
+  });
+
+  if (isPageReload()) {
+    sessionStorage.removeItem(SETTINGS_STORAGE_KEY);
+  } else {
+    restorePanelSettings();
+  }
+  applyDefaultTrackSettings();
+  applyMotionModeUI();
+  applyRestoredCreateGraphMode();
+
+  rebuildAxis();
+  redrawChart();
+  updateTimeStepButtons();
+  updateAxisStepButtons();
+  resetDog();
+</script>
+</body>
+</html>
