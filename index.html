@@ -1026,6 +1026,18 @@
             previewColor: "#e8f4ff",
           },
           {
+            id: "hustota",
+            title: "Hustota",
+            hash: "#/sim/hustota",
+            previewColor: "#ecfdf5",
+          },
+          {
+            id: "teplota",
+            title: "Teplota",
+            hash: "#/sim/teplota",
+            previewColor: "#fff7ed",
+          },
+          {
             id: "mereni_delka",
             title: "Měření délek",
             hash: "#/sim/mereni_delka",
@@ -1123,6 +1135,8 @@
       rychlost: "zaklady",
       auto_jizda: "zaklady",
       stlacovani_latek: "zaklady",
+      hustota: "zaklady",
+      teplota: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
       tepelna_kapacita_puvodni: "energie",
@@ -1412,6 +1426,49 @@
       </svg>`;
     }
 
+    function HustotaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <rect x="18" y="20" width="44" height="52" rx="6" fill="#ecfdf5" stroke="#059669" stroke-width="2" />
+        <circle cx="30" cy="36" r="5" fill="#10b981" />
+        <circle cx="44" cy="48" r="4" fill="#34d399" />
+        <circle cx="36" cy="58" r="3.5" fill="#6ee7b7" />
+        <rect x="70" y="20" width="44" height="52" rx="6" fill="#ecfdf5" stroke="#059669" stroke-width="2" />
+        <circle cx="82" cy="34" r="4" fill="#10b981" />
+        <circle cx="96" cy="40" r="4" fill="#34d399" />
+        <circle cx="88" cy="52" r="4" fill="#6ee7b7" />
+        <circle cx="78" cy="58" r="4" fill="#10b981" />
+        <circle cx="98" cy="62" r="4" fill="#34d399" />
+        <circle cx="86" cy="66" r="3.5" fill="#6ee7b7" />
+        <text x="40" y="84" text-anchor="middle" font-size="8" fill="#64748b" font-family="system-ui,sans-serif">ρ</text>
+      </svg>`;
+    }
+
+    function TeplotaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <rect x="54" y="14" width="24" height="52" rx="12" fill="#fff" stroke="#64748b" stroke-width="2" />
+        <rect x="60" y="46" width="12" height="16" rx="6" fill="#ef4444" />
+        <circle cx="66" cy="58" r="10" fill="#ef4444" stroke="#b91c1c" stroke-width="2" />
+        <path d="M66 24v22" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" />
+        <path d="M66 30h-4M66 36h-3M66 42h-4" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" />
+        <path d="M88 58c0-8 6-14 14-14 2 0 4 .4 5.6 1.2" fill="none" stroke="#f97316" stroke-width="3" stroke-linecap="round" />
+        <path d="M98 38c3 2 5 5.5 5 9.5 0 6.6-5.4 12-12 12" fill="none" stroke="#fb923c" stroke-width="3" stroke-linecap="round" />
+        <path d="M24 62h18" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" />
+        <rect x="28" y="48" width="10" height="14" rx="2" fill="#fbbf24" stroke="#d97706" stroke-width="1.5" />
+      </svg>`;
+    }
+
     function MereniDelkyCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1491,6 +1548,8 @@
       if (tileId === "rychlost") return html`<${RychlostCardIllustration} />`;
       if (tileId === "auto_jizda") return html`<${AutoJizdaCardIllustration} />`;
       if (tileId === "stlacovani_latek") return html`<${StlacovaniLatekCardIllustration} />`;
+      if (tileId === "hustota") return html`<${HustotaCardIllustration} />`;
+      if (tileId === "teplota") return html`<${TeplotaCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
       if (tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
@@ -1678,6 +1737,22 @@
           }
           return;
         }
+        if (simId === "hustota") {
+          try {
+            window.location.replace(new URL("hustota/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("hustota/");
+          }
+          return;
+        }
+        if (simId === "teplota") {
+          try {
+            window.location.replace(new URL("teplota/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("teplota/");
+          }
+          return;
+        }
         if (simId === "skutecny_obraz") {
           try {
             window.location.replace(new URL("skutecny-obraz/", window.location.href).href);
@@ -1816,6 +1891,20 @@
         `;
       }
       if (simId === "stlacovani_latek") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "hustota") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "teplota") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
