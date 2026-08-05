@@ -1014,6 +1014,12 @@
             previewColor: "#fff0e8",
           },
           {
+            id: "auto_jizda",
+            title: "Rychlost, dráha, čas",
+            hash: "#/sim/auto_jizda",
+            previewColor: "#ffe8e8",
+          },
+          {
             id: "stlacovani_latek",
             title: "Stlačování látek",
             hash: "#/sim/stlacovani_latek",
@@ -1115,6 +1121,7 @@
       graf_pohyb: "zaklady",
       graf: "zaklady",
       rychlost: "zaklady",
+      auto_jizda: "zaklady",
       stlacovani_latek: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
@@ -1364,6 +1371,28 @@
       </svg>`;
     }
 
+    function AutoJizdaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <path d="M16 66h100" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+        <path d="M28 66h12M52 66h12M76 66h12M100 66h12" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 10" />
+        <path d="M30 52h48l10 8H28z" fill="#dc2626" stroke="#991b1b" stroke-width="2" stroke-linejoin="round" />
+        <rect x="42" y="44" width="22" height="10" rx="2" fill="#93c5fd" stroke="#1d4ed8" stroke-width="1.5" />
+        <circle cx="40" cy="62" r="6" fill="#1e293b" />
+        <circle cx="72" cy="62" r="6" fill="#1e293b" />
+        <circle cx="40" cy="62" r="2" fill="#f8fafc" />
+        <circle cx="72" cy="62" r="2" fill="#f8fafc" />
+        <circle cx="104" cy="28" r="14" fill="#fff" stroke="#111827" stroke-width="2" />
+        <path d="M104 28v-8" stroke="#dc2626" stroke-width="2" stroke-linecap="round" />
+        <circle cx="104" cy="28" r="2" fill="#111827" />
+      </svg>`;
+    }
+
     function StlacovaniLatekCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1460,6 +1489,7 @@
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
       if (tileId === "graf") return html`<${GrafCardIllustration} />`;
       if (tileId === "rychlost") return html`<${RychlostCardIllustration} />`;
+      if (tileId === "auto_jizda") return html`<${AutoJizdaCardIllustration} />`;
       if (tileId === "stlacovani_latek") return html`<${StlacovaniLatekCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
@@ -1632,6 +1662,14 @@
           }
           return;
         }
+        if (simId === "auto_jizda") {
+          try {
+            window.location.replace(new URL("auto-jizda/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("auto-jizda/");
+          }
+          return;
+        }
         if (simId === "stlacovani_latek") {
           try {
             window.location.replace(new URL("stlacovani-latek/", window.location.href).href);
@@ -1764,6 +1802,13 @@
         `;
       }
       if (simId === "rychlost") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "auto_jizda") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
