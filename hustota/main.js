@@ -223,6 +223,10 @@ class Field {
     this.maskHoleY = 0;
     this.offscreenCanvas = null;
     this.offscreenCtx = null;
+    this.ballsOffscreenCanvas = null;
+    this.ballsOffscreenCtx = null;
+    this.blurCanvas = null;
+    this.blurCtx = null;
 
     this.bindEvents();
   }
@@ -294,6 +298,26 @@ class Field {
     if (this.offscreenCanvas.width !== this.width || this.offscreenCanvas.height !== this.height) {
       this.offscreenCanvas.width = this.width;
       this.offscreenCanvas.height = this.height;
+    }
+  }
+
+  ensureMaskBuffers() {
+    this.ensureOffscreenCanvas();
+    if (!this.ballsOffscreenCanvas) {
+      this.ballsOffscreenCanvas = document.createElement('canvas');
+      this.ballsOffscreenCtx = this.ballsOffscreenCanvas.getContext('2d');
+    }
+    if (!this.blurCanvas) {
+      this.blurCanvas = document.createElement('canvas');
+      this.blurCtx = this.blurCanvas.getContext('2d');
+    }
+    if (this.ballsOffscreenCanvas.width !== this.width || this.ballsOffscreenCanvas.height !== this.height) {
+      this.ballsOffscreenCanvas.width = this.width;
+      this.ballsOffscreenCanvas.height = this.height;
+    }
+    if (this.blurCanvas.width !== this.width || this.blurCanvas.height !== this.height) {
+      this.blurCanvas.width = this.width;
+      this.blurCanvas.height = this.height;
     }
   }
 
@@ -805,24 +829,29 @@ class Field {
   }
 
   drawWithMask() {
-    this.ensureOffscreenCanvas();
+    this.ensureMaskBuffers();
     this.offscreenCtx.clearRect(0, 0, this.width, this.height);
     this.drawScene(this.offscreenCtx);
 
+    this.ballsOffscreenCtx.clearRect(0, 0, this.width, this.height);
+    this.drawBalls(this.ballsOffscreenCtx);
+
+    this.blurCtx.clearRect(0, 0, this.width, this.height);
+    this.blurCtx.filter = `blur(${MASK_BLUR_PX}px)`;
+    this.blurCtx.drawImage(this.offscreenCanvas, 0, 0);
+    this.blurCtx.filter = 'none';
+
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.save();
-    this.ctx.filter = `blur(${MASK_BLUR_PX}px)`;
-    this.ctx.drawImage(this.offscreenCanvas, 0, 0);
-    this.ctx.restore();
+    this.ctx.filter = 'none';
+    this.ctx.drawImage(this.blurCanvas, 0, 0);
 
     const holeSide = this.getMaskHoleSidePx();
     const { maskHoleX: x, maskHoleY: y } = this;
-    this.ctx.save();
-    this.ctx.beginPath();
-    this.ctx.rect(x, y, holeSide, holeSide);
-    this.ctx.clip();
-    this.drawBalls(this.ctx);
-    this.ctx.restore();
+    this.ctx.drawImage(
+      this.ballsOffscreenCanvas,
+      x, y, holeSide, holeSide,
+      x, y, holeSide, holeSide
+    );
     this.drawMaskHoleBorder();
   }
 
