@@ -221,12 +221,8 @@ class Field {
     this.resizeHintTimeout = null;
     this.maskHoleX = 0;
     this.maskHoleY = 0;
-    this.offscreenCanvas = null;
-    this.offscreenCtx = null;
-    this.ballsOffscreenCanvas = null;
-    this.ballsOffscreenCtx = null;
-    this.blurCanvas = null;
-    this.blurCtx = null;
+    this.maskOverlayCanvas = null;
+    this.maskOverlayCtx = null;
 
     this.bindEvents();
   }
@@ -290,35 +286,26 @@ class Field {
     this.maskHoleY = Math.max(0, (totalHeight - holeSide) / 2);
   }
 
-  ensureOffscreenCanvas() {
-    if (!this.offscreenCanvas) {
-      this.offscreenCanvas = document.createElement('canvas');
-      this.offscreenCtx = this.offscreenCanvas.getContext('2d');
+  ensureMaskOverlayCanvas() {
+    if (!this.maskOverlayCanvas) {
+      this.maskOverlayCanvas = document.createElement('canvas');
+      this.maskOverlayCanvas.className = 'arena-canvas--mask-overlay is-hidden';
+      this.maskOverlayCanvas.setAttribute('aria-hidden', 'true');
+      this.maskOverlayCtx = this.maskOverlayCanvas.getContext('2d');
+      this.arena.appendChild(this.maskOverlayCanvas);
     }
-    if (this.offscreenCanvas.width !== this.width || this.offscreenCanvas.height !== this.height) {
-      this.offscreenCanvas.width = this.width;
-      this.offscreenCanvas.height = this.height;
+    if (this.maskOverlayCanvas.width !== this.width || this.maskOverlayCanvas.height !== this.height) {
+      this.maskOverlayCanvas.width = this.width;
+      this.maskOverlayCanvas.height = this.height;
     }
   }
 
-  ensureMaskBuffers() {
-    this.ensureOffscreenCanvas();
-    if (!this.ballsOffscreenCanvas) {
-      this.ballsOffscreenCanvas = document.createElement('canvas');
-      this.ballsOffscreenCtx = this.ballsOffscreenCanvas.getContext('2d');
-    }
-    if (!this.blurCanvas) {
-      this.blurCanvas = document.createElement('canvas');
-      this.blurCtx = this.blurCanvas.getContext('2d');
-    }
-    if (this.ballsOffscreenCanvas.width !== this.width || this.ballsOffscreenCanvas.height !== this.height) {
-      this.ballsOffscreenCanvas.width = this.width;
-      this.ballsOffscreenCanvas.height = this.height;
-    }
-    if (this.blurCanvas.width !== this.width || this.blurCanvas.height !== this.height) {
-      this.blurCanvas.width = this.width;
-      this.blurCanvas.height = this.height;
-    }
+  clearMaskPresentation() {
+    this.canvas.classList.remove('arena-canvas--mask-blur');
+    this.canvas.style.removeProperty('--mask-blur');
+    if (!this.maskOverlayCanvas) return;
+    this.maskOverlayCanvas.classList.add('is-hidden');
+    this.maskOverlayCtx.clearRect(0, 0, this.width, this.height);
   }
 
   shouldUseMask() {
@@ -816,43 +803,37 @@ class Field {
     this.balls.forEach((ball) => this.drawBall(ball, ctx));
   }
 
-  drawMaskHoleBorder() {
+  drawMaskHoleBorder(ctx = this.ctx) {
     const holeSide = this.getMaskHoleSidePx();
     const { maskHoleX: x, maskHoleY: y } = this;
 
-    this.ctx.save();
-    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-    this.ctx.lineWidth = 2;
-    this.ctx.setLineDash([6, 4]);
-    this.ctx.strokeRect(x + 0.5, y + 0.5, holeSide - 1, holeSide - 1);
-    this.ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(x + 0.5, y + 0.5, holeSide - 1, holeSide - 1);
+    ctx.restore();
   }
 
   drawWithMask() {
-    this.ensureMaskBuffers();
-    this.offscreenCtx.clearRect(0, 0, this.width, this.height);
-    this.drawScene(this.offscreenCtx);
-
-    this.ballsOffscreenCtx.clearRect(0, 0, this.width, this.height);
-    this.drawBalls(this.ballsOffscreenCtx);
-
-    this.blurCtx.clearRect(0, 0, this.width, this.height);
-    this.blurCtx.filter = `blur(${MASK_BLUR_PX}px)`;
-    this.blurCtx.drawImage(this.offscreenCanvas, 0, 0);
-    this.blurCtx.filter = 'none';
+    this.ensureMaskOverlayCanvas();
+    this.canvas.classList.add('arena-canvas--mask-blur');
+    this.canvas.style.setProperty('--mask-blur', `${MASK_BLUR_PX}px`);
+    this.maskOverlayCanvas.classList.remove('is-hidden');
 
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.filter = 'none';
-    this.ctx.drawImage(this.blurCanvas, 0, 0);
+    this.drawScene(this.ctx);
 
+    this.maskOverlayCtx.clearRect(0, 0, this.width, this.height);
     const holeSide = this.getMaskHoleSidePx();
     const { maskHoleX: x, maskHoleY: y } = this;
-    this.ctx.drawImage(
-      this.ballsOffscreenCanvas,
-      x, y, holeSide, holeSide,
-      x, y, holeSide, holeSide
-    );
-    this.drawMaskHoleBorder();
+    this.maskOverlayCtx.save();
+    this.maskOverlayCtx.beginPath();
+    this.maskOverlayCtx.rect(x, y, holeSide, holeSide);
+    this.maskOverlayCtx.clip();
+    this.drawBalls(this.maskOverlayCtx);
+    this.maskOverlayCtx.restore();
+    this.drawMaskHoleBorder(this.maskOverlayCtx);
   }
 
   updateWalls(ball) {
@@ -932,6 +913,7 @@ class Field {
       return;
     }
 
+    this.clearMaskPresentation();
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.drawScene();
   }
