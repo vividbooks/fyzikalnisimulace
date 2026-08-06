@@ -23,7 +23,7 @@ const UI_OFFSET_Y = 15;
 
 const DEFAULT_FIELD_COUNT = 1;
 const MASK_HOLE_AREA_CM2 = 1;
-const MASK_BLUR_PX = 10;
+const MASK_BLUR_DOWNSCALE = 8;
 
 const fields = [];
 let activeFieldCount = DEFAULT_FIELD_COUNT;
@@ -221,8 +221,7 @@ class Field {
     this.resizeHintTimeout = null;
     this.maskHoleX = 0;
     this.maskHoleY = 0;
-    this.maskOverlayCanvas = null;
-    this.maskOverlayCtx = null;
+    this.maskBuffers = null;
 
     this.bindEvents();
   }
@@ -286,26 +285,33 @@ class Field {
     this.maskHoleY = Math.max(0, (totalHeight - holeSide) / 2);
   }
 
-  ensureMaskOverlayCanvas() {
-    if (!this.maskOverlayCanvas) {
-      this.maskOverlayCanvas = document.createElement('canvas');
-      this.maskOverlayCanvas.className = 'arena-canvas--mask-overlay is-hidden';
-      this.maskOverlayCanvas.setAttribute('aria-hidden', 'true');
-      this.maskOverlayCtx = this.maskOverlayCanvas.getContext('2d');
-      this.arena.appendChild(this.maskOverlayCanvas);
+  ensureMaskBuffers() {
+    if (!this.maskBuffers) {
+      const create = () => {
+        const canvas = document.createElement('canvas');
+        return { canvas, ctx: canvas.getContext('2d') };
+      };
+      this.maskBuffers = {
+        scene: create(),
+        balls: create(),
+        blurA: create(),
+        blurB: create(),
+      };
     }
-    if (this.maskOverlayCanvas.width !== this.width || this.maskOverlayCanvas.height !== this.height) {
-      this.maskOverlayCanvas.width = this.width;
-      this.maskOverlayCanvas.height = this.height;
-    }
-  }
 
-  clearMaskPresentation() {
-    this.canvas.classList.remove('arena-canvas--mask-blur');
-    this.canvas.style.removeProperty('--mask-blur');
-    if (!this.maskOverlayCanvas) return;
-    this.maskOverlayCanvas.classList.add('is-hidden');
-    this.maskOverlayCtx.clearRect(0, 0, this.width, this.height);
+    const resize = ({ canvas }, w, h) => {
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+    };
+    const halfWidth = Math.max(1, Math.ceil(this.width / 2));
+    const halfHeight = Math.max(1, Math.ceil(this.height / 2));
+
+    resize(this.maskBuffers.scene, this.width, this.height);
+    resize(this.maskBuffers.balls, this.width, this.height);
+    resize(this.maskBuffers.blurA, halfWidth, halfHeight);
+    resize(this.maskBuffers.blurB, halfWidth, halfHeight);
+
+    return this.maskBuffers;
   }
 
   shouldUseMask() {
@@ -803,37 +809,76 @@ class Field {
     this.balls.forEach((ball) => this.drawBall(ball, ctx));
   }
 
-  drawMaskHoleBorder(ctx = this.ctx) {
-    const holeSide = this.getMaskHoleSidePx();
-    const { maskHoleX: x, maskHoleY: y } = this;
+  drawMaskHoleBorder(x, y, side) {
+    this.ctx.save();
+    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    this.ctx.lineWidth = 2;
+    this.ctx.setLineDash([6, 4]);
+    this.ctx.strokeRect(x + 0.5, y + 0.5, side - 1, side - 1);
+    this.ctx.restore();
+  }
 
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.strokeRect(x + 0.5, y + 0.5, holeSide - 1, holeSide - 1);
-    ctx.restore();
+  // Blur je poskládaný z opakovaného zmenšení a zpětného zvětšení, protože
+  // Safari na iPadu spolehlivě neaplikuje ctx.filter ani CSS filter na canvas.
+  drawBlurredScene(buffers) {
+    let source = buffers.scene.canvas;
+    let sourceWidth = this.width;
+    let sourceHeight = this.height;
+
+    const minWidth = Math.max(1, Math.round(this.width / MASK_BLUR_DOWNSCALE));
+    const minHeight = Math.max(1, Math.round(this.height / MASK_BLUR_DOWNSCALE));
+    const pingPong = [buffers.blurA, buffers.blurB];
+    let slot = 0;
+
+    while (sourceWidth > minWidth || sourceHeight > minHeight) {
+      const nextWidth = Math.max(minWidth, Math.ceil(sourceWidth / 2));
+      const nextHeight = Math.max(minHeight, Math.ceil(sourceHeight / 2));
+      const target = pingPong[slot];
+
+      target.ctx.clearRect(0, 0, target.canvas.width, target.canvas.height);
+      target.ctx.imageSmoothingEnabled = true;
+      target.ctx.drawImage(source, 0, 0, sourceWidth, sourceHeight, 0, 0, nextWidth, nextHeight);
+
+      source = target.canvas;
+      sourceWidth = nextWidth;
+      sourceHeight = nextHeight;
+      slot = 1 - slot;
+    }
+
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.drawImage(source, 0, 0, sourceWidth, sourceHeight, 0, 0, this.width, this.height);
   }
 
   drawWithMask() {
-    this.ensureMaskOverlayCanvas();
-    this.canvas.classList.add('arena-canvas--mask-blur');
-    this.canvas.style.setProperty('--mask-blur', `${MASK_BLUR_PX}px`);
-    this.maskOverlayCanvas.classList.remove('is-hidden');
+    if (this.width <= 0 || this.height <= 0) return;
+
+    const buffers = this.ensureMaskBuffers();
+
+    buffers.balls.ctx.clearRect(0, 0, this.width, this.height);
+    this.drawBalls(buffers.balls.ctx);
+
+    buffers.scene.ctx.clearRect(0, 0, this.width, this.height);
+    this.drawSquareDividers(buffers.scene.ctx);
+    buffers.scene.ctx.drawImage(buffers.balls.canvas, 0, 0);
 
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.drawScene(this.ctx);
+    this.drawBlurredScene(buffers);
 
-    this.maskOverlayCtx.clearRect(0, 0, this.width, this.height);
-    const holeSide = this.getMaskHoleSidePx();
-    const { maskHoleX: x, maskHoleY: y } = this;
-    this.maskOverlayCtx.save();
-    this.maskOverlayCtx.beginPath();
-    this.maskOverlayCtx.rect(x, y, holeSide, holeSide);
-    this.maskOverlayCtx.clip();
-    this.drawBalls(this.maskOverlayCtx);
-    this.maskOverlayCtx.restore();
-    this.drawMaskHoleBorder(this.maskOverlayCtx);
+    const side = Math.round(this.getMaskHoleSidePx());
+    const x = Math.round(this.maskHoleX);
+    const y = Math.round(this.maskHoleY);
+    const clippedWidth = Math.min(side, this.width - x);
+    const clippedHeight = Math.min(side, this.height - y);
+
+    if (clippedWidth > 0 && clippedHeight > 0) {
+      this.ctx.drawImage(
+        buffers.balls.canvas,
+        x, y, clippedWidth, clippedHeight,
+        x, y, clippedWidth, clippedHeight
+      );
+    }
+
+    this.drawMaskHoleBorder(x, y, side);
   }
 
   updateWalls(ball) {
@@ -913,7 +958,6 @@ class Field {
       return;
     }
 
-    this.clearMaskPresentation();
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.drawScene();
   }

@@ -395,22 +395,6 @@ canvas {
   touch-action: none;
 }
 
-canvas.arena-canvas--mask-blur {
-  filter: blur(var(--mask-blur, 10px));
-  -webkit-filter: blur(var(--mask-blur, 10px));
-}
-
-canvas.arena-canvas--mask-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-canvas.arena-canvas--mask-overlay.is-hidden {
-  display: none;
-}
-
 .arena-composite.show-resize-hint .resize-handle::after {
   background: rgba(88, 166, 255, 0.45);
   animation: resize-handle-pulse 1.6s ease-in-out infinite;
