@@ -29,6 +29,8 @@ jobs:
           test -f paka/lever-app.js
           test -f skladani_sil/index.html
           test -f skladani_sil/main.js
+          test -f silomer_2/index.html
+          test -f silomer_2/main.js
           test -f optika_geometrie/index.html
           test -d optika_geometrie/rysovani-app
           test -f README.md
