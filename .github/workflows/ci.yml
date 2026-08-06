@@ -54,14 +54,10 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: static-check
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 10
     permissions:
+      contents: write
       pages: write
-      id-token: write
-      actions: read
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     concurrency:
       group: pages-deploy
       cancel-in-progress: true
@@ -69,17 +65,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v4
+      - name: Prepare static site
+        run: |
+          mkdir -p _site
+          rsync -a \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'node_modules' \
+            --exclude '_site' \
+            ./ _site/
 
-      - name: Upload static assets
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
+      - name: Point GitHub Pages to gh-pages branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          curl -fsSL -X PUT \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          timeout: 1800000
-          error_count: 15
+          github_token: ${{ github.token }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "deploy: ${{ github.sha }}"
