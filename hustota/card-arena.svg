@@ -1,0 +1,37 @@
+<svg viewBox="-10 -10 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs>
+<radialGradient id="hustota-ball-0" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(0 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(0 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(0 86% 34%)"/>
+</radialGradient>
+<radialGradient id="hustota-ball-1" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(137.508 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(137.508 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(137.508 86% 34%)"/>
+</radialGradient>
+<radialGradient id="hustota-ball-2" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(275.016 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(275.016 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(275.016 86% 34%)"/>
+</radialGradient>
+<radialGradient id="hustota-ball-3" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(52.524 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(52.524 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(52.524 86% 34%)"/>
+</radialGradient>
+</defs>
+<rect x="28" y="-3.5" width="44" height="3.5" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="28" y="100" width="44" height="3.5" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="-3.5" y="28" width="3.5" height="44" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="100" y="28" width="3.5" height="44" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="0" y="0" width="100" height="100" rx="1.6" fill="#0d1117" stroke="#58a6ff" stroke-width="0.8"/>
+<circle cx="71" cy="31" r="3.6" fill="url(#hustota-ball-2)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="69.9" cy="29.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+<circle cx="30" cy="70" r="3.6" fill="url(#hustota-ball-0)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="28.9" cy="68.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+<circle cx="42" cy="58" r="3.6" fill="url(#hustota-ball-3)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="40.9" cy="56.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+<circle cx="62" cy="76" r="3.6" fill="url(#hustota-ball-1)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="60.9" cy="74.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+</svg>
