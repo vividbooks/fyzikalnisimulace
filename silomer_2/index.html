@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  />
+  <title>Siloměr</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
+  <div id="earth-grass" class="earth-grass" aria-hidden="true">
+    <img src="assets/travnik.svg" alt="" width="990" height="415" decoding="async" />
+  </div>
+  <div id="moon-surface" class="moon-surface" aria-hidden="true">
+    <img src="assets/mesic-povrch.svg" alt="" width="535" height="533" decoding="async" />
+  </div>
+
+  <main class="scene" aria-label="Simulace siloměru se závažími">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
+      <a href="../index.html" class="hub-back-to-sims">
+        ← Přehled simulací
+      </a>
+
+      <div class="panel-copy">
+        <h1 class="panel-title">Siloměr</h1>
+      </div>
+
+      <div class="panel-section" role="group" aria-label="Gravitační prostředí">
+        <span class="panel-label">Prostředí</span>
+        <div id="gravity-switch" class="env-toggle" role="group" aria-label="Gravitační prostředí">
+          <button type="button" class="env-toggle-btn is-active" data-env="earth" aria-pressed="true">
+            Země
+          </button>
+          <button type="button" class="env-toggle-btn" data-env="moon" aria-pressed="false">
+            Měsíc
+          </button>
+          <button type="button" class="env-toggle-btn" data-env="space" aria-pressed="false">
+            Kosmický prostor
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-section" role="group" aria-label="Simulace">
+        <span class="panel-label">Simulace</span>
+        <div class="actions-row actions-row--stack">
+          <button type="button" id="silomer-cut" class="panel-action-btn panel-action-btn--primary">
+            Přestříhnout
+          </button>
+          <button type="button" id="silomer-reset" class="panel-action-btn panel-action-btn--secondary">
+            Reset
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="scene-workspace" aria-label="Pracovní plocha">
+      <div class="play-surface" id="play-surface">
+        <div class="stage-anchor" id="stage-anchor">
+          <div class="stage">
+            <div id="silomer" class="silomer" aria-label="Siloměr"></div>
+            <div id="force-readout" class="force-readout" aria-live="polite">0 N</div>
+            <div id="dog-panels" class="dog-panels" hidden>
+              <div class="dog-quiz-panel">
+                <p id="dog-weight-label" class="dog-quiz-panel-label">Tíha pejska na Zemi je</p>
+                <div class="dog-quiz-panel-row">
+                  <div class="dog-quiz-panel-field">
+                    <input
+                      id="dog-weight-input"
+                      class="dog-quiz-panel-input"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                      aria-label="Tíha pejska v newtonech"
+                    />
+                  </div>
+                </div>
+                <p id="dog-weight-feedback" class="dog-quiz-panel-feedback" hidden aria-live="polite"></p>
+              </div>
+              <div class="dog-quiz-panel">
+                <p id="dog-mass-label" class="dog-quiz-panel-label">Hmotnost pejska na Zemi je</p>
+                <div class="dog-quiz-panel-row">
+                  <div class="dog-quiz-panel-field">
+                    <input
+                      id="dog-mass-input"
+                      class="dog-quiz-panel-input"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                      aria-label="Hmotnost pejska v kilogramech"
+                    />
+                  </div>
+                </div>
+                <p id="dog-mass-feedback" class="dog-quiz-panel-feedback" hidden aria-live="polite"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="weights-layer" class="weights-layer" aria-label="Závaží siloměru"></div>
+
+  <canvas id="quiz-confetti" class="quiz-confetti-canvas" aria-hidden="true"></canvas>
+
+  <div id="tableKeypadOverlay" class="table-keypad-overlay" hidden>
+    <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="tableKeypadTitle">
+      <p id="tableKeypadTitle" class="table-keypad-panel__title">Tíha</p>
+      <div id="tableKeypadDisplay" class="table-keypad-panel__display" aria-live="polite"></div>
+      <p id="tableKeypadError" class="table-keypad-panel__error" hidden></p>
+      <div class="table-math-keypad" id="tableMathKeypad" aria-label="Matematická klávesnice">
+        <div class="table-math-keypad__grid">
+          <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+          <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+          <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+          <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+          <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+          <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+          <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+          <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+          <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+          <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+          <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+          <button class="table-math-keypad__key" type="button" data-action="clear" aria-label="Smazat vše">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path
+                d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="table-keypad-panel__actions">
+        <button
+          type="button"
+          id="tableKeypadCancel"
+          class="table-keypad-panel__action table-keypad-panel__cancel"
+          aria-label="Zavřít bez uložení"
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path
+              d="M18 6L6 18M6 6l12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          id="tableKeypadConfirm"
+          class="table-keypad-panel__action table-keypad-panel__confirm"
+          aria-label="Ověřit hodnotu"
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path
+              d="M5 12.5l5 5L19 7"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
