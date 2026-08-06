@@ -1,0 +1,11 @@
+{
+  "name": "fyzikalni-simulace",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev-server.js",
+    "build:optika": "cd ../optika_geometrie && VITE_DEPLOY_BASE=./ npm run build && rm -rf ../fyzikalnisimulace/optika_geometrie && mkdir -p ../fyzikalnisimulace/optika_geometrie && cp docs/index.html docs/404.html ../fyzikalnisimulace/optika_geometrie/ && cp -R docs/rysovani-app ../fyzikalnisimulace/optika_geometrie/"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

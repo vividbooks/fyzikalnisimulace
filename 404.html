@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Načítání…</title>
+    <script>
+      (function () {
+        var path = window.location.pathname;
+        var marker = "/optika_geometrie/rysovani-app";
+        var idx = path.indexOf(marker);
+        if (idx === -1) return;
+        var appBase = path.slice(0, idx + marker.length);
+        var inAppPath = path.slice(idx + marker.length) || "/";
+        sessionStorage.setItem(
+          "optika_geometrie_spa_redirect",
+          inAppPath + window.location.search + window.location.hash
+        );
+        window.location.replace(appBase + "/index.html");
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

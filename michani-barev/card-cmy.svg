@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340" fill="none" aria-hidden="true">
+  <defs>
+    <mask id="michani-mask-c">
+      <rect width="400" height="340" fill="black"/>
+      <circle cx="154" cy="150" r="101.2" fill="white"/>
+    </mask>
+    <mask id="michani-mask-m">
+      <rect width="400" height="340" fill="black"/>
+      <circle cx="246" cy="150" r="101.2" fill="white"/>
+    </mask>
+    <mask id="michani-mask-y">
+      <rect width="400" height="340" fill="black"/>
+      <circle cx="200" cy="226" r="101.2" fill="white"/>
+    </mask>
+    <mask id="michani-mask-cm">
+      <rect width="400" height="340" fill="black"/>
+      <circle cx="246" cy="150" r="101.2" fill="white" mask="url(#michani-mask-c)"/>
+    </mask>
+    <mask id="michani-mask-cy">
+      <rect width="400" height="340" fill="black"/>
+      <circle cx="200" cy="226" r="101.2" fill="white" mask="url(#michani-mask-c)"/>
+    </mask>
+    <mask id="michani-mask-my">
+      <rect width="400" height="340" fill="black"/>
+      <circle cx="200" cy="226" r="101.2" fill="white" mask="url(#michani-mask-m)"/>
+    </mask>
+    <mask id="michani-mask-cmy">
+      <rect width="400" height="340" fill="black"/>
+      <circle cx="200" cy="226" r="101.2" fill="white" mask="url(#michani-mask-cm)"/>
+    </mask>
+    <mask id="michani-mask-c-only">
+      <rect width="400" height="340" fill="white" mask="url(#michani-mask-c)"/>
+      <circle cx="246" cy="150" r="101.2" fill="black"/>
+      <circle cx="200" cy="226" r="101.2" fill="black"/>
+    </mask>
+    <mask id="michani-mask-m-only">
+      <rect width="400" height="340" fill="white" mask="url(#michani-mask-m)"/>
+      <circle cx="154" cy="150" r="101.2" fill="black"/>
+      <circle cx="200" cy="226" r="101.2" fill="black"/>
+    </mask>
+    <mask id="michani-mask-y-only">
+      <rect width="400" height="340" fill="white" mask="url(#michani-mask-y)"/>
+      <circle cx="154" cy="150" r="101.2" fill="black"/>
+      <circle cx="246" cy="150" r="101.2" fill="black"/>
+    </mask>
+    <mask id="michani-mask-cm-only">
+      <rect width="400" height="340" fill="white" mask="url(#michani-mask-cm)"/>
+      <circle cx="200" cy="226" r="101.2" fill="black"/>
+    </mask>
+    <mask id="michani-mask-cy-only">
+      <rect width="400" height="340" fill="white" mask="url(#michani-mask-cy)"/>
+      <circle cx="246" cy="150" r="101.2" fill="black"/>
+    </mask>
+    <mask id="michani-mask-my-only">
+      <rect width="400" height="340" fill="white" mask="url(#michani-mask-my)"/>
+      <circle cx="154" cy="150" r="101.2" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="400" height="340" fill="#00ffff" mask="url(#michani-mask-c-only)"/>
+  <rect width="400" height="340" fill="#ff00ff" mask="url(#michani-mask-m-only)"/>
+  <rect width="400" height="340" fill="#ffff00" mask="url(#michani-mask-y-only)"/>
+  <rect width="400" height="340" fill="#0000ff" mask="url(#michani-mask-cm-only)"/>
+  <rect width="400" height="340" fill="#00ff00" mask="url(#michani-mask-cy-only)"/>
+  <rect width="400" height="340" fill="#ff0000" mask="url(#michani-mask-my-only)"/>
+  <rect width="400" height="340" fill="#000000" mask="url(#michani-mask-cmy)"/>
+</svg>

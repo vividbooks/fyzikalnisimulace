@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mereni_hmotnost — rovnoramenné váhy</title>
+  <style>
+    * { box-sizing: border-box; }
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    html {
+      background: #f4f5f8;
+      --ui-scale: 1.2;
+      --bg: #f4f5f8;
+      --panel-bg: #ffffff;
+      --text: #171923;
+      --muted: #6b7280;
+      --accent: #3d5a9a;
+      --accent-hover: #334b81;
+      --border: #e8eaef;
+      --area-muted: #eceff5;
+      --readout-bg: #f4f5f8;
+      --success: #059669;
+      --danger: #dc2626;
+      font-family: "Fenomen Sans", system-ui, sans-serif;
+    }
+    /*
+      +20 % přes transform na `.app-root`; výkonové pozice (`style.left/top`) řeší skript přes --ui-scale.
+      Šířka layoutu / scale ⇒ vizuálně ~ zaplněné okno.
+    */
+    .app-root {
+      transform: scale(var(--ui-scale));
+      transform-origin: top center;
+      width: calc(100% / var(--ui-scale));
+      max-width: calc((100vw - 2rem) / var(--ui-scale));
+      margin-inline: auto;
+    }
+
+    /*
+      Bez min-height na výšku okna — dokument končí u obsahu, žádný umělý prázdný pás dole.
+    */
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0;
+      padding-top: max(0.35rem, env(safe-area-inset-top, 0px));
+      padding-bottom: calc(
+        max(0.35rem, env(safe-area-inset-bottom, 0px)) + 2.5rem +
+          (var(--ui-scale) - 1) * 28vmin
+      );
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--text);
+    }
+    /*
+      Bez align-self + width táhne sloupcový flex (main) šířku jen „ke obsahu“ —
+      karta pak může být užší než obrázek vah a v náhledu/postranním panelu vypadá
+      kresba jako oříznutá na půlku.
+    */
+    main {
+      align-self: stretch;
+      width: 100%;
+      max-width: 100%;
+      margin-inline: auto;
+      margin-top: 24px;
+      padding: 0.35rem 1.5rem 0.4rem;
+      background: transparent;
+      border-radius: 0;
+      box-sizing: border-box;
+    }
+    .page-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: min(920px, 100%);
+      margin: 0 auto 0.7rem;
+    }
+    .hub-back-to-sims {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--area-muted);
+      color: var(--text);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .hub-back-to-sims:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--readout-bg);
+    }
+    .page-title {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .clear-weights-btn {
+      appearance: none;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+    .clear-weights-btn:hover {
+      border-color: var(--accent);
+    }
+    .clear-weights-btn:active {
+      transform: translateY(1px);
+    }
+    .clear-weights-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .stage {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: min(920px, 100%);
+      margin-inline: auto;
+      touch-action: pan-y;
+      padding-bottom: clamp(10px, 2.5vw, 20px);
+      /*
+        Symetrický okraj: stejně vlevo/vpravo, aby byl sloup vah uprostřed;
+        hodnota pokrývá přesah jablka i zásobníku závaží.
+      */
+      padding-inline: clamp(96px, 22vw, 280px);
+    }
+    /*
+      Geometrie vah a překryvy — `.scale-figure` je rámcová oblast kresby (pro %, drag, cíle).
+      Paleta potravin je flex sloupec vlevo od kresby (`justify-content: space-between`).
+    */
+    .scale-wrap {
+      position: relative;
+      line-height: 0;
+      max-width: min(720px, 100%);
+    }
+    .scale-figure {
+      position: relative;
+      line-height: 0;
+    }
+    .scale-art {
+      position: relative;
+      width: 100%;
+      line-height: 0;
+    }
+    .scale-wrap .scale-layer {
+      display: block;
+      width: 100%;
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+    }
+    /* Přední okraj misky nad závažími na misce (klony mají z-index 6). Paleta vlevo má vyšší vrstvu. */
+    .scale-layer--pan-rims {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      aspect-ratio: 360 / 376;
+      height: auto;
+      z-index: 7;
+      pointer-events: none;
+    }
+    /* Pozice a velikost míst pro dopínání — počítá skript z geometrie rameně v jednotkách viewBoxu. */
+    .pan-target--right,
+    .pan-target--left {
+      position: absolute;
+      inset: auto;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .pan-drag {
+      position: absolute;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+      z-index: 6;
+    }
+    /* Nad zásobníkem závaží (z-index 10), jen dokud je kus ještě u paletě. */
+    .food-palette .pan-drag:not(.on-left-pan):not(.on-right-pan) {
+      z-index: 12;
+    }
+    .pan-drag:active { cursor: grabbing; }
+    .pan-drag.is-dragging {
+      z-index: 20;
+      cursor: grabbing;
+    }
+    .apple--gfx { width: clamp(36px, 9vw, 58.5px); height: auto; }
+    .rohlik--gfx { width: clamp(62.4px, 15.6vw, 98.4px); height: auto; }
+    /* Zásobník: vzorky přebijí .pan-drag relativní pozicí v mřížce; klony mají jen .pan-drag → absolute. */
+    .sklenice-okurek--gfx { width: clamp(48px, 12vw, 76px); height: auto; }
+    .bonbon--gfx { width: clamp(28px, 7vw, 46px); height: auto; }
+    .zlata-cihla--gfx { width: clamp(52px, 13vw, 84px); height: auto; }
+    .weights-tray-wrap {
+      position: absolute;
+      left: calc(100% + 62px);
+      top: 6%;
+      width: max-content;
+      max-width: calc((100vw - 2rem - 48px) / var(--ui-scale));
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      /* Nad .scale-layer--pan-rims (7), aby šlo závaží spolehlivě „chytit“ i při překryvu. */
+      z-index: 10;
+      pointer-events: none;
+    }
+    .weights-tray {
+      width: max-content;
+      max-width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, max-content);
+      grid-auto-rows: max-content;
+      align-items: end;
+      justify-items: center;
+      gap: 12px 18px;
+      pointer-events: none;
+    }
+    .weights-tray-wrap .clear-weights-btn {
+      pointer-events: auto;
+      width: 100%;
+      white-space: nowrap;
+    }
+    .weights-tray .weight {
+      pointer-events: auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    .weights-tray .weight:not(.is-dragging) {
+      position: relative;
+      left: auto !important;
+      top: auto !important;
+      margin: 0;
+    }
+    .weight.on-right-pan,
+    .weight.on-left-pan {
+      position: absolute;
+    }
+    .weights-tray .weight svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* Paleta: 5× 1fr; pevná šířka jako rohlík (ne max-content), jinak po odebrání řádku zúží. */
+    .food-palette {
+      position: absolute;
+      right: 100%;
+      margin-right: 50px;
+      top: calc(clamp(4px, 1.5vmin, 16px) - 40px);
+      bottom: clamp(4px, 1.5vmin, 16px);
+      display: grid;
+      grid-template-rows: repeat(5, 1fr);
+      align-items: center;
+      justify-items: center;
+      row-gap: clamp(8px, 2vmin, 18px);
+      width: clamp(62.4px, 15.6vw, 98.4px);
+      max-width: min(140px, 28vw);
+      pointer-events: none;
+      z-index: 12;
+    }
+    .food-palette__slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      width: 100%;
+    }
+    /*
+      Pevná min. výška řádků = výška grafiky při stejném clamp jako u img.
+      Bez toho při přesunu prvku z palety zmizí obsah řádku → 1fr přepočítá
+      výšky a ostatní ikony vertikálně „cuknou“.
+    */
+    .food-palette__slot:nth-child(1) {
+      min-height: calc(clamp(36px, 9vw, 58.5px) * 68 / 65);
+    }
+    .food-palette__slot:nth-child(2) {
+      min-height: calc(clamp(62.4px, 15.6vw, 98.4px) * 118 / 156);
+    }
+    .food-palette__slot:nth-child(3) {
+      min-height: calc(clamp(48px, 12vw, 76px) * 106 / 78);
+    }
+    .food-palette__slot:nth-child(4) {
+      min-height: calc(clamp(28px, 7vw, 46px) * 36 / 87);
+    }
+    .food-palette__slot:nth-child(5) {
+      min-height: calc(clamp(52px, 13vw, 84px) * 99 / 174);
+    }
+    /* Drží místo přesně za staženou potravinu během pointer tažení (viz skript). */
+    .food-palette__layout-holder {
+      flex-shrink: 0;
+      box-sizing: border-box;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .food-palette .pan-drag {
+      pointer-events: auto;
+      flex-shrink: 0;
+    }
+    .food-palette .pan-drag:not(.on-left-pan):not(.on-right-pan):not(.is-dragging) {
+      position: relative;
+      left: auto !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+    }
+    .food-palette .rohlik.pan-drag:not(.on-left-pan):not(.on-right-pan):not(.is-dragging) {
+      top: -10px !important;
+    }
+    /* Trojice pod váhami — rozvržení jako SVG 498×34 (3×143 + mezery). */
+    .mass-verify {
+      margin-top: 0.4rem;
+      width: 100%;
+      max-width: 498px;
+      margin-inline: auto;
+      display: flex;
+      align-items: stretch;
+      gap: clamp(8px, 3.5vw, 28px);
+    }
+    .mass-verify-panel {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--panel-bg);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .mass-verify-panel.mass-verify-panel--correct {
+      border-color: rgba(5, 150, 105, 0.55);
+      background-color: rgb(236 253 245 / 0.92);
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
+    }
+    .mass-verify-panel.mass-verify-panel--wrong {
+      border-color: rgba(220, 38, 38, 0.35);
+      background-color: rgb(254 242 242 / 0.92);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.06);
+    }
+    .mass-verify-object-readout {
+      width: 100%;
+      margin: 0;
+      padding: 4px 4px;
+      text-align: center;
+      font: inherit;
+      color: inherit;
+      user-select: none;
+    }
+    .mass-verify-input-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto auto 1fr;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      column-gap: 0.25em;
+    }
+    .mass-verify-input-wrap .mass-verify-input {
+      grid-column: 2;
+      width: auto;
+      min-width: 9ch;
+      max-width: min(24ch, 50vw);
+      justify-self: end;
+      text-align: right;
+    }
+    .mass-verify-input-wrap .mass-verify-input:placeholder-shown {
+      padding-inline-end: 0.55em;
+    }
+    .mass-verify-input-wrap .mass-verify-unit {
+      grid-column: 3;
+      justify-self: start;
+      padding: 4px 0;
+      font: inherit;
+      color: var(--muted);
+      user-select: none;
+    }
+    .mass-verify-input {
+      width: 100%;
+      margin: 0;
+      padding: 4px 4px;
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      outline: none;
+    }
+    .mass-verify-input::placeholder {
+      color: rgba(23, 25, 35, 0.38);
+      opacity: 1;
+    }
+    .mass-verify-input::-webkit-outer-spin-button,
+    .mass-verify-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .mass-verify-input[type="number"] {
+      appearance: textfield;
+    }
+    .mass-verify-input.app-numeric-input[readonly] {
+      cursor: pointer;
+    }
+
+    .table-keypad-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .table-keypad-overlay[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel {
+      width: min(100%, 300px);
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 42px rgba(15, 23, 42, 0.22);
+      display: grid;
+      gap: 12px;
+    }
+
+    .table-keypad-panel__title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-keypad-panel__display {
+      box-sizing: border-box;
+      height: 64px;
+      min-height: 64px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      font-size: 1.5rem;
+      font-weight: 650;
+      line-height: 1.2;
+      text-align: center;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .table-keypad-panel__display.is-invalid {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .table-keypad-panel__error {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 650;
+      color: var(--danger);
+      text-align: center;
+    }
+
+    .table-keypad-panel__error[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel__actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .table-keypad-panel__action {
+      appearance: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
+      width: 56px;
+      height: 56px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .table-keypad-panel__action svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-keypad-panel__confirm {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(61, 90, 154, 0.35);
+    }
+
+    .table-keypad-panel__cancel {
+      background: var(--readout-bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .table-keypad-panel__action:hover {
+      filter: brightness(1.05);
+    }
+
+    .table-keypad-panel__cancel:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .table-keypad-panel__action:active {
+      transform: scale(0.97);
+    }
+
+    .table-math-keypad {
+      width: 100%;
+    }
+
+    .table-math-keypad__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .table-math-keypad__key {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1.125rem;
+      font-weight: 650;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .table-math-keypad__key svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-math-keypad__key:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--area-muted);
+    }
+
+    .table-math-keypad__key:active:not(:disabled) {
+      background: rgba(61, 90, 154, 0.12);
+    }
+
+    .table-math-keypad__key:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .mass-verify-result {
+      margin-top: 0.4rem;
+      max-width: 498px;
+      margin-inline: auto;
+      font-size: 0.875rem;
+      text-align: center;
+      line-height: 1.35;
+      min-height: 1.35em;
+    }
+    .mass-verify-result[data-status="ok"] {
+      color: var(--success);
+    }
+    .mass-verify-result[data-status="wrong"],
+    .mass-verify-result[data-status="error"] {
+      color: var(--danger);
+    }
+    @media (max-width: 760px) {
+      main {
+        margin-top: 12px;
+        padding: 0.35rem 0.8rem 0.4rem;
+      }
+      .page-top {
+        align-items: flex-start;
+      }
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-root">
+    <main>
+    <header class="page-top">
+      <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+      <h1 class="page-title">Měření hmotnosti</h1>
+    </header>
+    <div class="stage" id="stage" aria-label="Pracovní plocha s váhami">
+      <div class="scale-wrap">
+        <div class="scale-figure" id="scaleFigure">
+          <div class="food-palette" id="foodPalette" aria-label="Potraviny na paletě">
+            <div class="food-palette__slot">
+        <img
+          class="apple apple--gfx pan-drag"
+          id="apple"
+          src="assets/jablko.svg"
+          alt="Jablko 112,84 g"
+          width="65"
+          height="68"
+          draggable="false"
+        />
+            </div>
+            <div class="food-palette__slot">
+        <img
+          class="rohlik rohlik--gfx pan-drag"
+          id="rohlik"
+          src="assets/rohlik.svg"
+          alt="Rohlík 41,42 g"
+          width="156"
+          height="118"
+          draggable="false"
+        />
+            </div>
+            <div class="food-palette__slot">
+        <img
+          class="sklenice-okurek sklenice-okurek--gfx pan-drag"
+          id="skleniceOkurek"
+          src="assets/sklenice_okurek.svg"
+          alt="Sklenice okurek 687 g"
+          width="78"
+          height="106"
+          draggable="false"
+        />
+            </div>
+            <div class="food-palette__slot">
+        <img
+          class="bonbon bonbon--gfx pan-drag"
+          id="bonbon"
+          src="assets/bonbon.svg"
+          alt="Bonbón 2,9 g"
+          width="87"
+          height="36"
+          draggable="false"
+        />
+            </div>
+            <div class="food-palette__slot">
+        <img
+          class="zlata-cihla zlata-cihla--gfx pan-drag"
+          id="zlataCihla"
+          src="assets/zlata_cihla.svg"
+          alt="Zlatá cihla 1322 g"
+          width="174"
+          height="99"
+          draggable="false"
+        />
+            </div>
+          </div>
+        <div class="scale-art">
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="376" viewBox="0 0 160 167" fill="none" class="scale scale-layer" role="img" aria-label="Rovnoramenné váhy">
+<defs><clipPath id="clip_scale_dyn"><rect width="160" height="166.9" fill="white"/></clipPath></defs>
+<g clip-path="url(#clip_scale_dyn)">
+<g id="scale-fixed"><path d="M149.772 146.356H10.2262L0.611328 156.072H159.387L149.772 146.356Z" fill="#C19E6E"/>
+<path d="M149.772 146.356H10.2262L0.611328 156.072H159.387L149.772 146.356Z" stroke="#9B6E42" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M159.387 156.071H0.611328V166.286H159.387V156.071Z" fill="#9B6E42"/>
+<path d="M159.387 156.071H0.611328V166.286H159.387V156.071Z" stroke="#9B6E42" stroke-width="1.22444" stroke-linejoin="round"/>
+<path d="M84.9348 144.358H76.0117L76.3178 6.96143H84.9348V144.358Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M83.1211 19.8325V133.111" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M80.4776 132.494C74.8268 132.494 70.0179 136.611 69.1485 142.194L68.2088 148.228C67.8904 150.279 69.476 152.131 71.5515 152.131H89.4098C91.4853 152.131 93.0709 150.279 92.7526 148.228L91.8128 142.194C90.9435 136.611 86.1345 132.494 80.4837 132.494H80.4776Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M75.7969 135.181C77.1927 134.44 78.7876 134.023 80.4773 134.023C85.4056 134.023 89.535 137.559 90.2942 142.429L91.2339 148.463C91.3197 149.004 91.1697 149.534 90.8115 149.953" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<g id="scale-top-ruler" transform="translate(65.8509 0)">
+<path d="M2.24683 1.57564C6.38415 0.949183 10.7348 0.612183 15.1544 0.612183C19.6913 0.612183 24.0706 0.949137 28.198 1.57564C29.1777 1.82505 29.5956 2.10527 29.4073 3.61218L27.4109 14.1122C27.1293 15.3393 26.6227 15.5581 25.2468 15.3174C22.0584 14.865 18.6681 14.6228 15.1085 14.6228C11.5105 14.6228 8.0333 14.8813 4.74683 15.363C3.49609 15.6941 3.00068 15.5533 2.85824 14.1122L0.612244 3.61218C0.757095 2.48781 1.16272 2.07484 2.24683 1.57564Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M10.3845 2.26845C11.9579 2.1858 13.5466 2.14294 15.1476 2.14294C19.5955 2.14294 23.959 2.47422 28.1134 3.11218" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M14.8718 0.918579V5.2041" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.8777 0.612549V4.89807" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.738 0.807861L11.9309 4.95564" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.37866 0.835938L8.7766 5.12146" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.12671 1.24609L5.71444 5.39387" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1.87964 1.5769L2.68164 5.77672" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.1534 0.807861L17.9636 4.95564" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.5189 0.835938L21.1179 5.12146" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.7672 1.24609L24.1794 5.39387" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M28.0167 1.5769L27.2117 5.77672" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="scale-beam" transform="rotate(0 80.94 46.02)"><path d="M80.668 16.8359L80.9282 45.9132" stroke="#1D1D1C" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.2227 46.027C23.2227 44.7567 24.2481 43.722 25.5185 43.722L80.9303 41.4844L136.351 43.468C137.622 43.468 138.656 44.4934 138.656 45.7638C138.656 47.0341 137.631 48.0688 136.36 48.0688L80.9486 50.3064L25.5277 48.3228C24.2573 48.3228 23.2227 47.2974 23.2227 46.027Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M137.279 46.2354C137.279 45.5619 136.731 45.0201 136.058 45.0201L80.9336 43.1406L69.6719 43.462" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M80.9385 51.4483C83.9917 51.4483 86.4668 48.9731 86.4668 45.9199C86.4668 42.8667 83.9917 40.3916 80.9385 40.3916C77.8853 40.3916 75.4102 42.8667 75.4102 45.9199C75.4102 48.9731 77.8853 51.4483 80.9385 51.4483Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M83.5131 16.1991L80.6418 5.9873C80.6418 5.9873 77.9817 15.7185 77.8164 16.2144H77.8531C77.8286 16.3644 77.8164 16.5174 77.8164 16.6705C77.8195 18.2439 79.099 19.5143 80.6693 19.5112C82.2427 19.5081 83.5131 18.2286 83.51 16.6583C83.51 16.5021 83.4978 16.3491 83.4733 16.2022H83.51L83.5131 16.1991Z" fill="#FF184A" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M79.209 41.7905C82.068 41.7905 84.3853 43.3303 84.3853 45.2281" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<g id="pan-right-root" transform="translate(134.955 45.95)"><g transform="translate(-22.418 -10.1813)">
+<path d="M22.418 0.612183C20.9211 0.612183 19.7089 1.82437 19.7089 3.32124C19.7089 5.13647 21.365 5.53747 22.3415 5.94766C23.3179 6.35784 25.1271 6.63947 25.1271 8.73937C25.1271 10.2362 23.9149 11.4484 22.418 11.4484" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.418 11.4487C20.9211 11.4487 19.7089 10.2365 19.7089 8.73962" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+</g><g id="pan-right-counter" transform="rotate(0)"><g transform="translate(-22.418 -10.1813)">
+<circle id="pan-right-contact" cx="22.3643" cy="66.2937" r="1" visibility="hidden" pointer-events="none" aria-hidden="true"/>
+<path d="M43.8729 62.1157V31.6334C43.8729 19.7839 34.2672 10.1813 22.4208 10.1813C10.5713 10.1813 0.968689 19.787 0.968689 31.6334V62.1157" stroke="#1D1D1C" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.3643 66.2937C34.3777 66.2937 44.1164 64.0282 44.1164 61.2337C44.1164 58.4391 34.3777 56.1737 22.3643 56.1737C10.351 56.1737 0.612244 58.4391 0.612244 61.2337C0.612244 64.0282 10.351 66.2937 22.3643 66.2937Z" fill="#878787"/>
+<path d="M41.2512 63.7444C43.0695 63.0036 44.1164 62.1496 44.1164 61.2343C44.1164 58.4395 34.376 56.1713 22.3643 56.1713C10.3526 56.1713 0.612244 58.4365 0.612244 61.2343C0.612244 62.1557 1.67443 63.0189 3.52333 63.7628" fill="#9D9D9C"/>
+<path d="M41.2512 63.7444C43.0695 63.0036 44.1164 62.1496 44.1164 61.2343C44.1164 58.4395 34.376 56.1713 22.3643 56.1713C10.3526 56.1713 0.612244 58.4365 0.612244 61.2343C0.612244 62.1557 1.67443 63.0189 3.52333 63.7628" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.5224 63.7626C6.57124 61.7821 13.4801 60.4291 22.3634 60.4291C31.2467 60.4291 38.229 61.6872 41.2534 63.7412" fill="#878787"/>
+</g></g></g>
+<g id="pan-left-root" transform="translate(26.043 46.11)"><g transform="translate(-22.418 -10.1813)"><g transform="translate(45 0) scale(-1 1)">
+<path d="M22.418 0.612183C20.9211 0.612183 19.7089 1.82437 19.7089 3.32124C19.7089 5.13647 21.365 5.53747 22.3415 5.94766C23.3179 6.35784 25.1271 6.63947 25.1271 8.73937C25.1271 10.2362 23.9149 11.4484 22.418 11.4484" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.418 11.4487C20.9211 11.4487 19.7089 10.2365 19.7089 8.73962" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+</g></g><g id="pan-left-counter" transform="rotate(0)"><g transform="translate(-22.418 -10.1813)"><g transform="translate(45 0) scale(-1 1)">
+<circle id="pan-left-contact" cx="22.3643" cy="66.2937" r="1" visibility="hidden" pointer-events="none" aria-hidden="true"/>
+<path d="M43.8729 62.1157V31.6334C43.8729 19.7839 34.2672 10.1813 22.4208 10.1813C10.5713 10.1813 0.968689 19.787 0.968689 31.6334V62.1157" stroke="#1D1D1C" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.3643 66.2937C34.3777 66.2937 44.1164 64.0282 44.1164 61.2337C44.1164 58.4391 34.3777 56.1737 22.3643 56.1737C10.351 56.1737 0.612244 58.4391 0.612244 61.2337C0.612244 64.0282 10.351 66.2937 22.3643 66.2937Z" fill="#878787"/>
+<path d="M41.2512 63.7444C43.0695 63.0036 44.1164 62.1496 44.1164 61.2343C44.1164 58.4395 34.376 56.1713 22.3643 56.1713C10.3526 56.1713 0.612244 58.4365 0.612244 61.2343C0.612244 62.1557 1.67443 63.0189 3.52333 63.7628" fill="#9D9D9C"/>
+<path d="M41.2512 63.7444C43.0695 63.0036 44.1164 62.1496 44.1164 61.2343C44.1164 58.4395 34.376 56.1713 22.3643 56.1713C10.3526 56.1713 0.612244 58.4365 0.612244 61.2343C0.612244 62.1557 1.67443 63.0189 3.52333 63.7628" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.5224 63.7626C6.57124 61.7821 13.4801 60.4291 22.3634 60.4291C31.2467 60.4291 38.229 61.6872 41.2534 63.7412" fill="#878787"/>
+</g></g></g></g>
+</g>
+</g>
+</svg>
+</div>
+        <div class="pan-target pan-target--left" id="panLeft" aria-hidden="true"></div>
+        <div class="pan-target pan-target--right" id="panRight" aria-hidden="true"></div>
+        <div class="weights-tray-wrap">
+          <div id="weightsTray" class="weights-tray" aria-label="Zásobník závaží"></div>
+          <button
+            type="button"
+            id="clear-weights-btn"
+            class="clear-weights-btn"
+            aria-label="Sundat všechna závaží z obou misek"
+          >
+            Sundat závaží
+          </button>
+        </div>
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="376" viewBox="0 0 160 167" fill="none" class="scale scale-layer scale-layer--pan-rims" aria-hidden="true">
+<defs><clipPath id="clip_scale_rims_dyn"><rect width="160" height="166.9" fill="white"/></clipPath></defs>
+<g clip-path="url(#clip_scale_rims_dyn)">
+<g id="scale-beam-rims" transform="rotate(0 80.94 46.02)">
+<g id="pan-right-root-rims" transform="translate(134.955 45.95)"><g id="pan-right-counter-rims" transform="rotate(0)"><g transform="translate(-22.418 -10.1813)">
+<path d="M22.3648 66.2966C11.501 66.2966 2.49829 64.4446 0.875916 62.0233L1.93505 65.1915C3.06153 68.2618 11.0816 70.2546 22.3648 70.2546C33.6479 70.2546 41.7537 68.0751 42.7945 65.1915L43.8536 62.0233C42.2282 64.4446 33.2255 66.2966 22.3648 66.2966Z" fill="#575756" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+</g></g></g>
+<g id="pan-left-root-rims" transform="translate(26.043 46.11)"><g id="pan-left-counter-rims" transform="rotate(0)"><g transform="translate(-22.418 -10.1813)"><g transform="translate(45 0) scale(-1 1)">
+<path d="M22.3648 66.2966C11.501 66.2966 2.49829 64.4446 0.875916 62.0233L1.93505 65.1915C3.06153 68.2618 11.0816 70.2546 22.3648 70.2546C33.6479 70.2546 41.7537 68.0751 42.7945 65.1915L43.8536 62.0233C42.2282 64.4446 33.2255 66.2966 22.3648 66.2966Z" fill="#575756" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+</g></g></g></g>
+</g>
+</g>
+</svg>
+        </div>
+      </div>
+    </div>
+    <section class="mass-verify-row" aria-labelledby="mass-verify-heading">
+      <h2 id="mass-verify-heading" class="sr-only">Ověření hmotnosti objektu</h2>
+      <div class="mass-verify">
+        <div class="mass-verify-panel">
+          <span class="sr-only" id="verify-object-caption">Vybraný objekt</span>
+          <div
+            id="verify-object-display"
+            class="mass-verify-object-readout"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-labelledby="verify-object-caption"
+          >
+            <span id="verify-object-label">–</span>
+          </div>
+        </div>
+        <div class="mass-verify-panel">
+          <label class="sr-only" for="verify-mass-input">hmotnost v gramech</label>
+          <div class="mass-verify-input-wrap">
+            <input
+              id="verify-mass-input"
+              class="mass-verify-input"
+              type="text"
+              inputmode="decimal"
+              placeholder="hmotnost"
+              autocomplete="off"
+              aria-describedby="verify-mass-hint"
+            />
+            <span class="mass-verify-unit" aria-hidden="true">g</span>
+          </div>
+        </div>
+      </div>
+      <p id="verify-mass-hint" class="sr-only">
+        Objekt pro ověření vyber kliknutím na jablko, rohlík, sklenici okurek, bonbón nebo zlatou cihlu na váze (nebo jej přesuň).
+        Ověření akceptuje odchylku ± 0,5 gramu. Číslo může mít desetinnou čárku i tečku.
+      </p>
+      <div
+        id="verify-mass-result"
+        class="mass-verify-result"
+        role="status"
+        aria-live="polite"
+      ></div>
+    </section>
+    </main>
+  </div>
+
+<div id="tableKeypadOverlay" class="table-keypad-overlay" hidden>
+  <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="tableKeypadTitle">
+    <p id="tableKeypadTitle" class="table-keypad-panel__title">Hmotnost</p>
+    <div id="tableKeypadDisplay" class="table-keypad-panel__display" aria-live="polite"></div>
+    <p id="tableKeypadError" class="table-keypad-panel__error" hidden></p>
+    <div class="table-math-keypad" id="tableMathKeypad" aria-label="Matematická klávesnice">
+      <div class="table-math-keypad__grid">
+        <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+        <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+        <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+        <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+        <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+        <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+        <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+        <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+        <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+        <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+        <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+        <button class="table-math-keypad__key" type="button" data-action="clear" aria-label="Smazat vše">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path
+              d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="table-keypad-panel__actions">
+      <button type="button" id="tableKeypadCancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+      <button type="button" id="tableKeypadConfirm" class="table-keypad-panel__action table-keypad-panel__confirm" aria-label="Vložit hodnotu">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path
+            d="M5 12.5l5 5L19 7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+  <script>
+    (function () {
+      const stage = document.getElementById("stage");
+      const panLeft = document.getElementById("panLeft");
+      const panRight = document.getElementById("panRight");
+      const apple = document.getElementById("apple");
+      const rohlik = document.getElementById("rohlik");
+      const skleniceOkurek = document.getElementById("skleniceOkurek");
+      const bonbon = document.getElementById("bonbon");
+      const zlataCihla = document.getElementById("zlataCihla");
+      const weightsTray = document.getElementById("weightsTray");
+      /** Jednorázové potraviny z palety (ne klony závaží). */
+      const PAN_FOOD_ELS = [apple, rohlik, skleniceOkurek, bonbon, zlataCihla];
+      const scaleWrap = stage.querySelector(".scale-wrap");
+      const scaleFigure = document.getElementById("scaleFigure");
+      const foodPalette = document.getElementById("foodPalette");
+      const beamGroup = document.getElementById("scale-beam");
+      const beamGroupRims = document.getElementById("scale-beam-rims");
+      const panRightCounter = document.getElementById("pan-right-counter");
+      const panLeftCounter = document.getElementById("pan-left-counter");
+      const panRightCounterRims = document.getElementById(
+        "pan-right-counter-rims"
+      );
+      const panLeftCounterRims = document.getElementById(
+        "pan-left-counter-rims"
+      );
+      const panRightRoot = document.getElementById("pan-right-root");
+      const panLeftRoot = document.getElementById("pan-left-root");
+      const panRightRootRims = document.getElementById("pan-right-root-rims");
+      const panLeftRootRims = document.getElementById("pan-left-root-rims");
+      const panContactRightEl = document.getElementById("pan-right-contact");
+      const panContactLeftEl = document.getElementById("pan-left-contact");
+      let drag = null;
+      /** Nezbytný prostor v řádku palety během tažení, aby ostatní ikony nerefakovaly. */
+      let foodPaletteLayoutHolder = null;
+
+      /** Hmotnost jablka [g] — vstup do modelu vah. */
+      const APPLE_MASS_G = 112.84;
+      /** Hmotnost rohlíku [g]. */
+      const ROHLIK_MASS_G = 41.42;
+      /** Hmotnost sklenice okurek [g]. */
+      const SKLENICE_OKUREK_MASS_G = 687;
+      /** Hmotnost bonbónu [g]. */
+      const BONBON_MASS_G = 2.9;
+      /** Hmotnost zlaté cihly [g]. */
+      const ZLATA_CIHLA_MASS_G = 1322;
+
+      /** Sada závaží [g]; velikost vizuálně ~ ∛(m/1000) jako u stejnorodého tělesa. */
+      const WEIGHT_SET_G = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+      const WEIGHT_VIEW_ASPECT = 85 / 71;
+
+      let weights = []; /** Pouze vzory v `#weightsTray`; na misce jsou vždy jejich klony. */
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function weightTraySizePx(massG, wrapInnerWidth) {
+        const t = Math.cbrt(massG / 1000);
+        const minPx = Math.max(13, wrapInnerWidth * 0.042);
+        const maxPx = Math.min(56, wrapInnerWidth * 0.165);
+        const w = minPx + (maxPx - minPx) * t;
+        return { w: Math.round(w), h: Math.round(w * WEIGHT_VIEW_ASPECT) };
+      }
+
+      function createWeightElement(massG) {
+        const el = document.createElement("div");
+        el.className = "weight pan-drag";
+        el.dataset.massG = String(massG);
+        el.setAttribute("role", "img");
+        el.setAttribute(
+          "aria-label",
+          massG >= 1000 ? "Závaží 1 kg" : `Závaží ${massG} g`
+        );
+        const label = massG >= 1000 ? "1 kg" : `${massG} g`;
+        const fs =
+          massG >= 1000 ? 21 : massG >= 100 ? 18 : massG >= 10 ? 20 : 21;
+        el.innerHTML =
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 71 85" width="100%" height="100%" aria-hidden="true">` +
+          `<path d="M70.5 27H0.5V75.5H70.5V27Z" fill="black" stroke="black"/>` +
+          `<ellipse cx="35.5" cy="27" rx="35.5" ry="9" fill="#6F6F6F"/>` +
+          `<path d="M51 26C51 28.7614 44.0604 31 35.5 31C26.9396 31 20 28.7614 20 26C20 23.2386 26.9396 21 35.5 21C44.0604 21 51 23.2386 51 26Z" fill="black"/>` +
+          `<ellipse cx="35.5" cy="76" rx="35.5" ry="9" fill="black"/>` +
+          `<path d="M56.6972 1.97522H14.3028V12.6195H56.6972V1.97522Z" fill="black" stroke="black"/>` +
+          `<ellipse cx="35.5" cy="1.97523" rx="21.5" ry="1.97523" fill="#6F6F6F"/>` +
+          `<ellipse cx="35.5" cy="12.7293" rx="21.5" ry="1.97523" fill="black"/>` +
+          `<path d="M29.5 18.5C30 17.5 29.5 14.5 29.5 14.5H41.5V18.5L48.5 24.5H22.5C22.5 24.5 29 19.5 29.5 18.5Z" fill="black" stroke="black"/>` +
+          `<path d="M41.7222 14.5C41.7222 14.5 41.2222 17.5 41.7222 18.5C42.2222 19.5 49.7222 24.5 49.7222 24.5" stroke="black" fill="none"/>` +
+          `<text x="35.5" y="59.5" text-anchor="middle" dominant-baseline="central" font-family="Fenomen Sans, system-ui, sans-serif" font-weight="600" fill="white" font-size="${fs}">${escapeHtml(
+            label
+          )}</text>` +
+          `</svg>`;
+        return el;
+      }
+
+      WEIGHT_SET_G.forEach((g) =>
+        weightsTray.appendChild(createWeightElement(g))
+      );
+      weights = Array.from(weightsTray.querySelectorAll(".weight"));
+
+      /** Souřadnice viewBoxu 160×167; rameno se otáčí kolem BEAM_PIVOT. */
+      const VB_W = 160;
+      const VB_H = 167;
+      const BEAM_PIVOT = { x: 80.94, y: 46.02 };
+      /** Úchyt řetězu na rameni (stejně jako ve SVG); pozice dna misky se měří přes `#pan-*-contact`. */
+      const HOOK_LEFT = { x: 26.043, y: 46.11 };
+      const HOOK_RIGHT = { x: 134.955, y: 45.95 };
+      const PAN_TARGET_W_PCT = 28;
+      const PAN_TARGET_H_PCT = 43;
+      /** Posun misek dolů v pixelech (relativně k výšce měřítka → převod do viewBoxu). */
+      const PAN_OFFSET_DOWN_PX = 20;
+      /** Drobný posun kvůli průhlednému okraji ve spritech (px). */
+      const PAN_ITEM_SURFACE_PAD_PX = 2;
+      /** Rohlík má v SVG spodní „vzduch“ — na misce ho posuneme o to níž. */
+      const ROHLIK_SURFACE_EXTRA_PAD_PX = 8;
+      /** Pixely vůči `.scale-wrap`: střed a spodek skrytého kontaktu v misce (stejný řetěz transformací jako kresba). */
+      function panSurfaceWrapPx(which) {
+        const wr = wrapRect();
+        const node =
+          which === "left" ? panContactLeftEl : panContactRightEl;
+        const bb = node.getBoundingClientRect();
+        return {
+          cx: (bb.left + bb.right) / 2 - wr.left,
+          cy: (bb.top + bb.bottom) / 2 - wr.top,
+          bottom: bb.bottom - wr.top,
+        };
+      }
+
+      function layoutPanTargetsDeg() {
+        const wr = wrapRect();
+        function applyPan(el, which) {
+          const s = panSurfaceWrapPx(which);
+          el.style.left = `${(s.cx / wr.width) * 100 - PAN_TARGET_W_PCT / 2}%`;
+          el.style.top = `${(s.cy / wr.height) * 100 - PAN_TARGET_H_PCT / 2}%`;
+          el.style.width = `${PAN_TARGET_W_PCT}%`;
+          el.style.height = `${PAN_TARGET_H_PCT}%`;
+        }
+        applyPan(panLeft, "left");
+        applyPan(panRight, "right");
+      }
+
+      /** Laboratorní rovnoramenné váhy — odezva úhlu od Δm (kladný úhel = levá strana dolů). */
+      const SCALE_DEAD_ZONE_G = 0.25;
+      const SCALE_TANH_DIVISOR_G = 35;
+      const SCALE_MAX_ANGLE_DEG = 18;
+      /** Pružina + tlumení (úhel ve °, čas v s); mírně podkritické kvůli krátkému překmitnutí. */
+      const SCALE_SPRING_STIFFNESS = 46;
+      const SCALE_SPRING_DAMPING = 12.5;
+
+      let displayTiltDeg = 0;
+      let tiltVelDegPerSec = 0;
+      let tiltAnimRaf = null;
+      let tiltAnimLastTs = 0;
+
+      function wrapRect() {
+        return scaleFigure.getBoundingClientRect();
+      }
+
+      /** Viewport px → layout px pro `style.left/top` při `transform: scale(--ui-scale)` na předkovi. */
+      function dragLayoutFactor() {
+        const raw = getComputedStyle(document.documentElement)
+          .getPropertyValue("--ui-scale")
+          .trim();
+        const n = parseFloat(raw);
+        return Number.isFinite(n) && n > 0 ? n : 1;
+      }
+
+      function viewportOffsetToLayoutPx(vPx) {
+        return vPx / dragLayoutFactor();
+      }
+
+      /** Rozměry vykresleného `<svg>` (pro zásobník závaží apod.). */
+      function svgLayerBoundingRect() {
+        return scaleFigure
+          .querySelector("svg.scale-layer:not(.scale-layer--pan-rims)")
+          .getBoundingClientRect();
+      }
+
+      /** Po přesunu závaží do `.scale-wrap` při tahu je CB měřítko → offset 0; z palety ještě ne přesunuto → offset palety. */
+      function dragContainOriginInWrapPx(el) {
+        if (!weightsTray.contains(el)) return { ox: 0, oy: 0 };
+        const wr = wrapRect();
+        const tr = weightsTray.getBoundingClientRect();
+        return { ox: tr.left - wr.left, oy: tr.top - wr.top };
+      }
+
+      /** Rozměry vzorků v zásobníku (`weights` = jen řádky v `#weightsTray`). */
+      function applyTrayWeightSizes() {
+        const sr = svgLayerBoundingRect();
+        if (sr.width <= 0) return;
+        const innerLayW = viewportOffsetToLayoutPx(sr.width);
+        weights.forEach((el) => {
+          const g = Number(el.dataset.massG);
+          const { w, h } = weightTraySizePx(g, innerLayW);
+          el.style.width = `${w}px`;
+          el.style.height = `${h}px`;
+        });
+      }
+
+      function panHookYOffsetViewBox() {
+        const sr = svgLayerBoundingRect();
+        const h = viewportOffsetToLayoutPx(sr.height);
+        if (h <= 0) return 0;
+        return (PAN_OFFSET_DOWN_PX / h) * VB_H;
+      }
+
+      function clamp(n, min, max) {
+        return Math.min(Math.max(n, min), max);
+      }
+
+      /** Ořízne pozici táhnutého prvku k obdéžníku `<main>` (layout px vůči `.scale-figure`). */
+      function clampDragIntoBounds(left, top, wL, hL) {
+        const wr = wrapRect();
+        const f = dragLayoutFactor();
+        const boundsRoot = stage.closest("main") || stage;
+        const sr = boundsRoot.getBoundingClientRect();
+        const m = 4;
+        const sL = (sr.left - wr.left) / f;
+        const sR = (sr.right - wr.left) / f;
+        const sT = (sr.top - wr.top) / f;
+        const sB = (sr.bottom - wr.top) / f;
+        const loX = Math.min(sL + m, sR - wL - m);
+        const hiX = Math.max(sL + m, sR - wL - m);
+        const loY = Math.min(sT + m, sB - hL - m);
+        const hiY = Math.max(sT + m, sB - hL - m);
+        return {
+          left: clamp(left, loX, hiX),
+          top: clamp(top, loY, hiY),
+        };
+      }
+
+      function setPositionPx(el, left, top) {
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+        el.style.right = "auto";
+        el.style.bottom = "auto";
+        el.style.margin = "0";
+      }
+
+      function elementSize(el) {
+        const r = el.getBoundingClientRect();
+        return { w: r.width, h: r.height };
+      }
+
+      function intersects(a, b) {
+        return !(
+          a.right < b.left ||
+          a.left > b.right ||
+          a.bottom < b.top ||
+          a.top > b.bottom
+        );
+      }
+
+      function strictPanRect(panEl) {
+        const pr = panEl.getBoundingClientRect();
+        return {
+          left: pr.left,
+          right: pr.right,
+          top: pr.top,
+          bottom: pr.bottom,
+        };
+      }
+
+      /** Hranice snappable zóny v pixelech vůči `.scale-wrap`. */
+      function panTargetBoundsWrapPx(panEl) {
+        const pr = panEl.getBoundingClientRect();
+        const wr = wrapRect();
+        return {
+          left: pr.left - wr.left,
+          right: pr.right - wr.left,
+          top: pr.top - wr.top,
+          bottom: pr.bottom - wr.top,
+        };
+      }
+
+      /** Horizontální odchylka středu prvku od středu kontaktu v misce (px ve wrapu). */
+      function syncPanPlaceOffsetFromElement(el, which) {
+        const surf = panSurfaceWrapPx(which);
+        const wr = wrapRect();
+        const ir = el.getBoundingClientRect();
+        const cxEl = (ir.left + ir.right) / 2 - wr.left;
+        el.dataset.panPlaceOffsetX = String(
+          viewportOffsetToLayoutPx(cxEl - surf.cx)
+        );
+      }
+
+      function pickSnapPan(ir, releaseClientX, releaseClientY) {
+        const onLeft = shouldSnapOntoPan(
+          panLeft,
+          ir,
+          releaseClientX,
+          releaseClientY
+        );
+        const onRight = shouldSnapOntoPan(
+          panRight,
+          ir,
+          releaseClientX,
+          releaseClientY
+        );
+        if (!onLeft && !onRight) return null;
+        if (onLeft && !onRight) return "left";
+        if (!onLeft && onRight) return "right";
+        const wr = wrapRect();
+        const icx = (ir.left + ir.right) / 2 - wr.left;
+        const icy = (ir.top + ir.bottom) / 2 - wr.top;
+        const lc = panSurfaceWrapPx("left");
+        const rc = panSurfaceWrapPx("right");
+        const dl = (icx - lc.cx) ** 2 + (icy - lc.cy) ** 2;
+        const dr = (icx - rc.cx) ** 2 + (icy - rc.cy) ** 2;
+        return dl <= dr ? "left" : "right";
+      }
+
+      const SNAP_PAD_PX = 6;
+
+      function shouldSnapOntoPan(panEl, itemRect, releaseClientX, releaseClientY) {
+        const strict = strictPanRect(panEl);
+        if (intersects(itemRect, strict)) return true;
+        const cx = (itemRect.left + itemRect.right) / 2;
+        const cy = (itemRect.top + itemRect.bottom) / 2;
+        if (cx >= strict.left && cx <= strict.right && cy >= strict.top && cy <= strict.bottom)
+          return true;
+
+        const p = SNAP_PAD_PX;
+        const loose = {
+          left: strict.left - p,
+          right: strict.right + p,
+          top: strict.top - p,
+          bottom: strict.bottom + p,
+        };
+        if (!intersects(itemRect, loose)) return false;
+        const pin =
+          releaseClientX >= loose.left &&
+          releaseClientX <= loose.right &&
+          releaseClientY >= loose.top &&
+          releaseClientY <= loose.bottom;
+        return pin;
+      }
+
+      function isFullyOffPan(panEl, itemRect) {
+        const strict = strictPanRect(panEl);
+        return (
+          itemRect.right < strict.left ||
+          itemRect.left > strict.right ||
+          itemRect.bottom < strict.top ||
+          itemRect.top > strict.bottom
+        );
+      }
+
+      /** Klony závaží z misek zmizí, když je uživatel pustí nad zásobníkem. */
+      function shouldReturnWeightToTray(itemRect, releaseClientX, releaseClientY) {
+        const tr = weightsTray.getBoundingClientRect();
+        if (tr.width <= 0 && tr.height <= 0) return false;
+        if (intersects(itemRect, tr)) return true;
+        const p = SNAP_PAD_PX;
+        const loose = {
+          left: tr.left - p,
+          right: tr.right + p,
+          top: tr.top - p,
+          bottom: tr.bottom + p,
+        };
+        return (
+          releaseClientX >= loose.left &&
+          releaseClientX <= loose.right &&
+          releaseClientY >= loose.top &&
+          releaseClientY <= loose.bottom
+        );
+      }
+
+      function massLeftG() {
+        let m = 0;
+        if (apple.classList.contains("on-left-pan")) m += APPLE_MASS_G;
+        if (rohlik.classList.contains("on-left-pan")) m += ROHLIK_MASS_G;
+        if (skleniceOkurek.classList.contains("on-left-pan"))
+          m += SKLENICE_OKUREK_MASS_G;
+        if (bonbon.classList.contains("on-left-pan")) m += BONBON_MASS_G;
+        if (zlataCihla.classList.contains("on-left-pan"))
+          m += ZLATA_CIHLA_MASS_G;
+        scaleWrap.querySelectorAll(".weight.on-left-pan").forEach((el) => {
+          m += Number(el.dataset.massG);
+        });
+        return m;
+      }
+
+      function massRightG() {
+        let m = 0;
+        if (apple.classList.contains("on-right-pan")) m += APPLE_MASS_G;
+        if (rohlik.classList.contains("on-right-pan")) m += ROHLIK_MASS_G;
+        if (skleniceOkurek.classList.contains("on-right-pan"))
+          m += SKLENICE_OKUREK_MASS_G;
+        if (bonbon.classList.contains("on-right-pan")) m += BONBON_MASS_G;
+        if (zlataCihla.classList.contains("on-right-pan"))
+          m += ZLATA_CIHLA_MASS_G;
+        scaleWrap.querySelectorAll(".weight.on-right-pan").forEach((el) => {
+          m += Number(el.dataset.massG);
+        });
+        return m;
+      }
+
+      function repositionWeightsOnPan(which) {
+        const f = dragLayoutFactor();
+        const surfV = panSurfaceWrapPx(which);
+        const surf = {
+          cx: surfV.cx / f,
+          cy: surfV.cy / f,
+          bottom: surfV.bottom / f,
+        };
+        const panEl = which === "left" ? panLeft : panRight;
+        const boundsV = panTargetBoundsWrapPx(panEl);
+        const bounds = {
+          left: boundsV.left / f,
+          right: boundsV.right / f,
+          top: boundsV.top / f,
+          bottom: boundsV.bottom / f,
+        };
+        const edgePad = 2;
+        const sel =
+          which === "left" ? ".weight.on-left-pan" : ".weight.on-right-pan";
+        scaleWrap.querySelectorAll(sel).forEach((el) => {
+          if (el.classList.contains("is-dragging")) return;
+          const { w, h } = elementSize(el);
+          const wL = w / f;
+          const hL = h / f;
+          const offsetX = Number(el.dataset.panPlaceOffsetX || 0);
+          let left = surf.cx - wL / 2 + offsetX;
+          const lo = bounds.left + edgePad;
+          const hi = bounds.right - wL - edgePad;
+          if (hi >= lo) left = clamp(left, lo, hi);
+          else left = (lo + hi) / 2;
+          const top = surf.bottom - hL + PAN_ITEM_SURFACE_PAD_PX;
+          setPositionPx(el, left, top);
+        });
+      }
+
+      function repositionFoodImgOnPan(el) {
+        if (
+          !el ||
+          el.classList.contains("is-dragging") ||
+          (!el.classList.contains("on-left-pan") &&
+            !el.classList.contains("on-right-pan"))
+        )
+          return;
+        const f = dragLayoutFactor();
+        const which = el.classList.contains("on-left-pan") ? "left" : "right";
+        const surfV = panSurfaceWrapPx(which);
+        const surf = {
+          cx: surfV.cx / f,
+          cy: surfV.cy / f,
+          bottom: surfV.bottom / f,
+        };
+        const panEl = which === "left" ? panLeft : panRight;
+        const boundsV = panTargetBoundsWrapPx(panEl);
+        const bounds = {
+          left: boundsV.left / f,
+          right: boundsV.right / f,
+          top: boundsV.top / f,
+          bottom: boundsV.bottom / f,
+        };
+        const edgePad = 2;
+        const { w, h } = elementSize(el);
+        const wL = w / f;
+        const hL = h / f;
+        const offsetX = Number(el.dataset.panPlaceOffsetX || 0);
+        let left = surf.cx - wL / 2 + offsetX;
+        const lo = bounds.left + edgePad;
+        const hi = bounds.right - wL - edgePad;
+        if (hi >= lo) left = clamp(left, lo, hi);
+        else left = (lo + hi) / 2;
+        const surfacePad =
+          PAN_ITEM_SURFACE_PAD_PX +
+          (el === rohlik ? ROHLIK_SURFACE_EXTRA_PAD_PX : 0);
+        const top = surf.bottom - hL + surfacePad;
+        setPositionPx(el, left, top);
+      }
+
+      function repositionAllOnPanItems() {
+        repositionWeightsOnPan("left");
+        repositionWeightsOnPan("right");
+        PAN_FOOD_ELS.forEach(repositionFoodImgOnPan);
+      }
+
+      let overlayLayoutRaf = null;
+      function schedulePanOverlayLayout() {
+        if (overlayLayoutRaf != null) cancelAnimationFrame(overlayLayoutRaf);
+        overlayLayoutRaf = requestAnimationFrame(() => {
+          overlayLayoutRaf = null;
+          layoutPanTargetsDeg();
+          repositionAllOnPanItems();
+        });
+      }
+
+      /** delta = levá − pravá [g]; kladný úhel uživatele = levá miska dolů. SVG používá tiltSvg = −úhelUživatele. */
+      function targetAngleUserDeg() {
+        const delta = massLeftG() - massRightG();
+        if (Math.abs(delta) < SCALE_DEAD_ZONE_G) return 0;
+        return clamp(
+          SCALE_MAX_ANGLE_DEG * Math.tanh(delta / SCALE_TANH_DIVISOR_G),
+          -SCALE_MAX_ANGLE_DEG,
+          SCALE_MAX_ANGLE_DEG
+        );
+      }
+
+      function targetTiltDegSvg() {
+        return -targetAngleUserDeg();
+      }
+
+      function applyTiltVisual(tiltDeg) {
+        if (!beamGroup) return;
+        const delta = massLeftG() - massRightG();
+        scaleWrap.dataset.deltaMassG = delta.toFixed(2);
+        scaleWrap.dataset.angleTargetUserDeg = targetAngleUserDeg().toFixed(3);
+        scaleWrap.dataset.tiltDeg = tiltDeg.toFixed(4);
+
+        const beamTf = `rotate(${tiltDeg} ${BEAM_PIVOT.x} ${BEAM_PIVOT.y})`;
+        beamGroup.setAttribute("transform", beamTf);
+        if (beamGroupRims) beamGroupRims.setAttribute("transform", beamTf);
+        const counterRot = `${-tiltDeg}`;
+        if (panRightCounter) {
+          panRightCounter.setAttribute("transform", `rotate(${counterRot})`);
+        }
+        if (panLeftCounter) {
+          panLeftCounter.setAttribute("transform", `rotate(${counterRot})`);
+        }
+        if (panRightCounterRims) {
+          panRightCounterRims.setAttribute(
+            "transform",
+            `rotate(${counterRot})`
+          );
+        }
+        if (panLeftCounterRims) {
+          panLeftCounterRims.setAttribute(
+            "transform",
+            `rotate(${counterRot})`
+          );
+        }
+        const hookDy = panHookYOffsetViewBox();
+        if (panRightRoot) {
+          panRightRoot.setAttribute(
+            "transform",
+            `translate(${HOOK_RIGHT.x} ${HOOK_RIGHT.y + hookDy})`
+          );
+        }
+        if (panLeftRoot) {
+          panLeftRoot.setAttribute(
+            "transform",
+            `translate(${HOOK_LEFT.x} ${HOOK_LEFT.y + hookDy})`
+          );
+        }
+        if (panRightRootRims) {
+          panRightRootRims.setAttribute(
+            "transform",
+            `translate(${HOOK_RIGHT.x} ${HOOK_RIGHT.y + hookDy})`
+          );
+        }
+        if (panLeftRootRims) {
+          panLeftRootRims.setAttribute(
+            "transform",
+            `translate(${HOOK_LEFT.x} ${HOOK_LEFT.y + hookDy})`
+          );
+        }
+        schedulePanOverlayLayout();
+      }
+
+      function tiltSpringTick(ts) {
+        if (!beamGroup) {
+          tiltAnimRaf = null;
+          tiltAnimLastTs = 0;
+          return;
+        }
+        if (!tiltAnimLastTs) tiltAnimLastTs = ts;
+        let dt = (ts - tiltAnimLastTs) / 1000;
+        tiltAnimLastTs = ts;
+        dt = clamp(dt, 0.001, 0.064);
+
+        const target = targetTiltDegSvg();
+        const err = target - displayTiltDeg;
+        tiltVelDegPerSec +=
+          SCALE_SPRING_STIFFNESS * err * dt -
+          SCALE_SPRING_DAMPING * tiltVelDegPerSec * dt;
+        displayTiltDeg += tiltVelDegPerSec * dt;
+
+        applyTiltVisual(displayTiltDeg);
+
+        const settled =
+          Math.abs(target - displayTiltDeg) < 0.02 &&
+          Math.abs(tiltVelDegPerSec) < 0.03;
+        if (settled) {
+          displayTiltDeg = target;
+          tiltVelDegPerSec = 0;
+          applyTiltVisual(displayTiltDeg);
+          tiltAnimRaf = null;
+          tiltAnimLastTs = 0;
+          return;
+        }
+        tiltAnimRaf = requestAnimationFrame(tiltSpringTick);
+      }
+
+      function syncTiltGraphic() {
+        if (!beamGroup) return;
+        if (
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+          if (tiltAnimRaf) cancelAnimationFrame(tiltAnimRaf);
+          tiltAnimRaf = null;
+          tiltAnimLastTs = 0;
+          displayTiltDeg = targetTiltDegSvg();
+          tiltVelDegPerSec = 0;
+          applyTiltVisual(displayTiltDeg);
+          return;
+        }
+        if (!tiltAnimRaf) {
+          tiltAnimLastTs = 0;
+          tiltAnimRaf = requestAnimationFrame(tiltSpringTick);
+        }
+      }
+
+      function snapOntoPan(el, side) {
+        el.classList.remove("on-left-pan", "on-right-pan");
+        el.classList.add(side === "left" ? "on-left-pan" : "on-right-pan");
+        syncPanPlaceOffsetFromElement(el, side);
+        syncTiltGraphic();
+      }
+
+      function updateScaleAppearance() {
+        syncTiltGraphic();
+      }
+
+      const clearWeightsBtn = document.getElementById("clear-weights-btn");
+
+      function updateClearWeightsButtonState() {
+        if (!clearWeightsBtn) return;
+        const n = scaleWrap.querySelectorAll(
+          ".weight.on-left-pan, .weight.on-right-pan"
+        ).length;
+        clearWeightsBtn.disabled = n === 0;
+      }
+
+      function removeAllWeightsFromPans() {
+        scaleWrap
+          .querySelectorAll(".weight.on-left-pan, .weight.on-right-pan")
+          .forEach((el) => {
+            el.remove();
+          });
+        layoutPanTargetsDeg();
+        repositionAllOnPanItems();
+        updateClearWeightsButtonState();
+        updateScaleAppearance();
+      }
+
+      if (clearWeightsBtn) {
+        clearWeightsBtn.addEventListener("click", removeAllWeightsFromPans);
+      }
+
+      const DRAG_WINDOW_OPTS = { capture: true, passive: false };
+
+      function detachWindowDragListeners() {
+        window.removeEventListener("pointermove", onPointerMove, DRAG_WINDOW_OPTS);
+        window.removeEventListener("pointerup", onPointerUp, DRAG_WINDOW_OPTS);
+        window.removeEventListener(
+          "pointercancel",
+          onPointerUp,
+          DRAG_WINDOW_OPTS
+        );
+      }
+
+      function onPointerDown(e) {
+        const src = e.target.closest(".pan-drag");
+        if (!src) return;
+        e.preventDefault();
+
+        /* Měření před změnou DOM — po přesunu potraviny z palety je chvíli absolute bez left/top a rect by „skočil“. */
+        const wr = wrapRect();
+        const er = src.getBoundingClientRect();
+
+        let el = src;
+        if (weights.includes(src) && weightsTray.contains(src)) {
+          el = src.cloneNode(true);
+          el.classList.remove("is-dragging");
+          scaleFigure.appendChild(el);
+        } else if (PAN_FOOD_ELS.includes(el) && foodPalette.contains(el)) {
+          const slot = el.closest(".food-palette__slot");
+          const fDrag = dragLayoutFactor();
+          foodPaletteLayoutHolder = document.createElement("div");
+          foodPaletteLayoutHolder.className = "food-palette__layout-holder";
+          foodPaletteLayoutHolder.setAttribute("aria-hidden", "true");
+          foodPaletteLayoutHolder.style.width = `${er.width / fDrag}px`;
+          foodPaletteLayoutHolder.style.height = `${er.height / fDrag}px`;
+          slot.insertBefore(foodPaletteLayoutHolder, el);
+          scaleFigure.appendChild(el);
+        }
+
+        if (PAN_FOOD_ELS.includes(el)) syncVerifyPanelFromFood(el);
+
+        const { ox: cbOx, oy: cbOy } = dragContainOriginInWrapPx(el);
+        el.classList.add("is-dragging");
+        el.setPointerCapture(e.pointerId);
+        drag = {
+          el,
+          pid: e.pointerId,
+          grabDX: e.clientX - er.left,
+          grabDY: e.clientY - er.top,
+          cbOx,
+          cbOy,
+        };
+        setPositionPx(
+          el,
+          viewportOffsetToLayoutPx(er.left - wr.left - cbOx),
+          viewportOffsetToLayoutPx(er.top - wr.top - cbOy)
+        );
+
+        window.addEventListener("pointermove", onPointerMove, DRAG_WINDOW_OPTS);
+        window.addEventListener("pointerup", onPointerUp, DRAG_WINDOW_OPTS);
+        window.addEventListener("pointercancel", onPointerUp, DRAG_WINDOW_OPTS);
+      }
+
+      function onPointerMove(e) {
+        if (!drag || e.pointerId !== drag.pid) return;
+        e.preventDefault();
+        const f = dragLayoutFactor();
+        const wr = wrapRect();
+        const el = drag.el;
+        const { w, h } = elementSize(el);
+        const wL = w / f;
+        const hL = h / f;
+        let left = (e.clientX - wr.left - drag.grabDX - drag.cbOx) / f;
+        let top = (e.clientY - wr.top - drag.grabDY - drag.cbOy) / f;
+        const c = clampDragIntoBounds(left, top, wL, hL);
+        setPositionPx(el, c.left, c.top);
+      }
+
+      function onPointerUp(e) {
+        if (!drag || e.pointerId !== drag.pid) return;
+        detachWindowDragListeners();
+        const el = drag.el;
+        try {
+          el.releasePointerCapture(e.pointerId);
+        } catch (_) { /* už uvolněno */ }
+        el.classList.remove("is-dragging");
+        drag = null;
+
+        if (foodPaletteLayoutHolder) {
+          foodPaletteLayoutHolder.remove();
+          foodPaletteLayoutHolder = null;
+        }
+
+        const ir = el.getBoundingClientRect();
+        const side = pickSnapPan(ir, e.clientX, e.clientY);
+
+        if (side) {
+          snapOntoPan(el, side);
+        } else if (
+          el.classList.contains("weight") &&
+          !weightsTray.contains(el) &&
+          shouldReturnWeightToTray(ir, e.clientX, e.clientY)
+        ) {
+          el.remove();
+          layoutPanTargetsDeg();
+          repositionAllOnPanItems();
+          updateClearWeightsButtonState();
+          updateScaleAppearance();
+        } else {
+          if (
+            el.classList.contains("on-left-pan") &&
+            isFullyOffPan(panLeft, ir)
+          )
+            el.classList.remove("on-left-pan");
+          if (
+            el.classList.contains("on-right-pan") &&
+            isFullyOffPan(panRight, ir)
+          )
+            el.classList.remove("on-right-pan");
+          updateScaleAppearance();
+        }
+        updateClearWeightsButtonState();
+      }
+
+      stage.addEventListener("pointerdown", onPointerDown, { passive: false });
+
+      window.addEventListener(
+        "resize",
+        () => {
+          applyTrayWeightSizes();
+          applyTiltVisual(displayTiltDeg);
+        },
+        { passive: true }
+      );
+
+      /** Odhad hmotnosti z nabídky — shodné konstanty jako na váhou typu „správné“ řešení. */
+      const VERIFY_TOLERANCE_G = 0.5;
+      let verifySelectedObject = null;
+      const verifyObjectLabel = document.getElementById("verify-object-label");
+      const verifyMassInput = document.getElementById("verify-mass-input");
+      const verifyMassResult = document.getElementById("verify-mass-result");
+      const massVerifyPanels = Array.from(
+        document.querySelectorAll(".mass-verify .mass-verify-panel")
+      );
+
+      function applyMassVerifyPanelClasses(clsName) {
+        massVerifyPanels.forEach((panel) => {
+          panel.classList.remove(
+            "mass-verify-panel--correct",
+            "mass-verify-panel--wrong"
+          );
+          if (clsName) panel.classList.add(clsName);
+        });
+      }
+
+      function clearMassVerifyFeedback() {
+        if (verifyMassResult) {
+          verifyMassResult.textContent = "";
+          verifyMassResult.removeAttribute("data-status");
+        }
+        applyMassVerifyPanelClasses(null);
+      }
+
+      function truthMassForVerification(which) {
+        if (which === "rohlik") return ROHLIK_MASS_G;
+        if (which === "skleniceOkurek") return SKLENICE_OKUREK_MASS_G;
+        if (which === "bonbon") return BONBON_MASS_G;
+        if (which === "zlataCihla") return ZLATA_CIHLA_MASS_G;
+        return APPLE_MASS_G;
+      }
+
+      function parseUserGrams(raw) {
+        const n = Number.parseFloat(
+          String(raw).trim().replace(/\s/g, "").replace(",", ".")
+        );
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function syncVerifyPanelFromFood(el) {
+        if (!verifyObjectLabel || !PAN_FOOD_ELS.includes(el)) return;
+        const rows = [
+          [apple, "apple", "Jablko"],
+          [rohlik, "rohlik", "Rohlík"],
+          [skleniceOkurek, "skleniceOkurek", "Sklenice okurek"],
+          [bonbon, "bonbon", "Bonbón"],
+          [zlataCihla, "zlataCihla", "Zlatá cihla"],
+        ];
+        const hit = rows.find(([node]) => node === el);
+        if (!hit) return;
+        const [, nextKey, labelCs] = hit;
+        if (nextKey !== verifySelectedObject) {
+          if (verifyMassInput) verifyMassInput.value = "";
+          clearMassVerifyFeedback();
+        }
+        verifySelectedObject = nextKey;
+        verifyObjectLabel.textContent = labelCs;
+      }
+
+      function onVerifyMass() {
+        if (!verifyMassResult) return;
+        const g = verifyMassInput ? parseUserGrams(verifyMassInput.value) : NaN;
+        if (!verifySelectedObject) {
+          applyMassVerifyPanelClasses("mass-verify-panel--wrong");
+          verifyMassResult.dataset.status = "error";
+          verifyMassResult.textContent =
+            "Nejdřív klikni na jablko, rohlík, sklenici okurek, bonbón nebo zlatou cihlu (nebo jej přesuň).";
+          return;
+        }
+        if (!Number.isFinite(g)) {
+          applyMassVerifyPanelClasses("mass-verify-panel--wrong");
+          verifyMassResult.dataset.status = "error";
+          verifyMassResult.textContent =
+            "Zadej hmotnost jako číslo (např. 112,84).";
+          return;
+        }
+        const truth = truthMassForVerification(verifySelectedObject);
+        const diff = Math.abs(g - truth);
+        const ok = diff <= VERIFY_TOLERANCE_G + 1e-9;
+        applyMassVerifyPanelClasses(
+          ok ? "mass-verify-panel--correct" : "mass-verify-panel--wrong"
+        );
+        verifyMassResult.dataset.status = ok ? "ok" : "wrong";
+        verifyMassResult.textContent = ok
+          ? `Správně — jsi v toleranci ± ${VERIFY_TOLERANCE_G.toLocaleString("cs-CZ")} g.`
+          : ":(";
+      }
+
+      const tableKeypadOverlay = document.getElementById("tableKeypadOverlay");
+      const tableKeypadTitle = document.getElementById("tableKeypadTitle");
+      const tableKeypadDisplay = document.getElementById("tableKeypadDisplay");
+      const tableKeypadError = document.getElementById("tableKeypadError");
+      const tableKeypadConfirm = document.getElementById("tableKeypadConfirm");
+      const tableKeypadCancel = document.getElementById("tableKeypadCancel");
+      const tableMathKeypad = document.getElementById("tableMathKeypad");
+      const tableMathKeypadKeys = tableMathKeypad
+        ? tableMathKeypad.querySelectorAll(".table-math-keypad__key")
+        : [];
+
+      /** @type {HTMLInputElement | null} */
+      let tableKeypadTarget = null;
+      let tableKeypadDraft = "";
+
+      function prefersAppNumericKeypad() {
+        try {
+          if (window.matchMedia("(pointer: coarse)").matches) return true;
+          if (
+            typeof navigator.maxTouchPoints === "number" &&
+            navigator.maxTouchPoints > 0 &&
+            window.matchMedia("(hover: none)").matches
+          ) {
+            return true;
+          }
+        } catch (_err) {
+          /* ignore */
+        }
+        return false;
+      }
+
+      const useAppNumericKeypad = prefersAppNumericKeypad();
+
+      function applyNumericKeypadMode(input) {
+        if (!input) return;
+        input.classList.add("app-numeric-input");
+        /* Na tabletu/touch potlač systémovou klávesnici; desktop může psát i přes overlay. */
+        if (useAppNumericKeypad) {
+          input.readOnly = true;
+          input.setAttribute("inputmode", "none");
+        } else {
+          input.readOnly = false;
+          input.setAttribute("inputmode", "decimal");
+        }
+      }
+
+      function clearTableKeypadError() {
+        if (tableKeypadError) {
+          tableKeypadError.hidden = true;
+          tableKeypadError.textContent = "";
+        }
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.classList.remove("is-invalid");
+        }
+      }
+
+      function showTableKeypadError(message) {
+        if (tableKeypadError) {
+          tableKeypadError.hidden = false;
+          tableKeypadError.textContent = message;
+        }
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.classList.add("is-invalid");
+        }
+      }
+
+      function validateTableKeypadValue() {
+        const raw = tableKeypadDraft.trim();
+        if (raw === "") return { ok: true };
+        const n = parseUserGrams(raw);
+        if (!Number.isFinite(n)) {
+          return { ok: false, message: "Zadej platné číslo." };
+        }
+        if (n < 0) {
+          return { ok: false, message: "Hmotnost nemůže být záporná." };
+        }
+        return { ok: true };
+      }
+
+      function updateTableKeypadValidation() {
+        const result = validateTableKeypadValue();
+        if (!result.ok) {
+          showTableKeypadError(result.message);
+          return;
+        }
+        clearTableKeypadError();
+      }
+
+      function updateTableKeypadDisplay() {
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.textContent = tableKeypadDraft;
+        }
+        updateTableKeypadValidation();
+      }
+
+      function showTableMathKeypad(input) {
+        if (!tableKeypadOverlay || !input) return;
+        tableKeypadTarget = input;
+        tableKeypadDraft = input.value;
+        clearTableKeypadError();
+        if (tableKeypadTitle) {
+          tableKeypadTitle.textContent = "Hmotnost";
+        }
+        updateTableKeypadDisplay();
+        tableKeypadOverlay.hidden = false;
+        try {
+          input.blur();
+        } catch (_e) {
+          /* ignore */
+        }
+      }
+
+      function hideTableMathKeypad() {
+        tableKeypadTarget = null;
+        tableKeypadDraft = "";
+        clearTableKeypadError();
+        if (tableKeypadOverlay) tableKeypadOverlay.hidden = true;
+        if (tableKeypadDisplay) tableKeypadDisplay.textContent = "";
+      }
+
+      function insertIntoTableKeypadDraft(value) {
+        if (value === "," || value === ".") {
+          if (tableKeypadDraft.indexOf(",") !== -1 || tableKeypadDraft.indexOf(".") !== -1) {
+            return;
+          }
+        }
+        if (tableKeypadDraft.length >= 12) return;
+        tableKeypadDraft += value;
+        updateTableKeypadDisplay();
+      }
+
+      function clearTableKeypadDraft() {
+        tableKeypadDraft = "";
+        updateTableKeypadDisplay();
+      }
+
+      function backspaceTableKeypadDraft() {
+        tableKeypadDraft = tableKeypadDraft.slice(0, -1);
+        updateTableKeypadDisplay();
+      }
+
+      function cancelTableKeypad() {
+        hideTableMathKeypad();
+      }
+
+      function formatMassDraft(raw) {
+        const trimmed = String(raw || "").trim();
+        if (!trimmed) return "";
+        const n = parseUserGrams(trimmed);
+        if (!Number.isFinite(n)) return trimmed;
+        return String(n).replace(".", ",");
+      }
+
+      function confirmTableKeypad() {
+        const input = tableKeypadTarget;
+        if (!input) return;
+
+        const result = validateTableKeypadValue();
+        if (!result.ok) {
+          showTableKeypadError(result.message);
+          return;
+        }
+
+        input.value = formatMassDraft(tableKeypadDraft);
+        hideTableMathKeypad();
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        onVerifyMass();
+      }
+
+      function handleTableMathKeypadClick(event) {
+        const key = event.currentTarget;
+        if (!(key instanceof HTMLButtonElement) || key.disabled) return;
+
+        const action = key.getAttribute("data-action");
+        const value = key.getAttribute("data-value");
+
+        if (action === "clear") {
+          clearTableKeypadDraft();
+          return;
+        }
+
+        if (action === "backspace") {
+          backspaceTableKeypadDraft();
+          return;
+        }
+
+        if (value) {
+          insertIntoTableKeypadDraft(value);
+        }
+      }
+
+      if (verifyMassInput) {
+        applyNumericKeypadMode(verifyMassInput);
+        verifyMassInput.addEventListener("pointerdown", (ev) => {
+          ev.preventDefault();
+          showTableMathKeypad(verifyMassInput);
+        });
+        verifyMassInput.addEventListener("focus", () => {
+          if (useAppNumericKeypad) {
+            try {
+              verifyMassInput.blur();
+            } catch (_e) {
+              /* ignore */
+            }
+            showTableMathKeypad(verifyMassInput);
+          }
+        });
+        verifyMassInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onVerifyMass();
+          }
+        });
+      }
+
+      if (tableKeypadConfirm) {
+        tableKeypadConfirm.addEventListener("click", confirmTableKeypad);
+      }
+      if (tableKeypadCancel) {
+        tableKeypadCancel.addEventListener("click", cancelTableKeypad);
+      }
+      if (tableKeypadOverlay) {
+        tableKeypadOverlay.addEventListener("click", (ev) => {
+          if (ev.target === tableKeypadOverlay) cancelTableKeypad();
+        });
+      }
+
+      for (let ki = 0; ki < tableMathKeypadKeys.length; ki++) {
+        const keyBtn = tableMathKeypadKeys[ki];
+        keyBtn.addEventListener("mousedown", (ev) => {
+          ev.preventDefault();
+        });
+        keyBtn.addEventListener("click", handleTableMathKeypadClick);
+      }
+
+      document.addEventListener("keydown", (ev) => {
+        if (!tableKeypadTarget) return;
+        if (ev.key === "Escape") {
+          ev.preventDefault();
+          cancelTableKeypad();
+          return;
+        }
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          confirmTableKeypad();
+          return;
+        }
+        if (ev.key === "Backspace") {
+          ev.preventDefault();
+          backspaceTableKeypadDraft();
+          return;
+        }
+        if (/^[0-9]$/.test(ev.key)) {
+          ev.preventDefault();
+          insertIntoTableKeypadDraft(ev.key);
+          return;
+        }
+        if (ev.key === "," || ev.key === ".") {
+          ev.preventDefault();
+          insertIntoTableKeypadDraft(",");
+        }
+      });
+
+      applyTrayWeightSizes();
+      updateClearWeightsButtonState();
+      syncTiltGraphic();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1822 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Hledání skutečného obrazu</title>
+  <style>
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
+        format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      color-scheme: light;
+      --bg: #f4f5f8;
+      --sim-text: #e5e7eb;
+      --sim-muted: #94a3b8;
+      --sim-accent: #38bdf8;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #fb7185;
+
+      --canvas-bg: #0b1020;
+      --canvas-border: #1f2a44;
+
+      --axis: #94a3b8;
+      --tick: #94a3b8;
+      --ray: #38bdf8;
+      --ray2: #c4b5fd;
+      --lens: #60a5fa;
+      --screen: #e5e7eb;
+
+      --candle-body: #fb7185;
+      --candle-wax: #fecdd3;
+      --flame: #fbbf24;
+      --flame2: #fde68a;
+
+      --panel-bg: #ffffff;
+      --text: #171923;
+      --muted: #6b7280;
+      --accent: #3d5a9a;
+      --accent-hover: #334b81;
+      --border: #e8eaef;
+      --area-muted: #eceff5;
+      --readout-bg: #f4f5f8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: clamp(10px, 1.5vh, 14px);
+      width: 100%;
+      max-width: none;
+      margin: 0 auto;
+      padding: clamp(8px, 1.2vw, 14px);
+      padding-left: max(8px, env(safe-area-inset-left, 0px));
+      padding-right: max(8px, env(safe-area-inset-right, 0px));
+      padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+      padding-top: max(8px, env(safe-area-inset-top, 0px));
+      min-height: 100dvh;
+      box-sizing: border-box;
+    }
+
+    .viz-column {
+      flex: 1 1 auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sim-topbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel-bg);
+      color: var(--text);
+    }
+
+    .sim-topbar-intro {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sim-topbar-heading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .sim-topbar-copy {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .sim-topbar-intro .panel-title {
+      margin: 0;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .sim-topbar-intro .hint {
+      margin: 0;
+      min-width: 0;
+    }
+
+    .menuBtn {
+      appearance: none;
+      flex: 0 0 auto;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+
+    .menuBtn:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .menuBtn[aria-expanded="true"] {
+      background: var(--panel-bg);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .sim-menu-panel {
+      display: none;
+      flex: 0 0 auto;
+      margin-top: 10px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel-bg);
+      color: var(--text);
+    }
+
+    .sim-menu-panel[data-open="true"] {
+      display: block;
+    }
+
+    .sim-menu-panel .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    .scene-card {
+      flex: 1 1 auto;
+      min-height: min(78vh, calc(100dvh - 200px));
+      display: flex;
+      flex-direction: column;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--canvas-border);
+      background: var(--canvas-bg);
+      margin-top: 10px;
+    }
+
+    .sceneWrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      align-items: stretch;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      flex: 1 1 auto;
+      min-height: 320px;
+      border-radius: 0;
+      background: var(--canvas-bg);
+      border: none;
+      touch-action: none;
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    .sim-menu-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px 20px;
+      align-items: start;
+    }
+
+    .sim-menu-col {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sim-menu-col .row,
+    .sim-menu-col .uiToggle,
+    .sim-menu-col .lensToggle {
+      width: 100%;
+    }
+
+    @media (max-width: 760px) {
+      .sim-menu-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sim-topbar {
+        flex-wrap: wrap;
+      }
+
+      .sim-topbar-intro {
+        flex-basis: 100%;
+      }
+
+      .sim-topbar-heading {
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+
+      .sim-topbar-copy {
+        flex-wrap: wrap;
+      }
+
+      .sim-topbar-intro .panel-title {
+        white-space: normal;
+      }
+
+      .menuBtn {
+        margin-left: auto;
+      }
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .row-label {
+      font-weight: 650;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .hub-back-to-sims {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--area-muted);
+      color: var(--text);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .hub-back-to-sims:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    .lensToggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      user-select: none;
+    }
+
+    .lensToggle button {
+      appearance: none;
+      min-width: 0;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.08s;
+    }
+
+    .lensToggle button:hover {
+      border-color: var(--accent);
+    }
+
+    .lensToggle button[aria-pressed="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .taskBtn {
+      appearance: none;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+
+    .taskBtn:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .taskBtn:active {
+      transform: translateY(1px);
+    }
+
+    dialog.taskDialog {
+      border: none;
+      padding: 0;
+      background: transparent;
+      max-width: min(720px, calc(100vw - 24px));
+      width: 100%;
+    }
+    dialog.taskDialog::backdrop {
+      background: rgba(2, 6, 23, 0.55);
+      backdrop-filter: blur(5px);
+    }
+    .taskPanel {
+      background: #0f172a;
+      color: var(--sim-text);
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.26);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      padding: 16px 16px 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .taskPanel header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .taskTitle {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 950;
+      color: var(--sim-text);
+    }
+    .closeBtn {
+      appearance: none;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: rgba(15,23,42,0.08);
+      color: var(--sim-text);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .taskBody {
+      margin: 0;
+      color: var(--sim-text);
+      line-height: 1.5;
+      font-size: 0.98rem;
+    }
+    .taskBody ol, .taskBody ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .taskBody li { color: var(--sim-text); }
+    .taskBody strong { font-weight: 950; }
+
+    .uiToggle {
+      display: grid;
+      gap: 8px;
+      user-select: none;
+    }
+
+    .uiToggle > button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.08s;
+      width: 100%;
+      text-align: left;
+    }
+
+    .uiToggle > button:hover {
+      border-color: var(--accent);
+    }
+
+    .uiToggle > button[aria-pressed="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .helperMenu {
+      display: none;
+      margin-top: 0;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      gap: 6px;
+    }
+    .helperMenu[data-open="true"] {
+      display: grid;
+    }
+    .helperMenuGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+    .helperGroupTitle {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      margin: 0 0 6px;
+    }
+
+    .helperOption {
+      appearance: none;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: var(--area-muted);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 650;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .helperOption:hover {
+      border-color: var(--accent);
+    }
+
+    .helperOption[data-selected="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="viz-column" aria-label="Simulace">
+      <header class="sim-topbar">
+        <div class="sim-topbar-intro">
+          <div class="sim-topbar-heading">
+            <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+            <div class="sim-topbar-copy">
+              <h1 class="panel-title">Hledání skutečného obrazu</h1>
+              <p class="hint">
+                Pohybuj plamínkem svíčky a stínítkem sleduj, jaký obraz plamínku je vidět na stínítku.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button
+          id="menuBtn"
+          type="button"
+          class="menuBtn"
+          aria-expanded="false"
+          aria-controls="simMenuPanel"
+        >
+          Menu
+        </button>
+      </header>
+
+      <div
+        id="simMenuPanel"
+        class="sim-menu-panel"
+        data-open="false"
+        aria-label="Nastavení simulace"
+        hidden
+      >
+        <div class="controls">
+          <div class="sim-menu-grid">
+            <div class="sim-menu-col">
+              <div class="row">
+                <span class="row-label">Typ čočky</span>
+                <div id="lensToggle" class="lensToggle" role="group" aria-label="Typ čočky">
+                  <button id="convergingBtn" type="button" aria-pressed="true">Spojka</button>
+                  <button id="divergingBtn" type="button" aria-pressed="false">Rozptylka</button>
+                  <button id="noLensBtn" type="button" aria-pressed="false">Bez čočky</button>
+                  <button id="cameraBtn" type="button" aria-pressed="false">Camera obscura</button>
+                </div>
+              </div>
+              <button id="taskBtn" class="taskBtn" type="button">Badatelský úkol</button>
+            </div>
+            <div class="sim-menu-col">
+              <div class="row">
+                <span class="row-label">Pomocné paprsky</span>
+                <div class="uiToggle" role="group" aria-label="Pomocné paprsky">
+                  <button id="helperRaysBtn" type="button" aria-pressed="false">Pomocné paprsky</button>
+                  <div id="helperMenu" class="helperMenu" data-open="false" role="menu" aria-label="Volba počtu paprsků">
+                    <div class="helperMenuGrid">
+                      <div>
+                        <p class="helperGroupTitle">Počet</p>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="2" aria-checked="false">2 paprsky</button>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="5" aria-checked="true" data-selected="true">5 paprsků</button>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="all" aria-checked="false">Všechny paprsky</button>
+                      </div>
+                      <div>
+                        <p class="helperGroupTitle">Odkud</p>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-points="1" aria-checked="false">1 bod</button>
+                        <button class="helperOption" type="button" role="menuitemradio" data-helper-points="2" aria-checked="true" data-selected="true">2 body</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scene-card">
+        <div class="sceneWrap">
+          <canvas id="scene" width="1600" height="660" aria-label="Optická lavice se spojnou čočkou"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <dialog id="taskDialog" class="taskDialog" aria-labelledby="taskDialogTitle">
+      <div class="taskPanel" role="document">
+        <header>
+          <h2 id="taskDialogTitle" class="taskTitle">Badatelský úkol</h2>
+          <button id="taskCloseBtn" class="closeBtn" type="button">Zavřít</button>
+        </header>
+        <div class="taskBody">
+          <p style="margin:0"><strong>Vyber čočku spojku.</strong></p>
+          <p style="margin:8px 0 0">Postupně nastavuj plamínek do následujících vzdáleností od čočky:</p>
+          <ol>
+            <li>větší než 2F</li>
+            <li>2F</li>
+            <li>mezi F a 2F</li>
+            <li>F</li>
+            <li>menší než F</li>
+          </ol>
+          <p style="margin:10px 0 0">
+            U každé z předchozích vzdáleností plamínku hledej, v jaké vzdálenosti stínítka od čočky vzniká ostrý obraz plamínku.
+          </p>
+          <p style="margin:10px 0 0">Ke každé z předchozích vzdáleností přiřaď jednu z následujících možností:</p>
+          <ul>
+            <li>Obraz vznikl ve vzdálenosti větší než 2F.</li>
+            <li>Obraz vznikl ve vzdálenosti 2F.</li>
+            <li>Obraz vznikl ve vzdálenosti mezi F a 2F.</li>
+            <li>Obraz vznikl ve vzdálenosti F.</li>
+            <li>Obraz vznikl ve vzdálenosti menší než F.</li>
+            <li>Obraz nevznikl.</li>
+          </ul>
+        </div>
+      </div>
+    </dialog>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("scene");
+    const ctx = canvas.getContext("2d");
+
+    /** Spojka: přesně podle dodaného SVG (viewBox 0 0 45 174). */
+    const CONVERGING_LENS_SVG_W = 45;
+    const CONVERGING_LENS_SVG_H = 174;
+    const convergingLensSvgBody = new Path2D(
+      "M23.1597 174H22.7886C22.7886 174 0 138.621 0 86.721C0 34.821 22.7886 0 22.7886 0H23.1597C23.1597 0 45 35.562 45 86.8994C45 138.237 23.1597 174 23.1597 174Z"
+    );
+    const convergingLensSvgMarks = new Path2D(
+      "M22.0991 163L25.5055 157.1H18.6927L22.0991 163ZM22.0991 10.5L18.6927 16.4H25.5055L22.0991 10.5ZM22.0991 157.69H22.6891L22.6891 15.81H22.0991H21.5091L21.5091 157.69H22.0991Z"
+    );
+
+    /** Rozptylka: přesně podle dodaného SVG (viewBox 0 0 52 174). */
+    const DIVERGING_LENS_SVG_W = 52;
+    const DIVERGING_LENS_SVG_H = 174;
+    const divergingLensSvgBody = new Path2D(
+      "M8.74707e-07 174H51.9954C51.9954 174 35.1389 138.621 35.1389 86.721C35.1389 34.821 52 0 52 0H0.00456113C0.00456113 0 17.7358 35.562 17.7358 86.8994C17.7358 138.237 0.00456113 174 0.00456113 174H8.74707e-07Z"
+    );
+    const divergingLensSvgMarks = new Path2D(
+      "M26.41 163.1L23.5936 169L30.4064 169L27.59 163.1L26.41 163.1ZM27.59 10.9L30.4064 5L23.5936 5L26.41 10.9L27.59 10.9ZM27 163.69L27.59 163.69L27.59 10.31L27 10.31L26.41 10.31L26.41 163.69L27 163.69Z"
+    );
+
+    const lensToggleEl = document.getElementById("lensToggle");
+    const convergingBtn = document.getElementById("convergingBtn");
+    const divergingBtn = document.getElementById("divergingBtn");
+    const noLensBtn = document.getElementById("noLensBtn");
+    const cameraBtn = document.getElementById("cameraBtn");
+    const menuBtn = document.getElementById("menuBtn");
+    const simMenuPanel = document.getElementById("simMenuPanel");
+    const helperRaysBtn = document.getElementById("helperRaysBtn");
+    const helperMenu = document.getElementById("helperMenu");
+    const taskBtn = document.getElementById("taskBtn");
+    const taskDialog = document.getElementById("taskDialog");
+    const taskCloseBtn = document.getElementById("taskCloseBtn");
+
+    function openTask() {
+      if (!(taskDialog instanceof HTMLDialogElement)) return;
+      if (typeof taskDialog.showModal === "function") taskDialog.showModal();
+    }
+    function closeTask() {
+      if (!(taskDialog instanceof HTMLDialogElement)) return;
+      if (typeof taskDialog.close === "function") taskDialog.close();
+    }
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function roundRectPath(context, x, y, w, h, r) {
+      const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+      if (typeof context.roundRect === "function") {
+        context.roundRect(x, y, w, h, radius);
+        return;
+      }
+      context.moveTo(x + radius, y);
+      context.arcTo(x + w, y, x + w, y + h, radius);
+      context.arcTo(x + w, y + h, x, y + h, radius);
+      context.arcTo(x, y + h, x, y, radius);
+      context.arcTo(x, y, x + w, y, radius);
+      context.closePath();
+    }
+
+    // Vertical half-length of the screen line on the canvas (full height = 2 × this).
+    const SCREEN_HALF_LEN = 176; // 160 × 1.1 — full screen height 352 px
+    const INITIAL_SCREEN_Y = 360;
+
+    const state = {
+      // pixel coordinates on canvas
+      lensX: Math.round(canvas.width * 0.48),
+      axisY: 360,
+      candleBaseY: 445,
+      candleX: 140,
+      screenX: 900,
+      screenY: INITIAL_SCREEN_Y,
+      fPx: 165,
+      lensType: "converging", // "converging" | "diverging" | "none" | "camera"
+      candleHeight: 177,
+      showHelperRays: false,
+      helperRaysCount: 5, // 2 | 5 | "all"
+      helperRaysPoints: 2, // 1 | 2 (1 = only flame tip, 2 = tip + bottom)
+      dragging: null, // "candle" | "screen" | null
+      dragOffsetX: 0,
+      dragOffsetY: 0,
+      hover: null
+    };
+
+    const limits = {
+      candleMin: 40,
+      screenMin: 520,
+      screenMax: canvas.width - 40
+    };
+
+    const LENS_CANVAS_TOP = 76;
+    const LENS_CANVAS_BOTTOM = canvas.height - 70;
+    const OBJECT_LENS_GAP = 10;
+
+    function lensHalfWidthPx() {
+      if (state.lensType === "none") return 8;
+      if (state.lensType === "camera") return 10;
+      const svgW = state.lensType === "diverging" ? DIVERGING_LENS_SVG_W : CONVERGING_LENS_SVG_W;
+      const svgH = state.lensType === "diverging" ? DIVERGING_LENS_SVG_H : CONVERGING_LENS_SVG_H;
+      const scale = (LENS_CANVAS_BOTTOM - LENS_CANVAS_TOP) / svgH;
+      return (svgW / 2) * scale;
+    }
+
+    function flameHalfWidthPx() {
+      return (state.candleHeight * (FLAME_SVG_W / FLAME_SVG_H)) / 2;
+    }
+
+    function screenHalfWidthPx() {
+      return 16;
+    }
+
+    function applyPositionLimits() {
+      const maxCandleX = state.lensX - lensHalfWidthPx() - flameHalfWidthPx() - OBJECT_LENS_GAP;
+      state.candleX = clamp(state.candleX, limits.candleMin, Math.max(limits.candleMin, maxCandleX));
+      const minScreenX = state.lensX + lensHalfWidthPx() + screenHalfWidthPx() + OBJECT_LENS_GAP;
+      state.screenX = clamp(state.screenX, Math.max(limits.screenMin, minScreenX), limits.screenMax);
+    }
+
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+    function canvasPos(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY
+      };
+    }
+
+    // Lens formula: 1/f = 1/do + 1/di
+    // do: object distance (positive to left of lens), di: image distance (positive to right for real images)
+    function computeImage(doPx, fPx) {
+      if (doPx <= 0 || fPx <= 0) return { type: "invalid" };
+      if (Math.abs(doPx - fPx) < 1e-6) return { type: "at_f" };
+      const inv = (1 / fPx) - (1 / doPx);
+      if (Math.abs(inv) < 1e-9) return { type: "at_infinity" };
+      const di = 1 / inv; // can be negative for virtual images
+      const m = -di / doPx;
+      return { type: di > 0 ? "real" : "virtual", di, m };
+    }
+
+    function effectiveF() {
+      const f = Math.max(1, state.fPx);
+      if (state.lensType === "none") return Number.POSITIVE_INFINITY;
+      return state.lensType === "converging" ? f : -f;
+    }
+
+    function setLensType(type) {
+      state.lensType = type === "camera"
+        ? "camera"
+        : (type === "none" ? "none" : (type === "diverging" ? "diverging" : "converging"));
+      if (convergingBtn) convergingBtn.setAttribute("aria-pressed", String(state.lensType === "converging"));
+      if (divergingBtn) divergingBtn.setAttribute("aria-pressed", String(state.lensType === "diverging"));
+      if (noLensBtn) noLensBtn.setAttribute("aria-pressed", String(state.lensType === "none"));
+      if (cameraBtn) cameraBtn.setAttribute("aria-pressed", String(state.lensType === "camera"));
+      applyPositionLimits();
+      draw();
+    }
+
+    function positionLensToggle() {
+      /* Ovládání je v panelu nastavení pod scénou. */
+    }
+
+    function drawAxis() {
+      // intentionally left blank (no optical axis)
+    }
+
+    function drawMarks() {
+      if (state.lensType === "none" || state.lensType === "camera") return;
+      const x0 = state.lensX;
+      const f = Math.abs(effectiveF());
+      const marks = [
+        { x: x0 - 2 * f, label: "2F" },
+        { x: x0 - f, label: "F" },
+        { x: x0 + f, label: "F" },
+        { x: x0 + 2 * f, label: "2F" }
+      ];
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(148,163,184,0.78)";
+      ctx.fillStyle = "rgba(226,232,240,0.92)";
+      ctx.lineWidth = 2.5;
+      ctx.font = '900 20px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+
+      marks.forEach((m) => {
+        if (m.x < 26 || m.x > canvas.width - 26) return;
+        // small tick + label (without drawing the full axis)
+        const y = state.axisY;
+        ctx.beginPath();
+        ctx.moveTo(m.x, y - 14);
+        ctx.lineTo(m.x, y + 14);
+        ctx.stroke();
+
+        // label with subtle pill background for readability
+        const labelY = y + 18;
+        const padX = 10;
+        const padY = 5;
+        const w = ctx.measureText(m.label).width + padX * 2;
+        const h = 28;
+        ctx.save();
+        ctx.fillStyle = "rgba(15,23,42,0.40)";
+        ctx.strokeStyle = "rgba(148,163,184,0.30)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        roundRectPath(ctx, m.x - w / 2, labelY - padY, w, h, 999);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = "rgba(226,232,240,0.94)";
+        ctx.fillText(m.label, m.x, labelY);
+        ctx.restore();
+      });
+      ctx.restore();
+    }
+
+    function drawLens() {
+      if (state.lensType === "none") return;
+      if (state.lensType === "camera") {
+        // Pinhole camera: brown chamber over full canvas height.
+        const x = state.lensX;
+        const chamberW = 20;
+        const chamberH = canvas.height;
+        const chamberR = chamberW / 2;
+        ctx.save();
+        ctx.fillStyle = "#9A6B47";
+        ctx.strokeStyle = "#6B4A32";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        roundRectPath(ctx, x - chamberW / 2, 0, chamberW, chamberH, chamberR);
+        ctx.fill();
+        ctx.stroke();
+
+        // hole at optical axis
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.beginPath();
+        ctx.arc(x, state.axisY, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = "#4A3220";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(x, state.axisY, 3.2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      const x = state.lensX;
+      const top = LENS_CANVAS_TOP;
+      const bottom = LENS_CANVAS_BOTTOM;
+
+      ctx.save();
+      if (state.lensType === "diverging") {
+        const cy = (top + bottom) / 2;
+        const scale = (bottom - top) / DIVERGING_LENS_SVG_H;
+        ctx.translate(x, cy);
+        ctx.scale(scale, scale);
+        ctx.translate(-DIVERGING_LENS_SVG_W / 2, -DIVERGING_LENS_SVG_H / 2);
+        ctx.fillStyle = "#D4EAFF";
+        ctx.fill(divergingLensSvgBody);
+        ctx.fillStyle = "#000000";
+        ctx.fill(divergingLensSvgMarks);
+      } else {
+        const cy = (top + bottom) / 2;
+        const scale = (bottom - top) / CONVERGING_LENS_SVG_H;
+        ctx.translate(x, cy);
+        ctx.scale(scale, scale);
+        ctx.translate(-CONVERGING_LENS_SVG_W / 2, -CONVERGING_LENS_SVG_H / 2);
+        ctx.fillStyle = "#D4EAFF";
+        ctx.fill(convergingLensSvgBody);
+        ctx.fillStyle = "#000000";
+        ctx.fill(convergingLensSvgMarks);
+      }
+      ctx.restore();
+    }
+
+    const FLAME_SVG_W = 12;
+    const FLAME_SVG_H = 29;
+    const FLAME_SVG_MARKUP = `<svg width="12" height="29" viewBox="0 0 12 29" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79016 18.9447C4.79016 18.9447 6.39764 18.6087 6.76546 20.2253C7.13328 21.8419 6.30683 27.5771 6.30683 27.5771" fill="white"/><path d="M4.79016 18.9447C4.79016 18.9447 6.39764 18.6087 6.76546 20.2253C7.13328 21.8419 6.30683 27.5771 6.30683 27.5771" stroke="#1D1D1B" stroke-width="1.68923" stroke-linecap="round" stroke-linejoin="round"/><g opacity="0.9"><path d="M5.97039 23.2453C3.25945 23.2453 1.13428 20.0575 1.13428 15.9888C1.13428 14.0135 1.84721 10.3399 2.55559 7.579C4.08135 1.62583 5.0395 1.13086 5.96585 1.13086C6.8922 1.13086 7.84126 1.62582 9.37155 7.57446C10.0845 10.3444 10.8019 14.0181 10.8019 15.9843C10.8019 20.053 8.6768 23.2407 5.97039 23.2407V23.2453Z" fill="#FFDD00"/><path d="M5.97135 2.27047C7.18378 2.27047 9.66767 12.6102 9.66767 15.9932C9.66767 19.3762 8.01023 22.1144 5.97135 22.1144C3.93247 22.1144 2.27047 19.3717 2.27047 15.9932C2.27047 12.6147 4.73167 2.27047 5.97135 2.27047ZM5.97135 0C3.9688 0 2.87443 1.77552 1.45765 7.30184C0.731102 10.1354 0 13.918 0 15.9932C0 20.6976 2.62014 24.3849 5.97135 24.3849C9.32257 24.3849 11.9381 20.6976 11.9381 15.9932C11.9381 13.9271 11.2025 10.1399 10.4714 7.2973C9.05011 1.77097 7.95574 0 5.96681 0H5.97135Z" fill="#F03B50"/><path d="M5.97057 2.26975C7.183 2.26975 9.66689 12.6095 9.66689 15.9925C9.66689 19.3755 8.00945 22.1137 5.97057 22.1137C3.93169 22.1137 2.26969 19.3709 2.26969 15.9925C2.26969 12.614 4.73089 2.26975 5.97057 2.26975ZM5.97057 0.907471C4.71273 0.907471 4.09061 2.21527 3.60473 3.43678C3.19605 4.46757 2.76013 5.87981 2.33782 7.52363C1.62489 10.3027 0.90741 13.9945 0.90741 15.9925C0.90741 20.1883 3.13248 23.476 5.97057 23.476C8.80866 23.476 11.0292 20.1883 11.0292 15.9925C11.0292 14.0035 10.3072 10.3072 9.59424 7.52363C9.17193 5.87981 8.73601 4.46757 8.32732 3.43678C7.84598 2.21072 7.22387 0.907471 5.97057 0.907471Z" fill="#FF8158"/><path d="M5.96948 6.34804C6.86859 9.33598 7.85397 13.9042 7.85397 15.993C7.85397 18.6631 6.637 20.2978 5.97403 20.2978C5.31105 20.2978 4.08952 18.6631 4.08952 15.993C4.08952 13.8951 5.07492 9.33143 5.96948 6.34804ZM5.96948 2.27026C4.73434 2.27026 2.26862 12.61 2.26862 15.993C2.26862 19.376 3.92606 22.1142 5.96948 22.1142C8.01291 22.1142 9.66582 19.3715 9.66582 15.993C9.66582 12.6145 7.18191 2.27026 5.96948 2.27026Z" fill="#F6AF34"/></g></svg>`;
+    let flameSvgImage = null;
+    let flameSvgLoadPromise = null;
+
+    function ensureFlameSvgLoaded() {
+      if (flameSvgImage) return Promise.resolve(flameSvgImage);
+      if (!flameSvgLoadPromise) {
+        flameSvgLoadPromise = new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            flameSvgImage = img;
+            resolve(img);
+          };
+          img.onerror = reject;
+          img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(FLAME_SVG_MARKUP)}`;
+        });
+      }
+      return flameSvgLoadPromise;
+    }
+
+    function candleHitRect() {
+      const x = state.candleX;
+      const baseY = state.candleBaseY;
+      const h = state.candleHeight;
+      const w = h * (FLAME_SVG_W / FLAME_SVG_H);
+      return { x: x - w / 2 - 6, y: baseY - h - 8, w: w + 12, h: h + 14 };
+    }
+
+    function screenHitRect() {
+      const x = state.screenX;
+      const top = state.screenY - SCREEN_HALF_LEN;
+      const bottom = state.screenY + SCREEN_HALF_LEN;
+      return { x: x - 16, y: top - 12, w: 32, h: (bottom - top) + 24 };
+    }
+
+    function drawFlame(x, baseY, height, opts = {}) {
+      if (!flameSvgImage) return;
+
+      const inverted = Boolean(opts.inverted);
+      const blur = Number.isFinite(opts.blur) ? opts.blur : 0;
+      const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 1;
+      const onWhite = opts.onWhite === true;
+      const t = Number.isFinite(opts.t) ? opts.t : performance.now();
+      const H = clamp(Math.abs(height), 8, onWhite ? 1600 : 320);
+      const scale = H / FLAME_SVG_H;
+
+      // Subtle flicker: tiny wobble + scale breathing + micro-rotation.
+      // Keep it very small so it doesn't look like shaking.
+      const flicker = onWhite ? 0.005 : 0.008;
+      const w = H * (FLAME_SVG_W / FLAME_SVG_H);
+      const dx = Math.sin(t * 0.010 + x * 0.02) * w * (flicker * 0.45);
+      const dy = Math.sin(t * 0.013 + baseY * 0.02) * H * (flicker * 0.28);
+      const rot = Math.sin(t * 0.009) * (flicker * 0.16);
+      const sBreath = 1 + Math.sin(t * 0.017) * (flicker * 0.18);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      if (blur > 0.001 && "filter" in ctx) {
+        ctx.filter = `blur(${blur}px)`;
+      }
+      if (onWhite) {
+        ctx.shadowColor = "rgba(15, 23, 42, 0.14)";
+        ctx.shadowBlur = clamp(H * 0.04, 4, 18);
+        ctx.shadowOffsetY = 1;
+      }
+
+      ctx.translate(x + dx, baseY + dy);
+      ctx.rotate(rot);
+      if (inverted) {
+        // Wick at baseY (top), tip extends downward.
+        ctx.scale(scale * sBreath, -scale * sBreath);
+        ctx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
+      } else {
+        ctx.scale(scale * sBreath, scale * sBreath);
+        ctx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
+      }
+
+      ctx.filter = "none";
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    function drawScreen() {
+      const x = state.screenX;
+      const top = state.screenY - SCREEN_HALF_LEN;
+      const bottom = state.screenY + SCREEN_HALF_LEN;
+      ctx.save();
+      ctx.strokeStyle = cssVar("--screen", "#0f172a");
+      ctx.lineWidth = 7;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bottom);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSceneCandle(now) {
+      drawFlame(state.candleX, state.candleBaseY, state.candleHeight, { inverted: false, t: now });
+    }
+
+    function candleFlamePoint(baseY, height) {
+      // Flame-only object: tip is baseY - height (upright).
+      const H = clamp(Math.abs(height), 18, 320);
+      return { x: state.candleX, y: baseY - H };
+    }
+
+    function candleBottomPoint(baseY, height) {
+      // Flame-only object: bottom is its baseY (near wick).
+      void height;
+      return { x: state.candleX, y: baseY };
+    }
+
+    function imageYFromObjectY(yObj, m, yAxis = state.axisY) {
+      return yAxis + (yObj - yAxis) * m;
+    }
+
+    function drawRays(doPx, image) {
+      const xLens = state.lensX;
+      const yAxis = state.axisY;
+      const xObj = state.candleX;
+      const yObjTop = candleFlamePoint(state.candleBaseY, state.candleHeight).y;
+
+      // principal rays from top of object:
+      // 1) parallel to axis -> converging: through right focus; diverging: diverges as if from left focus
+      // 2) through center of lens -> straight line
+      const fAbs = Math.max(1, Math.abs(state.fPx));
+      const xFRight = xLens + fAbs;
+      const xFLeft = xLens - fAbs;
+
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = "round";
+
+      // ray 2: through lens center
+      ctx.strokeStyle = cssVar("--ray2", "#a78bfa");
+      ctx.beginPath();
+      ctx.moveTo(xObj, yObjTop);
+      ctx.lineTo(xLens, yAxis);
+      // extend to right
+      const t2 = (canvas.width - 24 - xLens) / (xLens - xObj);
+      const yRight2 = yAxis + (yAxis - yObjTop) * t2;
+      ctx.lineTo(canvas.width - 24, yRight2);
+      ctx.stroke();
+
+      // ray 1: parallel to axis to lens, then refract via focal point
+      ctx.strokeStyle = cssVar("--ray", "#0ea5e9");
+      ctx.beginPath();
+      ctx.moveTo(xObj, yObjTop);
+      ctx.lineTo(xLens, yObjTop);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(xLens, yObjTop);
+      const xRight = canvas.width - 24;
+      const dx = xRight - xLens;
+      if (state.lensType === "diverging") {
+        // Diverging lens: a parallel ray leaves diverging as if it originated from the left focal point.
+        // Use the line through (xFLeft, yAxis) and the lens point (xLens, yObjTop), extended to the right.
+        const slope = (yObjTop - yAxis) / ((xLens - xFLeft) || 1e-6);
+        ctx.lineTo(xRight, yObjTop + slope * dx);
+      } else {
+        // Converging lens: a parallel ray refracts through the right focal point.
+        const slope = (yAxis - yObjTop) / ((xFRight - xLens) || 1e-6);
+        ctx.lineTo(xRight, yObjTop + slope * dx);
+      }
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawHelperRays(imageSigned) {
+      const xLens = state.lensX;
+      const yAxis = state.axisY;
+      const xObj = state.candleX;
+      const yObjTop = candleFlamePoint(state.candleBaseY, state.candleHeight).y;
+      const yObjBottom = candleBottomPoint(state.candleBaseY, state.candleHeight).y;
+
+      // Lens vertical extent (matches drawLens()).
+      const lensTop = 76;
+      const lensBottom = canvas.height - 70;
+
+      function helperOffsets() {
+        if (state.helperRaysCount === 2) return [-54, 54];
+        if (state.helperRaysCount === "all") {
+          // This mode is handled as an angle fan (rays in many directions).
+          return [];
+        }
+        return [-72, -36, 0, 36, 72];
+      }
+
+      // Bundle of rays leaving from one point (flame tip/base), intersecting the lens plane.
+      // Distribute them around the optical axis.
+      const offsets = helperOffsets();
+      const yLensPoints = offsets.map((d) => clamp(yAxis + d, lensTop + 12, lensBottom - 12));
+
+      const xRight = canvas.width - 24;
+      const xLeft = 24;
+      const dxIn = xLens - xObj;
+
+      const withinAperture = (y) => y >= lensTop + 12 && y <= lensBottom - 12;
+
+      function drawStopMark(x, y) {
+        ctx.save();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(x - 1, y - 4);
+        ctx.lineTo(x - 1, y + 4);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawAllDirectionsBundle(yOrigin, strokeStyle) {
+        // Rays from a point source in many directions (fan).
+        // We draw:
+        // - same angular density left and right
+        // - slightly sparse to keep it readable
+        const angleStepDeg = 6;
+        const angleMaxDeg = 87;
+        const rightAnglesDeg = [];
+        const leftAnglesDeg = [];
+        for (let a = -angleMaxDeg; a <= angleMaxDeg; a += angleStepDeg) {
+          rightAnglesDeg.push(a);
+          leftAnglesDeg.push(a);
+        }
+
+        ctx.strokeStyle = strokeStyle;
+
+        // Left-going rays (no lens interaction), just extend to left canvas edge.
+        for (let i = 0; i < leftAnglesDeg.length; i += 1) {
+          const theta = (leftAnglesDeg[i] * Math.PI) / 180;
+          const dxL = xLeft - xObj; // negative
+          const yL = yOrigin + Math.tan(theta) * dxL;
+          ctx.beginPath();
+          ctx.moveTo(xObj, yOrigin);
+          ctx.lineTo(xLeft, yL);
+          ctx.stroke();
+        }
+
+        // Right-going rays toward the lens plane.
+        // Also include a special "chief ray" through the lens center.
+        for (let i = 0; i < rightAnglesDeg.length; i += 1) {
+          const theta = (rightAnglesDeg[i] * Math.PI) / 180;
+          const yAtLens = yOrigin + Math.tan(theta) * dxIn;
+          ctx.beginPath();
+          ctx.moveTo(xObj, yOrigin);
+          ctx.lineTo(xLens, yAtLens);
+          ctx.stroke();
+
+          if (!withinAperture(yAtLens)) {
+            drawStopMark(xLens, yAtLens);
+          }
+        }
+
+        // Chief ray through optical center (always drawn and always passes).
+        ctx.beginPath();
+        ctx.moveTo(xObj, yOrigin);
+        ctx.lineTo(xLens, yAxis);
+        ctx.stroke();
+      }
+
+      // Camera obscura: only a single ray can pass through the pinhole.
+      if (state.lensType === "camera") {
+        ctx.save();
+        ctx.globalAlpha = 0.70;
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = "round";
+        ctx.setLineDash([7, 7]);
+        function drawCameraBundle(yOrigin, strokeStyle) {
+          ctx.strokeStyle = strokeStyle;
+          if (state.helperRaysCount === "all") {
+            // In "all directions" mode: show many rays in all directions,
+            // but only the one through the pinhole continues.
+            drawAllDirectionsBundle(yOrigin, strokeStyle);
+
+            // Continue only the pinhole ray beyond the plate.
+            const dxOut = xRight - xLens;
+            const slopeIn = (yAxis - yOrigin) / (dxIn || 1e-6);
+            ctx.beginPath();
+            ctx.moveTo(xLens, yAxis);
+            ctx.lineTo(xRight, yAxis + slopeIn * dxOut);
+            ctx.stroke();
+            return;
+          }
+
+          for (let i = 0; i < yLensPoints.length; i += 1) {
+            // Prefer the ray closest to the axis as the only one through the pinhole.
+            const midIdx = Math.floor(yLensPoints.length / 2);
+            const yAtPlate = (i === midIdx) ? yAxis : yLensPoints[i];
+
+            // Segment to the plate (always drawn)
+            ctx.beginPath();
+            ctx.moveTo(xObj, yOrigin);
+            ctx.lineTo(xLens, yAtPlate);
+            ctx.stroke();
+
+            // Only the ray through the pinhole continues beyond the plate.
+            if (i === midIdx) {
+              const slope = (yAtPlate - yOrigin) / (dxIn || 1e-6);
+              const dxOut = xRight - xLens;
+              ctx.beginPath();
+              ctx.moveTo(xLens, yAtPlate);
+              ctx.lineTo(xRight, yAtPlate + slope * dxOut);
+              ctx.stroke();
+            } else {
+              // Small "stop" mark on the plate to show absorption.
+              drawStopMark(xLens, yAtPlate);
+            }
+          }
+        }
+
+        // From flame tip (and optionally from flame base): rays each, only the middle passes the hole.
+        drawCameraBundle(yObjTop, "rgba(56, 189, 248, 0.95)");
+        if (state.helperRaysPoints === 2) drawCameraBundle(yObjBottom, "rgba(34, 197, 94, 0.80)");
+
+        ctx.setLineDash([]);
+        ctx.restore();
+        return;
+      }
+
+      // No-lens mode: helper rays are just straight lines (no refraction).
+      if (state.lensType === "none") {
+        ctx.save();
+        ctx.globalAlpha = 0.62;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.setLineDash([7, 7]);
+
+        function drawBundleStraight(yOrigin, strokeStyle) {
+          ctx.strokeStyle = strokeStyle;
+          if (state.helperRaysCount === "all") {
+            // All directions: rays are straight everywhere.
+            drawAllDirectionsBundle(yOrigin, strokeStyle);
+
+            // Continue the fan to the right edge (no refraction, no stop).
+            const angleStepDeg = 6;
+            const angleMaxDeg = 87;
+            const rightAnglesDeg = [];
+            for (let a = -angleMaxDeg; a <= angleMaxDeg; a += angleStepDeg) rightAnglesDeg.push(a);
+            for (let i = 0; i < rightAnglesDeg.length; i += 1) {
+              const theta = (rightAnglesDeg[i] * Math.PI) / 180;
+              const yAtLens = yOrigin + Math.tan(theta) * dxIn;
+              const dxOut = xRight - xLens;
+              const yRight = yAtLens + Math.tan(theta) * dxOut;
+              ctx.beginPath();
+              ctx.moveTo(xLens, yAtLens);
+              ctx.lineTo(xRight, yRight);
+              ctx.stroke();
+            }
+
+            // Chief ray continuation
+            const dxOut = xRight - xLens;
+            const slopeIn = (yAxis - yOrigin) / (dxIn || 1e-6);
+            ctx.beginPath();
+            ctx.moveTo(xLens, yAxis);
+            ctx.lineTo(xRight, yAxis + slopeIn * dxOut);
+            ctx.stroke();
+            return;
+          }
+
+          for (let i = 0; i < yLensPoints.length; i += 1) {
+            const midIdx = Math.floor(yLensPoints.length / 2);
+            const yAtRef = (i === midIdx) ? yAxis : yLensPoints[i];
+            ctx.beginPath();
+            ctx.moveTo(xObj, yOrigin);
+            ctx.lineTo(xLens, yAtRef);
+            const slope = (yAtRef - yOrigin) / (dxIn || 1e-6);
+            const dxOut = xRight - xLens;
+            ctx.lineTo(xRight, yAtRef + slope * dxOut);
+            ctx.stroke();
+          }
+        }
+
+        drawBundleStraight(yObjTop, "rgba(56, 189, 248, 0.92)");
+        if (state.helperRaysPoints === 2) drawBundleStraight(yObjBottom, "rgba(34, 197, 94, 0.75)");
+
+        ctx.setLineDash([]);
+        ctx.restore();
+        return;
+      }
+
+      const doPx = xLens - xObj;
+      const fSigned = effectiveF();
+      const fAbs = Math.abs(fSigned);
+
+      // Thin-lens model for a point source:
+      // - for real images (di > 0): all refracted rays pass through the image point
+      // - for virtual images (di < 0): rays diverge as if they originated from the virtual image point
+      // - at the focal position (di -> ±∞): outgoing rays become (approximately) parallel, smoothly.
+      if (doPx <= 1e-6 || fAbs <= 1e-6) return;
+
+      let di = null;
+      let m = null;
+      if (imageSigned?.type === "real" || imageSigned?.type === "virtual") {
+        di = imageSigned.di;
+        m = imageSigned.m;
+      } else if (imageSigned?.type === "at_infinity") {
+        // approximate infinity with a very far image plane
+        di = (Math.sign(fSigned) || 1) * 1_000_000;
+        m = -di / doPx;
+      } else {
+        return;
+      }
+
+      if (!Number.isFinite(di) || !Number.isFinite(m) || Math.abs(di) < 1e-6) return;
+
+      ctx.save();
+      ctx.globalAlpha = 0.62;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.setLineDash([7, 7]);
+
+      function drawBundle(yOrigin, strokeStyle) {
+        // Image height from magnification (relative to axis)
+        const yImg = yAxis + (yOrigin - yAxis) * m;
+        ctx.strokeStyle = strokeStyle;
+
+        if (state.helperRaysCount === "all") {
+          // Draw many incoming directions. Only rays that hit the lens aperture get refracted.
+          const angleStepDeg = 6;
+          const angleMaxDeg = 87;
+          const rightAnglesDeg = [];
+          const leftAnglesDeg = [];
+          for (let a = -angleMaxDeg; a <= angleMaxDeg; a += angleStepDeg) {
+            rightAnglesDeg.push(a);
+            leftAnglesDeg.push(a);
+          }
+          for (let i = 0; i < leftAnglesDeg.length; i += 1) {
+            const theta = (leftAnglesDeg[i] * Math.PI) / 180;
+            const dxL = xLeft - xObj;
+            const yL = yOrigin + Math.tan(theta) * dxL;
+            ctx.beginPath();
+            ctx.moveTo(xObj, yOrigin);
+            ctx.lineTo(xLeft, yL);
+            ctx.stroke();
+          }
+
+          // Right-going rays to lens plane.
+          for (let i = 0; i < rightAnglesDeg.length; i += 1) {
+            const theta = (rightAnglesDeg[i] * Math.PI) / 180;
+            const yAtLens = yOrigin + Math.tan(theta) * dxIn;
+
+            // Incoming to lens
+            ctx.beginPath();
+            ctx.moveTo(xObj, yOrigin);
+            ctx.lineTo(xLens, yAtLens);
+            ctx.stroke();
+
+            if (!withinAperture(yAtLens)) {
+              drawStopMark(xLens, yAtLens);
+              continue;
+            }
+
+            // Outgoing after lens: pass through (or diverge from) image point.
+            ctx.beginPath();
+            ctx.moveTo(xLens, yAtLens);
+            const dx = xRight - xLens;
+            const slope = (yImg - yAtLens) / di;
+            ctx.lineTo(xRight, yAtLens + slope * dx);
+            ctx.stroke();
+          }
+
+          // Chief ray through optical center (not bent).
+          ctx.beginPath();
+          ctx.moveTo(xObj, yOrigin);
+          const slopeIn = (yAxis - yOrigin) / (dxIn || 1e-6);
+          ctx.lineTo(xLens, yAxis);
+          const dxOut = xRight - xLens;
+          ctx.lineTo(xRight, yAxis + slopeIn * dxOut);
+          ctx.stroke();
+          return;
+        }
+
+        for (let i = 0; i < yLensPoints.length; i += 1) {
+          const yLens = yLensPoints[i];
+          const midIdx = Math.floor(yLensPoints.length / 2);
+
+          // Middle helper ray: single continuous chief ray through lens center.
+          if (i === midIdx) {
+            ctx.beginPath();
+            ctx.moveTo(xObj, yOrigin);
+            const slopeIn = (yAxis - yOrigin) / (dxIn || 1e-6);
+            ctx.lineTo(xLens, yAxis);
+            const dxOut = xRight - xLens;
+            ctx.lineTo(xRight, yAxis + slopeIn * dxOut);
+            ctx.stroke();
+            continue;
+          }
+
+          // Incoming segment to lens
+          ctx.beginPath();
+          ctx.moveTo(xObj, yOrigin);
+          ctx.lineTo(xLens, yLens);
+          ctx.stroke();
+
+          // Outgoing segment after lens
+          ctx.beginPath();
+          ctx.moveTo(xLens, yLens);
+          const dx = xRight - xLens;
+          const slope = (yImg - yLens) / di;
+          ctx.lineTo(xRight, yLens + slope * dx);
+          ctx.stroke();
+        }
+      }
+
+      // From flame tip (existing)
+      drawBundle(yObjTop, "rgba(56, 189, 248, 0.92)");
+      // From bottom of the candle (new helper rays)
+      if (state.helperRaysPoints === 2) drawBundle(yObjBottom, "rgba(34, 197, 94, 0.75)");
+
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawImagePreview(image, focusedInfo) {
+      // Panel preview: inner white height = canvas screen segment (2 × SCREEN_HALF_LEN).
+      const panelPad = 14;
+      const screenSegH = SCREEN_HALF_LEN * 2;
+      const panelW = 315;
+      const panelH = screenSegH + panelPad * 2;
+      const x0 = canvas.width - 24 - panelW;
+      // Fixed position; top aligned with initial canvas screen line height.
+      const y0 = INITIAL_SCREEN_Y - SCREEN_HALF_LEN - panelPad;
+
+      ctx.save();
+      // Outer subtle frame (no labels)
+      ctx.strokeStyle = "rgba(100,116,139,0.28)";
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      roundRectPath(ctx, x0, y0, panelW, panelH, 12);
+      ctx.stroke();
+
+      // The "screen" (plátno) itself: fully white, no text/labels.
+      const screen = {
+        x: x0 + panelPad,
+        y: y0 + panelPad,
+        w: panelW - panelPad * 2,
+        h: screenSegH
+      };
+
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      roundRectPath(ctx, screen.x, screen.y, screen.w, screen.h, 10);
+      ctx.fill();
+
+      // Clip to the white screen so blur doesn't bleed out.
+      ctx.save();
+      ctx.beginPath();
+      roundRectPath(ctx, screen.x, screen.y, screen.w, screen.h, 10);
+      ctx.clip();
+
+      const drawX = screen.x + screen.w / 2;
+
+      // Map world Y on the physical screen segment to preview Y.
+      // This makes the preview depend on vertical screen position (screenY).
+      const worldTop = state.screenY - SCREEN_HALF_LEN;
+      const worldBottom = state.screenY + SCREEN_HALF_LEN;
+      const worldToPreviewY = (yWorld) => screen.y + ((yWorld - worldTop) * screen.h) / (worldBottom - worldTop);
+      const worldToPreviewScale = screen.h / (worldBottom - worldTop);
+
+      // Make the image dimmer as the screen moves farther from the lens.
+      // (Simple geometric falloff; tuned for visuals rather than strict photometry.)
+      const screenDistPx = Math.max(0, state.screenX - state.lensX);
+      const distNorm = screenDistPx / 420;
+      const distanceAtten = clamp(1 / (1 + distNorm * distNorm), 0.06, 1);
+
+      // Draw real image normally. For virtual image fade it out smoothly with heavy defocus.
+      if ((image.type === "real" || image.type === "virtual") && focusedInfo.visible) {
+        // Without a lens there is no imaging on a screen: show only a fully blurred glow.
+        if (state.lensType === "none") {
+          // No lens: only diffuse illumination on the canvas — no flame silhouette.
+          // Intensity falls off with distance from the aperture (lens plane) to the screen.
+          const dBarrierScreen = Math.max(0, state.screenX - state.lensX);
+          const distN = dBarrierScreen / 420;
+          const washAlpha = clamp(0.40 / (1 + distN * distN), 0.01, 0.40);
+          ctx.save();
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = `rgba(253, 230, 138, ${washAlpha})`;
+          ctx.beginPath();
+          roundRectPath(ctx, screen.x, screen.y, screen.w, screen.h, 10);
+          ctx.fill();
+          ctx.restore();
+
+          ctx.restore(); // end clip
+          ctx.restore();
+          return;
+        }
+
+        const doPx = state.lensX - state.candleX;
+        const fPx = state.fPx;
+
+        // For a converging lens, once we go inside focal length the image is not projectable.
+        // Keep the *same orientation* across the transition and let it blur/fade out (no sudden flip).
+        const inverted = image.type === "real" || (image.type === "virtual" && state.lensType === "converging");
+
+        let blurPx = 0;
+        let alphaPx = 1;
+        if (image.type === "real") {
+          const defocus = Math.abs(focusedInfo.focusDeltaPx);
+          blurPx = clamp(defocus * 0.06 + focusedInfo.blurPx * 0.6, 0, 22);
+          alphaPx = clamp(1 - blurPx / 34, 0.55, 1);
+        } else {
+          // Virtual image:
+          // - for converging lens (do < f): fade out smoothly as it "disappears"
+          // - for diverging lens: show a very blurred warm-colored smear
+          if (state.lensType === "diverging") {
+            const defocus = Math.abs(focusedInfo.focusDeltaPx);
+            blurPx = clamp(40 + defocus * 0.02, 40, 95);
+            alphaPx = clamp(0.28, 0.18, 0.34);
+          } else {
+            const range = Math.max(18, fPx * 0.35);
+            const t = clamp((fPx - doPx) / range, 0, 1); // 0 at f, 1 deeper inside
+            // Right after crossing f, the image is not projectable -> must already be strongly blurred.
+            blurPx = clamp(34 + t * 90, 34, 110);
+            alphaPx = clamp(0.85 * (1 - t), 0, 0.85);
+          }
+        }
+
+        // Camera obscura: image is sharp but very dim.
+        if (state.lensType === "camera" && image.type === "real") {
+          blurPx = 0;
+          alphaPx = 0.16;
+        }
+
+        // Apply distance falloff for all modes (further screen => dimmer).
+        alphaPx *= distanceAtten;
+
+        if (image.type === "virtual" && state.lensType === "diverging") {
+          const yFlameCenter = imageYFromObjectY(
+            (candleFlamePoint(state.candleBaseY, state.candleHeight).y + state.candleBaseY) / 2,
+            image.m
+          );
+          const blobH = clamp(screen.h * 0.42, 24, 280);
+          drawFlame(drawX, worldToPreviewY(yFlameCenter) + blobH / 2, blobH, {
+            blur: blurPx,
+            alpha: alphaPx,
+            onWhite: true
+          });
+
+          ctx.restore(); // end clip
+          ctx.restore();
+          return;
+        }
+
+        // Map wick (green rays) and tip (blue rays) onto the preview using the screen segment in world space.
+        const mVal = typeof image.m === "number" ? image.m : 0;
+        const invertedDraw = mVal < 0 ? true : inverted;
+        const yTipObj = candleFlamePoint(state.candleBaseY, state.candleHeight).y;
+        const yWickObj = candleBottomPoint(state.candleBaseY, state.candleHeight).y;
+        const yTipImg = imageYFromObjectY(yTipObj, mVal);
+        const yWickImg = imageYFromObjectY(yWickObj, mVal);
+        const tipPreviewY = worldToPreviewY(yTipImg);
+        const wickPreviewY = worldToPreviewY(yWickImg);
+        const hPxPreview = clamp(Math.abs(tipPreviewY - wickPreviewY), 12, 2200);
+
+        drawFlame(drawX, wickPreviewY, hPxPreview, {
+          inverted: invertedDraw,
+          blur: blurPx,
+          alpha: alphaPx,
+          onWhite: true
+        });
+      }
+
+      ctx.restore(); // end clip
+      ctx.restore();
+    }
+
+    function draw(now = performance.now()) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // geometry
+      const xLens = state.lensX;
+      const doPx = xLens - state.candleX;
+      let imageSigned;
+      if (state.lensType === "none") {
+        imageSigned = { type: "real", di: Number.POSITIVE_INFINITY, m: 1 };
+      } else if (state.lensType === "camera") {
+        const di = state.screenX - xLens;
+        const m = -di / Math.max(1e-6, doPx);
+        imageSigned = { type: "real", di, m };
+      } else {
+        // Recompute with signed f for correct di sign behavior.
+        imageSigned = computeImageSigned(doPx, effectiveF());
+      }
+
+      // focus + preview params
+      const focus = {
+        inFocus: false,
+        focusDeltaPx: 0,
+        blurPx: 0,
+        visible: true,
+        imageHeightPx: 0
+      };
+
+      if (imageSigned.type === "real") {
+        if (state.lensType === "none") {
+          focus.focusDeltaPx = 0;
+          focus.inFocus = true;
+          focus.blurPx = 0;
+          focus.imageHeightPx = state.candleHeight;
+          focus.visible = true;
+        } else if (state.lensType === "camera") {
+          // Pinhole camera has geometric imaging without defocus (in this simplified model).
+          focus.focusDeltaPx = 0;
+          focus.inFocus = true;
+          focus.blurPx = 0;
+          focus.imageHeightPx = state.candleHeight * Math.abs(imageSigned.m);
+          focus.visible = true;
+        } else {
+          const xImgPlane = xLens + imageSigned.di;
+          focus.focusDeltaPx = state.screenX - xImgPlane;
+          const tol = 6; // px tolerance for "sharp"
+          focus.inFocus = Math.abs(focus.focusDeltaPx) <= tol;
+          focus.blurPx = clamp(Math.abs(focus.focusDeltaPx) * 0.10, 0, 14);
+          focus.imageHeightPx = state.candleHeight * Math.abs(imageSigned.m);
+          // Always render; the preview clamps size to fit the white screen.
+          focus.visible = true;
+        }
+      } else if (imageSigned.type === "virtual") {
+        // Use distance to the (virtual) image plane as a defocus proxy for preview effects.
+        const xImgPlane = xLens + imageSigned.di; // di < 0 (left of lens)
+        focus.focusDeltaPx = state.screenX - xImgPlane;
+        focus.blurPx = clamp(Math.abs(focus.focusDeltaPx) * 0.10, 0, 20);
+        focus.imageHeightPx = state.candleHeight * Math.abs(imageSigned.m);
+      }
+
+      // scene
+      drawMarks();
+      drawLens();
+      drawScreen();
+      drawSceneCandle(now);
+
+      // rays
+      if (state.showHelperRays) {
+        drawHelperRays(imageSigned);
+      }
+
+      // preview panel next to the screen (as requested)
+      drawImagePreview(imageSigned, focus);
+    }
+
+    function setCandleX(x) {
+      const maxX = state.lensX - lensHalfWidthPx() - flameHalfWidthPx() - OBJECT_LENS_GAP;
+      state.candleX = clamp(x, limits.candleMin, Math.max(limits.candleMin, maxX));
+      draw();
+    }
+
+    function setScreenX(x) {
+      const minX = state.lensX + lensHalfWidthPx() + screenHalfWidthPx() + OBJECT_LENS_GAP;
+      state.screenX = clamp(x, Math.max(limits.screenMin, minX), limits.screenMax);
+      draw();
+    }
+
+    function setScreenY(y) {
+      // Allow the screen to move beyond the canvas edge, but keep a small visible/grabbable margin.
+      state.screenY = clamp(y, 20, canvas.height - 20);
+      draw();
+    }
+
+    function setScreenPos(x, y) {
+      // clamp X first (needs lensX)
+      const minX = state.lensX + lensHalfWidthPx() + screenHalfWidthPx() + OBJECT_LENS_GAP;
+      state.screenX = clamp(x, Math.max(limits.screenMin, minX), limits.screenMax);
+      state.screenY = clamp(y, 20, canvas.height - 20);
+      draw();
+    }
+
+    function setF(px) {
+      state.fPx = clamp(px, 75, 330);
+      draw();
+    }
+
+    // Signed lens formula variant (allows diverging lens f < 0).
+    function computeImageSigned(doPx, fPxSigned) {
+      if (doPx <= 0 || !Number.isFinite(fPxSigned) || fPxSigned === 0) return { type: "invalid" };
+      const inv = (1 / fPxSigned) - (1 / doPx);
+      if (Math.abs(inv) < 1e-9) return { type: "at_infinity" };
+      const di = 1 / inv;
+      const m = -di / doPx;
+      return { type: di > 0 ? "real" : "virtual", di, m };
+    }
+
+    // dragging
+    canvas.addEventListener("pointerdown", (event) => {
+      const p = canvasPos(event);
+      const c = candleHitRect();
+      const s = screenHitRect();
+
+      const inside = (r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+
+      if (inside(c)) {
+        state.dragging = "candle";
+        state.dragOffsetX = p.x - state.candleX;
+        canvas.setPointerCapture?.(event.pointerId);
+        return;
+      }
+      if (inside(s)) {
+        state.dragging = "screen";
+        state.dragOffsetX = p.x - state.screenX;
+        state.dragOffsetY = p.y - state.screenY;
+        canvas.setPointerCapture?.(event.pointerId);
+        return;
+      }
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (!state.dragging) return;
+      const p = canvasPos(event);
+      if (state.dragging === "candle") {
+        setCandleX(p.x - state.dragOffsetX);
+      } else if (state.dragging === "screen") {
+        setScreenPos(p.x - state.dragOffsetX, p.y - state.dragOffsetY);
+      }
+    });
+
+    function endDrag() { state.dragging = null; }
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
+
+    if (convergingBtn) convergingBtn.addEventListener("click", () => setLensType("converging"));
+    if (divergingBtn) divergingBtn.addEventListener("click", () => setLensType("diverging"));
+    if (noLensBtn) noLensBtn.addEventListener("click", () => setLensType("none"));
+    if (cameraBtn) cameraBtn.addEventListener("click", () => setLensType("camera"));
+    if (menuBtn && simMenuPanel) {
+      menuBtn.addEventListener("click", () => {
+        const open = simMenuPanel.getAttribute("data-open") !== "true";
+        simMenuPanel.setAttribute("data-open", String(open));
+        simMenuPanel.hidden = !open;
+        menuBtn.setAttribute("aria-expanded", String(open));
+      });
+    }
+
+    if (helperRaysBtn) helperRaysBtn.addEventListener("click", () => {
+      state.showHelperRays = !state.showHelperRays;
+      helperRaysBtn.setAttribute("aria-pressed", String(state.showHelperRays));
+      if (helperMenu) helperMenu.setAttribute("data-open", String(state.showHelperRays));
+      draw();
+    });
+    if (helperMenu) {
+      helperMenu.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const btn = t.closest?.("button[data-helper-count],button[data-helper-points]");
+        if (!(btn instanceof HTMLButtonElement)) return;
+        const vCount = btn.getAttribute("data-helper-count");
+        const vPts = btn.getAttribute("data-helper-points");
+        if (vCount) state.helperRaysCount = (vCount === "2") ? 2 : (vCount === "all" ? "all" : 5);
+        if (vPts) state.helperRaysPoints = (vPts === "1") ? 1 : 2;
+
+        const countOptions = helperMenu.querySelectorAll("button[data-helper-count]");
+        countOptions.forEach((opt) => {
+          const optVal = opt.getAttribute("data-helper-count");
+          const selected = optVal === "all"
+            ? state.helperRaysCount === "all"
+            : (Number(optVal) === state.helperRaysCount);
+          opt.setAttribute("aria-checked", String(selected));
+          opt.setAttribute("data-selected", String(selected));
+        });
+        const ptsOptions = helperMenu.querySelectorAll("button[data-helper-points]");
+        ptsOptions.forEach((opt) => {
+          const selected = Number(opt.getAttribute("data-helper-points")) === state.helperRaysPoints;
+          opt.setAttribute("aria-checked", String(selected));
+          opt.setAttribute("data-selected", String(selected));
+        });
+        draw();
+      });
+    }
+    if (taskBtn) taskBtn.addEventListener("click", openTask);
+    if (taskCloseBtn) taskCloseBtn.addEventListener("click", closeTask);
+    if (taskDialog instanceof HTMLDialogElement) {
+      taskDialog.addEventListener("click", (e) => {
+        // close when clicking the backdrop (outside the panel)
+        const r = taskDialog.getBoundingClientRect();
+        const inside =
+          e.clientX >= r.left && e.clientX <= r.right &&
+          e.clientY >= r.top && e.clientY <= r.bottom;
+        if (!inside) closeTask();
+      });
+    }
+    function animate(now) {
+      draw(now);
+      requestAnimationFrame(animate);
+    }
+    applyPositionLimits();
+    ensureFlameSvgLoaded()
+      .then(() => requestAnimationFrame(animate))
+      .catch(() => requestAnimationFrame(animate));
+  </script>
+</body>
+</html>
+

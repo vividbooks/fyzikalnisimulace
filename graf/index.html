@@ -1,0 +1,4530 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Graf</title>
+  <style>
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
+        format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --axis: #1e6bb8;
+      --grid: rgba(30, 107, 184, 0.22);
+      --bg: #f4f7fb;
+      --panel: #fff;
+      --panel-bg: #ffffff;
+      --accent: #3d5a9a;
+      --accent-hover: #334b81;
+      --text: #171923;
+      --muted: #6b7280;
+      --border: #e8eaef;
+      --focus: #3d5a9a;
+      --area-muted: #eceff5;
+      --readout-bg: #f4f5f8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    label {
+      font-family: inherit;
+    }
+
+    .app {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      align-content: stretch;
+      gap: clamp(10px, 1.8vw, 20px);
+      width: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
+      margin: 0 auto;
+      padding: clamp(8px, 1.2vw, 14px);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .viz-column {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(10px, 1.5vh, 16px);
+      overflow: hidden;
+    }
+
+    .chart-wrap {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: clamp(12px, 1.4vw, 18px) clamp(12px, 1.4vw, 18px) 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .chart-svg {
+      display: block;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+      max-height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .chart-svg.is-holding-point {
+      cursor: grabbing;
+    }
+
+    .chart-svg text {
+      -webkit-user-select: none;
+      user-select: none;
+      pointer-events: none;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .point-coord-label {
+      pointer-events: none;
+    }
+
+    .setup-panel {
+      flex: 0 0 min(320px, 36vw);
+      align-self: stretch;
+      min-height: 0;
+      max-height: 100%;
+      overflow: auto;
+      padding: 18px;
+      border-radius: 22px;
+      scrollbar-gutter: stable;
+      color-scheme: light;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+    }
+
+    .panel-title {
+      margin: 0 0 6px;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .hub-back-to-sims {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--area-muted);
+      color: var(--text);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .hub-back-to-sims:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    .controls {
+      display: grid;
+      gap: 20px;
+    }
+
+    .row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .row-label {
+      font-weight: 650;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .collapsible-section > .section-body {
+      display: grid;
+      gap: 8px;
+    }
+
+    .collapsible-section.is-collapsed > .section-body {
+      display: none;
+    }
+
+    .section-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      margin: 0;
+      padding: 2px 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-weight: 650;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .section-toggle:hover:not(:disabled),
+    .section-toggle:active:not(:disabled) {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      transform: none;
+      filter: none;
+    }
+
+    .section-toggle-chevron {
+      flex: 0 0 auto;
+      font-size: 0.7rem;
+      line-height: 1;
+      transition: transform 0.15s ease;
+    }
+
+    .collapsible-section.is-collapsed .section-toggle-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .actions-row button {
+      flex: 1 1 auto;
+      min-width: min(100%, 7rem);
+    }
+
+    button {
+      font: inherit;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      background: var(--panel-bg);
+      color: var(--accent);
+      border-color: var(--border);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button.fit-curve-active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    button.fit-curve-active:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .fit-mode-row[hidden] {
+      display: none !important;
+    }
+
+    .fit-mode-switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .fit-mode-switch button {
+      flex: 1 1 auto;
+      min-width: min(100%, 6.5rem);
+    }
+
+    .points-table-section {
+      flex: 0 0 auto;
+      background: var(--panel);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .points-table-section[hidden] {
+      display: none !important;
+    }
+
+    .points-table-wrap {
+      overflow-x: auto;
+      min-width: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .points-table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    .points-table th,
+    .points-table td {
+      border: 1px solid var(--border);
+      padding: 0;
+      vertical-align: middle;
+    }
+
+    .points-table td {
+      min-width: 0;
+      height: 1px;
+    }
+
+    .points-table th {
+      width: clamp(3.25rem, 12vw, 5.25rem);
+      background: var(--readout-bg);
+      font-size: 0.8125rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: left;
+      white-space: nowrap;
+      line-height: 1.2;
+      padding: 8px 10px;
+      overflow: hidden;
+    }
+
+    .points-table td input {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 1.625rem;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
+      padding: 3px 2px;
+      margin: 0;
+      font: inherit;
+      font-size: clamp(0.6875rem, 1.6vw, 0.8125rem);
+      color: var(--text);
+      text-align: center;
+      border-radius: 0;
+      appearance: none;
+    }
+
+    .points-table td input:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: -2px;
+      background: #fff;
+    }
+
+    .points-table td input[readonly],
+    .custom-field > input.app-numeric-input[readonly],
+    .custom-step-input input.app-numeric-input[readonly] {
+      cursor: pointer;
+    }
+
+    .points-table-section.graph-theme-0 {
+      --graph-color: #1e6bb8;
+      --graph-muted: rgba(30, 107, 184, 0.14);
+    }
+
+    .points-table-section.graph-theme-1 {
+      --graph-color: #c62828;
+      --graph-muted: rgba(198, 40, 40, 0.14);
+    }
+
+    .points-table-section.graph-theme-2 {
+      --graph-color: #2e7d32;
+      --graph-muted: rgba(46, 125, 50, 0.14);
+    }
+
+    .points-table-section[class*="graph-theme"] {
+      border-color: var(--graph-color);
+    }
+
+    .points-table-section[class*="graph-theme"] .points-table th,
+    .points-table-section[class*="graph-theme"] .points-table td {
+      border-color: var(--graph-muted);
+    }
+
+    .points-table-section[class*="graph-theme"] .points-table th {
+      background: var(--graph-muted);
+      color: var(--muted);
+    }
+
+    .points-table-section[class*="graph-theme"] .points-table td input:focus {
+      outline-color: var(--graph-color);
+    }
+
+    .graph-select-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+    }
+
+    .graph-select {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .graph-select:has(input:checked) {
+      color: var(--text);
+    }
+
+    .graph-select input {
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      accent-color: var(--graph-color, var(--accent));
+    }
+
+    .graph-select-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .graph-select--0 {
+      --graph-color: #1e6bb8;
+    }
+
+    .graph-select--1 {
+      --graph-color: #c62828;
+    }
+
+    .graph-select--2 {
+      --graph-color: #2e7d32;
+    }
+
+    .graph-select--0 .graph-select-swatch {
+      background: #1e6bb8;
+    }
+
+    .graph-select--1 .graph-select-swatch {
+      background: #c62828;
+    }
+
+    .graph-select--2 .graph-select-swatch {
+      background: #2e7d32;
+    }
+
+    .table-keypad-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .table-keypad-overlay[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel {
+      width: min(100%, 300px);
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 42px rgba(15, 23, 42, 0.22);
+      display: grid;
+      gap: 12px;
+    }
+
+    .table-keypad-panel__title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-keypad-panel__display {
+      min-height: 48px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-bg);
+      font-size: 1.5rem;
+      font-weight: 650;
+      text-align: center;
+      color: var(--text);
+    }
+
+    .table-keypad-panel__display.is-invalid {
+      border-color: #c62828;
+      color: #c62828;
+    }
+
+    .table-keypad-panel__error {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 650;
+      color: #c62828;
+      text-align: center;
+    }
+
+    .table-keypad-panel__error[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel__actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .table-keypad-panel__action {
+      width: 56px;
+      height: 56px;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .table-keypad-panel__confirm {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px color-mix(in oklab, var(--accent) 35%, transparent);
+    }
+
+    .table-keypad-panel__cancel {
+      background: var(--panel-bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .table-keypad-panel__action:hover {
+      filter: brightness(1.05);
+    }
+
+    .table-keypad-panel__cancel:hover {
+      color: var(--text);
+      border-color: color-mix(in oklab, var(--muted) 55%, var(--border));
+    }
+
+    .table-keypad-panel__action:active {
+      transform: scale(0.97);
+    }
+
+    .table-math-keypad {
+      width: 100%;
+    }
+
+    .table-math-keypad__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .table-math-keypad__key {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1.125rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .table-math-keypad__key:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    .table-math-keypad__key:active:not(:disabled) {
+      background: color-mix(in oklab, var(--accent) 12%, var(--panel-bg));
+    }
+
+    .table-math-keypad__key:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .table-math-keypad__key--wide {
+      grid-column: 1 / -1;
+      font-size: 1rem;
+    }
+
+    .custom-axis-settings {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .custom-axis-block {
+      margin: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--readout-bg);
+      display: grid;
+      gap: 8px;
+    }
+
+    .custom-axis-block-title {
+      font-size: 0.8125rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0;
+      padding: 0;
+    }
+
+    .custom-axis-inline-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .custom-axis-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .custom-axis-check input {
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+
+    .custom-axis-check:has(input:disabled) {
+      color: var(--muted);
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    @media (max-width: 479.98px) {
+      .custom-axis-inline-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .custom-field {
+      display: grid;
+      gap: 4px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .custom-field > input,
+    .custom-step-input input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .custom-step-input {
+      position: relative;
+      display: block;
+    }
+
+    .custom-step-input input {
+      padding-right: 2.1rem;
+    }
+
+    .custom-step-spin {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      bottom: 1px;
+      width: 1.65rem;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-radius: 0 7px 7px 0;
+      overflow: hidden;
+    }
+
+    .custom-step-btn {
+      flex: 1 1 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: var(--readout-bg);
+      color: var(--muted);
+      padding: 0;
+      font-size: 0.62rem;
+      line-height: 1;
+      cursor: pointer;
+      min-height: 0;
+    }
+
+    .custom-step-btn:hover {
+      background: var(--area-muted);
+      color: var(--text);
+    }
+
+    .custom-step-btn:active {
+      background: var(--border);
+    }
+
+    .custom-step-btn + .custom-step-btn {
+      border-top: 1px solid var(--border);
+    }
+
+    .custom-field > input:focus,
+    .custom-step-input input:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: 1px;
+    }
+
+    .custom-field > input::placeholder,
+    .custom-step-input input::placeholder {
+      color: var(--muted);
+      opacity: 1;
+    }
+
+    .chart-type-switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chart-type-switch button {
+      flex: 1 1 auto;
+      min-width: min(100%, 6.5rem);
+    }
+
+    .line-chart-controls,
+    .pie-chart-controls,
+    .bar-chart-controls {
+      display: grid;
+      gap: 20px;
+    }
+
+    .line-chart-controls[hidden],
+    .pie-chart-controls[hidden],
+    .bar-chart-controls[hidden] {
+      display: none !important;
+    }
+
+    .pie-slices-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .pie-slice-row,
+    .bar-entry-row {
+      display: grid;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--readout-bg);
+    }
+
+    .pie-slice-row {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) auto;
+    }
+
+    .bar-entry-row {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) auto;
+    }
+
+    .bar-entry-row.is-dual-value {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.85fr) minmax(0, 0.85fr) auto;
+    }
+
+    .bar-value-labels-row[hidden] {
+      display: none !important;
+    }
+
+    .pie-slice-row .custom-field,
+    .bar-entry-row .custom-field {
+      min-width: 0;
+    }
+
+    .pie-slice-remove {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .pie-slice-remove:hover:not(:disabled) {
+      border-color: #c62828;
+      color: #c62828;
+      background: #fff;
+    }
+
+    .pie-slice-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 6px;
+      vertical-align: -1px;
+    }
+
+    .chart-svg.is-pie-mode,
+    .chart-svg.is-bar-mode {
+      cursor: default;
+    }
+
+    .line-only-action[hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 479.98px) {
+      .pie-slice-row,
+      .bar-entry-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .pie-slice-row .custom-field:first-child,
+      .bar-entry-row .custom-field:nth-child(1),
+      .bar-entry-row .custom-field:nth-child(2),
+      .bar-entry-row.is-dual-value .custom-field:nth-child(3) {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 899.98px) {
+      .app {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding-left: max(8px, env(safe-area-inset-left, 0px));
+        padding-right: max(8px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        padding-top: max(8px, env(safe-area-inset-top, 0px));
+        gap: 12px;
+      }
+
+      .viz-column {
+        order: 1;
+        flex: 1 1 0;
+        min-height: 0;
+        width: 100%;
+      }
+
+      .setup-panel {
+        order: 2;
+        flex: 0 0 auto;
+        width: 100%;
+        max-height: min(42vh, 460px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        border-radius: 18px;
+        padding: 14px 16px;
+      }
+
+      .chart-wrap {
+        flex: 1 1 0;
+        min-height: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="setup-panel" aria-label="Nastavení">
+      <div class="controls">
+        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <h1 class="panel-title">Graf</h1>
+
+        <div class="row collapsible-section is-collapsed" aria-label="Typ grafu">
+          <button type="button" class="section-toggle" aria-expanded="false">
+            <span>Typ grafu</span>
+            <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="section-body">
+            <div class="chart-type-switch">
+              <button type="button" id="btnChartTypeLine" class="secondary fit-curve-active" aria-pressed="true">Bodový</button>
+              <button type="button" id="btnChartTypeBar" class="secondary" aria-pressed="false">Sloupcový</button>
+              <button type="button" id="btnChartTypePie" class="secondary" aria-pressed="false">Kruhový</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row collapsible-section is-collapsed" aria-label="Možnosti">
+          <button type="button" class="section-toggle" aria-expanded="false">
+            <span>Možnosti</span>
+            <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="section-body">
+            <div class="actions-row">
+              <button type="button" id="btnSave">Uložit</button>
+              <button type="button" id="btnFitCurve" class="secondary line-only-action" aria-pressed="false">Proložit</button>
+              <button type="button" id="btnTableInput" class="secondary line-only-action" aria-pressed="false">Tabulka</button>
+              <button type="button" id="btnReset" class="secondary">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="line-chart-controls" id="lineChartControls">
+          <div class="row fit-mode-row" id="fitModeRow" hidden aria-label="Typ proložení">
+            <div class="fit-mode-switch">
+              <button type="button" id="btnFitModeCurve" class="secondary fit-mode-btn fit-curve-active" aria-pressed="true">Křivka</button>
+              <button type="button" id="btnFitModePolyline" class="secondary fit-mode-btn" aria-pressed="false">Lomená čára</button>
+            </div>
+          </div>
+
+          <div class="row collapsible-section" aria-label="Výběr grafu">
+            <button type="button" class="section-toggle" aria-expanded="true">
+              <span>Aktivní graf</span>
+              <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="section-body">
+              <div class="graph-select-list" id="graphSelectList">
+                <label class="graph-select graph-select--0">
+                  <input type="checkbox" class="graph-select-input" data-graph-index="0" checked aria-label="Graf A" />
+                  <span class="graph-select-swatch" aria-hidden="true"></span>
+                  A
+                </label>
+                <label class="graph-select graph-select--1">
+                  <input type="checkbox" class="graph-select-input" data-graph-index="1" aria-label="Graf B" />
+                  <span class="graph-select-swatch" aria-hidden="true"></span>
+                  B
+                </label>
+                <label class="graph-select graph-select--2">
+                  <input type="checkbox" class="graph-select-input" data-graph-index="2" aria-label="Graf C" />
+                  <span class="graph-select-swatch" aria-hidden="true"></span>
+                  C
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row collapsible-section" aria-label="Nastavení os">
+            <button type="button" class="section-toggle" aria-expanded="true">
+              <span>Nastavení os</span>
+              <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="section-body">
+              <div class="custom-axis-settings">
+                <fieldset class="custom-axis-block">
+                  <div class="custom-axis-block-title">Osa X</div>
+                  <div class="custom-axis-inline-row">
+                    <label class="custom-field">
+                      Název
+                      <input type="text" id="customXName" value="Čas" maxlength="40" />
+                    </label>
+                    <label class="custom-field">
+                      Jednotka
+                      <input type="text" id="customXUnit" value="s" maxlength="16" />
+                    </label>
+                  </div>
+                  <div class="custom-axis-inline-row">
+                    <label class="custom-field">
+                      Velikost dílku
+                      <div class="custom-step-input">
+                        <input type="text" id="customXStep" value="1" inputmode="decimal" autocomplete="off" />
+                        <span class="custom-step-spin">
+                          <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose X">▲</button>
+                          <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose X">▼</button>
+                        </span>
+                      </div>
+                    </label>
+                    <label class="custom-field">
+                      Počet dílků
+                      <div class="custom-step-input">
+                        <input type="text" id="customXDivisions" value="12" inputmode="numeric" autocomplete="off" />
+                        <span class="custom-step-spin">
+                          <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit počet dílků na ose X">▲</button>
+                          <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit počet dílků na ose X">▼</button>
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                  <label class="custom-axis-check">
+                    <input type="checkbox" id="customXAllowNegative" />
+                    Zobrazit záporné hodnoty
+                  </label>
+                </fieldset>
+                <fieldset class="custom-axis-block">
+                  <div class="custom-axis-block-title">Osa Y</div>
+                  <div class="custom-axis-inline-row">
+                    <label class="custom-field">
+                      Název
+                      <input type="text" id="customYName" value="" maxlength="40" placeholder="např. Teplota" />
+                    </label>
+                    <label class="custom-field">
+                      Jednotka
+                      <input type="text" id="customYUnit" value="" maxlength="16" placeholder="např. m, kg, °C" />
+                    </label>
+                  </div>
+                  <div class="custom-axis-inline-row">
+                    <label class="custom-field">
+                      Velikost dílku
+                      <div class="custom-step-input">
+                        <input type="text" id="customYStep" value="1" inputmode="decimal" autocomplete="off" />
+                        <span class="custom-step-spin">
+                          <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose Y">▲</button>
+                          <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose Y">▼</button>
+                        </span>
+                      </div>
+                    </label>
+                    <label class="custom-field">
+                      Počet dílků
+                      <div class="custom-step-input">
+                        <input type="text" id="customYDivisions" value="8" inputmode="numeric" autocomplete="off" />
+                        <span class="custom-step-spin">
+                          <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit počet dílků na ose Y">▲</button>
+                          <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit počet dílků na ose Y">▼</button>
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                  <label class="custom-axis-check">
+                    <input type="checkbox" id="customYAllowNegative" />
+                    Zobrazit záporné hodnoty
+                  </label>
+                </fieldset>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pie-chart-controls" id="pieChartControls" hidden>
+          <div class="row collapsible-section" aria-label="Nastavení kruhového grafu">
+            <button type="button" class="section-toggle" aria-expanded="true">
+              <span>Nastavení</span>
+              <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="section-body">
+              <label class="custom-field">
+                Jednotka
+                <input type="text" id="pieUnit" value="" maxlength="16" placeholder="např. ks, %, kg" />
+              </label>
+              <label class="custom-axis-check">
+                <input type="checkbox" id="pieShowPercentages" />
+                Zobrazit procenta
+              </label>
+            </div>
+          </div>
+
+          <div class="row collapsible-section" aria-label="Údaje kruhového grafu">
+            <button type="button" class="section-toggle" aria-expanded="true">
+              <span>Údaje</span>
+              <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="section-body">
+              <div class="pie-slices-list" id="pieSlicesList"></div>
+              <div class="actions-row">
+                <button type="button" id="btnAddPieSlice" class="secondary">Přidat údaj</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bar-chart-controls" id="barChartControls" hidden>
+          <div class="row collapsible-section" aria-label="Nastavení svislé osy">
+            <button type="button" class="section-toggle" aria-expanded="true">
+              <span>Svislá osa</span>
+              <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="section-body">
+              <div class="custom-axis-settings">
+                <fieldset class="custom-axis-block">
+                <div class="custom-axis-inline-row">
+                  <label class="custom-field">
+                    Název
+                    <input type="text" id="barYName" value="" maxlength="40" placeholder="např. Počet" />
+                  </label>
+                  <label class="custom-field">
+                    Jednotka
+                    <input type="text" id="barYUnit" value="" maxlength="16" placeholder="např. ks, kg" />
+                  </label>
+                </div>
+                <div class="custom-axis-inline-row">
+                  <label class="custom-field">
+                    Velikost dílku
+                    <div class="custom-step-input">
+                      <input type="text" id="barYStep" value="1" inputmode="decimal" autocomplete="off" />
+                      <span class="custom-step-spin">
+                        <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku svislé osy">▲</button>
+                        <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku svislé osy">▼</button>
+                      </span>
+                    </div>
+                  </label>
+                  <label class="custom-field">
+                    Počet dílků
+                    <div class="custom-step-input">
+                      <input type="text" id="barYDivisions" value="8" inputmode="numeric" autocomplete="off" />
+                      <span class="custom-step-spin">
+                        <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit počet dílků svislé osy">▲</button>
+                        <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit počet dílků svislé osy">▼</button>
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </fieldset>
+              </div>
+            </div>
+          </div>
+
+          <div class="row collapsible-section" aria-label="Údaje sloupcového grafu">
+            <button type="button" class="section-toggle" aria-expanded="true">
+              <span>Údaje</span>
+              <span class="section-toggle-chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="section-body">
+              <label class="custom-axis-check">
+                <input type="checkbox" id="barUseTwoValues" />
+                Dvě hodnoty
+              </label>
+              <div class="row bar-value-labels-row" id="barValueLabelsRow" hidden aria-label="Popisky hodnot">
+                <span class="row-label">Popisky hodnot</span>
+                <div class="custom-axis-inline-row">
+                  <label class="custom-field">
+                    Popisek 1
+                    <input type="text" id="barValue1Label" value="" maxlength="40" placeholder="např. Chlapci" />
+                  </label>
+                  <label class="custom-field">
+                    Popisek 2
+                    <input type="text" id="barValue2Label" value="" maxlength="40" placeholder="např. Dívky" />
+                  </label>
+                </div>
+              </div>
+              <div class="pie-slices-list" id="barEntriesList"></div>
+              <div class="actions-row">
+                <button type="button" id="btnAddBarEntry" class="secondary">Přidat údaj</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="viz-column" aria-label="Graf">
+      <div class="chart-wrap">
+        <svg id="chart" class="chart-svg" aria-label="Vlastní graf"></svg>
+      </div>
+      <section id="pointsTableSection" class="points-table-section" hidden aria-label="Zadání bodů v tabulce">
+        <div class="points-table-wrap">
+          <table class="points-table">
+            <tbody id="pointsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tableKeypadOverlay" class="table-keypad-overlay" hidden>
+    <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="tableKeypadTitle">
+      <p id="tableKeypadTitle" class="table-keypad-panel__title">Hodnota</p>
+      <div id="tableKeypadDisplay" class="table-keypad-panel__display" aria-live="polite"></div>
+      <p id="tableKeypadError" class="table-keypad-panel__error" hidden></p>
+      <div class="table-math-keypad" id="tableMathKeypad" aria-label="Matematická klávesnice">
+        <div class="table-math-keypad__grid">
+          <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+          <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+          <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+          <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+          <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+          <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+          <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+          <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+          <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+          <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+          <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+          <button class="table-math-keypad__key" type="button" data-value="-">−</button>
+          <button class="table-math-keypad__key table-math-keypad__key--wide" type="button" data-action="backspace" aria-label="Smazat">⌫</button>
+        </div>
+      </div>
+      <div class="table-keypad-panel__actions">
+        <button type="button" id="tableKeypadCancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">×</button>
+        <button type="button" id="tableKeypadConfirm" class="table-keypad-panel__action table-keypad-panel__confirm" aria-label="Vložit hodnotu">✓</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(function () {
+  const CHART_GRID_SNAP_PX = 7;
+
+  const chartEl = document.getElementById("chart");
+  const chartWrap = document.querySelector(".chart-wrap");
+  const customXName = document.getElementById("customXName");
+  const customXUnit = document.getElementById("customXUnit");
+  const customXStep = document.getElementById("customXStep");
+  const customXDivisions = document.getElementById("customXDivisions");
+  const customXAllowNegative = document.getElementById("customXAllowNegative");
+  const customYName = document.getElementById("customYName");
+  const customYUnit = document.getElementById("customYUnit");
+  const customYStep = document.getElementById("customYStep");
+  const customYDivisions = document.getElementById("customYDivisions");
+  const customYAllowNegative = document.getElementById("customYAllowNegative");
+  const btnSave = document.getElementById("btnSave");
+  const btnFitCurve = document.getElementById("btnFitCurve");
+  const fitModeRow = document.getElementById("fitModeRow");
+  const btnFitModeCurve = document.getElementById("btnFitModeCurve");
+  const btnFitModePolyline = document.getElementById("btnFitModePolyline");
+  const btnTableInput = document.getElementById("btnTableInput");
+  const btnReset = document.getElementById("btnReset");
+  const btnChartTypeLine = document.getElementById("btnChartTypeLine");
+  const btnChartTypeBar = document.getElementById("btnChartTypeBar");
+  const btnChartTypePie = document.getElementById("btnChartTypePie");
+  const lineChartControls = document.getElementById("lineChartControls");
+  const pieChartControls = document.getElementById("pieChartControls");
+  const barChartControls = document.getElementById("barChartControls");
+  const pieUnitInput = document.getElementById("pieUnit");
+  const pieShowPercentages = document.getElementById("pieShowPercentages");
+  const pieSlicesList = document.getElementById("pieSlicesList");
+  const btnAddPieSlice = document.getElementById("btnAddPieSlice");
+  const barYName = document.getElementById("barYName");
+  const barYUnit = document.getElementById("barYUnit");
+  const barYStep = document.getElementById("barYStep");
+  const barYDivisions = document.getElementById("barYDivisions");
+  const barUseTwoValues = document.getElementById("barUseTwoValues");
+  const barValueLabelsRow = document.getElementById("barValueLabelsRow");
+  const barValue1LabelInput = document.getElementById("barValue1Label");
+  const barValue2LabelInput = document.getElementById("barValue2Label");
+  const barEntriesList = document.getElementById("barEntriesList");
+  const btnAddBarEntry = document.getElementById("btnAddBarEntry");
+  const lineOnlyActions = Array.from(document.querySelectorAll(".line-only-action"));
+  const pointsTableSection = document.getElementById("pointsTableSection");
+  const pointsTableBody = document.getElementById("pointsTableBody");
+  const tableKeypadOverlay = document.getElementById("tableKeypadOverlay");
+  const tableKeypadTitle = document.getElementById("tableKeypadTitle");
+  const tableKeypadDisplay = document.getElementById("tableKeypadDisplay");
+  const tableKeypadError = document.getElementById("tableKeypadError");
+  const tableKeypadConfirm = document.getElementById("tableKeypadConfirm");
+  const tableKeypadCancel = document.getElementById("tableKeypadCancel");
+  const tableMathKeypad = document.getElementById("tableMathKeypad");
+  const tableMathKeypadKeys = tableMathKeypad
+    ? tableMathKeypad.querySelectorAll(".table-math-keypad__key")
+    : [];
+
+  const ml = 78;
+  const mr = 28;
+  const mt = 28;
+  const mb = 44;
+  const W = 648;
+  const H = 340;
+
+  /** Dynamické rozměry grafu – přizpůsobí se obrazovce a popiskům os. */
+  const chartLayout = {
+    W: W,
+    H: H,
+    ml: ml,
+    mr: mr,
+    mt: mt,
+    mb: mb,
+    pw: W - ml - mr,
+    ph: H - mt - mb,
+    yAxisLabelX: 16,
+  };
+
+  const MIN_PLOT_W = 140;
+  const MIN_PLOT_H = 100;
+  const TICK_FONT_SIZE = 11;
+  const AXIS_FONT_SIZE = 14;
+  const CHART_LABEL_FONT = '"Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
+  const MIN_CHART_W = 280;
+  const MIN_CHART_H = 200;
+
+  let measureCanvas = null;
+  let layoutResizeRaf = 0;
+
+  const GRAPH_COUNT = 3;
+  const GRAPH_COLORS = ["#1e6bb8", "#c62828", "#2e7d32"];
+  const PIE_COLORS = [
+    "#1e6bb8",
+    "#c62828",
+    "#2e7d32",
+    "#f9a825",
+    "#6a1b9a",
+    "#00838f",
+    "#ef6c00",
+    "#546e7a",
+  ];
+  const DEFAULT_TABLE_COLUMN_COUNT = 8;
+
+  /** @type {{ points: { t: number, s: number }[], showFittedCurve: boolean, fitMode: "curve" | "polyline", tableColumnCount: number }[]} */
+  const graphs = [];
+
+  let activeGraphIndex = 0;
+  let tableInputMode = false;
+  let tableSyncInProgress = false;
+  /** @type {"line" | "pie" | "bar"} */
+  let chartType = "line";
+  let pieSliceIdSeq = 1;
+  let barEntryIdSeq = 1;
+  /** @type {{ unit: string, showPercentages: boolean, slices: { id: number, label: string, valueRaw: string }[] }} */
+  const pieState = {
+    unit: "",
+    showPercentages: false,
+    slices: [],
+  };
+  /** @type {{ yName: string, yUnit: string, yStep: number, yDivisions: number, useTwoValues: boolean, value1Label: string, value2Label: string, entries: { id: number, label: string, value1Raw: string, value2Raw: string }[] }} */
+  const barState = {
+    yName: "",
+    yUnit: "",
+    yStep: 1,
+    yDivisions: 8,
+    useTwoValues: false,
+    value1Label: "",
+    value2Label: "",
+    entries: [],
+  };
+  /** @type {HTMLInputElement | null} */
+  let tableKeypadTarget = null;
+  let tableKeypadDraft = "";
+
+  const graphSelectInputs = Array.from(
+    document.querySelectorAll(".graph-select-input")
+  );
+
+  function createGraphState() {
+    return {
+      points: [],
+      showFittedCurve: false,
+      fitMode: "curve",
+      tableColumnCount: DEFAULT_TABLE_COLUMN_COUNT,
+    };
+  }
+
+  for (let i = 0; i < GRAPH_COUNT; i++) {
+    graphs.push(createGraphState());
+  }
+
+  function createPieSlice() {
+    const id = pieSliceIdSeq++;
+    return {
+      id: id,
+      label: "",
+      valueRaw: "",
+    };
+  }
+
+  function createBarEntry() {
+    const id = barEntryIdSeq++;
+    return {
+      id: id,
+      label: "",
+      value1Raw: "",
+      value2Raw: "",
+    };
+  }
+
+  function pieColor(index) {
+    return PIE_COLORS[index % PIE_COLORS.length];
+  }
+
+  function mixHexColor(hex, towardWhite, amount) {
+    const raw = String(hex || "").replace("#", "");
+    if (raw.length !== 6) return hex;
+    const r = parseInt(raw.slice(0, 2), 16);
+    const g = parseInt(raw.slice(2, 4), 16);
+    const b = parseInt(raw.slice(4, 6), 16);
+    if (![r, g, b].every(Number.isFinite)) return hex;
+    const target = towardWhite ? 255 : 0;
+    const mix = Math.max(0, Math.min(1, amount));
+    function channel(c) {
+      return Math.max(0, Math.min(255, Math.round(c + (target - c) * mix)))
+        .toString(16)
+        .padStart(2, "0");
+    }
+    return "#" + channel(r) + channel(g) + channel(b);
+  }
+
+  function barValueColors(baseColor) {
+    return {
+      primary: baseColor,
+      secondary: mixHexColor(baseColor, true, 0.42),
+    };
+  }
+
+  function isLineMode() {
+    return chartType === "line";
+  }
+
+  function isPieMode() {
+    return chartType === "pie";
+  }
+
+  function isBarMode() {
+    return chartType === "bar";
+  }
+
+  function parsePieSliceValue(raw) {
+    const n = parseDecimalCs(String(raw || "").trim());
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return n;
+  }
+
+  function parseBarEntryValue(raw) {
+    const n = parseDecimalCs(String(raw || "").trim());
+    if (!Number.isFinite(n) || n < 0) return null;
+    return n;
+  }
+
+  function getRenderablePieSlices() {
+    const result = [];
+    pieState.slices.forEach(function (slice, index) {
+      const value = parsePieSliceValue(slice.valueRaw);
+      if (value == null) return;
+      result.push({
+        id: slice.id,
+        label: (slice.label || "").trim() || "Údaj " + (index + 1),
+        value: value,
+        color: pieColor(index),
+        sourceIndex: index,
+      });
+    });
+    return result;
+  }
+
+  function barSeriesLabel(seriesIndex) {
+    const raw =
+      seriesIndex === 2 ? barState.value2Label : barState.value1Label;
+    return (raw || "").trim();
+  }
+
+  function getRenderableBarEntries() {
+    const result = [];
+    barState.entries.forEach(function (entry, index) {
+      const value1 = parseBarEntryValue(entry.value1Raw);
+      const value2 = barState.useTwoValues
+        ? parseBarEntryValue(entry.value2Raw)
+        : null;
+      if (value1 == null && value2 == null) return;
+      result.push({
+        id: entry.id,
+        label: (entry.label || "").trim() || "Údaj " + (index + 1),
+        value1: value1,
+        value2: value2,
+        color: pieColor(index),
+        sourceIndex: index,
+      });
+    });
+    return result;
+  }
+
+  function activeGraph() {
+    return graphs[activeGraphIndex];
+  }
+
+  function activePoints() {
+    return activeGraph().points;
+  }
+
+  function graphColor(graphIndex) {
+    return GRAPH_COLORS[graphIndex] || GRAPH_COLORS[0];
+  }
+
+  function applyChartLabelFont(textEl) {
+    textEl.setAttribute("font-family", CHART_LABEL_FONT);
+  }
+
+  function hasAnyChartPoints() {
+    return graphs.some(function (g) {
+      return g.points.length > 0;
+    });
+  }
+
+  function updateNegativeAxisCheckboxState() {
+    const locked = hasAnyChartPoints();
+    [customXAllowNegative, customYAllowNegative].forEach(function (input) {
+      if (!input) return;
+      input.disabled = locked;
+      const label = input.closest(".custom-axis-check");
+      if (label) {
+        if (locked) {
+          label.setAttribute(
+            "title",
+            "Záporné hodnoty lze zapnout jen před vložením prvního bodu."
+          );
+        } else {
+          label.removeAttribute("title");
+        }
+      }
+    });
+  }
+
+  function updateGraphSelectUI() {
+    graphSelectInputs.forEach(function (input, i) {
+      input.checked = i === activeGraphIndex;
+    });
+  }
+
+  function updateTableGraphTheme() {
+    if (!pointsTableSection) return;
+    for (let i = 0; i < GRAPH_COUNT; i++) {
+      pointsTableSection.classList.toggle("graph-theme-" + i, i === activeGraphIndex);
+    }
+  }
+
+  function setActiveGraph(index) {
+    if (index < 0 || index >= GRAPH_COUNT || index === activeGraphIndex) return;
+    endPointHold();
+    activeGraphIndex = index;
+    updateGraphSelectUI();
+    updateTableGraphTheme();
+    if (tableInputMode) {
+      renderPointsTable();
+    }
+    redrawChart();
+  }
+
+  /** @type {{ xName: string, xUnit: string, xStep: number, xDivisions: number, xAllowNegative: boolean, yName: string, yUnit: string, yStep: number, yDivisions: number, yAllowNegative: boolean }} */
+  const customAxis = {
+    xName: "Čas",
+    xUnit: "s",
+    xStep: 1,
+    xDivisions: 12,
+    xAllowNegative: false,
+    yName: "Osa Y",
+    yUnit: "",
+    yStep: 1,
+    yDivisions: 8,
+    yAllowNegative: false,
+  };
+
+  const CUSTOM_STEP_SPIN_DELTA = 0.1;
+  const CUSTOM_STEP_MIN = 0.1;
+  const CUSTOM_DIV_MIN = 2;
+  const CUSTOM_DIV_MAX = 24;
+
+  const CROSS_HALF = 7;
+  const CROSS_HIT_RADIUS = 24;
+  const MARKER_TOUCH_PICK_PX = 36;
+
+  let chartClickPreviewGroup = null;
+  let pointCoordLabelGroup = null;
+  let plotBodyEl = null;
+  /** @type {{ mode: "new" | "existing", index?: number, t: number, s: number } | null} */
+  let pointHold = null;
+
+  function createCrossMarker(cx, cy, options) {
+    options = options || {};
+    const NS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "chart-cross-marker");
+    g.setAttribute("transform", "translate(" + cx + "," + cy + ")");
+
+    const hit = document.createElementNS(NS, "circle");
+    hit.setAttribute("r", String(CROSS_HIT_RADIUS));
+    hit.setAttribute("fill", "transparent");
+    hit.setAttribute("stroke", "none");
+    hit.setAttribute("pointer-events", "all");
+    g.appendChild(hit);
+
+    const stroke = options.stroke || "#1e6bb8";
+    const strokeWidth = options.strokeWidth || "2";
+    const dash = options.dash || "";
+
+    function addLine(x1, y1, x2, y2) {
+      const line = document.createElementNS(NS, "line");
+      line.setAttribute("x1", String(x1));
+      line.setAttribute("y1", String(y1));
+      line.setAttribute("x2", String(x2));
+      line.setAttribute("y2", String(y2));
+      line.setAttribute("stroke", stroke);
+      line.setAttribute("stroke-width", strokeWidth);
+      line.setAttribute("stroke-linecap", "round");
+      if (dash) line.setAttribute("stroke-dasharray", dash);
+      g.appendChild(line);
+    }
+
+    addLine(-CROSS_HALF, 0, CROSS_HALF, 0);
+    addLine(0, -CROSS_HALF, 0, CROSS_HALF);
+
+    g.querySelectorAll("line").forEach(function (line) {
+      line.setAttribute("pointer-events", "none");
+    });
+
+    return g;
+  }
+
+  function setCrossMarkerPosition(marker, cx, cy) {
+    marker.setAttribute("transform", "translate(" + cx + "," + cy + ")");
+  }
+
+  function tMin() {
+    return customAxis.xAllowNegative ? -customAxis.xDivisions / 2 : 0;
+  }
+
+  function tMax() {
+    return customAxis.xAllowNegative ? customAxis.xDivisions / 2 : customAxis.xDivisions;
+  }
+
+  function tSpan() {
+    return tMax() - tMin();
+  }
+
+  function sMin() {
+    return customAxis.yAllowNegative ? -customAxis.yDivisions / 2 : 0;
+  }
+
+  function sMax() {
+    return customAxis.yAllowNegative ? customAxis.yDivisions / 2 : customAxis.yDivisions;
+  }
+
+  function sSpan() {
+    return sMax() - sMin();
+  }
+
+  function measureTextWidth(text, fontSize) {
+    if (!measureCanvas) measureCanvas = document.createElement("canvas");
+    const ctx = measureCanvas.getContext("2d");
+    if (!ctx) return String(text || "").length * fontSize * 0.58;
+    ctx.font =
+      fontSize +
+      'px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
+    return ctx.measureText(String(text || "")).width;
+  }
+
+  function computeChartLayout() {
+    if (!chartWrap) return;
+    syncCustomAxisFromInputs({ formatInputs: false });
+
+    const rect = chartWrap.getBoundingClientRect();
+    const style = getComputedStyle(chartWrap);
+    const padL = parseFloat(style.paddingLeft) || 0;
+    const padR = parseFloat(style.paddingRight) || 0;
+    const padT = parseFloat(style.paddingTop) || 0;
+    const padB = parseFloat(style.paddingBottom) || 0;
+
+    chartLayout.W = Math.max(MIN_CHART_W, Math.round(rect.width - padL - padR));
+    chartLayout.H = Math.max(MIN_CHART_H, Math.round(rect.height - padT - padB));
+
+    let maxYTickW = 0;
+    for (let si = Math.ceil(sMin()); si <= Math.floor(sMax()); si++) {
+      const lab = formatAxisTickValue(si * customAxis.yStep, customAxis.yUnit);
+      maxYTickW = Math.max(maxYTickW, measureTextWidth(lab, TICK_FONT_SIZE));
+    }
+
+    const yTitleCol = Math.max(18, Math.min(30, AXIS_FONT_SIZE + 4));
+    chartLayout.yAxisLabelX = Math.max(12, Math.round(yTitleCol * 0.75));
+    chartLayout.ml = Math.ceil(chartLayout.yAxisLabelX + maxYTickW + 18);
+    chartLayout.mb = Math.ceil(6 + TICK_FONT_SIZE + 10 + AXIS_FONT_SIZE + 10);
+    chartLayout.mt = 28;
+    chartLayout.mr = 24;
+
+    const maxMl = chartLayout.W - chartLayout.mr - MIN_PLOT_W;
+    const maxMb = chartLayout.H - chartLayout.mt - MIN_PLOT_H;
+    chartLayout.ml = Math.min(chartLayout.ml, Math.max(44, maxMl));
+    chartLayout.mb = Math.min(chartLayout.mb, Math.max(40, maxMb));
+
+    chartLayout.pw = chartLayout.W - chartLayout.ml - chartLayout.mr;
+    chartLayout.ph = chartLayout.H - chartLayout.mt - chartLayout.mb;
+
+    chartEl.setAttribute(
+      "viewBox",
+      "0 0 " + chartLayout.W + " " + chartLayout.H
+    );
+  }
+
+  function scheduleLayoutAndRedraw() {
+    if (layoutResizeRaf) cancelAnimationFrame(layoutResizeRaf);
+    layoutResizeRaf = requestAnimationFrame(function () {
+      layoutResizeRaf = 0;
+      redrawChart();
+    });
+  }
+
+  function tToX(t) {
+    return chartLayout.ml + ((t - tMin()) / tSpan()) * chartLayout.pw;
+  }
+
+  function sToY(s) {
+    return chartLayout.mt + chartLayout.ph - ((s - sMin()) / sSpan()) * chartLayout.ph;
+  }
+
+  function xToT(x) {
+    const t = tMin() + ((x - chartLayout.ml) / chartLayout.pw) * tSpan();
+    return Math.min(tMax(), Math.max(tMin(), t));
+  }
+
+  function yToS(y) {
+    const s = sMin() + ((chartLayout.mt + chartLayout.ph - y) / chartLayout.ph) * sSpan();
+    return Math.min(sMax(), Math.max(sMin(), s));
+  }
+
+  function axisLineX() {
+    return customAxis.xAllowNegative ? tToX(0) : chartLayout.ml;
+  }
+
+  function axisLineY() {
+    return customAxis.yAllowNegative ? sToY(0) : chartLayout.mt + chartLayout.ph;
+  }
+
+  function snapChartXToTimeGrid(x) {
+    const xP = Math.min(chartLayout.ml + chartLayout.pw, Math.max(chartLayout.ml, x));
+    const tRaw = xToT(xP);
+    const tGrid = Math.round(tRaw);
+    const tSn = Math.min(tMax(), Math.max(tMin(), tGrid));
+    const xGrid = tToX(tSn);
+    if (Math.abs(xGrid - xP) <= CHART_GRID_SNAP_PX) return xGrid;
+    return xP;
+  }
+
+  function snapChartYToValueGrid(y) {
+    const yP = Math.min(
+      chartLayout.mt + chartLayout.ph,
+      Math.max(chartLayout.mt, y)
+    );
+    const sRaw = yToS(yP);
+    const sSn = Math.min(sMax(), Math.max(sMin(), Math.round(sRaw)));
+    const yGrid = sToY(sSn);
+    if (Math.abs(yGrid - yP) <= CHART_GRID_SNAP_PX) return yGrid;
+    return yP;
+  }
+
+  function snapChartXYToGrid(x, y) {
+    return { x: snapChartXToTimeGrid(x), y: snapChartYToValueGrid(y) };
+  }
+
+  function parseDecimalCs(raw) {
+    const normalized = String(raw ?? "")
+      .trim()
+      .replace(/\s/g, "")
+      .replace(",", ".");
+    if (normalized === "" || normalized === "." || normalized === "-") return NaN;
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function customAxisStepPositive(raw, fallback) {
+    const n = parseDecimalCs(raw);
+    if (!Number.isFinite(n) || n <= 0) return fallback;
+    return n;
+  }
+
+  function formatDecimalCs(value) {
+    const rounded = Math.abs(value - Math.round(value)) < 1e-6 ? Math.round(value) : value;
+    if (typeof rounded === "number" && Number.isInteger(rounded)) {
+      return String(rounded);
+    }
+    const num = String(Number(rounded.toFixed(2))).replace(/\.?0+$/, "");
+    return num.replace(".", ",");
+  }
+
+  function formatAxisTickValue(value, unit) {
+    const num = formatDecimalCs(value);
+    return unit ? num + " " + unit : num;
+  }
+
+  function tToDisplayValue(t) {
+    return t * customAxis.xStep;
+  }
+
+  function sToDisplayValue(s) {
+    return s * customAxis.yStep;
+  }
+
+  function displayValueToT(raw) {
+    if (customAxis.xStep <= 0) return NaN;
+    const n = parseDecimalCs(raw);
+    if (!Number.isFinite(n)) return NaN;
+    return Math.min(tMax(), Math.max(tMin(), n / customAxis.xStep));
+  }
+
+  function displayValueToS(raw) {
+    if (customAxis.yStep <= 0) return NaN;
+    const n = parseDecimalCs(raw);
+    if (!Number.isFinite(n)) return NaN;
+    return Math.min(sMax(), Math.max(sMin(), n / customAxis.yStep));
+  }
+
+  function formatTableCellValue(value) {
+    return formatDecimalCs(value);
+  }
+
+  function formatPointCoordsLabel(t, s) {
+    const xVal = formatTableCellValue(tToDisplayValue(t));
+    const yVal = formatTableCellValue(sToDisplayValue(s));
+    const xPart = customAxis.xUnit ? xVal + " " + customAxis.xUnit : xVal;
+    const yPart = customAxis.yUnit ? yVal + " " + customAxis.yUnit : yVal;
+    return "(" + xPart + "; " + yPart + ")";
+  }
+
+  function createPointCoordLabelGroup() {
+    const NS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "point-coord-label");
+    g.setAttribute("pointer-events", "none");
+    g.style.display = "none";
+
+    const bg = document.createElementNS(NS, "rect");
+    bg.setAttribute("class", "point-coord-label__bg");
+    bg.setAttribute("rx", "6");
+    bg.setAttribute("ry", "6");
+    bg.setAttribute("fill", "rgba(255,255,255,0.95)");
+    bg.setAttribute("stroke", "#1e6bb8");
+    bg.setAttribute("stroke-width", "1");
+
+    const text = document.createElementNS(NS, "text");
+    text.setAttribute("class", "point-coord-label__text");
+    applyChartLabelFont(text);
+    text.setAttribute("font-size", "11");
+    text.setAttribute("fill", "#1e6bb8");
+
+    g.appendChild(bg);
+    g.appendChild(text);
+    return g;
+  }
+
+  function updatePointCoordLabel(t, s, cx, cy) {
+    if (!pointCoordLabelGroup) return;
+
+    const label = formatPointCoordsLabel(t, s);
+    const textEl = pointCoordLabelGroup.querySelector(".point-coord-label__text");
+    const bgEl = pointCoordLabelGroup.querySelector(".point-coord-label__bg");
+    if (!textEl || !bgEl) return;
+
+    const fontSize = 11;
+    const padX = 6;
+    const padY = 4;
+    const textW = measureTextWidth(label, fontSize);
+    const textH = fontSize + 2;
+    const boxW = textW + padX * 2;
+    const boxH = textH + padY * 2;
+
+    let boxX = cx + CROSS_HALF + 8;
+    let boxY = cy - CROSS_HALF - 8 - boxH;
+
+    const minX = chartLayout.ml + 2;
+    const maxX = chartLayout.ml + chartLayout.pw - boxW - 2;
+    const minY = chartLayout.mt + 2;
+    const maxY = chartLayout.mt + chartLayout.ph - boxH - 2;
+    boxX = Math.min(maxX, Math.max(minX, boxX));
+    boxY = Math.min(maxY, Math.max(minY, boxY));
+
+    textEl.textContent = label;
+    textEl.setAttribute("x", String(boxX + padX));
+    textEl.setAttribute("y", String(boxY + padY + fontSize - 1));
+    bgEl.setAttribute("x", String(boxX));
+    bgEl.setAttribute("y", String(boxY));
+    bgEl.setAttribute("width", String(boxW));
+    bgEl.setAttribute("height", String(boxH));
+    pointCoordLabelGroup.style.display = "";
+  }
+
+  function hidePointCoordLabel() {
+    if (pointCoordLabelGroup) pointCoordLabelGroup.style.display = "none";
+  }
+
+  function axisRowLabel(axisName, unit) {
+    const name = (axisName || "").trim();
+    const u = (unit || "").trim();
+    if (name && u) return name + " (" + u + ")";
+    return name || u || "—";
+  }
+
+  function desiredTableColumnCount() {
+    const g = activeGraph();
+    let desired = Math.max(DEFAULT_TABLE_COLUMN_COUNT, g.points.length + 1);
+
+    if (pointsTableBody && tableInputMode) {
+      const xInputs = pointsTableBody.querySelectorAll(".points-table-x");
+      const yInputs = pointsTableBody.querySelectorAll(".points-table-y");
+      const colCount = xInputs.length;
+      if (colCount > 0) {
+        let allFilled = true;
+        for (let i = 0; i < colCount; i++) {
+          const xEmpty = String(xInputs[i].value).trim() === "";
+          const yEmpty = String(yInputs[i] ? yInputs[i].value : "").trim() === "";
+          if (xEmpty || yEmpty) {
+            allFilled = false;
+            break;
+          }
+        }
+        if (allFilled) {
+          desired = Math.max(desired, colCount + 1);
+        }
+      }
+    }
+
+    return desired;
+  }
+
+  function updateTableModeUI() {
+    const showTable = tableInputMode && isLineMode();
+    pointsTableSection.hidden = !showTable;
+    btnTableInput.setAttribute("aria-pressed", tableInputMode ? "true" : "false");
+    btnTableInput.classList.toggle("fit-curve-active", tableInputMode);
+    if (!showTable) {
+      hideTableMathKeypad();
+    }
+  }
+
+  function updateChartTypeUI() {
+    const line = isLineMode();
+    const pie = isPieMode();
+    const bar = isBarMode();
+    if (lineChartControls) lineChartControls.hidden = !line;
+    if (pieChartControls) pieChartControls.hidden = !pie;
+    if (barChartControls) barChartControls.hidden = !bar;
+    lineOnlyActions.forEach(function (btn) {
+      btn.hidden = !line;
+    });
+    if (btnChartTypeLine) {
+      btnChartTypeLine.setAttribute("aria-pressed", line ? "true" : "false");
+      btnChartTypeLine.classList.toggle("fit-curve-active", line);
+    }
+    if (btnChartTypeBar) {
+      btnChartTypeBar.setAttribute("aria-pressed", bar ? "true" : "false");
+      btnChartTypeBar.classList.toggle("fit-curve-active", bar);
+    }
+    if (btnChartTypePie) {
+      btnChartTypePie.setAttribute("aria-pressed", pie ? "true" : "false");
+      btnChartTypePie.classList.toggle("fit-curve-active", pie);
+    }
+    chartEl.classList.toggle("is-pie-mode", pie);
+    chartEl.classList.toggle("is-bar-mode", bar);
+    chartEl.setAttribute(
+      "aria-label",
+      pie ? "Kruhový graf" : bar ? "Sloupcový graf" : "Vlastní graf"
+    );
+    updateTableModeUI();
+  }
+
+  function ensureDefaultCategoryEntries(stateKey) {
+    if (stateKey === "pie" && pieState.slices.length === 0) {
+      pieState.slices.push(createPieSlice());
+      pieState.slices.push(createPieSlice());
+    }
+    if (stateKey === "bar" && barState.entries.length === 0) {
+      barState.entries.push(createBarEntry());
+      barState.entries.push(createBarEntry());
+    }
+  }
+
+  function setChartType(nextType) {
+    if (nextType !== "line" && nextType !== "pie" && nextType !== "bar") return;
+    if (chartType === nextType) return;
+    chartType = nextType;
+    if (!isLineMode()) {
+      endPointHold();
+      hideChartClickPreview();
+      hidePointCoordLabel();
+    }
+    if (isPieMode()) {
+      ensureDefaultCategoryEntries("pie");
+      renderPieSlicesList();
+    }
+    if (isBarMode()) {
+      ensureDefaultCategoryEntries("bar");
+      syncBarAxisFromInputs({ formatInputs: false });
+      renderBarEntriesList();
+    }
+    updateChartTypeUI();
+    redrawChart();
+  }
+
+  function renderPieSlicesList() {
+    if (!pieSlicesList) return;
+    pieSlicesList.innerHTML = "";
+    pieState.slices.forEach(function (slice, index) {
+      const row = document.createElement("div");
+      row.className = "pie-slice-row";
+      row.dataset.sliceId = String(slice.id);
+
+      const labelField = document.createElement("label");
+      labelField.className = "custom-field";
+      const labelTitle = document.createElement("span");
+      labelTitle.innerHTML =
+        '<span class="pie-slice-swatch" style="background:' +
+        pieColor(index) +
+        '"></span>Název';
+      const labelInput = document.createElement("input");
+      labelInput.type = "text";
+      labelInput.maxLength = 40;
+      labelInput.value = slice.label;
+      labelInput.placeholder = "Údaj " + (index + 1);
+      labelInput.setAttribute("aria-label", "Název údaje " + (index + 1));
+      labelInput.addEventListener("input", function () {
+        slice.label = labelInput.value;
+        redrawChart();
+      });
+      labelField.appendChild(labelTitle);
+      labelField.appendChild(labelInput);
+
+      const valueField = document.createElement("label");
+      valueField.className = "custom-field";
+      const valueTitle = document.createElement("span");
+      valueTitle.textContent = "Hodnota";
+      const valueInput = document.createElement("input");
+      valueInput.type = "text";
+      valueInput.inputMode = "decimal";
+      valueInput.autocomplete = "off";
+      valueInput.className = "chart-value-input";
+      valueInput.value = slice.valueRaw;
+      valueInput.placeholder = "např. 12";
+      valueInput.setAttribute("aria-label", "Hodnota údaje " + (index + 1));
+      applyNumericKeypadMode(valueInput);
+      valueInput.addEventListener("input", function () {
+        slice.valueRaw = valueInput.value;
+        redrawChart();
+      });
+      valueInput.addEventListener("change", function () {
+        const n = parseDecimalCs(valueInput.value.trim());
+        if (Number.isFinite(n)) {
+          slice.valueRaw = formatDecimalCs(n);
+          valueInput.value = slice.valueRaw;
+        }
+        redrawChart();
+      });
+      valueField.appendChild(valueTitle);
+      valueField.appendChild(valueInput);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "pie-slice-remove";
+      removeBtn.setAttribute("aria-label", "Odstranit údaj " + (index + 1));
+      removeBtn.textContent = "×";
+      removeBtn.disabled = pieState.slices.length <= 1;
+      removeBtn.addEventListener("click", function () {
+        if (pieState.slices.length <= 1) return;
+        const idx = pieState.slices.findIndex(function (s) {
+          return s.id === slice.id;
+        });
+        if (idx >= 0) pieState.slices.splice(idx, 1);
+        renderPieSlicesList();
+        redrawChart();
+      });
+
+      row.appendChild(labelField);
+      row.appendChild(valueField);
+      row.appendChild(removeBtn);
+      pieSlicesList.appendChild(row);
+    });
+  }
+
+  function renderBarEntriesList() {
+    if (!barEntriesList) return;
+    barEntriesList.innerHTML = "";
+    const dual = barState.useTwoValues;
+    const value1Title = dual
+      ? barSeriesLabel(1) || "Hodnota 1"
+      : "Hodnota";
+    const value2Title = barSeriesLabel(2) || "Hodnota 2";
+    if (barValueLabelsRow) {
+      barValueLabelsRow.hidden = !dual;
+    }
+    barState.entries.forEach(function (entry, index) {
+      const row = document.createElement("div");
+      row.className = "bar-entry-row" + (dual ? " is-dual-value" : "");
+      row.dataset.entryId = String(entry.id);
+
+      const labelField = document.createElement("label");
+      labelField.className = "custom-field";
+      const labelTitle = document.createElement("span");
+      labelTitle.innerHTML =
+        '<span class="pie-slice-swatch" style="background:' +
+        pieColor(index) +
+        '"></span>Název';
+      const labelInput = document.createElement("input");
+      labelInput.type = "text";
+      labelInput.maxLength = 40;
+      labelInput.value = entry.label;
+      labelInput.placeholder = "Údaj " + (index + 1);
+      labelInput.setAttribute("aria-label", "Název údaje " + (index + 1));
+      labelInput.addEventListener("input", function () {
+        entry.label = labelInput.value;
+        redrawChart();
+      });
+      labelField.appendChild(labelTitle);
+      labelField.appendChild(labelInput);
+
+      function makeValueField(rawKey, title, ariaName) {
+        const valueField = document.createElement("label");
+        valueField.className = "custom-field";
+        const valueTitleEl = document.createElement("span");
+        valueTitleEl.textContent = title;
+        const valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.inputMode = "decimal";
+        valueInput.autocomplete = "off";
+        valueInput.className = "chart-value-input";
+        valueInput.value = entry[rawKey];
+        valueInput.placeholder = "např. 12";
+        valueInput.setAttribute(
+          "aria-label",
+          ariaName + " údaje " + (index + 1)
+        );
+        applyNumericKeypadMode(valueInput);
+        valueInput.addEventListener("input", function () {
+          entry[rawKey] = valueInput.value;
+          redrawChart();
+        });
+        valueInput.addEventListener("change", function () {
+          const n = parseDecimalCs(valueInput.value.trim());
+          if (Number.isFinite(n)) {
+            entry[rawKey] = formatDecimalCs(n);
+            valueInput.value = entry[rawKey];
+          }
+          redrawChart();
+        });
+        valueField.appendChild(valueTitleEl);
+        valueField.appendChild(valueInput);
+        return valueField;
+      }
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "pie-slice-remove";
+      removeBtn.setAttribute("aria-label", "Odstranit údaj " + (index + 1));
+      removeBtn.textContent = "×";
+      removeBtn.disabled = barState.entries.length <= 1;
+      removeBtn.addEventListener("click", function () {
+        if (barState.entries.length <= 1) return;
+        const idx = barState.entries.findIndex(function (e) {
+          return e.id === entry.id;
+        });
+        if (idx >= 0) barState.entries.splice(idx, 1);
+        renderBarEntriesList();
+        redrawChart();
+      });
+
+      row.appendChild(labelField);
+      row.appendChild(
+        makeValueField("value1Raw", value1Title, dual ? "Hodnota 1" : "Hodnota")
+      );
+      if (dual) {
+        row.appendChild(makeValueField("value2Raw", value2Title, "Hodnota 2"));
+      }
+      row.appendChild(removeBtn);
+      barEntriesList.appendChild(row);
+    });
+  }
+
+  function describePieArc(cx, cy, radius, startAngle, endAngle) {
+    const start = {
+      x: cx + radius * Math.cos(startAngle),
+      y: cy + radius * Math.sin(startAngle),
+    };
+    const end = {
+      x: cx + radius * Math.cos(endAngle),
+      y: cy + radius * Math.sin(endAngle),
+    };
+    const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+    return (
+      "M " +
+      cx +
+      " " +
+      cy +
+      " L " +
+      start.x +
+      " " +
+      start.y +
+      " A " +
+      radius +
+      " " +
+      radius +
+      " 0 " +
+      largeArc +
+      " 1 " +
+      end.x +
+      " " +
+      end.y +
+      " Z"
+    );
+  }
+
+  function drawPieSeries(parent, slices, cx, cy, radius, unit, title) {
+    const NS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "pie-series");
+
+    if (title) {
+      const titleEl = document.createElementNS(NS, "text");
+      titleEl.setAttribute("x", String(cx));
+      titleEl.setAttribute("y", String(cy - radius - 14));
+      titleEl.setAttribute("text-anchor", "middle");
+      titleEl.setAttribute("fill", "#171923");
+      titleEl.setAttribute("font-size", "14");
+      titleEl.setAttribute("font-weight", "700");
+      applyChartLabelFont(titleEl);
+      titleEl.textContent = title;
+      g.appendChild(titleEl);
+    }
+
+    if (slices.length === 0) {
+      const empty = document.createElementNS(NS, "text");
+      empty.setAttribute("x", String(cx));
+      empty.setAttribute("y", String(cy));
+      empty.setAttribute("text-anchor", "middle");
+      empty.setAttribute("dominant-baseline", "middle");
+      empty.setAttribute("fill", "#6b7280");
+      empty.setAttribute("font-size", "13");
+      applyChartLabelFont(empty);
+      empty.textContent = "Bez hodnot";
+      g.appendChild(empty);
+      parent.appendChild(g);
+      return;
+    }
+
+    const total = slices.reduce(function (sum, s) {
+      return sum + s.value;
+    }, 0);
+
+    let angle = -Math.PI / 2;
+    slices.forEach(function (slice) {
+      const sweep = (slice.value / total) * Math.PI * 2;
+      const endAngle = angle + sweep;
+      if (slices.length === 1 || sweep >= Math.PI * 2 - 1e-9) {
+        const circle = document.createElementNS(NS, "circle");
+        circle.setAttribute("cx", String(cx));
+        circle.setAttribute("cy", String(cy));
+        circle.setAttribute("r", String(radius));
+        circle.setAttribute("fill", slice.color);
+        g.appendChild(circle);
+      } else {
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("d", describePieArc(cx, cy, radius, angle, endAngle));
+        path.setAttribute("fill", slice.color);
+        path.setAttribute("stroke", "#ffffff");
+        path.setAttribute("stroke-width", "2");
+        g.appendChild(path);
+      }
+
+      if (sweep > 0.22) {
+        const mid = angle + sweep / 2;
+        const lx = cx + Math.cos(mid) * radius * 0.62;
+        const ly = cy + Math.sin(mid) * radius * 0.62;
+        const valueLabel =
+          formatDecimalCs(slice.value) + (unit ? " " + unit : "");
+        const showPct = pieState.showPercentages;
+        const lab = document.createElementNS(NS, "text");
+        lab.setAttribute("x", String(lx));
+        lab.setAttribute("y", String(ly));
+        lab.setAttribute("text-anchor", "middle");
+        lab.setAttribute("dominant-baseline", "middle");
+        lab.setAttribute("fill", "#ffffff");
+        lab.setAttribute("font-size", showPct ? "11" : "12");
+        lab.setAttribute("font-weight", "700");
+        applyChartLabelFont(lab);
+
+        if (showPct) {
+          const pct = Math.round((slice.value / total) * 100);
+          const valueSpan = document.createElementNS(NS, "tspan");
+          valueSpan.setAttribute("x", String(lx));
+          valueSpan.setAttribute("dy", "-0.55em");
+          valueSpan.textContent = valueLabel;
+          const pctSpan = document.createElementNS(NS, "tspan");
+          pctSpan.setAttribute("x", String(lx));
+          pctSpan.setAttribute("dy", "1.25em");
+          pctSpan.setAttribute("font-size", "10");
+          pctSpan.setAttribute("font-weight", "650");
+          pctSpan.textContent = pct + " %";
+          lab.appendChild(valueSpan);
+          lab.appendChild(pctSpan);
+        } else {
+          lab.textContent = valueLabel;
+        }
+        g.appendChild(lab);
+      }
+
+      angle = endAngle;
+    });
+
+    parent.appendChild(g);
+  }
+
+  function drawPieLegend(parent, slices, x, y, unit, seriesLabel) {
+    const NS = "http://www.w3.org/2000/svg";
+    let legendY = y;
+    if (seriesLabel) {
+      const title = document.createElementNS(NS, "text");
+      title.setAttribute("x", String(x));
+      title.setAttribute("y", String(legendY));
+      title.setAttribute("fill", "#171923");
+      title.setAttribute("font-size", "12");
+      title.setAttribute("font-weight", "700");
+      applyChartLabelFont(title);
+      title.textContent = seriesLabel;
+      parent.appendChild(title);
+      legendY += 18;
+    }
+
+    if (slices.length === 0) {
+      const empty = document.createElementNS(NS, "text");
+      empty.setAttribute("x", String(x));
+      empty.setAttribute("y", String(legendY + 8));
+      empty.setAttribute("fill", "#6b7280");
+      empty.setAttribute("font-size", "12");
+      applyChartLabelFont(empty);
+      empty.textContent = "Bez hodnot";
+      parent.appendChild(empty);
+      return legendY + 28;
+    }
+
+    const total = slices.reduce(function (sum, s) {
+      return sum + s.value;
+    }, 0);
+
+    slices.forEach(function (slice) {
+      const sw = document.createElementNS(NS, "rect");
+      sw.setAttribute("x", String(x));
+      sw.setAttribute("y", String(legendY));
+      sw.setAttribute("width", "12");
+      sw.setAttribute("height", "12");
+      sw.setAttribute("rx", "3");
+      sw.setAttribute("fill", slice.color);
+      parent.appendChild(sw);
+
+      const name = document.createElementNS(NS, "text");
+      name.setAttribute("x", String(x + 18));
+      name.setAttribute("y", String(legendY + 10));
+      name.setAttribute("fill", "#171923");
+      name.setAttribute("font-size", "12");
+      name.setAttribute("font-weight", "650");
+      applyChartLabelFont(name);
+      name.textContent = slice.label;
+      parent.appendChild(name);
+
+      let valueText = formatDecimalCs(slice.value) + (unit ? " " + unit : "");
+      if (pieState.showPercentages) {
+        valueText += " (" + Math.round((slice.value / total) * 100) + " %)";
+      }
+      const val = document.createElementNS(NS, "text");
+      val.setAttribute("x", String(x + 18));
+      val.setAttribute("y", String(legendY + 24));
+      val.setAttribute("fill", "#6b7280");
+      val.setAttribute("font-size", "11");
+      applyChartLabelFont(val);
+      val.textContent = valueText;
+      parent.appendChild(val);
+
+      legendY += 36;
+    });
+
+    return legendY;
+  }
+
+  function drawPieChart(svg) {
+    const NS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "pie-chart");
+    g.setAttribute("pointer-events", "none");
+
+    const slices = getRenderablePieSlices();
+    const unit = (pieState.unit || "").trim();
+
+    if (slices.length === 0) {
+      const empty = document.createElementNS(NS, "text");
+      empty.setAttribute("x", String(chartLayout.W / 2));
+      empty.setAttribute("y", String(chartLayout.H / 2));
+      empty.setAttribute("text-anchor", "middle");
+      empty.setAttribute("dominant-baseline", "middle");
+      empty.setAttribute("fill", "#6b7280");
+      empty.setAttribute("font-size", "15");
+      applyChartLabelFont(empty);
+      empty.textContent = "Přidej údaje s kladnou hodnotou";
+      g.appendChild(empty);
+      svg.appendChild(g);
+      return;
+    }
+
+    const pad = 16;
+    const legendWidth = Math.min(220, Math.max(130, chartLayout.W * 0.34));
+    const chartAreaW = Math.max(120, chartLayout.W - pad * 2 - legendWidth);
+    const chartAreaH = Math.max(120, chartLayout.H - pad * 2);
+    const radius = Math.max(40, Math.min(chartAreaW, chartAreaH) / 2 - 8);
+    const cx = pad + chartAreaW / 2;
+    const cy = pad + chartAreaH / 2;
+
+    drawPieSeries(g, slices, cx, cy, radius, unit, "");
+    drawPieLegend(g, slices, pad + chartAreaW + 10, pad + 4, unit, "");
+
+    svg.appendChild(g);
+  }
+
+  function syncBarAxisFromInputs(options) {
+    if (!barYName || !barYUnit || !barYStep || !barYDivisions) return;
+    const formatInputs = !options || options.formatInputs !== false;
+    barState.yName = (barYName.value || "").trim();
+    barState.yUnit = (barYUnit.value || "").trim();
+    barState.yStep = customAxisStepPositive(barYStep.value, barState.yStep);
+    barState.yDivisions = customAxisDivisionsPositive(
+      barYDivisions.value,
+      barState.yDivisions
+    );
+    if (formatInputs) {
+      barYStep.value = formatDecimalCs(barState.yStep);
+      barYDivisions.value = String(barState.yDivisions);
+    }
+  }
+
+  function drawBarChart(svg) {
+    const NS = "http://www.w3.org/2000/svg";
+    buildDefs(svg);
+
+    const entries = getRenderableBarEntries();
+    const yName = (barState.yName || "").trim();
+    const yUnit = (barState.yUnit || "").trim();
+    const yStep = barState.yStep > 0 ? barState.yStep : 1;
+    const yDivisions = Math.max(1, barState.yDivisions);
+    const maxValue = yDivisions * yStep;
+
+    let maxTickW = 0;
+    for (let i = 0; i <= yDivisions; i++) {
+      const lab = formatAxisTickValue(i * yStep, yUnit);
+      maxTickW = Math.max(maxTickW, measureTextWidth(lab, TICK_FONT_SIZE));
+    }
+    const ml = Math.max(yName ? 58 : 42, Math.ceil(maxTickW + (yName ? 28 : 16)));
+    const mr = 24;
+    const mt = barState.useTwoValues ? 36 : 28;
+    const mb = 54;
+    const W = chartLayout.W;
+    const H = chartLayout.H;
+    const pw = Math.max(120, W - ml - mr);
+    const ph = Math.max(100, H - mt - mb);
+    const baselineY = mt + ph;
+    const axisColor = "#1e6bb8";
+
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "bar-chart");
+    g.setAttribute("pointer-events", "none");
+
+    const grid = document.createElementNS(NS, "g");
+    grid.setAttribute("class", "grid");
+    for (let i = 0; i <= yDivisions; i++) {
+      const y = baselineY - (i / yDivisions) * ph;
+      const line = document.createElementNS(NS, "line");
+      line.setAttribute("x1", String(ml));
+      line.setAttribute("x2", String(ml + pw));
+      line.setAttribute("y1", String(y));
+      line.setAttribute("y2", String(y));
+      line.setAttribute("stroke", "var(--grid)");
+      line.setAttribute("stroke-width", "1");
+      line.setAttribute("stroke-dasharray", "3 5");
+      grid.appendChild(line);
+    }
+    g.appendChild(grid);
+
+    const ax = document.createElementNS(NS, "g");
+    const yAxis = document.createElementNS(NS, "line");
+    yAxis.setAttribute("x1", String(ml));
+    yAxis.setAttribute("y1", String(baselineY));
+    yAxis.setAttribute("x2", String(ml));
+    yAxis.setAttribute("y2", String(mt - 4));
+    yAxis.setAttribute("stroke", axisColor);
+    yAxis.setAttribute("stroke-width", "2");
+    yAxis.setAttribute("marker-end", "url(#arrowBlue)");
+    ax.appendChild(yAxis);
+
+    const xAxis = document.createElementNS(NS, "line");
+    xAxis.setAttribute("x1", String(ml));
+    xAxis.setAttribute("y1", String(baselineY));
+    xAxis.setAttribute("x2", String(ml + pw + 6));
+    xAxis.setAttribute("y2", String(baselineY));
+    xAxis.setAttribute("stroke", axisColor);
+    xAxis.setAttribute("stroke-width", "2");
+    xAxis.setAttribute("marker-end", "url(#arrowBlue)");
+    ax.appendChild(xAxis);
+
+    if (yName) {
+      const yLabelCy = (mt - 4 + baselineY) / 2;
+      const yLabelX = 16;
+      const yl = document.createElementNS(NS, "text");
+      yl.setAttribute("x", String(yLabelX));
+      yl.setAttribute("y", String(yLabelCy));
+      yl.setAttribute("text-anchor", "middle");
+      yl.setAttribute("dominant-baseline", "middle");
+      yl.setAttribute("fill", axisColor);
+      yl.setAttribute("font-size", "14");
+      applyChartLabelFont(yl);
+      yl.setAttribute("transform", "rotate(-90 " + yLabelX + " " + yLabelCy + ")");
+      yl.textContent = yName;
+      ax.appendChild(yl);
+    }
+
+    for (let i = 0; i <= yDivisions; i++) {
+      const y = baselineY - (i / yDivisions) * ph;
+      const tick = document.createElementNS(NS, "line");
+      tick.setAttribute("x1", String(ml - 6));
+      tick.setAttribute("x2", String(ml));
+      tick.setAttribute("y1", String(y));
+      tick.setAttribute("y2", String(y));
+      tick.setAttribute("stroke", axisColor);
+      ax.appendChild(tick);
+
+      const lab = document.createElementNS(NS, "text");
+      lab.setAttribute("x", String(ml - 10));
+      lab.setAttribute("y", String(y + 4));
+      lab.setAttribute("text-anchor", "end");
+      lab.setAttribute("font-size", "11");
+      lab.setAttribute("fill", "#444");
+      applyChartLabelFont(lab);
+      lab.textContent = formatAxisTickValue(i * yStep, yUnit);
+      ax.appendChild(lab);
+    }
+    g.appendChild(ax);
+
+    if (entries.length === 0) {
+      const empty = document.createElementNS(NS, "text");
+      empty.setAttribute("x", String(ml + pw / 2));
+      empty.setAttribute("y", String(mt + ph / 2));
+      empty.setAttribute("text-anchor", "middle");
+      empty.setAttribute("dominant-baseline", "middle");
+      empty.setAttribute("fill", "#6b7280");
+      empty.setAttribute("font-size", "15");
+      applyChartLabelFont(empty);
+      empty.textContent = "Přidej údaje s nezápornou hodnotou";
+      g.appendChild(empty);
+      svg.appendChild(g);
+      return;
+    }
+
+    const dual = barState.useTwoValues;
+    const series1Label = barSeriesLabel(1);
+    const series2Label = barSeriesLabel(2);
+    const n = entries.length;
+    const slotW = pw / n;
+    const barsPerGroup = dual ? 2 : 1;
+    const groupInnerGap = dual ? 4 : 0;
+    const barW = Math.min(
+      dual ? 44 : 78,
+      Math.max(12, (slotW * (dual ? 0.72 : 0.58) - groupInnerGap) / barsPerGroup)
+    );
+    const groupW = barW * barsPerGroup + groupInnerGap;
+
+    function drawOneBar(value, color, x) {
+      if (value == null) return;
+      const ratio = maxValue > 0 ? Math.min(1, value / maxValue) : 0;
+      const barH = Math.max(0, ratio * ph);
+      const y = baselineY - barH;
+      const cx = x + barW / 2;
+
+      const bar = document.createElementNS(NS, "rect");
+      bar.setAttribute("x", String(x));
+      bar.setAttribute("y", String(y));
+      bar.setAttribute("width", String(barW));
+      bar.setAttribute("height", String(Math.max(barH, value > 0 ? 1 : 0)));
+      bar.setAttribute("rx", "4");
+      bar.setAttribute("fill", color);
+      g.appendChild(bar);
+
+      if (barH > 18 || value === 0) {
+        const valueLab = document.createElementNS(NS, "text");
+        valueLab.setAttribute("x", String(cx));
+        valueLab.setAttribute("y", String(barH > 22 ? y + 14 : y - 6));
+        valueLab.setAttribute("text-anchor", "middle");
+        valueLab.setAttribute("font-size", dual ? "10" : "11");
+        valueLab.setAttribute("font-weight", "700");
+        valueLab.setAttribute("fill", barH > 22 ? "#ffffff" : "#171923");
+        applyChartLabelFont(valueLab);
+        valueLab.textContent =
+          formatDecimalCs(value) + (yUnit ? " " + yUnit : "");
+        g.appendChild(valueLab);
+      }
+    }
+
+    entries.forEach(function (entry, i) {
+      const groupX = ml + slotW * i + (slotW - groupW) / 2;
+      const catCx = ml + slotW * i + slotW / 2;
+      const shades = barValueColors(entry.color);
+
+      if (dual) {
+        drawOneBar(entry.value1, shades.primary, groupX);
+        drawOneBar(entry.value2, shades.secondary, groupX + barW + groupInnerGap);
+      } else {
+        drawOneBar(entry.value1, entry.color, groupX);
+      }
+
+      const cat = document.createElementNS(NS, "text");
+      cat.setAttribute("x", String(catCx));
+      cat.setAttribute("y", String(baselineY + 18));
+      cat.setAttribute("text-anchor", "middle");
+      cat.setAttribute("font-size", "12");
+      cat.setAttribute("font-weight", "650");
+      cat.setAttribute("fill", "#171923");
+      applyChartLabelFont(cat);
+      let catText = entry.label;
+      const maxCatW = Math.max(24, slotW - 6);
+      while (catText.length > 1 && measureTextWidth(catText, 12) > maxCatW) {
+        catText = catText.slice(0, -1);
+      }
+      if (catText !== entry.label && catText.length > 1) {
+        catText = catText.slice(0, -1) + "…";
+      }
+      cat.textContent = catText;
+      g.appendChild(cat);
+    });
+
+    if (dual) {
+      const legendShades = barValueColors(entries[0].color);
+      let legendX = ml;
+      const legendY = 14;
+      [
+        { color: legendShades.primary, label: series1Label || "Hodnota 1" },
+        { color: legendShades.secondary, label: series2Label || "Hodnota 2" },
+      ].forEach(function (item) {
+        const sw = document.createElementNS(NS, "rect");
+        sw.setAttribute("x", String(legendX));
+        sw.setAttribute("y", String(legendY - 9));
+        sw.setAttribute("width", "12");
+        sw.setAttribute("height", "12");
+        sw.setAttribute("rx", "3");
+        sw.setAttribute("fill", item.color);
+        g.appendChild(sw);
+
+        const lab = document.createElementNS(NS, "text");
+        lab.setAttribute("x", String(legendX + 18));
+        lab.setAttribute("y", String(legendY));
+        lab.setAttribute("fill", "#171923");
+        lab.setAttribute("font-size", "12");
+        lab.setAttribute("font-weight", "650");
+        applyChartLabelFont(lab);
+        lab.textContent = item.label;
+        g.appendChild(lab);
+
+        legendX += 18 + measureTextWidth(item.label, 12) + 18;
+      });
+    }
+
+    svg.appendChild(g);
+  }
+
+  function prefersAppNumericKeypad() {
+    try {
+      if (window.matchMedia("(pointer: coarse)").matches) return true;
+      if (
+        typeof navigator.maxTouchPoints === "number" &&
+        navigator.maxTouchPoints > 0 &&
+        window.matchMedia("(hover: none)").matches
+      ) {
+        return true;
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return false;
+  }
+
+  const useAppNumericKeypad = prefersAppNumericKeypad();
+
+  function applyNumericKeypadMode(input, force) {
+    if (!input) return;
+    if (!force && !useAppNumericKeypad) return;
+    input.readOnly = true;
+    input.inputMode = "none";
+    input.classList.add("app-numeric-input");
+  }
+
+  function applyTableInputKeypadMode(input) {
+    applyNumericKeypadMode(input, true);
+  }
+
+  function isTableFieldInput(el) {
+    return (
+      el instanceof HTMLInputElement &&
+      (el.classList.contains("points-table-x") || el.classList.contains("points-table-y"))
+    );
+  }
+
+  function isAppNumericInput(el) {
+    return (
+      el instanceof HTMLInputElement &&
+      (el.classList.contains("app-numeric-input") || isTableFieldInput(el))
+    );
+  }
+
+  function getKeypadValidationMode(input) {
+    if (!input) return "decimal";
+    if (input.classList.contains("points-table-x")) return "axis-x";
+    if (input.classList.contains("points-table-y")) return "axis-y";
+    if (
+      input.id === "customXDivisions" ||
+      input.id === "customYDivisions" ||
+      input.id === "barYDivisions"
+    ) {
+      return "divisions";
+    }
+    if (
+      input.id === "customXStep" ||
+      input.id === "customYStep" ||
+      input.id === "barYStep"
+    ) {
+      return "step";
+    }
+    if (input.classList.contains("chart-value-input")) return "value";
+    return "decimal";
+  }
+
+  function axisMinDisplayValue(axis) {
+    if (axis === "x") {
+      return tMin() * customAxis.xStep;
+    }
+    return sMin() * customAxis.yStep;
+  }
+
+  function axisMaxDisplayValue(axis) {
+    if (axis === "x") {
+      return tMax() * customAxis.xStep;
+    }
+    return sMax() * customAxis.yStep;
+  }
+
+  function formatAxisMaxLabel(axis) {
+    const max = axisMaxDisplayValue(axis);
+    const unit = axis === "x" ? customAxis.xUnit : customAxis.yUnit;
+    const num = formatDecimalCs(max);
+    return unit ? num + " " + unit : num;
+  }
+
+  function formatAxisMinLabel(axis) {
+    const min = axisMinDisplayValue(axis);
+    const unit = axis === "x" ? customAxis.xUnit : customAxis.yUnit;
+    const num = formatDecimalCs(min);
+    return unit ? num + " " + unit : num;
+  }
+
+  function validateTableKeypadValue() {
+    const raw = tableKeypadDraft.trim();
+    const mode = getKeypadValidationMode(tableKeypadTarget);
+
+    if (raw === "") {
+      if (mode === "step" || mode === "divisions") {
+        return { ok: false, message: "Zadej platné číslo." };
+      }
+      return { ok: true };
+    }
+
+    const n = parseDecimalCs(raw);
+    if (!Number.isFinite(n)) {
+      return { ok: false, message: "Zadej platné číslo." };
+    }
+
+    if (mode === "axis-x" || mode === "axis-y") {
+      const axis = mode === "axis-x" ? "x" : "y";
+      const min = axisMinDisplayValue(axis);
+      const max = axisMaxDisplayValue(axis);
+      if (n < min - 1e-9) {
+        return {
+          ok: false,
+          message: "Hodnota nesmí být menší než " + formatAxisMinLabel(axis) + ".",
+        };
+      }
+      if (n > max + 1e-9) {
+        return {
+          ok: false,
+          message: "Hodnota nesmí být větší než " + formatAxisMaxLabel(axis) + ".",
+        };
+      }
+      return { ok: true };
+    }
+
+    if (mode === "step") {
+      if (n < CUSTOM_STEP_MIN - 1e-9) {
+        return {
+          ok: false,
+          message: "Hodnota musí být alespoň " + formatDecimalCs(CUSTOM_STEP_MIN) + ".",
+        };
+      }
+      return { ok: true };
+    }
+
+    if (mode === "divisions") {
+      const rounded = Math.round(n);
+      if (Math.abs(n - rounded) > 1e-9) {
+        return { ok: false, message: "Zadej celé číslo." };
+      }
+      if (rounded < CUSTOM_DIV_MIN || rounded > CUSTOM_DIV_MAX) {
+        return {
+          ok: false,
+          message:
+            "Počet dílků musí být mezi " +
+            CUSTOM_DIV_MIN +
+            " a " +
+            CUSTOM_DIV_MAX +
+            ".",
+        };
+      }
+      return { ok: true };
+    }
+
+    return { ok: true };
+  }
+
+  function clearTableKeypadError() {
+    if (tableKeypadError) {
+      tableKeypadError.hidden = true;
+      tableKeypadError.textContent = "";
+    }
+    if (tableKeypadDisplay) {
+      tableKeypadDisplay.classList.remove("is-invalid");
+    }
+  }
+
+  function showTableKeypadError(message) {
+    if (tableKeypadError) {
+      tableKeypadError.hidden = false;
+      tableKeypadError.textContent = message;
+    }
+    if (tableKeypadDisplay) {
+      tableKeypadDisplay.classList.add("is-invalid");
+    }
+  }
+
+  function updateTableKeypadValidation() {
+    const result = validateTableKeypadValue();
+    if (!result.ok && tableKeypadDraft.trim() !== "") {
+      showTableKeypadError(result.message);
+      return;
+    }
+    if (!result.ok && tableKeypadDraft.trim() === "") {
+      showTableKeypadError(result.message);
+      return;
+    }
+    clearTableKeypadError();
+  }
+
+  function updateTableKeypadDisplay() {
+    if (tableKeypadDisplay) {
+      tableKeypadDisplay.textContent = tableKeypadDraft;
+    }
+    updateTableKeypadValidation();
+  }
+
+  function showTableMathKeypad(input) {
+    if (!tableKeypadOverlay || !input) return;
+    const isTable = isTableFieldInput(input);
+    if (isTable && !tableInputMode) return;
+    if (!isTable && !useAppNumericKeypad) return;
+
+    tableKeypadTarget = input;
+    tableKeypadDraft = input.value;
+    clearTableKeypadError();
+    if (tableKeypadTitle) {
+      tableKeypadTitle.textContent = input.getAttribute("aria-label") || "Hodnota";
+    }
+    updateTableKeypadDisplay();
+    tableKeypadOverlay.hidden = false;
+    input.blur();
+  }
+
+  function hideTableMathKeypad() {
+    tableKeypadTarget = null;
+    tableKeypadDraft = "";
+    clearTableKeypadError();
+    if (tableKeypadOverlay) tableKeypadOverlay.hidden = true;
+    if (tableKeypadDisplay) tableKeypadDisplay.textContent = "";
+  }
+
+  function insertIntoTableKeypadDraft(value) {
+    tableKeypadDraft += value;
+    updateTableKeypadDisplay();
+  }
+
+  function backspaceTableKeypadDraft() {
+    tableKeypadDraft = tableKeypadDraft.slice(0, -1);
+    updateTableKeypadDisplay();
+  }
+
+  function cancelTableKeypad() {
+    hideTableMathKeypad();
+  }
+
+  function confirmTableKeypad() {
+    const input = tableKeypadTarget;
+    if (!input) return;
+
+    const result = validateTableKeypadValue();
+    if (!result.ok) {
+      showTableKeypadError(result.message);
+      return;
+    }
+
+    const mode = getKeypadValidationMode(input);
+    const raw = tableKeypadDraft.trim();
+    let out = tableKeypadDraft;
+    if (raw !== "") {
+      const n = parseDecimalCs(raw);
+      if (mode === "divisions") {
+        out = String(Math.round(n));
+      } else if (mode === "axis-x" || mode === "axis-y") {
+        out = formatTableCellValue(n);
+      } else {
+        out = formatDecimalCs(n);
+      }
+    } else {
+      out = "";
+    }
+
+    input.value = out;
+    hideTableMathKeypad();
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function handleTableMathKeypadClick(event) {
+    const key = event.currentTarget;
+    if (!(key instanceof HTMLButtonElement) || key.disabled) return;
+
+    const action = key.dataset.action;
+    const value = key.dataset.value;
+
+    if (action === "backspace") {
+      backspaceTableKeypadDraft();
+      return;
+    }
+
+    if (value) {
+      insertIntoTableKeypadDraft(value);
+    }
+  }
+
+  function openNumericKeypadFromEvent(ev) {
+    const input = ev.target;
+    if (!isAppNumericInput(input)) return false;
+    if (isTableFieldInput(input) && !tableInputMode) return false;
+    if (!isTableFieldInput(input) && !useAppNumericKeypad) return false;
+    ev.preventDefault();
+    showTableMathKeypad(input);
+    return true;
+  }
+
+  function bindNumericKeypadInput(input, force) {
+    if (!input) return;
+    applyNumericKeypadMode(input, force);
+  }
+
+  function isTableInputFocused() {
+    if (tableKeypadTarget) return true;
+    const active = document.activeElement;
+    return (
+      tableInputMode &&
+      pointsTableBody &&
+      active instanceof HTMLInputElement &&
+      pointsTableBody.contains(active)
+    );
+  }
+
+  function renderPointsTable() {
+    if (!tableInputMode || !pointsTableBody) return;
+
+    const g = activeGraph();
+    g.tableColumnCount = desiredTableColumnCount();
+    pointsTableBody.innerHTML = "";
+
+    const xLabel = axisRowLabel(customAxis.xName, customAxis.xUnit);
+    const yLabel = axisRowLabel(customAxis.yName, customAxis.yUnit);
+
+    const xRow = document.createElement("tr");
+    const xHead = document.createElement("th");
+    xHead.scope = "row";
+    xHead.textContent = xLabel;
+    xRow.appendChild(xHead);
+
+    const yRow = document.createElement("tr");
+    const yHead = document.createElement("th");
+    yHead.scope = "row";
+    yHead.textContent = yLabel;
+    yRow.appendChild(yHead);
+
+    for (let i = 0; i < g.tableColumnCount; i++) {
+      const p = g.points[i];
+      const xVal = p ? formatTableCellValue(tToDisplayValue(p.t)) : "";
+      const yVal = p ? formatTableCellValue(sToDisplayValue(p.s)) : "";
+
+      const xCell = document.createElement("td");
+      const xInput = document.createElement("input");
+      xInput.type = "text";
+      xInput.className = "points-table-x";
+      xInput.autocomplete = "off";
+      applyTableInputKeypadMode(xInput);
+      xInput.value = xVal;
+      xInput.setAttribute("aria-label", xLabel + ", bod " + (i + 1));
+      xCell.appendChild(xInput);
+      xRow.appendChild(xCell);
+
+      const yCell = document.createElement("td");
+      const yInput = document.createElement("input");
+      yInput.type = "text";
+      yInput.className = "points-table-y";
+      yInput.autocomplete = "off";
+      applyTableInputKeypadMode(yInput);
+      yInput.value = yVal;
+      yInput.setAttribute("aria-label", yLabel + ", bod " + (i + 1));
+      yCell.appendChild(yInput);
+      yRow.appendChild(yCell);
+
+      function handleTableCellChange() {
+        if (tableSyncInProgress) return;
+        const columnCountBefore = pointsTableBody.querySelectorAll(".points-table-x").length;
+        syncPointsFromTable();
+        if (desiredTableColumnCount() > columnCountBefore) {
+          renderPointsTable();
+        }
+        redrawChart({ skipTable: true });
+      }
+
+      xInput.addEventListener("change", handleTableCellChange);
+      yInput.addEventListener("change", handleTableCellChange);
+    }
+
+    pointsTableBody.appendChild(xRow);
+    pointsTableBody.appendChild(yRow);
+  }
+
+  function syncPointsFromTable() {
+    if (!pointsTableBody) return;
+
+    const xInputs = pointsTableBody.querySelectorAll(".points-table-x");
+    const yInputs = pointsTableBody.querySelectorAll(".points-table-y");
+    const newPoints = [];
+
+    for (let i = 0; i < xInputs.length; i++) {
+      const xRaw = xInputs[i].value;
+      const yRaw = yInputs[i] ? yInputs[i].value : "";
+      const xEmpty = String(xRaw).trim() === "";
+      const yEmpty = String(yRaw).trim() === "";
+      if (xEmpty && yEmpty) continue;
+      if (xEmpty || yEmpty) continue;
+
+      const t = displayValueToT(xRaw);
+      const s = displayValueToS(yRaw);
+      if (!Number.isFinite(t) || !Number.isFinite(s)) continue;
+      newPoints.push({ t, s });
+    }
+
+    const g = activeGraph();
+    g.points.length = 0;
+    newPoints.forEach(function (p) {
+      g.points.push(p);
+    });
+    sortPointsArr(g.points);
+    g.tableColumnCount = desiredTableColumnCount();
+  }
+
+  function customAxisDivisionsPositive(raw, fallback) {
+    const normalized = String(raw ?? "")
+      .trim()
+      .replace(/\s/g, "")
+      .replace(",", ".");
+    const n = Number(normalized);
+    if (!Number.isFinite(n)) return fallback;
+    const rounded = Math.round(n);
+    if (rounded < CUSTOM_DIV_MIN) return CUSTOM_DIV_MIN;
+    if (rounded > CUSTOM_DIV_MAX) return CUSTOM_DIV_MAX;
+    return rounded;
+  }
+
+  function syncCustomAxisFromInputs(options) {
+    const formatInputs = !options || options.formatInputs !== false;
+    customAxis.xName = (customXName.value || "Osa X").trim() || "Osa X";
+    customAxis.xUnit = (customXUnit.value || "").trim();
+    customAxis.xStep = customAxisStepPositive(customXStep.value, customAxis.xStep);
+    customAxis.xDivisions = customAxisDivisionsPositive(
+      customXDivisions.value,
+      customAxis.xDivisions
+    );
+    customAxis.yName = (customYName.value || "Osa Y").trim() || "Osa Y";
+    customAxis.yUnit = (customYUnit.value || "").trim();
+    customAxis.yStep = customAxisStepPositive(customYStep.value, customAxis.yStep);
+    customAxis.yDivisions = customAxisDivisionsPositive(
+      customYDivisions.value,
+      customAxis.yDivisions
+    );
+    customAxis.xAllowNegative = customXAllowNegative.checked;
+    customAxis.yAllowNegative = customYAllowNegative.checked;
+    if (formatInputs) {
+      customXStep.value = formatDecimalCs(customAxis.xStep);
+      customYStep.value = formatDecimalCs(customAxis.yStep);
+      customXDivisions.value = String(customAxis.xDivisions);
+      customYDivisions.value = String(customAxis.yDivisions);
+    }
+  }
+
+  function stepCustomAxisInput(input, axisKey, direction) {
+    const current = customAxisStepPositive(input.value, customAxis[axisKey]);
+    const next = Math.max(
+      CUSTOM_STEP_MIN,
+      Number((current + direction * CUSTOM_STEP_SPIN_DELTA).toFixed(4))
+    );
+    customAxis[axisKey] = next;
+    input.value = formatDecimalCs(next);
+    redrawChart();
+  }
+
+  function stepCustomAxisDivisionsInput(input, axisKey, direction) {
+    const current = customAxisDivisionsPositive(input.value, customAxis[axisKey]);
+    const next = Math.min(
+      CUSTOM_DIV_MAX,
+      Math.max(CUSTOM_DIV_MIN, current + direction)
+    );
+    customAxis[axisKey] = next;
+    input.value = String(next);
+    redrawChart();
+  }
+
+  function bindCustomStepSpinner(input, axisKey) {
+    const wrap = input.closest(".custom-step-input");
+    if (!wrap) return;
+    const up = wrap.querySelector(".custom-step-up");
+    const down = wrap.querySelector(".custom-step-down");
+    if (up) {
+      up.addEventListener("click", function () {
+        stepCustomAxisInput(input, axisKey, 1);
+      });
+    }
+    if (down) {
+      down.addEventListener("click", function () {
+        stepCustomAxisInput(input, axisKey, -1);
+      });
+    }
+  }
+
+  function bindCustomDivisionsSpinner(input, axisKey) {
+    const wrap = input.closest(".custom-step-input");
+    if (!wrap) return;
+    const up = wrap.querySelector(".custom-step-up");
+    const down = wrap.querySelector(".custom-step-down");
+    if (up) {
+      up.addEventListener("click", function () {
+        stepCustomAxisDivisionsInput(input, axisKey, 1);
+      });
+    }
+    if (down) {
+      down.addEventListener("click", function () {
+        stepCustomAxisDivisionsInput(input, axisKey, -1);
+      });
+    }
+  }
+
+  function sortPointsArr(arr) {
+    if (!arr.length) return;
+    for (let i = 0; i < arr.length; i++) {
+      arr[i].t = Math.min(tMax(), Math.max(tMin(), arr[i].t));
+      arr[i].s = Math.min(sMax(), Math.max(sMin(), arr[i].s));
+    }
+  }
+
+  function wouldRejectNewPoint(targetArr, t, val, ignoreIndex) {
+    return targetArr.some(function (p, i) {
+      if (ignoreIndex != null && i === ignoreIndex) return false;
+      const dx = (p.t - t) / tSpan();
+      const dy = (p.s - val) / sSpan();
+      return dx * dx + dy * dy < 0.02 * 0.02;
+    });
+  }
+
+  function finalCoordsAfterHypotheticalAdd(targetArr, t, val) {
+    return {
+      t: Math.min(tMax(), Math.max(tMin(), t)),
+      s: Math.min(sMax(), Math.max(sMin(), val)),
+    };
+  }
+
+  function plotCoordsFromEvent(ev, options) {
+    const clampToPlot = options && options.clampToPlot;
+    let { x, y } = chartCoordsFromEvent(ev);
+    const minX = chartLayout.ml;
+    const maxX = chartLayout.ml + chartLayout.pw;
+    const minY = chartLayout.mt;
+    const maxY = chartLayout.mt + chartLayout.ph;
+    if (clampToPlot) {
+      x = Math.min(maxX, Math.max(minX, x));
+      y = Math.min(maxY, Math.max(minY, y));
+    } else if (x < minX || x > maxX || y < minY || y > maxY) {
+      return null;
+    }
+    const snapped = snapChartXYToGrid(x, y);
+    return finalCoordsAfterHypotheticalAdd(
+      activePoints(),
+      xToT(snapped.x),
+      yToS(snapped.y)
+    );
+  }
+
+  function showHeldPointPreview(t, s) {
+    if (!chartClickPreviewGroup) return;
+    const cx = tToX(t);
+    const cy = sToY(s);
+    setCrossMarkerPosition(chartClickPreviewGroup, cx, cy);
+    chartClickPreviewGroup.style.display = "";
+    updatePointCoordLabel(t, s, cx, cy);
+  }
+
+  function setHeldMarkerVisible(graphIndex, index, visible) {
+    const marker = chartEl.querySelector(
+      '.chart-cross-marker[data-graph-index="' +
+        graphIndex +
+        '"][data-index="' +
+        index +
+        '"]'
+    );
+    if (marker) marker.style.display = visible ? "" : "none";
+  }
+
+  function svgPointToScreen(x, y) {
+    try {
+      const ctm = chartEl.getScreenCTM();
+      if (!ctm) return null;
+      const pt = chartEl.createSVGPoint();
+      pt.x = x;
+      pt.y = y;
+      const screen = pt.matrixTransform(ctm);
+      return { x: screen.x, y: screen.y };
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function findNearestActivePointFromEvent(ev, maxPx) {
+    const pts = activePoints();
+    if (!pts.length) return null;
+    const { clientX, clientY } = clientXY(ev);
+    let bestIdx = -1;
+    let bestDist = maxPx;
+    pts.forEach(function (p, idx) {
+      const screen = svgPointToScreen(tToX(p.t), sToY(p.s));
+      if (!screen) return;
+      const dist = Math.hypot(clientX - screen.x, clientY - screen.y);
+      if (dist <= bestDist) {
+        bestDist = dist;
+        bestIdx = idx;
+      }
+    });
+    if (bestIdx < 0) return null;
+    const p = pts[bestIdx];
+    return {
+      index: bestIdx,
+      graphIndex: activeGraphIndex,
+      t: p.t,
+      s: p.s,
+    };
+  }
+
+  function startPointHold(session, ev) {
+    pointHold = session;
+    chartEl.classList.add("is-holding-point");
+    showHeldPointPreview(session.t, session.s);
+    if (
+      session.mode === "existing" &&
+      session.index != null &&
+      session.graphIndex != null
+    ) {
+      setHeldMarkerVisible(session.graphIndex, session.index, false);
+    }
+    if (ev && typeof ev.pointerId === "number" && chartEl.setPointerCapture) {
+      try {
+        chartEl.setPointerCapture(ev.pointerId);
+        session.pointerId = ev.pointerId;
+      } catch (err) {
+        /* ignore capture failures */
+      }
+    }
+    document.addEventListener("pointermove", onPointHoldMove, { passive: false });
+    document.addEventListener("pointerup", onPointHoldUp, { passive: false });
+    document.addEventListener("pointercancel", onPointHoldUp, { passive: false });
+  }
+
+  function endPointHold() {
+    const hold = pointHold;
+    if (
+      hold &&
+      hold.mode === "existing" &&
+      hold.index != null &&
+      hold.graphIndex != null
+    ) {
+      setHeldMarkerVisible(hold.graphIndex, hold.index, true);
+    }
+    if (
+      hold &&
+      typeof hold.pointerId === "number" &&
+      chartEl.releasePointerCapture
+    ) {
+      try {
+        if (chartEl.hasPointerCapture && chartEl.hasPointerCapture(hold.pointerId)) {
+          chartEl.releasePointerCapture(hold.pointerId);
+        } else if (!chartEl.hasPointerCapture) {
+          chartEl.releasePointerCapture(hold.pointerId);
+        }
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    pointHold = null;
+    chartEl.classList.remove("is-holding-point");
+    hideChartClickPreview();
+    hidePointCoordLabel();
+    document.removeEventListener("pointermove", onPointHoldMove);
+    document.removeEventListener("pointerup", onPointHoldUp);
+    document.removeEventListener("pointercancel", onPointHoldUp);
+  }
+
+  function onPointHoldMove(ev) {
+    if (!pointHold) return;
+    if (
+      typeof pointHold.pointerId === "number" &&
+      typeof ev.pointerId === "number" &&
+      ev.pointerId !== pointHold.pointerId
+    ) {
+      return;
+    }
+    ev.preventDefault();
+    const coords = plotCoordsFromEvent(ev, { clampToPlot: true });
+    if (!coords) return;
+    pointHold.t = coords.t;
+    pointHold.s = coords.s;
+    showHeldPointPreview(pointHold.t, pointHold.s);
+  }
+
+  function onPointHoldUp(ev) {
+    if (!pointHold) return;
+    if (
+      typeof pointHold.pointerId === "number" &&
+      typeof ev.pointerId === "number" &&
+      ev.pointerId !== pointHold.pointerId
+    ) {
+      return;
+    }
+    if (ev && ev.cancelable) ev.preventDefault();
+
+    const coords = plotCoordsFromEvent(ev, { clampToPlot: true }) || {
+      t: pointHold.t,
+      s: pointHold.s,
+    };
+    const hold = pointHold;
+    endPointHold();
+
+    const graphIndex = hold.graphIndex != null ? hold.graphIndex : activeGraphIndex;
+    const pts = graphs[graphIndex].points;
+
+    if (hold.mode === "new") {
+      if (
+        !tableInputMode &&
+        !wouldRejectNewPoint(pts, coords.t, coords.s)
+      ) {
+        pts.push({ t: coords.t, s: coords.s });
+        sortPointsArr(pts);
+      }
+    } else if (hold.mode === "existing" && hold.index != null) {
+      const p = pts[hold.index];
+      if (
+        p &&
+        !wouldRejectNewPoint(pts, coords.t, coords.s, hold.index)
+      ) {
+        p.t = coords.t;
+        p.s = coords.s;
+        sortPointsArr(pts);
+      }
+    }
+
+    redrawChart();
+  }
+
+  function pointsSortedForCurve(pts) {
+    const copy = pts.map(function (p) {
+      return { t: p.t, s: p.s };
+    });
+    copy.sort(function (a, b) {
+      return a.t - b.t || a.s - b.s;
+    });
+    const deduped = [];
+    copy.forEach(function (p) {
+      const last = deduped[deduped.length - 1];
+      if (last && Math.abs(last.t - p.t) < 1e-5) {
+        last.s = (last.s + p.s) / 2;
+        return;
+      }
+      deduped.push({ t: p.t, s: p.s });
+    });
+    return deduped;
+  }
+
+  function buildNaturalCubicSpline(xs, ys) {
+    const n = xs.length;
+    if (n < 2) return null;
+    if (n === 2) {
+      const x0 = xs[0];
+      const x1 = xs[1];
+      const y0 = ys[0];
+      const y1 = ys[1];
+      const slope = x1 === x0 ? 0 : (y1 - y0) / (x1 - x0);
+      return {
+        eval: function (x) {
+          return y0 + slope * (x - x0);
+        },
+      };
+    }
+
+    const h = new Array(n - 1);
+    for (let i = 0; i < n - 1; i++) {
+      h[i] = xs[i + 1] - xs[i];
+      if (h[i] <= 0) return null;
+    }
+
+    const alpha = new Array(n).fill(0);
+    for (let i = 1; i < n - 1; i++) {
+      alpha[i] =
+        (3 / h[i]) * (ys[i + 1] - ys[i]) -
+        (3 / h[i - 1]) * (ys[i] - ys[i - 1]);
+    }
+
+    const l = new Array(n).fill(1);
+    const mu = new Array(n).fill(0);
+    const z = new Array(n).fill(0);
+
+    for (let i = 1; i < n - 1; i++) {
+      l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1];
+      mu[i] = h[i] / l[i];
+      z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
+    }
+
+    const c = new Array(n).fill(0);
+    const b = new Array(n - 1);
+    const d = new Array(n - 1);
+
+    for (let j = n - 2; j >= 0; j--) {
+      c[j] = z[j] - mu[j] * c[j + 1];
+      b[j] = (ys[j + 1] - ys[j]) / h[j] - (h[j] * (c[j + 1] + 2 * c[j])) / 3;
+      d[j] = (c[j + 1] - c[j]) / (3 * h[j]);
+    }
+
+    return {
+      xs: xs,
+      ys: ys,
+      b: b,
+      c: c,
+      d: d,
+      eval: function (x) {
+        const xsLocal = this.xs;
+        const ysLocal = this.ys;
+        const nLocal = xsLocal.length;
+        if (x <= xsLocal[0]) {
+          const dx = x - xsLocal[0];
+          return (
+            ysLocal[0] +
+            this.b[0] * dx +
+            this.c[0] * dx * dx +
+            this.d[0] * dx * dx * dx
+          );
+        }
+        if (x >= xsLocal[nLocal - 1]) {
+          const i = nLocal - 2;
+          const dx = x - xsLocal[i];
+          return (
+            ysLocal[i] +
+            this.b[i] * dx +
+            this.c[i] * dx * dx +
+            this.d[i] * dx * dx * dx
+          );
+        }
+        let i = 0;
+        while (i < nLocal - 2 && x > xsLocal[i + 1]) i++;
+        const dx = x - xsLocal[i];
+        return (
+          ysLocal[i] +
+          this.b[i] * dx +
+          this.c[i] * dx * dx +
+          this.d[i] * dx * dx * dx
+        );
+      },
+    };
+  }
+
+  function fittedCurvePathData(pts) {
+    const sorted = pointsSortedForCurve(pts);
+    if (sorted.length < 2) return "";
+
+    const xs = sorted.map(function (p) {
+      return p.t;
+    });
+    const ys = sorted.map(function (p) {
+      return p.s;
+    });
+    const spline = buildNaturalCubicSpline(xs, ys);
+    if (!spline) return "";
+
+    const t0 = xs[0];
+    const t1 = xs[xs.length - 1];
+    const steps = Math.max(48, Math.ceil((t1 - t0) * 16));
+    const parts = [];
+
+    for (let i = 0; i <= steps; i++) {
+      const t = t0 + (i / steps) * (t1 - t0);
+      const s = Math.min(sMax(), Math.max(sMin(), spline.eval(t)));
+      parts.push(tToX(t).toFixed(2) + "," + sToY(s).toFixed(2));
+    }
+
+    return "M " + parts.join(" L ");
+  }
+
+  function polylinePathData(pts) {
+    const sorted = pointsSortedForCurve(pts);
+    if (sorted.length < 2) return "";
+
+    return (
+      "M " +
+      sorted
+        .map(function (p) {
+          return tToX(p.t).toFixed(2) + "," + sToY(p.s).toFixed(2);
+        })
+        .join(" L ")
+    );
+  }
+
+  function fitPathData(pts, mode) {
+    if (mode === "polyline") return polylinePathData(pts);
+    return fittedCurvePathData(pts);
+  }
+
+  function drawFittedCurve(svg, pts, color, mode) {
+    const d = fitPathData(pts, mode);
+    if (!d) return;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", "fitted-curve");
+    path.setAttribute("d", d);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", color);
+    path.setAttribute("stroke-width", "2.5");
+    path.setAttribute("stroke-linejoin", "round");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("pointer-events", "none");
+    svg.appendChild(path);
+  }
+
+  function updateFitCurveButton() {
+    const g = activeGraph();
+    const canFit = g.points.length >= 2;
+    btnFitCurve.disabled = !canFit;
+    btnFitCurve.setAttribute(
+      "aria-pressed",
+      g.showFittedCurve && canFit ? "true" : "false"
+    );
+    btnFitCurve.classList.toggle("fit-curve-active", g.showFittedCurve && canFit);
+    if (!canFit) g.showFittedCurve = false;
+
+    if (fitModeRow) {
+      fitModeRow.hidden = !g.showFittedCurve || !canFit;
+    }
+    if (btnFitModeCurve && btnFitModePolyline) {
+      const isCurve = g.fitMode === "curve";
+      btnFitModeCurve.classList.toggle("fit-curve-active", isCurve);
+      btnFitModePolyline.classList.toggle("fit-curve-active", !isCurve);
+      btnFitModeCurve.setAttribute("aria-pressed", isCurve ? "true" : "false");
+      btnFitModePolyline.setAttribute("aria-pressed", !isCurve ? "true" : "false");
+    }
+  }
+
+  function sanitizeFilenamePart(value) {
+    return (
+      String(value || "graf")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "graf"
+    );
+  }
+
+  function inlineSvgPresentationStyles(sourceEl, cloneEl) {
+    const props = [
+      "fill",
+      "stroke",
+      "stroke-width",
+      "stroke-dasharray",
+      "stroke-linecap",
+      "stroke-linejoin",
+      "opacity",
+      "font-size",
+      "font-family",
+      "font-weight",
+      "text-anchor",
+      "dominant-baseline",
+    ];
+    const cs = getComputedStyle(sourceEl);
+    props.forEach(function (prop) {
+      const val = cs.getPropertyValue(prop);
+      if (val) cloneEl.setAttribute(prop, val);
+    });
+  }
+
+  function saveChartAsImage() {
+    const svg = chartEl;
+    const clone = svg.cloneNode(true);
+    const srcEls = [svg].concat(Array.from(svg.querySelectorAll("*")));
+    const cloneEls = [clone].concat(Array.from(clone.querySelectorAll("*")));
+    for (let i = 0; i < srcEls.length && i < cloneEls.length; i++) {
+      inlineSvgPresentationStyles(srcEls[i], cloneEls[i]);
+    }
+
+    const plotHit = clone.querySelector("#plot-hit-layer");
+    if (plotHit) plotHit.remove();
+    const preview = clone.querySelector(".chart-click-preview");
+    if (preview) preview.remove();
+
+    const NS = "http://www.w3.org/2000/svg";
+    const bg = document.createElementNS(NS, "rect");
+    bg.setAttribute("x", "0");
+    bg.setAttribute("y", "0");
+    bg.setAttribute("width", String(chartLayout.W));
+    bg.setAttribute("height", String(chartLayout.H));
+    bg.setAttribute("fill", "#ffffff");
+    clone.insertBefore(bg, clone.firstChild);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+    const svgString = new XMLSerializer().serializeToString(clone);
+    const scale = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = chartLayout.W * scale;
+    canvas.height = chartLayout.H * scale;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, chartLayout.W, chartLayout.H);
+
+    const img = new Image();
+    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0, chartLayout.W, chartLayout.H);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (pngBlob) {
+        if (!pngBlob) return;
+        const pngUrl = URL.createObjectURL(pngBlob);
+        const a = document.createElement("a");
+        a.href = pngUrl;
+        a.download =
+          "graf-" +
+          (isPieMode()
+            ? "kruhovy" +
+              (pieState.unit ? "-" + sanitizeFilenamePart(pieState.unit) : "")
+            : isBarMode()
+              ? "sloupcovy" +
+                (barState.yName
+                  ? "-" + sanitizeFilenamePart(barState.yName)
+                  : "")
+              : sanitizeFilenamePart(customAxis.xName) +
+                "-" +
+                sanitizeFilenamePart(customAxis.yName)) +
+          ".png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(pngUrl);
+      }, "image/png");
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+
+  function buildDefs(svg) {
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    defs.innerHTML =
+      '<marker id="arrowBlue" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">' +
+      '<path d="M0.6,1 L4.4,3 L0.6,5" fill="none" stroke="#1e6bb8" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" /></marker>';
+    svg.appendChild(defs);
+  }
+
+  function drawGrid(svg) {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "grid");
+    g.setAttribute("pointer-events", "none");
+
+    for (let t = Math.ceil(tMin()); t <= Math.floor(tMax()); t++) {
+      const x = tToX(t);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x);
+      line.setAttribute("x2", x);
+      line.setAttribute("y1", chartLayout.mt);
+      line.setAttribute("y2", chartLayout.mt + chartLayout.ph);
+      line.setAttribute("stroke", "var(--grid)");
+      line.setAttribute("stroke-width", "1");
+      line.setAttribute("stroke-dasharray", "3 5");
+      g.appendChild(line);
+    }
+
+    for (let si = Math.ceil(sMin()); si <= Math.floor(sMax()); si++) {
+      const y = sToY(si);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", chartLayout.ml);
+      line.setAttribute("x2", chartLayout.ml + chartLayout.pw);
+      line.setAttribute("y1", y);
+      line.setAttribute("y2", y);
+      line.setAttribute("stroke", "var(--grid)");
+      line.setAttribute("stroke-width", "1");
+      line.setAttribute("stroke-dasharray", "3 5");
+      g.appendChild(line);
+    }
+
+    svg.appendChild(g);
+  }
+
+  function drawAxes(svg) {
+    const axisColor = "#1e6bb8";
+    const ax = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    ax.setAttribute("pointer-events", "none");
+
+    const yAxisX = axisLineX();
+    const xAxisY = axisLineY();
+
+    const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    yAxis.setAttribute("x1", yAxisX);
+    yAxis.setAttribute("y1", chartLayout.mt + chartLayout.ph);
+    yAxis.setAttribute("x2", yAxisX);
+    yAxis.setAttribute("y2", chartLayout.mt - 4);
+    yAxis.setAttribute("stroke", axisColor);
+    yAxis.setAttribute("stroke-width", "2");
+    yAxis.setAttribute("marker-end", "url(#arrowBlue)");
+    ax.appendChild(yAxis);
+
+    const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    xAxis.setAttribute("x1", chartLayout.ml);
+    xAxis.setAttribute("y1", xAxisY);
+    xAxis.setAttribute("x2", chartLayout.ml + chartLayout.pw + 6);
+    xAxis.setAttribute("y2", xAxisY);
+    xAxis.setAttribute("stroke", axisColor);
+    xAxis.setAttribute("stroke-width", "2");
+    xAxis.setAttribute("marker-end", "url(#arrowBlue)");
+    ax.appendChild(xAxis);
+
+    const xl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    xl.setAttribute("x", chartLayout.ml + chartLayout.pw / 2);
+    xl.setAttribute("y", chartLayout.H - 6);
+    xl.setAttribute("text-anchor", "middle");
+    xl.setAttribute("fill", axisColor);
+    xl.setAttribute("font-size", "14");
+    applyChartLabelFont(xl);
+    xl.textContent = customAxis.xName;
+    ax.appendChild(xl);
+
+    const yAxisLabelCy = (chartLayout.mt - 4 + chartLayout.mt + chartLayout.ph) / 2;
+    const yAxisLabelX = chartLayout.yAxisLabelX;
+    const yl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    yl.setAttribute("x", String(yAxisLabelX));
+    yl.setAttribute("y", String(yAxisLabelCy));
+    yl.setAttribute("text-anchor", "middle");
+    yl.setAttribute("dominant-baseline", "middle");
+    yl.setAttribute("fill", axisColor);
+    yl.setAttribute("font-size", "14");
+    applyChartLabelFont(yl);
+    yl.setAttribute(
+      "transform",
+      "rotate(-90 " + yAxisLabelX + " " + yAxisLabelCy + ")"
+    );
+    yl.textContent = customAxis.yName;
+    ax.appendChild(yl);
+
+    let maxXTickW = 0;
+    for (let t = Math.ceil(tMin()); t <= Math.floor(tMax()); t++) {
+      const lab = formatAxisTickValue(t * customAxis.xStep, customAxis.xUnit);
+      maxXTickW = Math.max(maxXTickW, measureTextWidth(lab, TICK_FONT_SIZE));
+    }
+    const xTickSpacing = chartLayout.pw / Math.max(1, Math.floor(tMax()) - Math.ceil(tMin()));
+    const xLabelEvery = Math.max(
+      1,
+      Math.ceil((maxXTickW + 6) / Math.max(1, xTickSpacing))
+    );
+
+    for (let t = Math.ceil(tMin()); t <= Math.floor(tMax()); t++) {
+      const x = tToX(t);
+      const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      tick.setAttribute("x1", x);
+      tick.setAttribute("x2", x);
+      tick.setAttribute("y1", xAxisY);
+      tick.setAttribute("y2", xAxisY + 6);
+      tick.setAttribute("stroke", axisColor);
+      ax.appendChild(tick);
+      const tIndex = t - Math.ceil(tMin());
+      if (tIndex % xLabelEvery !== 0 && t !== Math.floor(tMax())) continue;
+      const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lab.setAttribute("x", x);
+      lab.setAttribute("y", xAxisY + 22);
+      lab.setAttribute("text-anchor", "middle");
+      lab.setAttribute("font-size", "11");
+      lab.setAttribute("fill", "#444");
+      applyChartLabelFont(lab);
+      lab.textContent = formatAxisTickValue(t * customAxis.xStep, customAxis.xUnit);
+      ax.appendChild(lab);
+    }
+
+    for (let si = Math.ceil(sMin()); si <= Math.floor(sMax()); si++) {
+      const y = sToY(si);
+      const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      tick.setAttribute("x1", yAxisX - 6);
+      tick.setAttribute("x2", yAxisX);
+      tick.setAttribute("y1", y);
+      tick.setAttribute("y2", y);
+      tick.setAttribute("stroke", axisColor);
+      ax.appendChild(tick);
+      const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lab.setAttribute("x", yAxisX - 10);
+      lab.setAttribute("y", y + 4);
+      lab.setAttribute("text-anchor", "end");
+      lab.setAttribute("font-size", "11");
+      lab.setAttribute("fill", "#444");
+      applyChartLabelFont(lab);
+      lab.textContent = formatAxisTickValue(si * customAxis.yStep, customAxis.yUnit);
+      ax.appendChild(lab);
+    }
+
+    svg.appendChild(ax);
+  }
+
+  function redrawChart(options) {
+    const skipTable = options && options.skipTable;
+    computeChartLayout();
+    chartEl.innerHTML = "";
+    plotBodyEl = null;
+    chartClickPreviewGroup = null;
+    pointCoordLabelGroup = null;
+
+    if (isPieMode()) {
+      drawPieChart(chartEl);
+      updateChartTypeUI();
+      return;
+    }
+
+    if (isBarMode()) {
+      syncBarAxisFromInputs({ formatInputs: false });
+      drawBarChart(chartEl);
+      updateChartTypeUI();
+      return;
+    }
+
+    buildDefs(chartEl);
+
+    plotBodyEl = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    plotBodyEl.setAttribute("class", "plot-body");
+
+    drawGrid(plotBodyEl);
+    drawAxes(plotBodyEl);
+
+    graphs.forEach(function (graph, graphIdx) {
+      sortPointsArr(graph.points);
+      if (graph.showFittedCurve && graph.points.length >= 2) {
+        drawFittedCurve(plotBodyEl, graph.points, graphColor(graphIdx), graph.fitMode);
+      }
+    });
+
+    const handlesLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    handlesLayer.setAttribute("class", "handles");
+
+    graphs.forEach(function (graph, graphIdx) {
+      const color = graphColor(graphIdx);
+      const isActive = graphIdx === activeGraphIndex;
+
+      graph.points.forEach(function (p, idx) {
+        const cx = tToX(p.t);
+        const cy = sToY(p.s);
+        const marker = createCrossMarker(cx, cy, { stroke: color });
+        if (isActive) {
+          marker.style.cursor = "grab";
+        } else {
+          marker.style.pointerEvents = "none";
+        }
+        marker.setAttribute("data-index", String(idx));
+        marker.setAttribute("data-graph-index", String(graphIdx));
+        marker.dataset.index = String(idx);
+        marker.dataset.graphIndex = String(graphIdx);
+        if (isActive) {
+          marker.addEventListener("pointerenter", function () {
+            if (pointHold) return;
+            updatePointCoordLabel(p.t, p.s, cx, cy);
+          });
+          marker.addEventListener("pointerleave", function () {
+            if (pointHold) return;
+            hidePointCoordLabel();
+          });
+        }
+        handlesLayer.appendChild(marker);
+      });
+    });
+    plotBodyEl.appendChild(handlesLayer);
+    chartEl.appendChild(plotBodyEl);
+
+    chartClickPreviewGroup = createCrossMarker(0, 0, {
+      stroke: graphColor(activeGraphIndex),
+      dash: "4 3",
+    });
+    chartClickPreviewGroup.setAttribute("class", "chart-click-preview");
+    chartClickPreviewGroup.setAttribute("pointer-events", "none");
+    chartClickPreviewGroup.style.display = "none";
+    plotBodyEl.appendChild(chartClickPreviewGroup);
+
+    pointCoordLabelGroup = createPointCoordLabelGroup();
+    plotBodyEl.appendChild(pointCoordLabelGroup);
+
+    updateFitCurveButton();
+    updateNegativeAxisCheckboxState();
+    updateChartTypeUI();
+
+    if (tableInputMode && !skipTable && !isTableInputFocused()) {
+      renderPointsTable();
+    }
+  }
+
+  function clientXY(ev) {
+    const touch = ev.touches && ev.touches[0];
+    const changed = ev.changedTouches && ev.changedTouches[0];
+    if (touch) return { clientX: touch.clientX, clientY: touch.clientY };
+    if (changed) return { clientX: changed.clientX, clientY: changed.clientY };
+    return { clientX: ev.clientX, clientY: ev.clientY };
+  }
+
+  function chartCoordsFromEvent(ev) {
+    const svg = chartEl;
+    const { clientX, clientY } = clientXY(ev);
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    try {
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const loc = pt.matrixTransform(ctm.inverse());
+        return { x: loc.x, y: loc.y };
+      }
+    } catch (err) {
+      /* fallback níže */
+    }
+    const r = svg.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    const rw = r.width || 1;
+    const rh = r.height || 1;
+    return {
+      x: (clientX - r.left) * (vb.width / rw) + vb.x,
+      y: (clientY - r.top) * (vb.height / rh) + vb.y,
+    };
+  }
+
+  function hideChartClickPreview() {
+    if (chartClickPreviewGroup) chartClickPreviewGroup.style.display = "none";
+    if (!pointHold) hidePointCoordLabel();
+  }
+
+  function updateChartClickPreviewFromEvent(ev) {
+    if (isPieMode() || isBarMode() || tableInputMode || pointHold) {
+      hideChartClickPreview();
+      return;
+    }
+    const marker = markerFromEventTarget(ev.target);
+    if (marker) return;
+    const { x, y } = chartCoordsFromEvent(ev);
+    const inPlot =
+      x >= chartLayout.ml &&
+      x <= chartLayout.ml + chartLayout.pw &&
+      y >= chartLayout.mt &&
+      y <= chartLayout.mt + chartLayout.ph;
+    if (!inPlot) {
+      hideChartClickPreview();
+      return;
+    }
+    if (!chartClickPreviewGroup) return;
+
+    const snapped = snapChartXYToGrid(x, y);
+    const t = xToT(snapped.x);
+    const val = yToS(snapped.y);
+
+    if (wouldRejectNewPoint(activePoints(), t, val)) {
+      hideChartClickPreview();
+      return;
+    }
+
+    const fin = finalCoordsAfterHypotheticalAdd(activePoints(), t, val);
+    const cx = tToX(fin.t);
+    const cy = sToY(fin.s);
+    setCrossMarkerPosition(chartClickPreviewGroup, cx, cy);
+    chartClickPreviewGroup.style.display = "";
+    updatePointCoordLabel(fin.t, fin.s, cx, cy);
+  }
+
+  function isPlotPointerEvent(ev) {
+    const { x, y } = chartCoordsFromEvent(ev);
+    return (
+      x >= chartLayout.ml &&
+      x <= chartLayout.ml + chartLayout.pw &&
+      y >= chartLayout.mt &&
+      y <= chartLayout.mt + chartLayout.ph
+    );
+  }
+
+  function handleChartPointerDown(ev) {
+    if (!isLineMode()) return;
+    if (ev.pointerType === "mouse" && ev.button !== 0) return;
+
+    const marker = markerFromEventTarget(ev.target);
+    let existing = null;
+    if (marker) {
+      const idx = parseInt(marker.getAttribute("data-index"), 10);
+      const graphIdx = parseInt(marker.getAttribute("data-graph-index"), 10);
+      if (
+        graphIdx === activeGraphIndex &&
+        idx === idx &&
+        idx >= 0 &&
+        activePoints()[idx]
+      ) {
+        const p = activePoints()[idx];
+        existing = {
+          mode: "existing",
+          index: idx,
+          graphIndex: graphIdx,
+          t: p.t,
+          s: p.s,
+        };
+      }
+    }
+    if (!existing && (ev.pointerType === "touch" || ev.pointerType === "pen")) {
+      const near = findNearestActivePointFromEvent(ev, MARKER_TOUCH_PICK_PX);
+      if (near) {
+        existing = {
+          mode: "existing",
+          index: near.index,
+          graphIndex: near.graphIndex,
+          t: near.t,
+          s: near.s,
+        };
+      }
+    }
+
+    if (existing) {
+      ev.preventDefault();
+      if (typeof ev.stopPropagation === "function") ev.stopPropagation();
+      endPointHold();
+      startPointHold(existing, ev);
+      return;
+    }
+
+    if (!isPlotPointerEvent(ev) || tableInputMode) return;
+    ev.preventDefault();
+
+    const coords = plotCoordsFromEvent(ev, { clampToPlot: true });
+    if (!coords || wouldRejectNewPoint(activePoints(), coords.t, coords.s)) return;
+
+    startPointHold(
+      {
+        mode: "new",
+        graphIndex: activeGraphIndex,
+        t: coords.t,
+        s: coords.s,
+      },
+      ev
+    );
+  }
+
+  function markerFromEventTarget(target) {
+    let el = target;
+    while (el && el !== chartEl) {
+      if (
+        el.getAttribute &&
+        el.getAttribute("class") &&
+        el.getAttribute("class").indexOf("chart-cross-marker") >= 0 &&
+        el.getAttribute("data-index") != null &&
+        el.getAttribute("data-graph-index") != null
+      ) {
+        const graphIdx = parseInt(el.getAttribute("data-graph-index"), 10);
+        if (graphIdx === activeGraphIndex) {
+          return el;
+        }
+        return null;
+      }
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  chartEl.addEventListener("dblclick", function (ev) {
+    if (!isLineMode()) return;
+    const marker = markerFromEventTarget(ev.target);
+    if (!marker) return;
+    const raw = marker.getAttribute("data-index");
+    if (raw === undefined || raw === null || raw === "") return;
+    const idx = parseInt(raw, 10);
+    if (idx !== idx || idx < 0) return;
+    activePoints().splice(idx, 1);
+    redrawChart();
+    ev.preventDefault();
+  });
+
+  function resetGraph() {
+    endPointHold();
+    if (isPieMode()) {
+      pieState.unit = "";
+      pieState.showPercentages = false;
+      if (pieUnitInput) pieUnitInput.value = "";
+      if (pieShowPercentages) pieShowPercentages.checked = false;
+      pieState.slices = [createPieSlice(), createPieSlice()];
+      renderPieSlicesList();
+      return;
+    }
+    if (isBarMode()) {
+      barState.yName = "";
+      barState.yUnit = "";
+      barState.yStep = 1;
+      barState.yDivisions = 8;
+      barState.useTwoValues = false;
+      barState.value1Label = "";
+      barState.value2Label = "";
+      if (barYName) barYName.value = "";
+      if (barYUnit) barYUnit.value = "";
+      if (barYStep) barYStep.value = "1";
+      if (barYDivisions) barYDivisions.value = "8";
+      if (barUseTwoValues) barUseTwoValues.checked = false;
+      if (barValue1LabelInput) barValue1LabelInput.value = "";
+      if (barValue2LabelInput) barValue2LabelInput.value = "";
+      barState.entries = [createBarEntry(), createBarEntry()];
+      renderBarEntriesList();
+      return;
+    }
+    const g = activeGraph();
+    g.points.length = 0;
+    g.showFittedCurve = false;
+    g.fitMode = "curve";
+    g.tableColumnCount = DEFAULT_TABLE_COLUMN_COUNT;
+  }
+
+  btnSave.addEventListener("click", saveChartAsImage);
+  if (btnChartTypeLine) {
+    btnChartTypeLine.addEventListener("click", function () {
+      setChartType("line");
+    });
+  }
+  if (btnChartTypeBar) {
+    btnChartTypeBar.addEventListener("click", function () {
+      setChartType("bar");
+    });
+  }
+  if (btnChartTypePie) {
+    btnChartTypePie.addEventListener("click", function () {
+      setChartType("pie");
+    });
+  }
+  if (btnAddPieSlice) {
+    btnAddPieSlice.addEventListener("click", function () {
+      pieState.slices.push(createPieSlice());
+      renderPieSlicesList();
+      redrawChart();
+    });
+  }
+  if (btnAddBarEntry) {
+    btnAddBarEntry.addEventListener("click", function () {
+      barState.entries.push(createBarEntry());
+      renderBarEntriesList();
+      redrawChart();
+    });
+  }
+  if (pieUnitInput) {
+    pieUnitInput.addEventListener("input", function () {
+      pieState.unit = pieUnitInput.value;
+      redrawChart();
+    });
+    pieUnitInput.addEventListener("change", function () {
+      pieState.unit = pieUnitInput.value;
+      redrawChart();
+    });
+  }
+  if (pieShowPercentages) {
+    pieShowPercentages.addEventListener("change", function () {
+      pieState.showPercentages = pieShowPercentages.checked;
+      redrawChart();
+    });
+  }
+  if (barUseTwoValues) {
+    barUseTwoValues.addEventListener("change", function () {
+      barState.useTwoValues = barUseTwoValues.checked;
+      renderBarEntriesList();
+      redrawChart();
+    });
+  }
+  [barValue1LabelInput, barValue2LabelInput].forEach(function (input, idx) {
+    if (!input) return;
+    const key = idx === 0 ? "value1Label" : "value2Label";
+    input.addEventListener("input", function () {
+      barState[key] = input.value;
+      renderBarEntriesList();
+      redrawChart();
+    });
+    input.addEventListener("change", function () {
+      barState[key] = input.value;
+      renderBarEntriesList();
+      redrawChart();
+    });
+  });
+  [barYName, barYUnit].forEach(function (input) {
+    if (!input) return;
+    input.addEventListener("input", function () {
+      syncBarAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+    input.addEventListener("change", function () {
+      syncBarAxisFromInputs();
+      redrawChart();
+    });
+  });
+  [barYStep, barYDivisions].forEach(function (input) {
+    if (!input) return;
+    input.addEventListener("input", function () {
+      syncBarAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+    input.addEventListener("change", function () {
+      syncBarAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("blur", function () {
+      syncBarAxisFromInputs();
+    });
+  });
+  if (barYStep) {
+    const wrap = barYStep.closest(".custom-step-input");
+    if (wrap) {
+      const up = wrap.querySelector(".custom-step-up");
+      const down = wrap.querySelector(".custom-step-down");
+      if (up) {
+        up.addEventListener("click", function () {
+          const current = customAxisStepPositive(barYStep.value, barState.yStep);
+          const next = Math.max(
+            CUSTOM_STEP_MIN,
+            Number((current + CUSTOM_STEP_SPIN_DELTA).toFixed(4))
+          );
+          barState.yStep = next;
+          barYStep.value = formatDecimalCs(next);
+          redrawChart();
+        });
+      }
+      if (down) {
+        down.addEventListener("click", function () {
+          const current = customAxisStepPositive(barYStep.value, barState.yStep);
+          const next = Math.max(
+            CUSTOM_STEP_MIN,
+            Number((current - CUSTOM_STEP_SPIN_DELTA).toFixed(4))
+          );
+          barState.yStep = next;
+          barYStep.value = formatDecimalCs(next);
+          redrawChart();
+        });
+      }
+    }
+  }
+  if (barYDivisions) {
+    const wrap = barYDivisions.closest(".custom-step-input");
+    if (wrap) {
+      const up = wrap.querySelector(".custom-step-up");
+      const down = wrap.querySelector(".custom-step-down");
+      if (up) {
+        up.addEventListener("click", function () {
+          const current = customAxisDivisionsPositive(
+            barYDivisions.value,
+            barState.yDivisions
+          );
+          const next = Math.min(CUSTOM_DIV_MAX, Math.max(CUSTOM_DIV_MIN, current + 1));
+          barState.yDivisions = next;
+          barYDivisions.value = String(next);
+          redrawChart();
+        });
+      }
+      if (down) {
+        down.addEventListener("click", function () {
+          const current = customAxisDivisionsPositive(
+            barYDivisions.value,
+            barState.yDivisions
+          );
+          const next = Math.min(CUSTOM_DIV_MAX, Math.max(CUSTOM_DIV_MIN, current - 1));
+          barState.yDivisions = next;
+          barYDivisions.value = String(next);
+          redrawChart();
+        });
+      }
+    }
+  }
+  btnFitCurve.addEventListener("click", function () {
+    if (!isLineMode()) return;
+    const g = activeGraph();
+    if (g.points.length < 2) return;
+    g.showFittedCurve = !g.showFittedCurve;
+    redrawChart();
+  });
+  if (btnFitModeCurve) {
+    btnFitModeCurve.addEventListener("click", function () {
+      if (!isLineMode()) return;
+      const g = activeGraph();
+      if (!g.showFittedCurve || g.points.length < 2) return;
+      if (g.fitMode === "curve") return;
+      g.fitMode = "curve";
+      redrawChart();
+    });
+  }
+  if (btnFitModePolyline) {
+    btnFitModePolyline.addEventListener("click", function () {
+      if (!isLineMode()) return;
+      const g = activeGraph();
+      if (!g.showFittedCurve || g.points.length < 2) return;
+      if (g.fitMode === "polyline") return;
+      g.fitMode = "polyline";
+      redrawChart();
+    });
+  }
+  btnTableInput.addEventListener("click", function () {
+    if (!isLineMode()) return;
+    tableInputMode = !tableInputMode;
+    updateTableModeUI();
+    if (tableInputMode) {
+      const g = activeGraph();
+      g.tableColumnCount = Math.max(DEFAULT_TABLE_COLUMN_COUNT, g.points.length + 1);
+      renderPointsTable();
+    }
+    redrawChart();
+  });
+  btnReset.addEventListener("click", function () {
+    resetGraph();
+    redrawChart();
+  });
+
+  [customXName, customXUnit, customYName, customYUnit].forEach(function (input) {
+    input.addEventListener("change", function () {
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("input", function () {
+      syncCustomAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+  });
+
+  [customXStep, customYStep].forEach(function (input) {
+    input.addEventListener("change", function () {
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("input", function () {
+      syncCustomAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+    input.addEventListener("blur", function () {
+      syncCustomAxisFromInputs();
+    });
+  });
+
+  [customXDivisions, customYDivisions].forEach(function (input) {
+    input.addEventListener("change", function () {
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("input", function () {
+      syncCustomAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+    input.addEventListener("blur", function () {
+      syncCustomAxisFromInputs();
+    });
+  });
+
+  bindCustomStepSpinner(customXStep, "xStep");
+  bindCustomStepSpinner(customYStep, "yStep");
+  bindCustomDivisionsSpinner(customXDivisions, "xDivisions");
+  bindCustomDivisionsSpinner(customYDivisions, "yDivisions");
+
+  [customXAllowNegative, customYAllowNegative].forEach(function (input) {
+    input.addEventListener("change", function () {
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+  });
+
+  graphSelectInputs.forEach(function (input, i) {
+    input.addEventListener("change", function () {
+      if (input.checked) {
+        setActiveGraph(i);
+      } else if (i === activeGraphIndex) {
+        input.checked = true;
+      }
+    });
+  });
+
+  if (pointsTableSection) {
+    pointsTableSection.addEventListener("pointerdown", function (ev) {
+      openNumericKeypadFromEvent(ev);
+    });
+  }
+
+  const setupPanel = document.querySelector(".setup-panel");
+  if (setupPanel) {
+    setupPanel.addEventListener("pointerdown", function (ev) {
+      openNumericKeypadFromEvent(ev);
+    });
+  }
+
+  [
+    customXStep,
+    customYStep,
+    customXDivisions,
+    customYDivisions,
+    barYStep,
+    barYDivisions,
+  ].forEach(function (input) {
+    bindNumericKeypadInput(input);
+    if (!input) return;
+    const label = input.closest("label.custom-field");
+    if (label && !input.getAttribute("aria-label")) {
+      const title = label.childNodes[0] && label.childNodes[0].textContent
+        ? String(label.childNodes[0].textContent).trim()
+        : "";
+      if (title) input.setAttribute("aria-label", title);
+    }
+  });
+
+  if (tableKeypadConfirm) {
+    tableKeypadConfirm.addEventListener("click", confirmTableKeypad);
+  }
+
+  if (tableKeypadCancel) {
+    tableKeypadCancel.addEventListener("click", cancelTableKeypad);
+  }
+
+  tableMathKeypadKeys.forEach(function (key) {
+    key.addEventListener("mousedown", function (ev) {
+      ev.preventDefault();
+    });
+    key.addEventListener("click", handleTableMathKeypadClick);
+  });
+
+  chartEl.addEventListener("pointerdown", handleChartPointerDown);
+  chartEl.addEventListener("mousemove", updateChartClickPreviewFromEvent);
+  chartEl.addEventListener("mouseleave", hideChartClickPreview);
+  chartEl.addEventListener("touchmove", updateChartClickPreviewFromEvent, {
+    passive: true,
+  });
+  chartEl.addEventListener(
+    "touchstart",
+    function (ev) {
+      if (!isLineMode()) return;
+      if (ev.cancelable) ev.preventDefault();
+    },
+    { passive: false }
+  );
+
+  if (chartWrap && typeof ResizeObserver !== "undefined") {
+    const chartResizeObserver = new ResizeObserver(function () {
+      scheduleLayoutAndRedraw();
+    });
+    chartResizeObserver.observe(chartWrap);
+  } else {
+    window.addEventListener("resize", scheduleLayoutAndRedraw);
+  }
+
+  updateTableModeUI();
+  updateGraphSelectUI();
+  updateTableGraphTheme();
+  updateNegativeAxisCheckboxState();
+  updateChartTypeUI();
+  syncCustomAxisFromInputs();
+
+  document.querySelectorAll(".section-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const section = btn.closest(".collapsible-section");
+      if (!section) return;
+      const collapsed = section.classList.toggle("is-collapsed");
+      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    });
+  });
+
+  redrawChart();
+})();
+  </script>
+</body>
+</html>

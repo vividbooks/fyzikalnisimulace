@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="cs" data-mix-surface="rgb">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Simulace míchání barev (RGB/CMY)</title>
+    <style>
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --bg: #000000;
+        --panel-bg: #07080c;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --accent: #7cb4fc;
+        --accent-hover: #a8d0ff;
+        --canvas-border: rgba(255, 255, 255, 0.16);
+        --border: #2a2f3a;
+        --focus: #7cb4fc;
+        --area-muted: #181b22;
+        --readout-bg: #12141a;
+        --readout-text: #f3f4f6;
+        --danger: #fb7185;
+        --success: #34d399;
+      }
+
+      html[data-mix-surface="rgb"] {
+        color-scheme: dark;
+        --bg: #000000;
+        --panel-bg: #07080c;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --accent: #7cb4fc;
+        --accent-hover: #a8d0ff;
+        --canvas-border: rgba(255, 255, 255, 0.16);
+        --border: #2a2f3a;
+        --focus: #7cb4fc;
+        --area-muted: #181b22;
+        --readout-bg: #12141a;
+        --readout-text: #f3f4f6;
+        --danger: #fb7185;
+        --success: #34d399;
+      }
+
+      html[data-mix-surface="cmy"] {
+        color-scheme: light;
+        --bg: #ffffff;
+        --panel-bg: #ffffff;
+        --text: #171923;
+        --muted: #6b7280;
+        --accent: #3d5a9a;
+        --accent-hover: #334b81;
+        --canvas-border: transparent;
+        --border: #e8eaef;
+        --focus: #3d5a9a;
+        --area-muted: #eceff5;
+        --readout-bg: #f4f5f8;
+        --readout-text: #171923;
+        --danger: #dc2626;
+        --success: #059669;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      .app {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        align-content: stretch;
+        gap: clamp(10px, 1.8vw, 20px);
+        max-width: none;
+        width: 100%;
+        margin: 0 auto;
+        padding: clamp(8px, 1.2vw, 14px);
+        min-height: 100dvh;
+        box-sizing: border-box;
+      }
+
+      .setup-panel {
+        flex: 0 0 min(320px, 100%);
+        max-height: none;
+        align-self: stretch;
+        overflow: auto;
+        padding: 18px;
+        border-radius: 22px;
+        scrollbar-gutter: stable;
+
+        /* Světlý panel vždy — nesleduje tmavý režim RGB plochy diagramu */
+        color-scheme: light;
+        --panel-bg: #ffffff;
+        --text: #171923;
+        --muted: #6b7280;
+        --accent: #3d5a9a;
+        --accent-hover: #334b81;
+        --border: #e8eaef;
+        --focus: #3d5a9a;
+        --area-muted: #eceff5;
+        --readout-bg: #f4f5f8;
+        --readout-text: #171923;
+        --danger: #dc2626;
+        --success: #059669;
+
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      .viz-column {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+      }
+
+      .panel-title {
+        margin: 0 0 6px;
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+      }
+
+      .controls {
+        display: grid;
+        gap: 20px;
+      }
+
+      .row {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 650;
+        font-size: 0.8125rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      label.segmented-label {
+        margin-bottom: 0;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin: 0;
+      }
+
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .segmented button {
+        appearance: none;
+        flex: 1 1 auto;
+        min-width: 5rem;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        color: var(--text);
+        font-weight: 650;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, transform 0.08s;
+      }
+
+      .segmented button:hover {
+        border-color: var(--accent);
+      }
+
+      .segmented button:active {
+        transform: translateY(1px);
+      }
+
+      .segmented button[aria-pressed="true"] {
+        background: var(--accent);
+        color: #ffffff;
+        border-color: var(--accent);
+      }
+
+      .val {
+        font-variant-numeric: tabular-nums;
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--accent);
+      }
+
+      /* Kanály jako štítky uprostřed barevných kotoučů — táhnout vodorovně u čísla */
+      .diagram-channels {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
+      }
+
+      .diagram-channel-anchor {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        pointer-events: none;
+        z-index: 4;
+        max-width: 92%;
+      }
+
+      .diagram-channel-chip {
+        position: relative;
+        transform: none;
+        pointer-events: auto;
+        display: inline-flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 1px 4px;
+        max-width: 100%;
+        padding: 7px 11px;
+        border-radius: 999px;
+        box-sizing: border-box;
+      }
+
+      .diagram-channel-corr {
+        pointer-events: none;
+        flex-shrink: 0;
+        font-size: 1.12rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
+        padding: 7px 16px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-corr {
+        color: rgba(255, 255, 255, 0.96);
+        background: rgba(8, 10, 18, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-corr {
+        color: rgba(18, 20, 28, 0.94);
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.09);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-corr.diagram-channel-corr--pos {
+        border-color: rgba(52, 211, 153, 0.45);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-corr.diagram-channel-corr--neg {
+        border-color: rgba(251, 113, 133, 0.45);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-corr.diagram-channel-corr--pos {
+        border-color: rgba(5, 150, 105, 0.35);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-corr.diagram-channel-corr--neg {
+        border-color: rgba(220, 38, 38, 0.35);
+      }
+
+      /* Bobánky = plná intenzita příslušného kanálu (RGB / CMY primárky) */
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 {
+        background: rgb(255, 0, 0);
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        box-shadow: 0 10px 31px rgba(0, 0, 0, 0.42);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 {
+        background: rgb(0, 255, 0);
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        box-shadow: 0 10px 31px rgba(0, 0, 0, 0.28);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 {
+        background: rgb(0, 0, 255);
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        box-shadow: 0 10px 31px rgba(0, 0, 0, 0.42);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip.ch-diagram-0 {
+        background: rgb(0, 255, 255);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        box-shadow: 0 7px 26px rgba(0, 0, 0, 0.12);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip.ch-diagram-1 {
+        background: rgb(255, 0, 255);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        box-shadow: 0 7px 26px rgba(0, 0, 0, 0.12);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip.ch-diagram-2 {
+        background: rgb(255, 255, 0);
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        box-shadow: 0 7px 26px rgba(0, 0, 0, 0.12);
+      }
+
+      /* Kotouče DISKS ve viewBox 400×340 — kotva bobánku + korekce */
+      .diagram-channel-anchor.ch-diagram-0 {
+        left: 30.18%;
+        top: 38.72%;
+      }
+
+      .diagram-channel-anchor.ch-diagram-1 {
+        left: 69.82%;
+        top: 38.72%;
+      }
+
+      .diagram-channel-anchor.ch-diagram-2 {
+        left: 50%;
+        top: 77.65%;
+      }
+
+      .diagram-channel-chip .channel-drag-line {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0 6px;
+        font-size: 1.1rem;
+        line-height: 1.2;
+      }
+
+      .diagram-channel-chip .channel-key {
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        margin-right: 1px;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-key,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-key {
+        color: rgba(255, 255, 255, 0.98);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-key {
+        color: rgba(10, 26, 10, 0.94);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-key {
+        color: rgba(12, 14, 22, 0.94);
+      }
+
+      .diagram-channel-chip .channel-scrub {
+        cursor: ew-resize;
+        padding: 5px 6px;
+        margin: -5px -6px;
+        border-radius: 11px;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .diagram-channel-chip .channel-scrub:focus {
+        outline: none;
+      }
+
+      .diagram-channel-chip .channel-scrub:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+        border-radius: 11px;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-scrub:hover .channel-scrub-inner,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-scrub:hover .channel-scrub-inner {
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-scrub:hover .channel-scrub-inner {
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-scrub:hover .channel-scrub-inner {
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      .diagram-channel-chip .channel-scrub-inner {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        padding: 2px 6px;
+        border-radius: 9px;
+        transition: background 0.12s ease;
+      }
+
+      .diagram-channel-chip .channel-scrub-arrow {
+        flex-shrink: 0;
+        font-size: 0.74rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: 0;
+        pointer-events: auto;
+        cursor: pointer;
+        opacity: 0.72;
+        padding: 2px 4px;
+        margin: -2px -4px;
+        border: none;
+        background: transparent;
+        font-family: inherit;
+      }
+
+      .diagram-channel-chip .channel-scrub-arrow:hover {
+        opacity: 1;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-scrub-arrow,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-scrub-arrow {
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-scrub-arrow {
+        color: rgba(10, 26, 10, 0.58);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-scrub-arrow {
+        color: rgba(12, 14, 22, 0.42);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-scrub:hover .channel-scrub-arrow,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-scrub:hover .channel-scrub-arrow {
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-scrub:hover .channel-scrub-arrow {
+        color: rgba(10, 26, 10, 0.78);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-scrub:hover .channel-scrub-arrow {
+        color: rgba(12, 14, 22, 0.62);
+      }
+
+      .diagram-channel-chip .channel-val {
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
+        font-size: 1.15rem;
+        min-width: 2.7ch;
+        text-align: right;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-val,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-0 .channel-pct,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-val,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-2 .channel-pct {
+        color: #fff;
+      }
+
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-val,
+      html[data-mix-surface="rgb"] .diagram-channel-chip.ch-diagram-1 .channel-pct {
+        color: rgba(10, 26, 10, 0.96);
+      }
+
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-val,
+      html[data-mix-surface="cmy"] .diagram-channel-chip .channel-pct {
+        color: rgba(12, 14, 22, 0.94);
+      }
+
+      .diagram-channel-chip .channel-pct {
+        font-weight: 800;
+        font-size: 1.06rem;
+      }
+
+      .actions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .actions-row-pair {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .actions-scale-toggle {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+        width: 100%;
+        flex: 1 1 100%;
+      }
+
+      .actions-scale-toggle[hidden] {
+        display: none !important;
+      }
+
+      .actions-scale-toggle-label {
+        font-weight: 650;
+        font-size: 0.8125rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .actions-scale-toggle .segmented {
+        flex: 0 1 auto;
+      }
+
+      .actions-scale-toggle .segmented button {
+        min-width: 2.75rem;
+        padding: 8px 14px;
+      }
+
+      .diagram-channel-chip .channel-pct[hidden] {
+        display: none;
+      }
+
+      html[data-intensity-scale="byte"] .diagram-channel-chip .channel-val {
+        min-width: 3.1ch;
+      }
+
+      .actions-row .btn {
+        white-space: nowrap;
+      }
+
+      .btn {
+        appearance: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .btn-primary {
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
+
+      .btn-ghost {
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      .btn-ghost:hover {
+        border-color: var(--accent);
+      }
+
+      .btn-ghost[aria-pressed="true"] {
+        background: var(--accent);
+        color: #ffffff;
+        border-color: var(--accent);
+      }
+
+      .btn-ghost[aria-pressed="true"]:hover {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
+
+      /* ——— Vizualizace ——— */
+      .viz-readout {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 12px;
+        flex-shrink: 0;
+      }
+
+      .viz-readout:has(#testReadout[hidden]) {
+        margin-bottom: 0;
+      }
+
+      /* Test: bez diagramu pod readoutem */
+      .viz-readout:has(#testReadout:not([hidden])) {
+        margin-bottom: 12px;
+      }
+
+      .test-swatch-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-items: center;
+        align-items: start;
+        gap: clamp(12px, 3vw, 28px);
+        width: 100%;
+      }
+
+      .test-swatch-row[hidden] {
+        display: none !important;
+      }
+
+      .swatch-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .swatch-circle {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        height: auto;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        box-sizing: border-box;
+        flex-shrink: 0;
+      }
+
+      html[data-mix-surface="rgb"] .swatch-circle {
+        box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      html[data-mix-surface="cmy"] .swatch-circle {
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+      }
+
+      .swatch-label {
+        font-size: 0.75rem;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .swatch-hex {
+        font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+        font-weight: 800;
+        font-size: 0.88rem;
+        color: var(--accent);
+      }
+
+      .test-sliders-wrap {
+        width: 100%;
+        max-width: min(560px, 100%);
+        margin: 8px auto 0;
+        padding: 0 4px;
+      }
+
+      .test-sliders-wrap[hidden] {
+        display: none !important;
+      }
+
+      /* Stejné bobánky jako na diagramu — jen v řádku pod kolečky */
+      .test-diagram-channels {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: clamp(14px, 4vw, 28px);
+      }
+
+      .test-diagram-channels .diagram-channel-anchor {
+        position: relative;
+        left: auto !important;
+        top: auto !important;
+        transform: none;
+        max-width: none;
+      }
+
+      .viz-stage {
+        flex: 1;
+        min-height: 0;
+        min-width: 0;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .viz-stage[hidden] {
+        display: none !important;
+      }
+
+      .diagram-wrap {
+        position: relative;
+        box-sizing: border-box;
+        aspect-ratio: 400 / 340;
+        max-width: 100%;
+        height: auto;
+        margin-inline: auto;
+      }
+
+      @supports (container-type: size) {
+        .viz-stage {
+          container-type: size;
+          container-name: vstage;
+        }
+
+        .diagram-wrap {
+          width: min(100cqw, calc(100cqh * 400 / 340));
+        }
+      }
+
+      @supports not (container-type: size) {
+        .diagram-wrap {
+          width: min(100%, calc((100dvh - 11rem) * 400 / 340));
+          max-height: calc(100dvh - 11rem);
+        }
+      }
+
+      #vennCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        border-radius: 0;
+        border: none;
+        outline: none;
+      }
+
+      .result {
+        margin-top: 4px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--readout-bg);
+        padding: 1rem 1rem 1.1rem;
+        display: none;
+        text-align: center;
+      }
+
+      .result.visible {
+        display: block;
+      }
+
+      .result .pct--hero {
+        margin: 0;
+        font-family: ui-monospace, Menlo, monospace;
+        font-weight: 800;
+        font-size: clamp(2rem, 7vw, 2.85rem);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.05;
+        color: var(--text);
+        letter-spacing: -0.03em;
+      }
+
+      .result.result--perfect {
+        border-color: rgba(52, 211, 153, 0.55);
+        background: linear-gradient(165deg, var(--readout-bg) 0%, rgba(52, 211, 153, 0.12) 100%);
+        box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.2), 0 12px 36px rgba(52, 211, 153, 0.18);
+        animation: result-perfect-pop 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
+      }
+
+      @keyframes result-perfect-pop {
+        0% {
+          transform: scale(0.92);
+          opacity: 0.6;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .result-perfect-badge {
+        margin: 0 0 0.35rem;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--success);
+        animation: result-badge-glow 1.2s ease-in-out infinite alternate;
+      }
+
+      @keyframes result-badge-glow {
+        from {
+          opacity: 0.82;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .result .pct--hero.pct--perfect {
+        color: var(--success);
+        animation: pct-perfect-pulse 0.9s ease-in-out 2;
+      }
+
+      @keyframes pct-perfect-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.06);
+        }
+      }
+
+      .test-swatch-row.swatch-row--perfect .swatch-circle {
+        animation: swatch-perfect-ring 1.1s ease-out 2;
+        box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.45), 0 8px 28px rgba(52, 211, 153, 0.28);
+      }
+
+      @keyframes swatch-perfect-ring {
+        0% {
+          transform: scale(1);
+        }
+        40% {
+          transform: scale(1.04);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .celebration-layer {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .confetti-piece {
+        position: absolute;
+        top: -14px;
+        width: 9px;
+        height: 13px;
+        border-radius: 2px;
+        opacity: 0.95;
+        animation: confetti-fall 2.9s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+      }
+
+      @keyframes confetti-fall {
+        0% {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translate3d(var(--confetti-drift), 108vh, 0) rotate(720deg);
+          opacity: 0;
+        }
+      }
+
+      .warning {
+        color: var(--danger);
+        font-weight: 700;
+      }
+
+      .hub-back-to-sims {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 9px 14px;
+        margin: 0 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--area-muted);
+        color: var(--text);
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+      }
+
+      .hub-back-to-sims:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--readout-bg);
+      }
+
+      /* Telefony: diagram nahoře, ovládání dole */
+      @media (max-width: 899.98px) {
+        .app {
+          flex-direction: column;
+          flex-wrap: nowrap;
+          align-items: stretch;
+          padding-left: max(8px, env(safe-area-inset-left, 0px));
+          padding-right: max(8px, env(safe-area-inset-right, 0px));
+          padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+          padding-top: max(8px, env(safe-area-inset-top, 0px));
+          gap: 12px;
+        }
+
+        .viz-column {
+          order: 1;
+          flex: 1 1 auto;
+          min-height: min(48vh, 520px);
+          width: 100%;
+        }
+
+        .setup-panel {
+          order: 2;
+          flex: 0 1 auto;
+          width: 100%;
+          max-height: min(46vh, 520px);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          border-radius: 18px;
+          padding: 14px 16px;
+        }
+
+        .hub-back-to-sims {
+          margin-bottom: 10px;
+        }
+
+        .controls {
+          gap: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="setup-panel" aria-label="Ovládání">
+        <div class="controls">
+          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+          <h1 class="panel-title">Míchání barev (RGB / CMY)</h1>
+
+          <div class="row">
+            <label class="segmented-label">Mód</label>
+            <div class="segmented" role="group" aria-label="Výběr módu">
+              <button id="modePractice" type="button" aria-pressed="true">Procvičuj</button>
+              <button id="modeTest" type="button" aria-pressed="false">Test</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="segmented-label">Model barev</label>
+            <div class="segmented" role="group" aria-label="Výběr modelu barev">
+              <button id="modelRGB" type="button" aria-pressed="true">RGB</button>
+              <button id="modelCMY" type="button" aria-pressed="false">CMY</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="segmented-label">Akce</label>
+            <div class="actions-row">
+              <button id="btnNewTarget" type="button" class="btn btn-ghost" style="display: none">Nová barva</button>
+              <button id="btnEvaluate" type="button" class="btn btn-primary" style="display: none">Vyhodnotit</button>
+              <div class="actions-row-pair">
+                <button
+                  id="btnHideMixResult"
+                  type="button"
+                  class="btn btn-ghost"
+                  style="display: none"
+                  aria-pressed="false"
+                >
+                  Vypnout výsledek
+                </button>
+                <button id="btnReset" type="button" class="btn btn-ghost">Reset (50 %)</button>
+              </div>
+              <button
+                id="btnColorCode"
+                type="button"
+                class="btn btn-ghost"
+                aria-pressed="false"
+              >
+                Kód barvy
+              </button>
+              <div class="actions-scale-toggle intensity-scale">
+                <span class="actions-scale-toggle-label">Intenzita barev:</span>
+                <div
+                  class="segmented"
+                  role="group"
+                  aria-label="Zobrazení intenzity kanálů"
+                >
+                  <button
+                    id="intensityPct"
+                    type="button"
+                    aria-pressed="true"
+                    title="Intenzita v procentech (0–100 %)"
+                  >
+                    %
+                  </button>
+                  <button
+                    id="intensity255"
+                    type="button"
+                    aria-pressed="false"
+                    title="Intenzita jako hodnota kanálu (0–255)"
+                  >
+                    255
+                  </button>
+                </div>
+              </div>
+              <div id="colorCodeRadixWrap" class="actions-scale-toggle color-code-radix" hidden>
+                <span class="actions-scale-toggle-label">Kód barvy:</span>
+                <div
+                  class="segmented"
+                  role="group"
+                  aria-label="Soustava zápisu kódu barvy"
+                >
+                  <button
+                    id="colorCodeRadix10"
+                    type="button"
+                    aria-pressed="true"
+                    title="Desítková soustava (hodnoty kanálů 0–255)"
+                  >
+                    10
+                  </button>
+                  <button
+                    id="colorCodeRadix16"
+                    type="button"
+                    aria-pressed="false"
+                    title="Šestnáctková soustava (#RRGGBB)"
+                  >
+                    16
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="result" id="resultBox" aria-live="polite"></div>
+        </div>
+      </aside>
+
+      <div class="viz-column" aria-label="Vizualizace">
+        <div class="viz-readout">
+          <div id="testReadout" class="test-swatch-row" hidden>
+            <div class="swatch-item">
+              <div id="targetSwatchCircle" class="swatch-circle" role="img" aria-label="Cílová barva"></div>
+              <span class="swatch-label">Cíl</span>
+              <code id="targetHex" class="swatch-hex">—</code>
+            </div>
+            <div id="mixSwatchItem" class="swatch-item">
+              <div id="mixSwatchCircle" class="swatch-circle" role="img" aria-label="Tvoje namíchaná barva"></div>
+              <span class="swatch-label">Výsledek</span>
+              <code id="mixHexTest" class="swatch-hex">#000000</code>
+            </div>
+          </div>
+          <div id="testSlidersWrap" class="test-sliders-wrap" hidden>
+            <div
+              id="testDiagramChannels"
+              class="test-diagram-channels"
+              role="group"
+              aria-label="Intenzity kanálů (test, táhni u čísla jako v Procvičuj)"
+            ></div>
+          </div>
+        </div>
+
+        <div class="viz-stage" id="vizStage">
+          <div class="diagram-wrap" id="diagramWrap">
+            <canvas id="vennCanvas" width="800" height="680" aria-hidden="true"></canvas>
+            <div id="diagramChannels" class="diagram-channels" aria-label="Intenzity kanálů"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        /** @typedef {"practice"|"test"} Mode */
+        /** @typedef {"rgb"|"cmy"} Model */
+
+        /** @typedef {10 | 16} ColorCodeRadix */
+        /** @typedef {"pct"|"byte"} IntensityScale */
+
+        /** @type {{mode: Mode, model: Model, v: [number,number,number], showColorCodes: boolean, colorCodeRadix: ColorCodeRadix, intensityScale: IntensityScale, hideMixResult: boolean}} */
+        const state = {
+          mode: "practice",
+          model: "rgb",
+          v: [50, 50, 50],
+          showColorCodes: false,
+          colorCodeRadix: 16,
+          intensityScale: "pct",
+          hideMixResult: false,
+        };
+        /** @type {{model: Model, v: [number,number,number]} | null} */
+        let target = null;
+        let lastEval = null;
+        /** @type {HTMLElement | null} */
+        let celebrationLayer = null;
+        let celebrationTimer = 0;
+
+        const els = {
+          modePractice: document.getElementById("modePractice"),
+          modeTest: document.getElementById("modeTest"),
+          modelRGB: document.getElementById("modelRGB"),
+          modelCMY: document.getElementById("modelCMY"),
+          diagramChannels: document.getElementById("diagramChannels"),
+          btnNewTarget: document.getElementById("btnNewTarget"),
+          btnEvaluate: document.getElementById("btnEvaluate"),
+          btnHideMixResult: document.getElementById("btnHideMixResult"),
+          btnReset: document.getElementById("btnReset"),
+          btnColorCode: document.getElementById("btnColorCode"),
+          colorCodeRadixWrap: document.getElementById("colorCodeRadixWrap"),
+          colorCodeRadix10: document.getElementById("colorCodeRadix10"),
+          colorCodeRadix16: document.getElementById("colorCodeRadix16"),
+          intensityPct: document.getElementById("intensityPct"),
+          intensity255: document.getElementById("intensity255"),
+          testReadout: document.getElementById("testReadout"),
+          testSlidersWrap: document.getElementById("testSlidersWrap"),
+          testDiagramChannels: document.getElementById("testDiagramChannels"),
+          vizStage: document.getElementById("vizStage"),
+          targetSwatchCircle: document.getElementById("targetSwatchCircle"),
+          mixSwatchCircle: document.getElementById("mixSwatchCircle"),
+          targetHex: document.getElementById("targetHex"),
+          mixHexTest: document.getElementById("mixHexTest"),
+          resultBox: document.getElementById("resultBox"),
+          diagramWrap: document.getElementById("diagramWrap"),
+          vennCanvas: /** @type {HTMLCanvasElement} */ (document.getElementById("vennCanvas")),
+        };
+
+        const VB = { w: 400, h: 340 };
+        const DISKS = [
+          { cx: 154, cy: 150, r: 88 },
+          { cx: 246, cy: 150, r: 88 },
+          { cx: 200, cy: 226, r: 88 },
+        ];
+
+        /** Sedm oblastí Vennova diagramu — maska bitů kotoučů 0|1|2, pozice štítku ve viewBoxu. */
+        const VENN_REGIONS = [
+          { mask: 1, x: 90, y: 118 },
+          { mask: 2, x: 310, y: 118 },
+          { mask: 4, x: 200, y: 300 },
+          { mask: 3, x: 200, y: 122 },
+          { mask: 5, x: 154, y: 198 },
+          { mask: 6, x: 248, y: 198 },
+          { mask: 7, x: 200, y: 172 },
+        ];
+
+        /** @param {CanvasRenderingContext2D} ctx */
+        function drawDisk(ctx, cx, cy, r, cssColor) {
+          ctx.fillStyle = cssColor;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        /** Barva v oblasti dle aktivních kotoučů (stejná logika jako lighter / multiply). */
+        function regionDisplayRgb(model, mask, v100) {
+          const t = v100.map((x) => clamp01(x / 100));
+          if (model === "rgb") {
+            const R = int(t[0] * 255);
+            const G = int(t[1] * 255);
+            const B = int(t[2] * 255);
+            return [(mask & 1) ? R : 0, (mask & 2) ? G : 0, (mask & 4) ? B : 0];
+          }
+          const c = t[0];
+          const m = t[1];
+          const y = t[2];
+          return [
+            (mask & 1) ? int(255 * (1 - c)) : 255,
+            (mask & 2) ? int(255 * (1 - m)) : 255,
+            (mask & 4) ? int(255 * (1 - y)) : 255,
+          ];
+        }
+
+        function srgbLuminanceChannel(c) {
+          const s = c / 255;
+          return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+        }
+
+        /** @param {[number, number, number]} rgb — relativní jas (WCAG). */
+        function rgbLuminance(rgb) {
+          const r = srgbLuminanceChannel(rgb[0]);
+          const g = srgbLuminanceChannel(rgb[1]);
+          const b = srgbLuminanceChannel(rgb[2]);
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+
+        /** Černá nebo bílá — vyšší kontrast s pozadím (ne prah jasu). */
+        function textColorOnRgb(rgb) {
+          const bgLum = rgbLuminance(rgb);
+          const contrastWhite = (1.0 + 0.05) / (bgLum + 0.05);
+          const contrastBlack = (bgLum + 0.05) / 0.05;
+          return contrastWhite >= contrastBlack ? "#ffffff" : "#000000";
+        }
+
+        /** @param {CanvasRenderingContext2D} ctx */
+        function drawVennColorCode(ctx, cx, cy, codeText, rgb, mask) {
+          const bits = (mask & 1) + (mask & 2) + (mask & 4);
+          const isDec = state.colorCodeRadix === 10;
+          let fontSize = bits >= 3 ? 6.5 : bits === 2 ? 7 : 7.5;
+          if (isDec) fontSize = Math.max(4.5, fontSize - (bits >= 3 ? 1.5 : 1));
+          ctx.save();
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font =
+            "400 " + fontSize + 'px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
+          ctx.fillStyle = textColorOnRgb(rgb);
+          ctx.fillText(codeText, cx, cy);
+          ctx.restore();
+        }
+
+        function drawVennColorCodes(ctx, model) {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.globalAlpha = 1;
+          for (const region of VENN_REGIONS) {
+            const rgb = regionDisplayRgb(model, region.mask, state.v);
+            drawVennColorCode(
+              ctx,
+              region.x,
+              region.y,
+              formatColorCode(rgb, state.colorCodeRadix),
+              rgb,
+              region.mask
+            );
+          }
+        }
+
+        function syncCanvasSize() {
+          const canvas = els.vennCanvas;
+          const wrap = els.diagramWrap;
+          const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+          const rect = wrap.getBoundingClientRect();
+          const w = Math.max(1, Math.round(rect.width * dpr));
+          const h = Math.max(1, Math.round(rect.height * dpr));
+          if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+          }
+        }
+
+        function paintVenn() {
+          if (state.mode === "test") return;
+          const canvas = els.vennCanvas;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          syncCanvasSize();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = "source-over";
+
+          const scale = Math.min(canvas.width / VB.w, canvas.height / VB.h);
+          const tx = (canvas.width - VB.w * scale) / 2;
+          const ty = (canvas.height - VB.h * scale) / 2;
+          ctx.setTransform(scale, 0, 0, scale, tx, ty);
+
+          const t = state.v.map((x) => clamp01(x / 100));
+
+          if (state.model === "rgb") {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, VB.w, VB.h);
+            ctx.globalCompositeOperation = "lighter";
+            const R = int(t[0] * 255);
+            const G = int(t[1] * 255);
+            const B = int(t[2] * 255);
+            drawDisk(ctx, DISKS[0].cx, DISKS[0].cy, DISKS[0].r, "rgb(" + R + ",0,0)");
+            drawDisk(ctx, DISKS[1].cx, DISKS[1].cy, DISKS[1].r, "rgb(0," + G + ",0)");
+            drawDisk(ctx, DISKS[2].cx, DISKS[2].cy, DISKS[2].r, "rgb(0,0," + B + ")");
+            if (state.showColorCodes) drawVennColorCodes(ctx, "rgb");
+          } else {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, VB.w, VB.h);
+            ctx.globalCompositeOperation = "multiply";
+            const c = t[0];
+            const m = t[1];
+            const y = t[2];
+            drawDisk(ctx, DISKS[0].cx, DISKS[0].cy, DISKS[0].r, "rgb(" + int(255 * (1 - c)) + ",255,255)");
+            drawDisk(ctx, DISKS[1].cx, DISKS[1].cy, DISKS[1].r, "rgb(255," + int(255 * (1 - m)) + ",255)");
+            drawDisk(ctx, DISKS[2].cx, DISKS[2].cy, DISKS[2].r, "rgb(255,255," + int(255 * (1 - y)) + ")");
+            if (state.showColorCodes) drawVennColorCodes(ctx, "cmy");
+          }
+
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+
+        function clamp01(x) {
+          return Math.min(1, Math.max(0, x));
+        }
+
+        function int(n) {
+          return Math.round(Number(n) || 0);
+        }
+
+        function toHexByte(n) {
+          const v = Math.min(255, Math.max(0, int(n)));
+          return v.toString(16).padStart(2, "0");
+        }
+
+        function rgbToHex(rgb) {
+          return "#" + toHexByte(rgb[0]) + toHexByte(rgb[1]) + toHexByte(rgb[2]);
+        }
+
+        const COLOR_CODE_DEC_SEP = "\u2002";
+
+        /** @param {[number, number, number]} rgb @param {ColorCodeRadix} radix */
+        function formatColorCode(rgb, radix) {
+          if (radix === 16) return rgbToHex(rgb).toUpperCase();
+          return rgb.map((c) => int(c)).join(COLOR_CODE_DEC_SEP);
+        }
+
+        /** @param {Model} model @param {[number,number,number]} v100 */
+        function mixToRgb(model, v100) {
+          const a = clamp01(v100[0] / 100);
+          const b = clamp01(v100[1] / 100);
+          const c = clamp01(v100[2] / 100);
+
+          if (model === "rgb") {
+            return [int(a * 255), int(b * 255), int(c * 255)];
+          }
+          return [int((1 - a) * 255), int((1 - b) * 255), int((1 - c) * 255)];
+        }
+
+        /** @param {Model} model */
+        function channelLabels(model) {
+          return model === "rgb"
+            ? [
+                { key: "R", name: "Červená" },
+                { key: "G", name: "Zelená" },
+                { key: "B", name: "Modrá" },
+              ]
+            : [
+                { key: "C", name: "Azurová" },
+                { key: "M", name: "Purpurová" },
+                { key: "Y", name: "Žlutá" },
+              ];
+        }
+
+        function setPressed(a, b, activeA) {
+          a.setAttribute("aria-pressed", activeA ? "true" : "false");
+          b.setAttribute("aria-pressed", activeA ? "false" : "true");
+        }
+
+        function intensityUsesByte() {
+          return state.intensityScale === "byte";
+        }
+
+        /** @param {number} pct 0–100 */
+        function pctToByte(pct) {
+          return Math.min(255, Math.max(0, Math.round((pct / 100) * 255)));
+        }
+
+        /** @param {number} byte 0–255 */
+        function byteToPct(byte) {
+          return Math.min(100, Math.max(0, Math.round((byte / 255) * 100)));
+        }
+
+        /** @param {number} pct 0–100 */
+        function displayIntensity(pct) {
+          return intensityUsesByte() ? String(pctToByte(pct)) : String(int(pct));
+        }
+
+        /** @param {number} pct 0–100 */
+        function scrubAriaForPct(pct) {
+          if (intensityUsesByte()) {
+            return { min: 0, max: 255, now: pctToByte(pct) };
+          }
+          return { min: 0, max: 100, now: int(pct) };
+        }
+
+        /** @param {HTMLElement} scrubEl @param {HTMLElement} valSpan @param {number} pct */
+        function applyIntensityToScrub(scrubEl, valSpan, pct) {
+          const aria = scrubAriaForPct(pct);
+          scrubEl.setAttribute("aria-valuemin", String(aria.min));
+          scrubEl.setAttribute("aria-valuemax", String(aria.max));
+          scrubEl.setAttribute("aria-valuenow", String(aria.now));
+          valSpan.textContent = displayIntensity(pct);
+          const pctEl = scrubEl.closest(".diagram-channel-chip")?.querySelector(".channel-pct");
+          if (pctEl) pctEl.hidden = intensityUsesByte();
+          const dec = scrubEl.querySelector(".channel-scrub-arrow-dec");
+          const inc = scrubEl.querySelector(".channel-scrub-arrow-inc");
+          const unit = intensityUsesByte() ? "v kanálu" : "procento";
+          if (dec) dec.setAttribute("aria-label", "Snížit o 1 " + unit);
+          if (inc) inc.setAttribute("aria-label", "Zvýšit o 1 " + unit);
+        }
+
+        function syncIntensityScaleChrome() {
+          document.documentElement.dataset.intensityScale = state.intensityScale;
+          setPressed(els.intensityPct, els.intensity255, state.intensityScale === "pct");
+          updateResetButtonLabel();
+          refreshChannelIntensityUi();
+        }
+
+        function updateResetButtonLabel() {
+          const mid = intensityUsesByte() ? pctToByte(50) : 50;
+          const suffix = intensityUsesByte() ? "" : " %";
+          els.btnReset.textContent = "Reset (" + mid + suffix + ")";
+        }
+
+        function refreshChannelIntensityUi() {
+          const pairs = [
+            { root: els.diagramChannels, prefix: "" },
+            { root: els.testDiagramChannels, prefix: "t" },
+          ];
+          for (const { root, prefix } of pairs) {
+            if (!root) continue;
+            for (let i = 0; i < 3; i++) {
+              const scrub = root.querySelector("#" + prefix + "scrub" + i);
+              const valEl = root.querySelector("#" + prefix + "val" + i);
+              if (scrub && valEl) applyIntensityToScrub(scrub, valEl, state.v[i]);
+            }
+          }
+        }
+
+        /** @param {number} byte 0–255 */
+        function byteToPctExact(byte) {
+          const b = Math.min(255, Math.max(0, int(byte)));
+          return (b / 255) * 100;
+        }
+
+        /** @param {number} displayValue hodnota v aktivní soustavě (% nebo 0–255) */
+        function displayValueToPct(displayValue) {
+          if (intensityUsesByte()) return byteToPctExact(displayValue);
+          return Math.min(100, Math.max(0, int(displayValue)));
+        }
+
+        /** @param {number} pct 0–100 */
+        function pctToDisplayValue(pct) {
+          return intensityUsesByte() ? pctToByte(pct) : int(pct);
+        }
+
+        let activeScrubDragStop = null;
+
+        function bindChannelScrubDrag(scrubEl, getStartValue, applyDragValue) {
+          let dragging = false;
+          let startX = 0;
+          let startV = 0;
+          let activePointerId = null;
+
+          const applyFromDrag = (clientX) => {
+            const delta = Math.round((clientX - startX) / 2);
+            applyDragValue(startV + delta);
+          };
+
+          const stopDragging = () => {
+            if (!dragging) return;
+            dragging = false;
+            activePointerId = null;
+            if (activeScrubDragStop === stopDragging) {
+              activeScrubDragStop = null;
+            }
+            window.removeEventListener("pointermove", onPointerMove, true);
+            window.removeEventListener("pointerup", onPointerUp, true);
+            window.removeEventListener("pointercancel", onPointerUp, true);
+            document.removeEventListener("mouseup", onMouseUp, true);
+            window.removeEventListener("blur", stopDragging);
+          };
+
+          const onPointerMove = (e) => {
+            if (!dragging || e.pointerId !== activePointerId) return;
+            if (e.pointerType === "mouse" && !(e.buttons & 1)) {
+              stopDragging();
+              return;
+            }
+            applyFromDrag(e.clientX);
+          };
+
+          const onPointerUp = (e) => {
+            if (!dragging || e.pointerId !== activePointerId) return;
+            stopDragging();
+          };
+
+          const onMouseUp = () => stopDragging();
+
+          scrubEl.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            if (e.target.closest(".channel-scrub-arrow")) return;
+
+            if (activeScrubDragStop) {
+              activeScrubDragStop();
+            }
+            activeScrubDragStop = stopDragging;
+
+            dragging = true;
+            activePointerId = e.pointerId;
+            startX = e.clientX;
+            startV = getStartValue();
+
+            window.addEventListener("pointermove", onPointerMove, true);
+            window.addEventListener("pointerup", onPointerUp, true);
+            window.addEventListener("pointercancel", onPointerUp, true);
+            document.addEventListener("mouseup", onMouseUp, true);
+            window.addEventListener("blur", stopDragging);
+          });
+        }
+
+        /**
+         * Řádek „C: 42“ / „C: 42 %“ — horizontální táhnutí u čísla (~2 px ≈ 1 krok v aktivní soustavě).
+         * @param {HTMLElement} scrubEl
+         * @param {HTMLElement} valSpan
+         * @param {number} index
+         */
+        function bindChannelScrub(scrubEl, valSpan, index) {
+          function applyValue(displayValue) {
+            let nextPct;
+            if (intensityUsesByte()) {
+              const nextByte = Math.min(255, Math.max(0, int(displayValue)));
+              if (nextByte === pctToByte(state.v[index])) return;
+              nextPct = byteToPctExact(nextByte);
+            } else {
+              nextPct = displayValueToPct(displayValue);
+              if (nextPct === state.v[index]) return;
+            }
+            state.v[index] = nextPct;
+            applyIntensityToScrub(scrubEl, valSpan, nextPct);
+            resetEval();
+            render();
+          }
+
+          function stepByArrow(delta) {
+            if (intensityUsesByte()) {
+              const nextByte = Math.min(255, Math.max(0, pctToByte(state.v[index]) + delta));
+              applyValue(nextByte);
+            } else {
+              applyValue(pctToDisplayValue(state.v[index]) + delta);
+            }
+          }
+
+          function bindScrubArrow(el, delta) {
+            if (!el) return;
+            el.addEventListener("pointerdown", (e) => {
+              if (e.button !== 0) return;
+              e.preventDefault();
+              e.stopPropagation();
+            });
+            el.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              stepByArrow(delta);
+            });
+          }
+
+          bindScrubArrow(scrubEl.querySelector(".channel-scrub-arrow-dec"), -1);
+          bindScrubArrow(scrubEl.querySelector(".channel-scrub-arrow-inc"), 1);
+
+          bindChannelScrubDrag(
+            scrubEl,
+            () => pctToDisplayValue(state.v[index]),
+            (displayValue) => applyValue(displayValue)
+          );
+
+          scrubEl.addEventListener("keydown", (e) => {
+            const max = intensityUsesByte() ? 255 : 100;
+            const page = intensityUsesByte() ? 25 : 10;
+            let nv = pctToDisplayValue(state.v[index]);
+            if (e.key === "ArrowRight" || e.key === "ArrowUp") nv = Math.min(max, nv + 1);
+            else if (e.key === "ArrowLeft" || e.key === "ArrowDown") nv = Math.max(0, nv - 1);
+            else if (e.key === "PageUp") nv = Math.min(max, nv + page);
+            else if (e.key === "PageDown") nv = Math.max(0, nv - page);
+            else if (e.key === "Home") nv = 0;
+            else if (e.key === "End") nv = max;
+            else return;
+            e.preventDefault();
+            applyValue(nv);
+          });
+
+          scrubEl.addEventListener(
+            "wheel",
+            (e) => {
+              e.preventDefault();
+              const step = e.shiftKey ? (intensityUsesByte() ? 25 : 5) : 1;
+              const dir = e.deltaY > 0 ? -step : step;
+              applyValue(pctToDisplayValue(state.v[index]) + dir);
+            },
+            { passive: false }
+          );
+
+          applyIntensityToScrub(scrubEl, valSpan, state.v[index]);
+        }
+
+        /** @param {string} chKey @param {string} chName */
+        function channelScrubHtml(idPrefix, i, chKey, chName) {
+          const pct = state.v[i];
+          const aria = scrubAriaForPct(pct);
+          const pctHidden = intensityUsesByte() ? " hidden" : "";
+          const unitHint = intensityUsesByte()
+            ? "0–255"
+            : "procenta, 0–100";
+          const arrowUnit = intensityUsesByte() ? "v kanálu" : "procento";
+          return (
+            '<span class="channel-scrub" id="' +
+            idPrefix +
+            "scrub" +
+            i +
+            '" tabindex="0" role="slider" aria-valuemin="' +
+            aria.min +
+            '" aria-valuemax="' +
+            aria.max +
+            '" aria-valuenow="' +
+            aria.now +
+            '" aria-label="' +
+            chName +
+            " (" +
+            chKey +
+            "), táhni vodorovně u čísla nebo použij šipky — mění intenzitu (" +
+            unitHint +
+            ')">' +
+            '<span class="channel-scrub-inner">' +
+            '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1 ' +
+            arrowUnit +
+            '">◀</button>' +
+            '<span class="channel-val val" id="' +
+            idPrefix +
+            "val" +
+            i +
+            '">' +
+            displayIntensity(pct) +
+            '</span><span class="channel-pct"' +
+            pctHidden +
+            ">%</span>" +
+            '<button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1 ' +
+            arrowUnit +
+            '">▶</button>' +
+            "</span></span>"
+          );
+        }
+
+        /** Stejné bobánky jako na diagramu — řádek v Testu (id prefix t* kvůli kolizi s Procvičuj). */
+        function renderTestStrip() {
+          if (!els.testDiagramChannels) return;
+          const labels = channelLabels(state.model);
+          els.testDiagramChannels.innerHTML = "";
+          labels.forEach((ch, i) => {
+            const anchor = document.createElement("div");
+            anchor.className = "diagram-channel-anchor ch-diagram-" + i;
+
+            const wrap = document.createElement("div");
+            wrap.className = "diagram-channel-chip ch-diagram-" + i;
+            wrap.innerHTML =
+              '<div class="channel-drag-line">' +
+              '<span class="channel-key">' +
+              ch.key +
+              "</span>" +
+              channelScrubHtml("t", i, ch.key, ch.name) +
+              "</div>";
+
+            const corr = document.createElement("div");
+            corr.className = "diagram-channel-corr";
+            corr.id = "tcorr" + i;
+            corr.hidden = true;
+
+            anchor.appendChild(wrap);
+            anchor.appendChild(corr);
+            els.testDiagramChannels.appendChild(anchor);
+
+            const scrubEl = wrap.querySelector("#tscrub" + i);
+            const valEl = wrap.querySelector("#tval" + i);
+            if (scrubEl && valEl) bindChannelScrub(scrubEl, valEl, i);
+          });
+
+        }
+
+        function renderSliders() {
+          const labels = channelLabels(state.model);
+          els.diagramChannels.innerHTML = "";
+          labels.forEach((ch, i) => {
+            const anchor = document.createElement("div");
+            anchor.className = "diagram-channel-anchor ch-diagram-" + i;
+
+            const wrap = document.createElement("div");
+            wrap.className = "diagram-channel-chip ch-diagram-" + i;
+            wrap.innerHTML =
+              '<div class="channel-drag-line">' +
+              '<span class="channel-key">' +
+              ch.key +
+              "</span>" +
+              channelScrubHtml("", i, ch.key, ch.name) +
+              "</div>";
+
+            const corr = document.createElement("div");
+            corr.className = "diagram-channel-corr";
+            corr.id = "corr" + i;
+            corr.hidden = true;
+
+            anchor.appendChild(wrap);
+            anchor.appendChild(corr);
+            els.diagramChannels.appendChild(anchor);
+
+            const scrubEl = wrap.querySelector("#scrub" + i);
+            const valEl = wrap.querySelector("#val" + i);
+            if (scrubEl && valEl) bindChannelScrub(scrubEl, valEl, i);
+          });
+
+          renderTestStrip();
+        }
+
+        /** Korekce jen na řádku v Testu (diagramové corr prvky se nepoužívají). */
+        function updateDiagramCorrections() {
+          for (let i = 0; i < 3; i++) {
+            const el = document.getElementById("corr" + i);
+            if (!el) continue;
+            el.hidden = true;
+            el.textContent = "";
+            el.removeAttribute("title");
+            el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
+          }
+        }
+
+        function random100() {
+          return Math.floor(Math.random() * 101);
+        }
+
+        function resetMixChannels50() {
+          state.v = [50, 50, 50];
+          renderSliders();
+        }
+
+        function newTarget() {
+          target = { model: state.model, v: [random100(), random100(), random100()] };
+          resetEval();
+          if (state.mode === "test") resetMixChannels50();
+          render();
+        }
+
+        /** @param {[number,number,number]} a @param {[number,number,number]} b */
+        function similarityPercent(a, b) {
+          const dx = a[0] - b[0];
+          const dy = a[1] - b[1];
+          const dz = a[2] - b[2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          const maxDist = Math.sqrt(3 * 255 * 255);
+          const pct = (1 - dist / maxDist) * 100;
+          return Math.max(0, Math.min(100, pct));
+        }
+
+        function resetEval() {
+          lastEval = null;
+          clearCelebration();
+        }
+
+        function isPerfectScore(pct) {
+          return pct >= 99.95;
+        }
+
+        function clearCelebration() {
+          if (celebrationTimer) {
+            window.clearTimeout(celebrationTimer);
+            celebrationTimer = 0;
+          }
+          if (celebrationLayer) {
+            celebrationLayer.remove();
+            celebrationLayer = null;
+          }
+        }
+
+        function launchCelebration() {
+          clearCelebration();
+          const layer = document.createElement("div");
+          layer.className = "celebration-layer";
+          layer.setAttribute("aria-hidden", "true");
+          const colors = [
+            "#ff5c7a",
+            "#ffd166",
+            "#34d399",
+            "#7cb4fc",
+            "#c084fc",
+            "#fb923c",
+            "#f472b6",
+            "#38bdf8",
+          ];
+          for (let i = 0; i < 56; i++) {
+            const piece = document.createElement("span");
+            piece.className = "confetti-piece";
+            piece.style.left = Math.random() * 100 + "%";
+            piece.style.background = colors[i % colors.length];
+            piece.style.animationDelay = Math.random() * 0.45 + "s";
+            piece.style.animationDuration = 2.2 + Math.random() * 1.4 + "s";
+            piece.style.setProperty("--confetti-drift", (Math.random() - 0.5) * 140 + "px");
+            layer.appendChild(piece);
+          }
+          document.body.appendChild(layer);
+          celebrationLayer = layer;
+          celebrationTimer = window.setTimeout(clearCelebration, 3800);
+        }
+
+        function evaluate() {
+          if (!target) return;
+          state.hideMixResult = false;
+          const targetRgb = mixToRgb(target.model, target.v);
+          const myRgb = mixToRgb(state.model, state.v);
+          const pct = similarityPercent(myRgb, targetRgb);
+          const perfect = isPerfectScore(pct);
+          lastEval = {
+            pct,
+            perfect,
+            targetRgb,
+            myRgb,
+            targetV: target.v.slice(0),
+            myV: state.v.slice(0),
+            model: state.model,
+          };
+          if (perfect) launchCelebration();
+          render();
+        }
+
+        function updateMixLabelAndExpertChrome() {
+          const myRgb = mixToRgb(state.model, state.v);
+          const hex = rgbToHex(myRgb).toUpperCase();
+          els.mixHexTest.textContent = hex;
+          els.mixSwatchCircle.style.background = hex;
+        }
+
+        /** Po Vyhodnotit: pod testovými bobánky stejná korekce jako dřív u diagramu. */
+        function updateTestStripCorrections() {
+          const show =
+            state.mode === "test" &&
+            lastEval &&
+            typeof lastEval.pct === "number" &&
+            target &&
+            lastEval.model === state.model;
+
+          for (let i = 0; i < 3; i++) {
+            const el = document.getElementById("tcorr" + i);
+            if (!el) continue;
+            if (!show) {
+              el.hidden = true;
+              el.textContent = "";
+              el.removeAttribute("title");
+              el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
+              continue;
+            }
+            const d = intensityUsesByte()
+              ? pctToByte(lastEval.targetV[i]) - pctToByte(lastEval.myV[i])
+              : Math.round(lastEval.targetV[i] - lastEval.myV[i]);
+            const sign = d > 0 ? "+" : "";
+            el.textContent = sign + d;
+            el.hidden = false;
+            el.title = intensityUsesByte()
+              ? "Korekce kanálu: o kolik změnit hodnotu 0–255 oproti cíli (cílová hodnota minus tvoje při vyhodnocení)."
+              : "Korekce kanálu: kolik procent přidat nebo ubrat oproti cíli (cílová hodnota minus tvoje při vyhodnocení).";
+            el.classList.remove("diagram-channel-corr--pos", "diagram-channel-corr--neg");
+            if (d > 0) el.classList.add("diagram-channel-corr--pos");
+            else if (d < 0) el.classList.add("diagram-channel-corr--neg");
+          }
+        }
+
+        function syncTestChannelValsFromState() {
+          if (state.mode !== "test" || !els.testDiagramChannels) return;
+          for (let i = 0; i < 3; i++) {
+            const scrub = els.testDiagramChannels.querySelector("#tscrub" + i);
+            const valEl = els.testDiagramChannels.querySelector("#tval" + i);
+            if (scrub && valEl) applyIntensityToScrub(scrub, valEl, state.v[i]);
+          }
+        }
+        function updateTargetUi() {
+          const inTest = state.mode === "test";
+          const hideHexInTest = inTest && !(lastEval && typeof lastEval.pct === "number");
+          const hideMixSwatch = inTest && state.hideMixResult;
+
+          els.testReadout.hidden = !inTest;
+          if (els.testSlidersWrap) els.testSlidersWrap.hidden = !inTest;
+          if (els.vizStage) els.vizStage.hidden = inTest;
+          if (inTest && target) {
+            const targetRgb = mixToRgb(target.model, target.v);
+            const targetHex = rgbToHex(targetRgb).toUpperCase();
+            els.targetSwatchCircle.style.background = targetHex;
+            els.targetHex.textContent = targetHex;
+          } else {
+            els.targetHex.textContent = "—";
+            els.targetSwatchCircle.style.background = "";
+          }
+
+          els.targetHex.style.visibility = hideHexInTest ? "hidden" : "visible";
+          if (els.mixSwatchCircle) els.mixSwatchCircle.hidden = hideMixSwatch;
+          els.mixHexTest.style.visibility =
+            hideMixSwatch || hideHexInTest ? "hidden" : "visible";
+        }
+
+        function renderResultBox() {
+          if (!lastEval || !target) {
+            els.resultBox.classList.remove("visible", "result--perfect");
+            els.resultBox.innerHTML = "";
+            els.resultBox.removeAttribute("aria-label");
+            els.testReadout?.classList.remove("swatch-row--perfect");
+            return;
+          }
+          const labels = channelLabels(state.model);
+          const fmt = (v) => v.map((x) => int(x) + " %").join(" / ");
+          const perfect = lastEval.perfect === true;
+          const pctTxt = perfect
+            ? "100,0 %"
+            : lastEval.pct.toFixed(1).replace(".", ",") + " %";
+
+          els.resultBox.classList.add("visible");
+          els.resultBox.classList.toggle("result--perfect", perfect);
+          els.resultBox.innerHTML = perfect
+            ? '<p class="result-perfect-badge">Perfektní shoda!</p><p class="pct pct--hero pct--perfect">' +
+              pctTxt +
+              "</p>"
+            : '<p class="pct pct--hero">' + pctTxt + "</p>";
+          els.testReadout?.classList.toggle("swatch-row--perfect", perfect);
+          els.resultBox.setAttribute(
+            "aria-label",
+            (perfect ? "Perfektní shoda — " : "Shoda s cílovou barvou ") +
+              pctTxt +
+              ". Tvoje nastavení " +
+              labels.map((x) => x.key).join("") +
+              " " +
+              fmt(lastEval.myV) +
+              ", správně " +
+              fmt(target.v) +
+              "."
+          );
+        }
+
+        function renderButtons() {
+          const inTest = state.mode === "test";
+          const inPractice = !inTest;
+          els.btnNewTarget.style.display = inTest ? "inline-block" : "none";
+          els.btnEvaluate.style.display = inTest ? "inline-block" : "none";
+          els.btnHideMixResult.style.display = inTest ? "inline-block" : "none";
+          els.btnHideMixResult.setAttribute("aria-pressed", state.hideMixResult ? "true" : "false");
+          els.btnColorCode.style.display = inPractice ? "inline-block" : "none";
+          els.btnColorCode.setAttribute("aria-pressed", state.showColorCodes ? "true" : "false");
+          const showRadix = inPractice && state.showColorCodes;
+          els.colorCodeRadixWrap.hidden = !showRadix;
+          setPressed(els.colorCodeRadix10, els.colorCodeRadix16, state.colorCodeRadix === 10);
+        }
+
+        function syncMixSurfaceTheme() {
+          document.documentElement.dataset.mixSurface = state.model === "cmy" ? "cmy" : "rgb";
+        }
+
+        function render() {
+          syncMixSurfaceTheme();
+          syncIntensityScaleChrome();
+          renderButtons();
+          paintVenn();
+          updateMixLabelAndExpertChrome();
+          updateTargetUi();
+          syncTestChannelValsFromState();
+          renderResultBox();
+          updateDiagramCorrections();
+          updateTestStripCorrections();
+        }
+
+        els.modePractice.addEventListener("click", () => {
+          state.mode = "practice";
+          setPressed(els.modePractice, els.modeTest, true);
+          resetEval();
+          render();
+        });
+
+        els.modeTest.addEventListener("click", () => {
+          state.mode = "test";
+          setPressed(els.modePractice, els.modeTest, false);
+          if (!target || target.model !== state.model) newTarget();
+          render();
+        });
+
+        els.modelRGB.addEventListener("click", () => {
+          state.model = "rgb";
+          setPressed(els.modelRGB, els.modelCMY, true);
+          renderSliders();
+          if (state.mode === "test") newTarget();
+          resetEval();
+          render();
+        });
+
+        els.modelCMY.addEventListener("click", () => {
+          state.model = "cmy";
+          setPressed(els.modelRGB, els.modelCMY, false);
+          renderSliders();
+          if (state.mode === "test") newTarget();
+          resetEval();
+          render();
+        });
+
+        els.btnNewTarget.addEventListener("click", () => {
+          newTarget();
+        });
+
+        els.btnEvaluate.addEventListener("click", () => {
+          evaluate();
+        });
+
+        els.btnHideMixResult.addEventListener("click", () => {
+          state.hideMixResult = !state.hideMixResult;
+          render();
+        });
+
+        els.btnReset.addEventListener("click", () => {
+          state.v = [50, 50, 50];
+          resetEval();
+          renderSliders();
+          render();
+        });
+
+        els.btnColorCode.addEventListener("click", () => {
+          state.showColorCodes = !state.showColorCodes;
+          render();
+        });
+
+        els.colorCodeRadix10.addEventListener("click", () => {
+          if (state.colorCodeRadix === 10) return;
+          state.colorCodeRadix = 10;
+          render();
+        });
+
+        els.colorCodeRadix16.addEventListener("click", () => {
+          if (state.colorCodeRadix === 16) return;
+          state.colorCodeRadix = 16;
+          render();
+        });
+
+        els.intensityPct.addEventListener("click", () => {
+          if (state.intensityScale === "pct") return;
+          state.intensityScale = "pct";
+          render();
+        });
+
+        els.intensity255.addEventListener("click", () => {
+          if (state.intensityScale === "byte") return;
+          state.intensityScale = "byte";
+          render();
+        });
+
+        renderSliders();
+        render();
+
+        if ("ResizeObserver" in window) {
+          new ResizeObserver(() => render()).observe(els.diagramWrap);
+        } else {
+          window.addEventListener("resize", () => render());
+        }
+      })();
+    </script>
+
+    <noscript>
+      <p style="padding: 1rem; text-align: center">Zapni JavaScript — bez něj simulace nefunguje.</p>
+    </noscript>
+  </body>
+</html>

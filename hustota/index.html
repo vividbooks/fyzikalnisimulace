@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hustota</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <link rel="stylesheet" href="style.css?v=20260806c">
+</head>
+<body>
+  <div class="global-actions">
+    <a href="../index.html" class="panel-btn simulations-overview-btn" id="simulationsOverviewBtn">← Přehled simulací</a>
+    <div class="global-actions-center">
+      <div class="field-mode-toggle" role="group" aria-label="Počet ploch">
+        <button class="field-mode-btn" id="fieldModeOne" type="button" aria-pressed="true">1 plocha</button>
+        <button class="field-mode-btn" id="fieldModeTwo" type="button" aria-pressed="false">2 plochy</button>
+      </div>
+      <button class="panel-btn mask-btn" id="maskBtn" type="button" aria-pressed="false">Maska</button>
+      <button class="panel-btn pause-btn" id="pauseBtn" type="button" aria-pressed="false">Pauza</button>
+      <button class="panel-btn reset-btn" id="resetBtn" type="button">Reset</button>
+      <button class="panel-btn help-btn" id="helpBtn" type="button">Nápověda</button>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <div class="main">
+      <div class="fields-row">
+        <div class="field-unit">
+          <div class="stats-panel">
+            <div class="stats" aria-live="polite">
+              <div class="stat-item stat-item--ball-count">
+                <div class="stats-label">Počet míčků</div>
+                <div class="ball-count-scrub-wrap">
+                  <span
+                    class="channel-scrub ball-count-scrub"
+                    tabindex="0"
+                    role="slider"
+                    aria-valuemin="1"
+                    aria-valuemax="90"
+                    aria-valuenow="4"
+                    aria-label="Celkový počet míčků, táhni vodorovně u čísla nebo použij šipky"
+                  >
+                    <span class="channel-scrub-inner">
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1">◀</button>
+                      <span class="channel-val stats-value ball-count-value">4</span>
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1">▶</button>
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div class="stat-item stat-item--area">
+                <div class="stats-label">Obsah plochy</div>
+                <div class="area-scrub-wrap">
+                  <span
+                    class="channel-scrub area-scrub"
+                    tabindex="0"
+                    role="slider"
+                    aria-valuemin="1"
+                    aria-valuemax="36"
+                    aria-valuenow="4"
+                    aria-label="Celkový obsah plochy, táhni vodorovně u čísla nebo použij šipky"
+                  >
+                    <span class="channel-scrub-inner">
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1">◀</button>
+                      <span class="channel-val stats-value area-scrub-value">4 cm²</span>
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1">▶</button>
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stats-label">Hustota</div>
+                <div class="stats-value density-value">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="arena-composite">
+            <div class="arena">
+              <canvas></canvas>
+            </div>
+            <div class="arena-controls arena-controls--right">
+              <button class="arena-size-btn arena-size-btn--minus" type="button" aria-label="Zmenšit plochu vpravo">−</button>
+              <button class="arena-size-btn arena-size-btn--plus" type="button" aria-label="Zkopírovat plochu vpravo">+</button>
+            </div>
+            <div class="arena-controls arena-controls--bottom">
+              <button class="arena-size-btn arena-size-btn--minus" type="button" aria-label="Zmenšit plochu dolů">−</button>
+              <button class="arena-size-btn arena-size-btn--plus" type="button" aria-label="Zkopírovat plochu dolů">+</button>
+            </div>
+            <div class="resize-handle n" data-edge="n"></div>
+            <div class="resize-handle s" data-edge="s"></div>
+            <div class="resize-handle e" data-edge="e"></div>
+            <div class="resize-handle w" data-edge="w"></div>
+            <p class="resize-hint">Táhni za okraj</p>
+          </div>
+        </div>
+
+        <div class="field-unit">
+          <div class="stats-panel">
+            <div class="stats" aria-live="polite">
+              <div class="stat-item stat-item--ball-count">
+                <div class="stats-label">Počet míčků</div>
+                <div class="ball-count-scrub-wrap">
+                  <span
+                    class="channel-scrub ball-count-scrub"
+                    tabindex="0"
+                    role="slider"
+                    aria-valuemin="1"
+                    aria-valuemax="90"
+                    aria-valuenow="4"
+                    aria-label="Celkový počet míčků, táhni vodorovně u čísla nebo použij šipky"
+                  >
+                    <span class="channel-scrub-inner">
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1">◀</button>
+                      <span class="channel-val stats-value ball-count-value">4</span>
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1">▶</button>
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div class="stat-item stat-item--area">
+                <div class="stats-label">Obsah plochy</div>
+                <div class="area-scrub-wrap">
+                  <span
+                    class="channel-scrub area-scrub"
+                    tabindex="0"
+                    role="slider"
+                    aria-valuemin="1"
+                    aria-valuemax="36"
+                    aria-valuenow="4"
+                    aria-label="Celkový obsah plochy, táhni vodorovně u čísla nebo použij šipky"
+                  >
+                    <span class="channel-scrub-inner">
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit o 1">◀</button>
+                      <span class="channel-val stats-value area-scrub-value">4 cm²</span>
+                      <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit o 1">▶</button>
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stats-label">Hustota</div>
+                <div class="stats-value density-value">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="arena-composite">
+            <div class="arena">
+              <canvas></canvas>
+            </div>
+            <div class="arena-controls arena-controls--right">
+              <button class="arena-size-btn arena-size-btn--minus" type="button" aria-label="Zmenšit plochu vpravo">−</button>
+              <button class="arena-size-btn arena-size-btn--plus" type="button" aria-label="Zkopírovat plochu vpravo">+</button>
+            </div>
+            <div class="arena-controls arena-controls--bottom">
+              <button class="arena-size-btn arena-size-btn--minus" type="button" aria-label="Zmenšit plochu dolů">−</button>
+              <button class="arena-size-btn arena-size-btn--plus" type="button" aria-label="Zkopírovat plochu dolů">+</button>
+            </div>
+            <div class="resize-handle n" data-edge="n"></div>
+            <div class="resize-handle s" data-edge="s"></div>
+            <div class="resize-handle e" data-edge="e"></div>
+            <div class="resize-handle w" data-edge="w"></div>
+            <p class="resize-hint">Táhni za okraj</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <dialog class="help-dialog" id="helpDialog">
+    <div class="help-dialog-header">
+      <h2>Nápověda</h2>
+      <button class="help-dialog-close" id="helpCloseBtn" type="button" aria-label="Zavřít">×</button>
+    </div>
+    <ul class="help-dialog-list">
+      <li><strong>1 / 2 plochy</strong> — přepni počet zobrazených ploch; u 1 plochy je maximum 36 cm², u 2 ploch 25 cm² na čtverec</li>
+      <li><strong>Dvě plochy</strong> — každá má vlastní panel a nezávislé nastavení</li>
+      <li><strong>Maska</strong> — zakryje a rozostří celou plochu kromě jednoho ostrého okna o velikosti 1 cm² uprostřed</li>
+      <li><strong>Počet míčků</strong> — celkový počet míčků na ploše; táhni vodorovně u čísla, použij šipky nebo kolečko myši</li>
+      <li><strong>Obsah plochy</strong> — celkový obsah plochy; táhni vodorovně u čísla, použij šipky nebo kolečko myši</li>
+      <li><strong>+ / − u plochy</strong> — kopírování a zmenšení plochy (jen v režimu 1 plochy)</li>
+      <li><strong>Táhni za hranu</strong> — také změna velikosti čtverce</li>
+      <li><strong>Reset</strong> — vrátí úvodní nastavení aktuálního režimu (4 cm², 4 míčky na každé ploše)</li>
+      <li><strong>Kliknutí do čtverce</strong> — změna směru nejbližšího míčku</li>
+    </ul>
+  </dialog>
+
+  <script src="main.js?v=20260806c"></script>
+</body>
+</html>

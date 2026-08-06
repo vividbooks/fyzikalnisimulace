@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <title>Skládání sil</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="scene" aria-label="Skládání sil">
+      <aside class="setup-panel" aria-label="Ovládání simulace">
+        <a href="../index.html" class="hub-back-to-sims">
+          ← Přehled simulací
+        </a>
+
+        <div class="panel-copy">
+          <h1 class="panel-title">Skládání sil</h1>
+        </div>
+
+        <div class="panel-section" role="group" aria-label="Počet objektů">
+          <span class="panel-label">Počet objektů</span>
+          <div class="circle-mode-toggle" role="group" aria-label="Počet kruhů">
+            <button
+              id="one-circle-btn"
+              class="circle-mode-btn"
+              type="button"
+              aria-pressed="true"
+            >
+              1 kruh
+            </button>
+            <button
+              id="two-circles-btn"
+              class="circle-mode-btn"
+              type="button"
+              aria-pressed="false"
+            >
+              2 kruhy
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section" role="group" aria-label="Nastavení">
+          <span class="panel-label">Nastavení</span>
+          <div class="actions-row">
+            <button
+              id="snap90-btn"
+              class="panel-action-btn"
+              type="button"
+              aria-pressed="false"
+            >
+              90°
+            </button>
+            <button
+              id="resultant-btn"
+              class="panel-action-btn"
+              type="button"
+              aria-pressed="false"
+            >
+              Výsledná síla
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section" role="group" aria-label="Simulace">
+          <span class="panel-label">Simulace</span>
+          <div class="actions-row actions-row--stack">
+            <button id="start-btn" class="panel-action-btn panel-action-btn--primary" type="button">
+              Spustit
+            </button>
+            <button id="reset-btn" class="panel-action-btn panel-action-btn--secondary" type="button">
+              Reset
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="scene-workspace" aria-label="Pracovní plocha">
+        <div class="stage">
+          <div class="simulation">
+            <div id="objects-stage" class="objects-stage">
+              <div class="object-wrap">
+                <svg
+                  class="tile"
+                  width="75"
+                  height="51"
+                  viewBox="0 0 75 51"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-label="Objekt"
+                  role="img"
+                >
+                  <g class="object-hit">
+                    <circle cx="37.0547" cy="25.4297" r="25.4297" fill="#3d5a9a" />
+                    <g class="plus" fill="#ffffff" aria-hidden="true">
+                      <rect x="24.5" y="23.5" width="26" height="4" rx="2" />
+                      <rect x="35.5" y="12.5" width="4" height="26" rx="2" />
+                    </g>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="force-keypad-overlay" class="force-keypad-overlay" hidden>
+        <div
+          class="force-keypad-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="force-keypad-title"
+        >
+          <div class="force-keypad-panel__header">
+            <h2 id="force-keypad-title" class="force-keypad-panel__title">Velikost síly (N)</h2>
+            <button
+              id="force-keypad-close"
+              class="force-keypad-panel__close"
+              type="button"
+              aria-label="Zavřít"
+            >
+              ×
+            </button>
+          </div>
+          <div
+            id="force-keypad-display"
+            class="force-keypad-panel__display"
+            aria-live="polite"
+          ></div>
+          <div class="math-keypad" id="force-math-keypad" aria-label="Matematická klávesnice">
+            <div class="math-keypad__grid">
+              <button class="math-keypad__key" type="button" data-value="7">7</button>
+              <button class="math-keypad__key" type="button" data-value="8">8</button>
+              <button class="math-keypad__key" type="button" data-value="9">9</button>
+              <button class="math-keypad__key" type="button" data-value="4">4</button>
+              <button class="math-keypad__key" type="button" data-value="5">5</button>
+              <button class="math-keypad__key" type="button" data-value="6">6</button>
+              <button class="math-keypad__key" type="button" data-value="1">1</button>
+              <button class="math-keypad__key" type="button" data-value="2">2</button>
+              <button class="math-keypad__key" type="button" data-value="3">3</button>
+              <button class="math-keypad__key math-keypad__key--zero" type="button" data-value="0">
+                0
+              </button>
+              <button
+                class="math-keypad__key math-keypad__key--wide"
+                type="button"
+                data-action="backspace"
+                aria-label="Smazat"
+              >
+                ⌫
+              </button>
+            </div>
+          </div>
+          <button
+            id="force-keypad-confirm"
+            class="panel-action-btn panel-action-btn--primary force-keypad-panel__confirm"
+            type="button"
+          >
+            Potvrdit
+          </button>
+        </div>
+      </div>
+    </main>
+    <script src="main.js"></script>
+  </body>
+</html>

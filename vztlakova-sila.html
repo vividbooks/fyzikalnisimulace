@@ -1,0 +1,1314 @@
+<!doctype html>
+<!-- Simulace ze zdroje: https://github.com/FrantisekVvb/vztlakova_sila -->
+<html lang="cs" data-theme="tokyo-midnight">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Vztlaková síla</title>
+    <style>
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+
+        /* Tokyo midnight — hluboká noc + jemné cyan / violet záře */
+        --bg-base: #05070e;
+        --bg-glow-cyan: rgba(56, 189, 248, 0.085);
+        --bg-glow-violet: rgba(167, 139, 250, 0.065);
+
+        --bg: #0a0f1a;
+        --text: #e8eaf2;
+        --muted: #8b95ab;
+        --accent: #5eb8ff;
+        --accent-hover: #93d0ff;
+        --canvas-border: rgba(120, 160, 220, 0.12);
+        --border: rgba(120, 140, 190, 0.26);
+        --focus: #5eb8ff;
+        --area-muted: rgba(255, 255, 255, 0.065);
+        --rope: #8b96ab;
+        --weight-stroke: rgba(255, 255, 255, 0.55);
+        --scale-body: #121a2a;
+        --scale-border: rgba(100, 150, 210, 0.38);
+        --readout-bg: #080e18;
+        --readout-text: #dce4f5;
+        --tank-glass-stroke: rgba(200, 225, 255, 0.82);
+        --tank-glass-glow: rgba(120, 180, 255, 0.55);
+        --danger: #fb7185;
+        --success: #34d399;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background-color: var(--bg-base);
+        background-image:
+          radial-gradient(ellipse 125% 95% at 50% -28%, var(--bg-glow-cyan), transparent 54%),
+          radial-gradient(ellipse 72% 58% at 108% 38%, var(--bg-glow-violet), transparent 50%),
+          radial-gradient(ellipse 58% 42% at -12% 82%, rgba(56, 189, 248, 0.045), transparent 44%),
+          linear-gradient(168deg, #04060d 0%, #080d18 42%, #050812 100%);
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      .app {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        align-content: stretch;
+        gap: clamp(10px, 1.8vw, 20px);
+        max-width: none;
+        width: 100%;
+        margin: 0 auto;
+        padding: clamp(8px, 1.2vw, 14px);
+        min-height: 100dvh;
+        box-sizing: border-box;
+      }
+
+      .viz-column {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .setup-panel {
+        flex: 0 0 min(320px, 100%);
+        max-height: none;
+        align-self: stretch;
+        overflow: auto;
+        padding: 18px;
+        border-radius: 22px;
+        scrollbar-gutter: stable;
+
+        color-scheme: light;
+        --panel-bg: #ffffff;
+        --text: #171923;
+        --muted: #6b7280;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --border: #e8eaef;
+        --focus: #2563eb;
+        --area-muted: #eceff5;
+        --readout-bg: #f4f5f8;
+        --readout-text: #171923;
+        --danger: #dc2626;
+        --success: #059669;
+
+        border: 1px solid var(--border);
+        background: var(--panel-bg);
+        box-shadow:
+          0 20px 48px rgba(0, 0, 0, 0.34),
+          0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+        color: var(--text);
+      }
+
+      .panel-title {
+        margin: 0 0 6px;
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+      }
+
+      .hub-back-to-sims {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 9px 14px;
+        margin: 0 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--area-muted);
+        color: var(--text);
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+      }
+
+      .hub-back-to-sims:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--readout-bg);
+      }
+
+      .controls {
+        display: grid;
+        gap: 20px;
+      }
+
+      .row {
+        display: grid;
+        gap: 8px;
+      }
+
+      .row.row-immersion {
+        gap: 5px;
+      }
+
+      label {
+        font-weight: 650;
+        font-size: 0.8125rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      label.check-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-transform: none;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      label.check-label.check-label--immersion-gap {
+        margin-top: 30px;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin: 0;
+      }
+
+      canvas {
+        display: block;
+        background: transparent;
+        max-width: 100%;
+        flex-shrink: 0;
+        touch-action: none;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 999px;
+        background: var(--area-muted);
+        outline: none;
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--area-muted);
+      }
+
+      input[type="range"]::-moz-range-progress {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 2px solid var(--accent);
+        box-shadow: 0 0 20px rgba(94, 184, 255, 0.25);
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 2px solid var(--accent);
+        box-shadow: 0 0 20px rgba(94, 184, 255, 0.25);
+        cursor: pointer;
+      }
+
+      .setup-panel input[type="range"] {
+        background: var(--area-muted);
+      }
+
+      .setup-panel input[type="range"]::-moz-range-track {
+        background: var(--area-muted);
+      }
+
+      .setup-panel input[type="range"]::-webkit-slider-thumb {
+        background: var(--panel-bg);
+        box-shadow: 0 1px 5px rgba(37, 99, 235, 0.28);
+      }
+
+      .setup-panel input[type="range"]::-moz-range-thumb {
+        background: var(--panel-bg);
+        box-shadow: 0 1px 5px rgba(37, 99, 235, 0.28);
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        border-radius: 10px;
+        padding: 11px 12px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        outline: none;
+        font-size: 0.95rem;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      .setup-panel input[type="number"],
+      .setup-panel select {
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      input[type="number"]:focus,
+      select:focus {
+        border-color: var(--focus);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 22%, transparent);
+      }
+
+      input[type="checkbox"] {
+        width: 1.05rem;
+        height: 1.05rem;
+        accent-color: var(--accent);
+      }
+
+      .val {
+        font-variant-numeric: tabular-nums;
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--accent);
+      }
+
+      .setup-panel .val {
+        color: var(--accent);
+      }
+
+      /* Telefony: simulace nahoře, nastavení dole se skrolováním */
+      @media (max-width: 899.98px) {
+        .app {
+          flex-direction: column;
+          flex-wrap: nowrap;
+          align-items: stretch;
+          padding-left: max(8px, env(safe-area-inset-left, 0px));
+          padding-right: max(8px, env(safe-area-inset-right, 0px));
+          padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+          padding-top: max(8px, env(safe-area-inset-top, 0px));
+          gap: 12px;
+        }
+
+        .viz-column {
+          order: 1;
+          flex: 1 1 auto;
+          min-height: min(52vh, 560px);
+          width: 100%;
+          justify-content: center;
+        }
+
+        .setup-panel {
+          order: 2;
+          flex: 0 1 auto;
+          width: 100%;
+          max-height: min(46vh, 520px);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          border-radius: 18px;
+          padding: 14px 16px;
+        }
+
+        .hub-back-to-sims {
+          margin-bottom: 10px;
+        }
+
+        .controls {
+          gap: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="setup-panel" aria-label="Ovládání">
+        <div class="controls">
+          <a href="index.html" class="hub-back-to-sims">← Přehled simulací</a>
+          <h1 class="panel-title">Vztlaková síla</h1>
+
+            <div class="row">
+              <label for="material">Materiál závaží</label>
+              <select id="material">
+                <option value="beton" selected>Beton (2 000 kg/m³)</option>
+                <option value="fe">Železo/ocel (7 850 kg/m³)</option>
+                <option value="cu">Měď (8 960 kg/m³)</option>
+                <option value="ag">Stříbro (10 000 kg/m³)</option>
+                <option value="au">Zlato (19 300 kg/m³)</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label for="vol">Objem závaží</label>
+              <div class="sub"><span class="val" id="outV">50 cm³</span></div>
+              <input id="vol" type="range" min="1" max="100" step="1" value="50" />
+            </div>
+
+            <div class="row">
+              <label for="liquid">Kapalina</label>
+              <select id="liquid">
+                <option value="water" selected>Voda (1 000 kg/m³)</option>
+                <option value="sea">Mořská voda (1 025 kg/m³)</option>
+                <option value="oil">Rostlinný olej (920 kg/m³)</option>
+                <option value="ethanol">Etanol (789 kg/m³)</option>
+                <option value="glycerin">Glycerin (1 260 kg/m³)</option>
+              </select>
+            </div>
+
+            <div class="row row-immersion">
+              <label>Ponoření</label>
+              <p class="sub">Chyť závaží a táhni nahoru nebo dolů.</p>
+              <!-- Hodnotu udržuje skript při tažení (dříve posuvník). -->
+              <input id="bottomDepth" type="hidden" value="0" />
+              <input id="bottomDepth2" type="hidden" value="0" />
+              <label class="check-label check-label--immersion-gap" for="enable2">
+                <input id="enable2" type="checkbox" />
+                Druhé závaží
+              </label>
+            </div>
+
+            <div id="w2Wrap" class="row" style="display: none; gap: 10px">
+              <div class="row">
+                <label for="material2">Materiál 2. závaží</label>
+                <select id="material2">
+                  <option value="beton" selected>Beton (2 000 kg/m³)</option>
+                  <option value="fe">Železo/ocel (7 850 kg/m³)</option>
+                  <option value="cu">Měď (8 960 kg/m³)</option>
+                  <option value="ag">Stříbro (10 000 kg/m³)</option>
+                  <option value="au">Zlato (19 300 kg/m³)</option>
+                </select>
+              </div>
+
+              <div class="row">
+                <label for="vol2">Objem 2. závaží</label>
+                <div class="sub"><span class="val" id="outV2">50 cm³</span></div>
+                <input id="vol2" type="range" min="1" max="100" step="1" value="50" />
+              </div>
+            </div>
+        </div>
+      </aside>
+
+      <div class="viz-column">
+        <canvas
+          id="cv"
+          width="1200"
+          height="1320"
+          aria-label="Vizualizace ponoření — chyť závaží a táhni myší nebo prstem nahoru nebo dolů"
+        ></canvas>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const g = 10;
+        /** Manipulační ponechá závaží u hladiny (cm). */
+        const SUBMERSION_AIR_GAP_CM = 2.0;
+        /** Min. vzdálenost dna závaží od dna nádrže (cm) — nedosáhne úplně na dno. */
+        const TANK_BOTTOM_CLEARANCE_CM = 2.0;
+
+        const MATERIALS = {
+          beton: { name: "Beton", rho: 2000 },
+          fe: { name: "Železo/ocel", rho: 7850 },
+          cu: { name: "Měď", rho: 8960 },
+          ag: { name: "Stříbro", rho: 10000 },
+          au: { name: "Zlato", rho: 19300 },
+        };
+
+        const LIQUIDS = {
+          water: { name: "Voda", rho: 1000 },
+          sea: { name: "Mořská voda", rho: 1025 },
+          oil: { name: "Rostlinný olej", rho: 920 },
+          ethanol: { name: "Etanol", rho: 789 },
+          glycerin: { name: "Glycerin", rho: 1260 },
+        };
+
+        const els = {
+          vizColumn: document.querySelector(".viz-column"),
+          cv: document.getElementById("cv"),
+          material: document.getElementById("material"),
+          vol: document.getElementById("vol"),
+          outV: document.getElementById("outV"),
+          enable2: document.getElementById("enable2"),
+          w2Wrap: document.getElementById("w2Wrap"),
+          material2: document.getElementById("material2"),
+          vol2: document.getElementById("vol2"),
+          outV2: document.getElementById("outV2"),
+          liquid: document.getElementById("liquid"),
+          bottomDepth: document.getElementById("bottomDepth"),
+          bottomDepth2: document.getElementById("bottomDepth2"),
+        };
+
+        const waterMotion = {
+          levelCm: 0,
+          levelVelocityCm: 0,
+          waveCm: 0,
+          waveVelocityCm: 0,
+          phase: 0,
+          lastTargetCm: 0,
+          lastTime: performance.now(),
+        };
+
+        let lastTotalVsubM3 = -1;
+        /** Vyhlazená rychlost změny Vsub (m³/s) — bez toho kvant hloubky + impuls každý snímek „restartují“ vlnu. */
+        let submergeRateSmoothed = 0;
+
+        /** Změna objemu pod hladinou od min. snímku (+ ponoření, − vynoření) — zvlnění v obou směrech. */
+        function consumeSubmersionDeltaM3(s) {
+          const t = s.w1.Vsub + (s.w2 ? s.w2.Vsub : 0);
+          let d = 0;
+          if (lastTotalVsubM3 >= 0) d = t - lastTotalVsubM3;
+          lastTotalVsubM3 = t;
+          return d;
+        }
+
+        /** Poslední obdélníky závaží v designových px (pro úchop). */
+        let lastWeightBoxes = { w1: null, w2: null };
+        /** Poslední geometrie pro převod táhnutí → hloubka. */
+        let lastDragGeom = null;
+
+        const dragWeight = {
+          pointerId: null,
+          grabOffsetY: 0,
+          which: null,
+        };
+
+        /** Při zapnutí druhého závaží zkopíruj hloubku z prvního (společný start). */
+        let prevEnable2 = false;
+
+        let canvasPointerDesign = null;
+
+        /** Hystereze plného ponoření — u hladiny jinak kolísá zlomek objemu a siloměr. */
+        let immersionLockedW1 = false;
+        let immersionLockedW2 = false;
+        let lastV1ForImmersion = null;
+        let lastV2ForImmersion = null;
+
+        /** @returns {number} */
+        function num(el, fallback) {
+          const v = Number(el.value);
+          return Number.isFinite(v) ? v : fallback;
+        }
+
+        function clamp(x, a, b) {
+          return Math.min(b, Math.max(a, x));
+        }
+
+        /** Snížení šumu z pointeru / převodu px→cm (jinak kolísá siloměr u hladiny). */
+        function quantizeDepthCm(cm) {
+          return Math.round(cm * 20) / 20;
+        }
+
+        /** Skupiny po 3 číslicích (řád tisíců / stovek …) — česká mezera. */
+        function formatIntCs(n) {
+          const x = Math.round(Number(n));
+          if (!Number.isFinite(x)) return String(n);
+          const neg = x < 0;
+          const s = String(Math.abs(x));
+          const parts = [];
+          for (let i = s.length; i > 0; i -= 3) {
+            parts.unshift(s.slice(Math.max(0, i - 3), i));
+          }
+          return (neg ? "-" : "") + parts.join(" ");
+        }
+
+        /** Desetinná čárka + skupiny v celé části. */
+        function formatDecimalCs(x, fracDigits) {
+          if (!Number.isFinite(x)) return String(x);
+          const neg = x < 0;
+          const ax = Math.abs(x);
+          const fixed = ax.toFixed(fracDigits);
+          const dot = fixed.indexOf(".");
+          const intRaw = dot === -1 ? fixed : fixed.slice(0, dot);
+          const dec = dot === -1 ? "" : fixed.slice(dot + 1);
+          const intFmt = formatIntCs(Number(intRaw));
+          if (fracDigits === 0 || dec === "") return (neg ? "-" : "") + intFmt;
+          return (neg ? "-" : "") + intFmt + "," + dec;
+        }
+
+        function fmtN(x) {
+          return formatDecimalCs(x, 2) + " N";
+        }
+
+        /** Stejné zaokrouhlení jako digitální siloměr (krok 0,005 N). */
+        function tensionDisplayedN(valueN) {
+          const x = Number(valueN);
+          if (!Number.isFinite(x) || Math.abs(x) < 1e-9) return 0;
+          return Math.round(x * 200) / 200;
+        }
+
+        function fmtG(x) {
+          return formatIntCs(x * 1000) + " g";
+        }
+
+        function fmtCm(x) {
+          return formatDecimalCs(x, 1) + " cm";
+        }
+
+        function updateMaterialUI() {
+          // už jen předdefinované materiály (bez vlastní hustoty)
+        }
+
+        function updateLiquidUI() {
+          // už jen předdefinované kapaliny (bez vlastní hustoty)
+        }
+
+        /** Zobrazená hrana krychle (cm), shodně jako ve weightFromInputs. */
+        function cubeDisplaySideCm(Vcm3) {
+          return Math.cbrt(Math.max(1, Vcm3)) * 2.0;
+        }
+
+        /** Zámek drží plné Vsub až do výrazně menší hloubky (exit > enter). */
+        function updateImmersionLock(wasLocked, bottomDepth, sideDispCm, waterH) {
+          if (sideDispCm <= 0 || bottomDepth > waterH + 1e-9) return false;
+          const enter = Math.max(0.48, sideDispCm * 0.058);
+          const exit = Math.max(0.82, sideDispCm * 0.102);
+          if (wasLocked) return bottomDepth >= sideDispCm - exit;
+          return bottomDepth + enter >= sideDispCm;
+        }
+
+        function weightFromInputs(materialKey, Vcm3, rhoW, xBottom, waterH, forceFullImmersion) {
+          const material = MATERIALS[materialKey] || MATERIALS.beton;
+          const rhoObj = Math.max(1, material.rho);
+          const V = Math.max(1, Vcm3) * 1e-6; // m3
+
+          // Tvar závaží: kostka. Pro čitelnost je v obrázku zvětšená,
+          // proto vztlak počítáme přes PODÍL ponoření (zobrazená výška) a ten aplikujeme na reálný objem V.
+          const sideCm = Math.cbrt(Math.max(1, Vcm3)); // cm (reálná hrana)
+          const displayScale = 2.0;
+          const sideDispCm = sideCm * displayScale; // cm (zobrazená hrana)
+
+          const bottom = xBottom; // cm (dno tělesa pod hladinou)
+          const top = bottom - sideDispCm; // cm (vršek tělesa pod hladinou)
+
+          let submergedCm = Math.max(0, Math.min(bottom, waterH) - Math.max(top, 0)); // cm
+          submergedCm = clamp(submergedCm, 0, sideDispCm);
+
+          let frac;
+          const fitsInWaterColumn = bottom <= waterH + 1e-9;
+          if (forceFullImmersion && fitsInWaterColumn) {
+            frac = 1;
+            submergedCm = sideDispCm;
+          } else {
+            frac = sideDispCm > 0 ? submergedCm / sideDispCm : 0;
+            frac = clamp(frac, 0, 1);
+            if (frac > 1 - 1e-6) frac = 1;
+            if (frac < 1e-6) frac = 0;
+          }
+
+          const Vsub = frac * V;
+          const W = rhoObj * g * V;
+          const B = rhoW * g * Vsub;
+          const Tfree = W - B;
+          const m = rhoObj * V;
+
+          return { materialKey, rhoObj, Vcm3, V, sideDispCm, frac, Vsub, W, B, Tfree, m };
+        }
+
+        /** Čte a normalizuje skryté pole hloubky (uživatelský index + cm dna pod hladinou). */
+        function readBottomDepthField(el, maxX, airGapCm, maxBottomDepth) {
+          const rawUser = num(el, 0);
+          let xUser = quantizeDepthCm(clamp(rawUser, 0, maxX));
+          let depthRaw = clamp(quantizeDepthCm(xUser - airGapCm), -airGapCm, maxBottomDepth);
+          xUser = depthRaw + airGapCm;
+          if (Math.abs(rawUser - xUser) > 1e-9) el.value = String(xUser);
+          return { xUser, xBottom: depthRaw };
+        }
+
+        function compute() {
+          // Nádoba a hladina jsou pevně dané (v UI se nezobrazují).
+          const tankHFixed = 40; // cm
+          const waterHFixed = 30; // cm
+
+          const liquidKey = String(els.liquid.value || "water");
+          const liquid = LIQUIDS[liquidKey] || LIQUIDS.water;
+          const rhoW = Math.max(1, liquid.rho);
+          const tankH = tankHFixed;
+          const waterH = clamp(waterHFixed, 0, tankH);
+
+          // Uživatelský posuv: 0 znamená, že závaží je kousek NAD hladinou.
+          // (aby bylo v klidu vidět "ve vzduchu", bez vztlaku)
+          const airGapCm = SUBMERSION_AIR_GAP_CM;
+          const maxBottomDepth = quantizeDepthCm(
+            Math.max(-airGapCm, waterH - TANK_BOTTOM_CLEARANCE_CM),
+          );
+          // Maximum posuvu: nejhlubší dno závaží + mezera nad hladinou.
+          const maxX = Math.max(0, maxBottomDepth + airGapCm);
+
+          const enable2 = !!(els.enable2 && els.enable2.checked);
+
+          const { xUser, xBottom: xBottom1 } = readBottomDepthField(
+            els.bottomDepth,
+            maxX,
+            airGapCm,
+            maxBottomDepth,
+          );
+          let xBottom2 = xBottom1;
+          let xUser2 = xUser;
+          if (enable2 && els.bottomDepth2) {
+            const r2 = readBottomDepthField(els.bottomDepth2, maxX, airGapCm, maxBottomDepth);
+            xUser2 = r2.xUser;
+            xBottom2 = r2.xBottom;
+          }
+
+          const V1 = Math.max(1, num(els.vol, 50));
+          const V2 = Math.max(1, num(els.vol2, 50));
+
+          if (lastV1ForImmersion !== V1) {
+            immersionLockedW1 = false;
+            lastV1ForImmersion = V1;
+          }
+          if (lastV2ForImmersion !== V2) {
+            immersionLockedW2 = false;
+            lastV2ForImmersion = V2;
+          }
+          if (!enable2) immersionLockedW2 = false;
+
+          const s1 = cubeDisplaySideCm(V1);
+          const s2 = cubeDisplaySideCm(V2);
+          immersionLockedW1 = updateImmersionLock(immersionLockedW1, xBottom1, s1, waterH);
+          if (enable2) immersionLockedW2 = updateImmersionLock(immersionLockedW2, xBottom2, s2, waterH);
+
+          const w1 = weightFromInputs(
+            String(els.material.value || "beton"),
+            V1,
+            rhoW,
+            xBottom1,
+            waterH,
+            immersionLockedW1,
+          );
+          const w2 = enable2
+            ? weightFromInputs(
+                String(els.material2.value || "beton"),
+                V2,
+                rhoW,
+                xBottom2,
+                waterH,
+                immersionLockedW2,
+              )
+            : null;
+
+          const wouldHitBottom1 = xBottom1 >= maxBottomDepth - 1e-4;
+          const wouldHitBottom2 = xBottom2 >= maxBottomDepth - 1e-4;
+          const T1 = wouldHitBottom1 && w1.Tfree > 0 ? Math.max(0, w1.Tfree) : w1.Tfree;
+          const T2 = w2 ? (wouldHitBottom2 && w2.Tfree > 0 ? Math.max(0, w2.Tfree) : w2.Tfree) : null;
+          const netDownIfFree = w1.Tfree + (w2 ? w2.Tfree : 0);
+          const waterRiseCm = 0; // zdvih hladiny od vytlačeného objemu vypnutý
+
+          return {
+            rhoW,
+            liquidKey,
+            tankH,
+            waterH,
+            waterRiseCm,
+            xUser,
+            xUser2: enable2 ? xUser2 : xUser,
+            xBottom: xBottom1,
+            xBottom2: enable2 ? xBottom2 : xBottom1,
+            T1,
+            T2,
+            w1,
+            w2,
+            wouldHitBottom: wouldHitBottom1 || wouldHitBottom2,
+            netDownIfFree,
+            maxBottomDepth,
+            maxUserCm: maxX,
+          };
+        }
+
+        function materialFlat(materialKey) {
+          const map = {
+            beton: "#8a8f94",
+            fe: "#5c6575",
+            cu: "#c2410c",
+            ag: "#c8d0da",
+            au: "#D4AF37",
+          };
+          return map[materialKey] || map.beton;
+        }
+
+        function stepWaterMotion(targetRiseCm, now, dVsubM3) {
+          const dt = clamp((now - waterMotion.lastTime) / 1000 || 0.016, 0.001, 0.04);
+          waterMotion.lastTime = now;
+
+          const targetDelta = targetRiseCm - waterMotion.lastTargetCm;
+          if (Math.abs(targetDelta) > 0.001) {
+            waterMotion.levelVelocityCm += targetDelta * 5.5;
+            waterMotion.waveVelocityCm += targetDelta * 9;
+            waterMotion.lastTargetCm = targetRiseCm;
+          }
+
+          /* Rychlé dorovnání výšky hladiny (bez skákání); vlny zůstávají jen jemné. */
+          const levelSettled =
+            Math.abs(targetRiseCm - waterMotion.levelCm) < 0.002 &&
+            Math.abs(waterMotion.levelVelocityCm) < 0.008;
+          if (levelSettled) {
+            waterMotion.levelCm = targetRiseCm;
+            waterMotion.levelVelocityCm = 0;
+          } else {
+            const levelAcceleration = (targetRiseCm - waterMotion.levelCm) * 38 - waterMotion.levelVelocityCm * 12;
+            waterMotion.levelVelocityCm += levelAcceleration * dt;
+            waterMotion.levelCm += waterMotion.levelVelocityCm * dt;
+          }
+
+          const rawRate = dVsubM3 / dt;
+          submergeRateSmoothed = submergeRateSmoothed * 0.84 + rawRate * 0.16;
+          const drive = clamp(submergeRateSmoothed * 3.8e6, -88, 88);
+
+          const waveAcceleration =
+            -waterMotion.waveCm * 38 - waterMotion.waveVelocityCm * 7 + drive;
+          waterMotion.waveVelocityCm += waveAcceleration * dt;
+          waterMotion.waveCm += waterMotion.waveVelocityCm * dt;
+          waterMotion.phase += dt * (1.55 + Math.min(5.5, Math.abs(waterMotion.waveCm) * 3.2));
+        }
+
+        function fillCircle(ctx, cx, cy, r) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        function strokeCircle(ctx, cx, cy, r) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        function liquidStyle(liquidKey) {
+          // Živější, sytější barvy (pořád průhledná výplň + výrazná hladina) — výraznější akvárium
+          if (liquidKey === "oil") {
+            return { fill: "rgba(245, 158, 11, 0.58)", line: "rgba(217, 119, 6, 0.96)" };
+          }
+          if (liquidKey === "ethanol") {
+            return { fill: "rgba(56, 189, 248, 0.38)", line: "rgba(14, 165, 233, 0.9)" };
+          }
+          if (liquidKey === "glycerin") {
+            return { fill: "rgba(52, 155, 195, 0.52)", line: "rgba(22, 118, 168, 0.95)" };
+          }
+          if (liquidKey === "sea") {
+            return { fill: "rgba(0, 191, 255, 0.52)", line: "rgba(0, 119, 200, 0.98)" };
+          }
+          // water (default)
+          return { fill: "rgba(59, 130, 246, 0.52)", line: "rgba(29, 78, 216, 0.96)" };
+        }
+
+        const DESIGN_W = 1200;
+        const DESIGN_H = 1320;
+
+        /** Aktuální měřítko mezi designovým plátnem (1200×1320) a CSS velikostí canvasu. */
+        let canvasLayoutScale = 1;
+        /** devicePixelRatio, omezené kvůli výkonu. */
+        let canvasDpr = 1;
+
+        function syncCanvasSize() {
+          if (!els.vizColumn || !els.cv) return;
+          const col = els.vizColumn.getBoundingClientRect();
+          const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+          const margin = 12;
+          const maxH = Math.max(220, vh - col.top - margin);
+          const maxW = Math.max(200, col.width);
+          canvasLayoutScale = Math.min(maxW / DESIGN_W, maxH / DESIGN_H, 2.75);
+          canvasDpr = Math.min(2, window.devicePixelRatio || 1);
+
+          const cssW = DESIGN_W * canvasLayoutScale;
+          const cssH = DESIGN_H * canvasLayoutScale;
+          els.cv.style.width = cssW + "px";
+          els.cv.style.height = cssH + "px";
+          els.cv.width = Math.max(1, Math.round(DESIGN_W * canvasDpr * canvasLayoutScale));
+          els.cv.height = Math.max(1, Math.round(DESIGN_H * canvasDpr * canvasLayoutScale));
+        }
+
+        function designFromClient(clientX, clientY) {
+          const r = els.cv.getBoundingClientRect();
+          if (r.width <= 0 || r.height <= 0) return null;
+          return {
+            x: ((clientX - r.left) / r.width) * DESIGN_W,
+            y: ((clientY - r.top) / r.height) * DESIGN_H,
+          };
+        }
+
+        function hitWeightBox(px, py, pad) {
+          const p = pad == null ? 20 : pad;
+          const cand = [lastWeightBoxes.w2, lastWeightBoxes.w1].filter(Boolean);
+          for (const b of cand) {
+            if (px >= b.x - p && px <= b.x + b.w + p && py >= b.y - p && py <= b.y + b.h + p) {
+              return b;
+            }
+          }
+          return null;
+        }
+
+        function applyDragToSubmersion(pointerYDesign) {
+          if (!lastDragGeom) return;
+          const g = lastDragGeom;
+          const newBottomY = pointerYDesign - dragWeight.grabOffsetY;
+          let xBottom = (newBottomY - g.baseYWater) / g.pxPerCm;
+          xBottom = quantizeDepthCm(clamp(xBottom, -g.airGapCm, g.maxBottomDepth));
+          const xUser = clamp(xBottom + g.airGapCm, 0, g.maxUserCm);
+          const el =
+            dragWeight.which === "w2" && els.bottomDepth2 ? els.bottomDepth2 : els.bottomDepth;
+          el.value = String(xUser);
+        }
+
+        function draw(s) {
+          const ctx = els.cv.getContext("2d");
+          ctx.setTransform(canvasDpr * canvasLayoutScale, 0, 0, canvasDpr * canvasLayoutScale, 0, 0);
+          ctx.clearRect(0, 0, DESIGN_W, DESIGN_H);
+
+          /** Siloměr: o ~10 % menší a posunutý výš nad závaží. */
+          const Z = 2;
+          const SCALE_SHRINK = 0.9;
+          const SCALE_W = 278 * Z * SCALE_SHRINK;
+          const SCALE_H = 162 * Z * SCALE_SHRINK;
+          const scaleLiftPx = 26 * Z;
+
+          const pad = 28 * Z;
+          const topY = pad;
+          const scaleTopY = topY - scaleLiftPx;
+          const tankW = 480 * Z;
+          const tankHpx = 460 * Z;
+          const tankX = Math.round(pad + (DESIGN_W - 2 * pad - tankW) / 2);
+          const tankY = pad + 150 * Z;
+          const scaleCenterX = tankX + tankW / 2;
+
+          const pxPerCm = tankHpx / Math.max(1, s.tankH);
+          const baseYWater = tankY + (s.tankH - s.waterH) * pxPerCm;
+          const visualWaterH = clamp(s.waterH + waterMotion.levelCm, 0, s.tankH);
+          const yWater = tankY + (s.tankH - visualWaterH) * pxPerCm;
+          const yBottom = tankY + tankHpx;
+          const waveAmp = clamp(Math.abs(waterMotion.waveCm) * pxPerCm, 0, 9.5 * Z);
+
+          /** Hák siloměru bez vykreslení těla (závěs se kreslí dřív, siloměr navrch). */
+          function scaleHook(centerX) {
+            return { hookX: centerX, hookBottomY: scaleTopY + SCALE_H };
+          }
+
+          function drawScaleAt(centerX, valueN) {
+            const scaleW = SCALE_W;
+            const scaleH = SCALE_H;
+            const scaleX = Math.round(centerX - scaleW / 2);
+            const scaleY = scaleTopY;
+            const hookX = centerX;
+            const hookBottomY = scaleY + scaleH;
+
+            const bodyFill =
+              getComputedStyle(document.documentElement).getPropertyValue("--scale-body").trim() ||
+              "#ffffff";
+            const bodyBorder =
+              getComputedStyle(document.documentElement).getPropertyValue("--scale-border").trim() ||
+              "#e2e5eb";
+            const rBody = 14 * Z * SCALE_SHRINK;
+            const rDisp = 10 * Z * SCALE_SHRINK;
+            const mSide = 14 * Z * SCALE_SHRINK;
+            const mTop = 12 * Z * SCALE_SHRINK;
+
+            ctx.fillStyle = bodyFill;
+            ctx.strokeStyle = bodyBorder;
+            ctx.lineWidth = Math.max(2, 1.5 * Z * SCALE_SHRINK);
+            roundRect(ctx, scaleX, scaleY, scaleW, scaleH, rBody, true, false);
+
+            const dispX = scaleX + mSide;
+            const dispY = scaleY + mTop;
+            const dispW = scaleW - 2 * mSide;
+            const dispH = 112 * Z * SCALE_SHRINK;
+            const readBg =
+              getComputedStyle(document.documentElement).getPropertyValue("--readout-bg").trim() ||
+              "#f4f5f8";
+            ctx.fillStyle = readBg;
+            roundRect(ctx, dispX, dispY, dispW, dispH, rDisp, true, false);
+            ctx.strokeStyle = bodyBorder;
+            ctx.lineWidth = Math.max(1, Z * SCALE_SHRINK);
+            roundRect(ctx, dispX, dispY, dispW, dispH, rDisp, false, true);
+
+            const readTx =
+              getComputedStyle(document.documentElement).getPropertyValue("--readout-text").trim() ||
+              "#171923";
+            ctx.fillStyle = readTx;
+            const fontPx = 78 * Z * SCALE_SHRINK;
+            ctx.font = `800 ${fontPx}px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            const tDisp = tensionDisplayedN(valueN);
+            const txt = formatDecimalCs(tDisp, 2) + " N";
+            ctx.shadowColor = "rgba(94, 184, 255, 0.55)";
+            ctx.shadowBlur = 16 * Z * SCALE_SHRINK;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.fillText(txt, dispX + dispW / 2, dispY + dispH / 2);
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = "transparent";
+            return { hookX, hookBottomY };
+          }
+
+          const liq = liquidStyle(s.liquidKey);
+          const tankBottomR = Math.min(18 * Z, tankW * 0.06, tankHpx * 0.05);
+          function waveY(x) {
+            const t = (x - tankX) / tankW;
+            const env = Math.sin(t * Math.PI);
+            const p = waterMotion.phase;
+            const surf =
+              Math.sin(t * Math.PI * 2.6 + p) * 0.4 +
+              Math.sin(t * Math.PI * 5.1 + p * 1.18) * 0.24 +
+              Math.sin(t * Math.PI * 8.2 + p * 0.75) * 0.13;
+            const micro = 0.48 * Z * Math.sin(t * Math.PI * 4 + p * 2.45);
+            return yWater + waveAmp * env * surf + micro * env;
+          }
+
+          ctx.save();
+          const inset = 2 * Z;
+          const il = tankX + inset;
+          const ir = tankX + tankW - inset;
+          const it = tankY + inset;
+          const ib = yBottom - inset;
+          const innerBR = Math.max(4 * Z, Math.min(tankBottomR, (ir - il) / 2 - 2 * Z, (ib - it) / 4));
+          ctx.beginPath();
+          ctx.moveTo(il, it);
+          ctx.lineTo(il, ib - innerBR);
+          ctx.arcTo(il, ib, il + innerBR, ib, innerBR);
+          ctx.lineTo(ir - innerBR, ib);
+          ctx.arcTo(ir, ib, ir, ib - innerBR, innerBR);
+          ctx.lineTo(ir, it);
+          ctx.closePath();
+          ctx.clip();
+          ctx.fillStyle = liq.fill;
+          ctx.beginPath();
+          ctx.moveTo(il, waveY(il));
+          for (let i = 0; i <= 72; i++) {
+            const wx = il + ((ir - il) * i) / 72;
+            ctx.lineTo(wx, waveY(wx));
+          }
+          ctx.lineTo(ir, waveY(ir));
+          ctx.lineTo(ir, ib - innerBR);
+          ctx.arcTo(ir, ib, ir - innerBR, ib, innerBR);
+          ctx.lineTo(il + innerBR, ib);
+          ctx.arcTo(il, ib, il, ib - innerBR, innerBR);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+
+          // Akvárium — výrazný obrys + měkký „neon“ pod světlem tokijské noci
+          const tankStroke =
+            getComputedStyle(document.documentElement).getPropertyValue("--tank-glass-stroke").trim() ||
+            "#b6c0cf";
+          const tankGlow =
+            getComputedStyle(document.documentElement).getPropertyValue("--tank-glass-glow").trim() ||
+            "rgba(120, 180, 255, 0.55)";
+          ctx.save();
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.moveTo(tankX, tankY);
+          ctx.lineTo(tankX, yBottom - tankBottomR);
+          ctx.arcTo(tankX, yBottom, tankX + tankBottomR, yBottom, tankBottomR);
+          ctx.lineTo(tankX + tankW - tankBottomR, yBottom);
+          ctx.arcTo(tankX + tankW, yBottom, tankX + tankW, yBottom - tankBottomR, tankBottomR);
+          ctx.lineTo(tankX + tankW, tankY);
+          ctx.strokeStyle = tankGlow;
+          ctx.lineWidth = 14 * Z;
+          ctx.shadowColor = tankGlow;
+          ctx.shadowBlur = 22 * Z;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = tankStroke;
+          ctx.lineWidth = 6.5 * Z;
+          ctx.stroke();
+          ctx.restore();
+
+          const w1 = s.w1;
+          const w2 = s.w2;
+
+          const s1px = clamp(w1.sideDispCm * pxPerCm, 72 * Z, 260 * Z);
+          const s2px = w2 ? clamp(w2.sideDispCm * pxPerCm, 72 * Z, 260 * Z) : 0;
+
+          const scales = w2
+            ? [scaleCenterX - 170 * Z, scaleCenterX + 170 * Z]
+            : [scaleCenterX];
+
+          const hook1 = scaleHook(scales[0]);
+          const hook2 = w2 ? scaleHook(scales[1]) : null;
+
+          function drawWeightUnder(hook, sizePx, materialKey, bottomCm) {
+            const yBottomWeight = baseYWater + bottomCm * pxPerCm;
+            const x = clamp(hook.hookX - sizePx / 2, tankX + 8 * Z, tankX + tankW - sizePx - 8 * Z);
+            const y = yBottomWeight - sizePx;
+            const attachX = x + sizePx / 2;
+            const attachY = y - 8 * Z;
+
+            const rope =
+              getComputedStyle(document.documentElement).getPropertyValue("--rope").trim() ||
+              "#9ca3af";
+            const hx = hook.hookX;
+            const hy = hook.hookBottomY;
+            ctx.strokeStyle = rope;
+            ctx.lineWidth = Math.max(2.5, 3 * Z);
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(hx, hy);
+            ctx.lineTo(attachX, attachY);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.globalAlpha = 1;
+
+            const acc =
+              getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() ||
+              "#3d5a9a";
+            ctx.fillStyle = acc;
+            ctx.shadowColor = "rgba(94, 184, 255, 0.65)";
+            ctx.shadowBlur = 10 * Z;
+            fillCircle(ctx, attachX, attachY, 5 * Z);
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = materialFlat(materialKey);
+            ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+            ctx.shadowBlur = 18 * Z;
+            ctx.shadowOffsetY = 6 * Z;
+            roundRect(ctx, x, y, sizePx, sizePx, 10 * Z, true, false);
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.strokeStyle =
+              getComputedStyle(document.documentElement).getPropertyValue("--weight-stroke").trim() ||
+              "rgba(23, 25, 35, 0.14)";
+            ctx.lineWidth = Math.max(2.5, 3.2 * Z);
+            roundRect(ctx, x, y, sizePx, sizePx, 10 * Z, false, true);
+
+            const dotR = Math.max(2, 2.15 * Z);
+            const midX = x + sizePx / 2;
+            const midY = y + sizePx / 2;
+            const step = Math.max(8 * Z, sizePx * 0.14);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+            ctx.lineWidth = Math.max(1.1, 0.55 * Z);
+            for (let row = -1; row <= 1; row++) {
+              for (let col = -1; col <= 1; col++) {
+                const dcx = midX + col * step;
+                const dcy = midY + row * step;
+                fillCircle(ctx, dcx, dcy, dotR);
+                strokeCircle(ctx, dcx, dcy, dotR);
+              }
+            }
+
+            const surfY = waveY(midX);
+            const yBot = y + sizePx;
+            const subTop = Math.max(y, surfY);
+            if (subTop < yBot - 0.5) {
+              ctx.save();
+              ctx.globalAlpha = 1;
+              const rCorner = 10 * Z;
+              const cr = Math.min(rCorner, sizePx / 2);
+              ctx.beginPath();
+              ctx.moveTo(x + cr, y);
+              ctx.arcTo(x + sizePx, y, x + sizePx, y + sizePx, cr);
+              ctx.arcTo(x + sizePx, y + sizePx, x, y + sizePx, cr);
+              ctx.arcTo(x, y + sizePx, x, y, cr);
+              ctx.arcTo(x, y, x + sizePx, y, cr);
+              ctx.closePath();
+              ctx.clip();
+              ctx.fillStyle = liq.fill;
+              ctx.fillRect(x - 3, subTop - 3, sizePx + 6, yBot - subTop + 6);
+              ctx.restore();
+            }
+
+            ctx.restore();
+            return { x, y, w: sizePx, h: sizePx };
+          }
+
+          const w1Box = drawWeightUnder(hook1, s1px, w1.materialKey, s.xBottom);
+          const w2Box =
+            w2 && hook2 ? drawWeightUnder(hook2, s2px, w2.materialKey, s.xBottom2) : null;
+
+          drawScaleAt(scales[0], s.T1);
+          if (w2) drawScaleAt(scales[1], s.T2);
+
+          lastWeightBoxes = {
+            w1: { x: w1Box.x, y: w1Box.y, w: w1Box.w, h: w1Box.h, key: "w1" },
+            w2: w2Box ? { x: w2Box.x, y: w2Box.y, w: w2Box.w, h: w2Box.h, key: "w2" } : null,
+          };
+          lastDragGeom = {
+            pxPerCm,
+            baseYWater,
+            waterH: s.waterH,
+            airGapCm: SUBMERSION_AIR_GAP_CM,
+            maxBottomDepth: s.maxBottomDepth,
+            maxUserCm: s.maxUserCm,
+          };
+
+          if (dragWeight.pointerId != null) {
+            els.cv.style.cursor = "grabbing";
+          } else if (canvasPointerDesign && hitWeightBox(canvasPointerDesign.x, canvasPointerDesign.y, 24)) {
+            els.cv.style.cursor = "grab";
+          } else {
+            els.cv.style.cursor = "";
+          }
+        }
+
+        function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+          const rr = Math.min(r, w / 2, h / 2);
+          ctx.beginPath();
+          ctx.moveTo(x + rr, y);
+          ctx.arcTo(x + w, y, x + w, y + h, rr);
+          ctx.arcTo(x + w, y + h, x, y + h, rr);
+          ctx.arcTo(x, y + h, x, y, rr);
+          ctx.arcTo(x, y, x + w, y, rr);
+          ctx.closePath();
+          if (fill) ctx.fill();
+          if (stroke) ctx.stroke();
+        }
+
+        function render() {
+          updateMaterialUI();
+          updateLiquidUI();
+          const s = compute();
+
+          if (els.outV && els.vol) els.outV.textContent = formatIntCs(Math.round(num(els.vol, 50))) + " cm³";
+          if (els.outV2 && els.vol2) els.outV2.textContent = formatIntCs(Math.round(num(els.vol2, 50))) + " cm³";
+          stepWaterMotion(s.waterRiseCm, performance.now(), consumeSubmersionDeltaM3(s));
+          draw(s);
+        }
+
+        function animate(now) {
+          const s = compute();
+          if (els.outV && els.vol) els.outV.textContent = formatIntCs(Math.round(num(els.vol, 50))) + " cm³";
+          if (els.outV2 && els.vol2) els.outV2.textContent = formatIntCs(Math.round(num(els.vol2, 50))) + " cm³";
+          stepWaterMotion(s.waterRiseCm, now, consumeSubmersionDeltaM3(s));
+          draw(s);
+          requestAnimationFrame(animate);
+        }
+
+        function onResizeCanvas() {
+          syncCanvasSize();
+        }
+
+        window.addEventListener("resize", onResizeCanvas);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", onResizeCanvas);
+        }
+        if (els.vizColumn && typeof ResizeObserver !== "undefined") {
+          new ResizeObserver(onResizeCanvas).observe(els.vizColumn);
+        }
+
+        function onAnyChange() {
+          render();
+        }
+
+        // events
+        els.material.addEventListener("change", () => {
+          updateMaterialUI();
+          render();
+        });
+        els.vol.addEventListener("input", onAnyChange);
+        if (els.enable2 && els.w2Wrap) {
+          const sync2Vis = () => {
+            const on = els.enable2.checked;
+            if (on && !prevEnable2 && els.bottomDepth2) {
+              els.bottomDepth2.value = els.bottomDepth.value;
+              if (els.vol2 && els.vol) els.vol2.value = els.vol.value;
+            }
+            prevEnable2 = on;
+            els.w2Wrap.style.display = on ? "grid" : "none";
+            render();
+          };
+          els.enable2.addEventListener("change", sync2Vis);
+          sync2Vis();
+        }
+        if (els.material2) els.material2.addEventListener("change", onAnyChange);
+        if (els.vol2) els.vol2.addEventListener("input", onAnyChange);
+        els.liquid.addEventListener("change", () => {
+          updateLiquidUI();
+          render();
+        });
+
+        function endWeightDrag(e) {
+          if (dragWeight.pointerId != null && e.pointerId === dragWeight.pointerId) {
+            try {
+              els.cv.releasePointerCapture(e.pointerId);
+            } catch (_) {
+              /* ignore */
+            }
+            dragWeight.pointerId = null;
+            dragWeight.which = null;
+          }
+        }
+
+        els.cv.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          const d = designFromClient(e.clientX, e.clientY);
+          if (!d) return;
+          const box = hitWeightBox(d.x, d.y, 24);
+          if (!box) return;
+          dragWeight.pointerId = e.pointerId;
+          dragWeight.which = box.key || "w1";
+          dragWeight.grabOffsetY = d.y - (box.y + box.h);
+          els.cv.setPointerCapture(e.pointerId);
+          e.preventDefault();
+        });
+
+        els.cv.addEventListener("pointermove", (e) => {
+          const d = designFromClient(e.clientX, e.clientY);
+          if (dragWeight.pointerId == null) {
+            canvasPointerDesign = d;
+          }
+          if (dragWeight.pointerId != null && e.pointerId === dragWeight.pointerId && d) {
+            applyDragToSubmersion(d.y);
+            e.preventDefault();
+          }
+        });
+
+        els.cv.addEventListener("pointerup", endWeightDrag);
+        els.cv.addEventListener("pointercancel", endWeightDrag);
+        els.cv.addEventListener("pointerleave", () => {
+          if (dragWeight.pointerId == null) {
+            canvasPointerDesign = null;
+          }
+        });
+
+        // init
+        updateMaterialUI();
+        syncCanvasSize();
+        requestAnimationFrame(animate);
+      })();
+    </script>
+
+    <noscript>
+      <p style="padding: 1rem; text-align: center; color: var(--muted, #8b95ab)">
+        Zapni JavaScript — bez něj simulace nefunguje.
+      </p>
+    </noscript>
+  </body>
+</html>
+

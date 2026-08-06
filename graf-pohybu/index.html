@@ -1,0 +1,3018 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Graf pohybu</title>
+  <style>
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
+        format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --axis: #1e6bb8;
+      --grid: rgba(30, 107, 184, 0.22);
+      --track: #111;
+      --bg: #f4f7fb;
+      --panel: #fff;
+      --panel-bg: #ffffff;
+      --accent: #3d5a9a;
+      --accent-hover: #334b81;
+      --text: #171923;
+      --muted: #6b7280;
+      --border: #e8eaef;
+      --focus: #3d5a9a;
+      --area-muted: #eceff5;
+      --readout-bg: #f4f5f8;
+      --handle: #1e6bb8;
+      --square: #c8ccd4;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select,
+    label {
+      font-family: inherit;
+    }
+
+    .app {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      align-content: stretch;
+      gap: clamp(10px, 1.8vw, 20px);
+      width: 100%;
+      margin: 0 auto;
+      padding: clamp(8px, 1.2vw, 14px);
+      min-height: 100dvh;
+      box-sizing: border-box;
+    }
+
+    .viz-column {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(10px, 1.5vh, 16px);
+    }
+
+    .chart-wrap {
+      flex: 1 1 0;
+      min-height: min(240px, 42vh);
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: clamp(12px, 1.4vw, 18px) clamp(12px, 1.4vw, 18px) 8px;
+      border: 1px solid var(--border);
+    }
+
+    .chart-svg {
+      display: block;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+      max-height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .chart-svg text {
+      -webkit-user-select: none;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .track-section {
+      flex: 0 0 auto;
+      margin-top: 0;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 10px 14px 6px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /**
+     * ViewBox má horní rezervu (záporné min-y), aby nebyla ořezaná hlava SVG cyklisty.
+     */
+    .track-section > .track-svg {
+      display: block;
+      width: 100%;
+      flex: 0 0 auto;
+      height: auto;
+      aspect-ratio: 648 / 116;
+      margin-left: 0;
+      margin-right: 0;
+      max-width: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .track-section > .track-svg text {
+      -webkit-user-select: none;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .track-section .cyclist-jet {
+      animation: cyclist-jet-pulse 0.14s ease-in-out infinite;
+    }
+
+    @keyframes cyclist-jet-pulse {
+      0%,
+      100% {
+        opacity: 1;
+      }
+      45% {
+        opacity: 0.76;
+      }
+      72% {
+        opacity: 0.93;
+      }
+    }
+
+    .setup-panel {
+      flex: 0 0 min(320px, 100%);
+      align-self: stretch;
+      overflow: auto;
+      padding: 18px;
+      border-radius: 22px;
+      scrollbar-gutter: stable;
+      color-scheme: light;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+    }
+
+    .panel-title {
+      margin: 0 0 6px;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .controls {
+      display: grid;
+      gap: 20px;
+    }
+
+    .row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .row-label {
+      font-weight: 650;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .actions-row button {
+      flex: 1 1 auto;
+      min-width: min(100%, 7rem);
+    }
+
+    .dual-graph-block {
+      display: grid;
+      gap: 10px;
+    }
+
+    .graph-target-wrap.graph-target-under-dual {
+      margin-left: 0;
+      padding-left: 0;
+      border-left: none;
+    }
+
+    .graph-target-wrap[hidden] {
+      display: none !important;
+    }
+
+    .graph-axis-y-panel .graph-target-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .graph-axis-y-panel .graph-target-label {
+      font-weight: 650;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .hub-back-to-sims {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--area-muted);
+      color: var(--text);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .hub-back-to-sims:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    button {
+      font: inherit;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      background: var(--panel-bg);
+      color: var(--accent);
+      border-color: var(--border);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--readout-bg);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .timer {
+      font-variant-numeric: tabular-nums;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--readout-bg);
+      width: 100%;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    .dual-check,
+    .graph-target-wrap label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .dual-check input,
+    .graph-target-wrap input {
+      margin-right: 8px;
+      vertical-align: middle;
+      accent-color: var(--accent);
+    }
+
+    .graph-target-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+    }
+
+    .graph-target-wrap input:disabled {
+      cursor: not-allowed;
+    }
+
+    .graph-mode-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .graph-mode-wrap label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .graph-mode-wrap input {
+      margin-right: 8px;
+      vertical-align: middle;
+      accent-color: var(--accent);
+    }
+
+    .custom-graph-panel {
+      flex: 0 0 auto;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      display: grid;
+      gap: 10px;
+    }
+
+    .custom-graph-panel[hidden] {
+      display: none !important;
+    }
+
+    .custom-graph-panel .row-label {
+      margin: 0;
+    }
+
+    .custom-axis-settings {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 699.98px) {
+      .custom-axis-settings {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .custom-axis-block {
+      margin: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--readout-bg);
+      display: grid;
+      gap: 8px;
+    }
+
+    .custom-axis-block legend {
+      font-size: 0.8125rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+
+    .custom-axis-inline-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    @media (max-width: 479.98px) {
+      .custom-axis-inline-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .custom-field {
+      display: grid;
+      gap: 4px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .custom-field > input,
+    .custom-step-input input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .custom-step-input {
+      position: relative;
+      display: block;
+    }
+
+    .custom-step-input input {
+      padding-right: 2.1rem;
+    }
+
+    .custom-step-spin {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      bottom: 1px;
+      width: 1.65rem;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-radius: 0 7px 7px 0;
+      overflow: hidden;
+    }
+
+    .custom-step-btn {
+      flex: 1 1 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: var(--readout-bg);
+      color: var(--muted);
+      padding: 0;
+      font-size: 0.62rem;
+      line-height: 1;
+      cursor: pointer;
+      min-height: 0;
+    }
+
+    .custom-step-btn:hover {
+      background: var(--area-muted);
+      color: var(--text);
+    }
+
+    .custom-step-btn:active {
+      background: var(--border);
+    }
+
+    .custom-step-btn + .custom-step-btn {
+      border-top: 1px solid var(--border);
+    }
+
+    .custom-field > input:focus,
+    .custom-step-input input:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: 1px;
+    }
+
+    .track-section[hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 899.98px) {
+      .app {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding-left: max(8px, env(safe-area-inset-left, 0px));
+        padding-right: max(8px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        padding-top: max(8px, env(safe-area-inset-top, 0px));
+        gap: 12px;
+      }
+
+      .viz-column {
+        order: 1;
+        flex: 1 1 auto;
+        min-height: min(52vh, 560px);
+        width: 100%;
+      }
+
+      .setup-panel {
+        order: 2;
+        flex: 0 1 auto;
+        width: 100%;
+        max-height: min(46vh, 520px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        border-radius: 18px;
+        padding: 14px 16px;
+      }
+
+      .chart-wrap {
+        flex: 1 1 55%;
+        min-height: 200px;
+      }
+
+      .track-section {
+        flex: 0 0 auto;
+      }
+    }
+
+    .help-dialog {
+      max-width: min(520px, calc(100vw - 48px));
+      padding: 0;
+      border: 1px solid #dde3ec;
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
+    }
+
+    .help-dialog::backdrop {
+      background: rgba(26, 26, 26, 0.35);
+    }
+
+    .help-dialog-inner {
+      padding: 20px 22px 22px;
+    }
+
+    .help-dialog-inner h2 {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .help-dialog-inner p {
+      margin: 0 0 18px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .help-dialog-inner > button {
+      margin-top: 16px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="setup-panel" aria-label="Nastavení">
+      <div class="controls">
+        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <h1 class="panel-title">Graf pohybu</h1>
+
+        <div class="row">
+          <span class="row-label">Akce</span>
+          <div class="actions-row" aria-label="Akce simulace">
+            <button type="button" id="btnRun">Spustit</button>
+            <button type="button" id="btnUndo" class="secondary" disabled>Zpět</button>
+            <button type="button" id="btnReset" class="secondary">Reset</button>
+            <button type="button" id="btnHelp" class="secondary">Nápověda</button>
+          </div>
+        </div>
+
+        <div id="timerRow" class="row" aria-label="Časomíra">
+          <span class="row-label">Čas</span>
+          <span class="timer" id="timer" aria-live="polite">00 : 00</span>
+        </div>
+
+        <div class="row">
+          <span class="row-label">Režim</span>
+          <div class="graph-mode-wrap">
+            <label><input type="radio" name="graphMode" value="cyclist" checked /> Cyklista</label>
+            <label><input type="radio" name="graphMode" value="custom" /> Vlastní graf</label>
+          </div>
+        </div>
+
+        <div id="axisYCyclistPanel" class="row graph-axis-y-panel">
+          <span class="graph-target-wrap axis-y-wrap">
+            <span class="graph-target-label">Osa Y</span>
+            <label><input type="radio" name="axisY" value="start" checked /> Vzdálenost od startu</label>
+            <label><input type="radio" name="axisY" value="cumulative" /> Celkově ujetá vzdálenost</label>
+            <label><input type="radio" name="axisY" value="velocity" /> Rychlost</label>
+          </span>
+        </div>
+
+        <div id="dualGraphRow" class="row">
+          <span class="row-label">Grafy</span>
+          <div class="dual-graph-block">
+            <label class="dual-check">
+              <input type="checkbox" id="chkDualGraph" />
+              Dva cyklisti
+            </label>
+            <span id="graphTargetWrap" class="graph-target-wrap graph-target-under-dual" hidden>
+              <span class="graph-target-label">Upravovat</span>
+              <label><input type="radio" name="graphTarget" value="1" checked disabled /> graf 1</label>
+              <label><input type="radio" name="graphTarget" value="2" disabled /> graf 2</label>
+            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="viz-column" aria-label="Simulace">
+      <div class="chart-wrap">
+        <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
+      </div>
+      <div id="customGraphPanel" class="custom-graph-panel" hidden aria-label="Nastavení vlastních os">
+        <span class="row-label">Vlastní osy</span>
+        <div class="custom-axis-settings">
+          <fieldset class="custom-axis-block">
+            <legend>Osa X</legend>
+            <label class="custom-field">
+              Název
+              <input type="text" id="customXName" value="Čas" maxlength="40" />
+            </label>
+            <div class="custom-axis-inline-row">
+              <label class="custom-field">
+                Jednotka
+                <input type="text" id="customXUnit" value="s" maxlength="16" />
+              </label>
+              <label class="custom-field">
+                Velikost dílku
+                <div class="custom-step-input">
+                  <input type="text" id="customXStep" value="1" inputmode="decimal" autocomplete="off" />
+                  <span class="custom-step-spin">
+                    <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose X">▲</button>
+                    <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose X">▼</button>
+                  </span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset class="custom-axis-block">
+            <legend>Osa Y</legend>
+            <label class="custom-field">
+              Název
+              <input type="text" id="customYName" value="" maxlength="40" placeholder="např. Teplota" />
+            </label>
+            <div class="custom-axis-inline-row">
+              <label class="custom-field">
+                Jednotka
+                <input type="text" id="customYUnit" value="" maxlength="16" placeholder="např. m, kg, °C" />
+              </label>
+              <label class="custom-field">
+                Velikost dílku
+                <div class="custom-step-input">
+                  <input type="text" id="customYStep" value="1" inputmode="decimal" autocomplete="off" />
+                  <span class="custom-step-spin">
+                    <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose Y">▲</button>
+                    <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose Y">▼</button>
+                  </span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+      <div id="trackSection" class="track-section">
+        <svg id="track" class="track-svg" viewBox="0 -34 648 116" preserveAspectRatio="xMidYMin meet" aria-label="Dráha"></svg>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="helpDialog" class="help-dialog" aria-labelledby="helpDialogTitle">
+    <div class="help-dialog-inner">
+      <h2 id="helpDialogTitle">Tvorba grafu</h2>
+      <p>
+        Kliknutím přidej bod grafu. Body je možné posunovat. Dvojklikem bod zrušíš.
+        Tlačítkem Zpět vrátíš poslední úpravu grafu.
+        U čar mřížky se bod jemně přitahuje; dál od nich lze zadat hodnotu i mezi dílky.
+      </p>
+      <button type="button" id="helpDialogClose" class="secondary">Zavřít</button>
+    </div>
+  </dialog>
+
+  <script>
+(function () {
+  const T_MAX = 12;
+  const S_MAX = 8;
+  /** Na svislé ose v režimu „Rychlost“: jeden dílek mřížky = tolik m/s (horní dílek = S_MAX × toto). */
+  const VELOCITY_AXIS_MPS_PER_DIV = 2;
+  /** Jedna dílka na vodorovné časové ose [s] */
+  const TIME_AXIS_STEP = 1;
+
+  /** Tolerance přitahu k čáře mřížky ve viewBox souřadnicích grafu (mimo ni lze vložit libovolně). */
+  const CHART_GRID_SNAP_PX = 7;
+
+  function velocityGraphMaxMps() {
+    return S_MAX * VELOCITY_AXIS_MPS_PER_DIV;
+  }
+
+  const chartEl = document.getElementById("chart");
+  const trackEl = document.getElementById("track");
+  const trackSection = document.getElementById("trackSection");
+  const timerRow = document.getElementById("timerRow");
+  const axisYCyclistPanel = document.getElementById("axisYCyclistPanel");
+  const customGraphPanel = document.getElementById("customGraphPanel");
+  const dualGraphRow = document.getElementById("dualGraphRow");
+  const customXName = document.getElementById("customXName");
+  const customXUnit = document.getElementById("customXUnit");
+  const customXStep = document.getElementById("customXStep");
+  const customYName = document.getElementById("customYName");
+  const customYUnit = document.getElementById("customYUnit");
+  const customYStep = document.getElementById("customYStep");
+  const btnRun = document.getElementById("btnRun");
+  const btnUndo = document.getElementById("btnUndo");
+  const btnReset = document.getElementById("btnReset");
+  const btnHelp = document.getElementById("btnHelp");
+  const chkDualGraph = document.getElementById("chkDualGraph");
+  const graphTargetWrap = document.getElementById("graphTargetWrap");
+  const helpDialog = document.getElementById("helpDialog");
+  const helpDialogClose = document.getElementById("helpDialogClose");
+  const timerEl = document.getElementById("timer");
+
+  /** Plot margins inside SVG viewBox */
+  const ml = 78;
+  const mr = 28;
+  const mt = 28;
+  const mb = 44;
+  const W = 648;
+  const H = 340;
+  const pw = W - ml - mr;
+  const ph = H - mt - mb;
+  /** Barvy grafů = barvy helem cyklistů. */
+  const GRAPH1_COLOR = "#FF184A";
+  const GRAPH2_COLOR = "#2563EB";
+  /** Druhý jezdec — modrá helma. */
+  const RIDER2_HELMET_FILL = GRAPH2_COLOR;
+  const RIDER2_HELMET_STROKE = "#1D4ED8";
+
+  function tToX(t) {
+    return ml + (t / T_MAX) * pw;
+  }
+
+  function sToY(s) {
+    return mt + ph - (s / S_MAX) * ph;
+  }
+
+  function xToT(x) {
+    const t = ((x - ml) / pw) * T_MAX;
+    return Math.min(T_MAX, Math.max(0, t));
+  }
+
+  function yToS(y) {
+    const s = ((mt + ph - y) / ph) * S_MAX;
+    return Math.min(S_MAX, Math.max(0, s));
+  }
+
+  /** Osa rychlosti: výška grafu = 0…S_MAX „dílků“, 1 dílek = VELOCITY_AXIS_MPS_PER_DIV m/s. */
+  function vToY(vMps) {
+    return sToY(vMps / VELOCITY_AXIS_MPS_PER_DIV);
+  }
+
+  function yToV(y) {
+    return yToS(y) * VELOCITY_AXIS_MPS_PER_DIV;
+  }
+
+  function snapChartXToTimeGrid(x) {
+    const xP = Math.min(ml + pw, Math.max(ml, x));
+    const tRaw = xToT(xP);
+    const tGrid =
+      Math.round(tRaw / TIME_AXIS_STEP) * TIME_AXIS_STEP;
+    const tSn = Math.min(T_MAX, Math.max(0, tGrid));
+    const xGrid = tToX(tSn);
+    if (Math.abs(xGrid - xP) <= CHART_GRID_SNAP_PX) return xGrid;
+    return xP;
+  }
+
+  /** Svislé čáry drawGrid — vzdálenost / dílek na ose případně rychlost / 2 m·s⁻¹. */
+  function snapChartYToValueGrid(y) {
+    const yP = Math.min(mt + ph, Math.max(mt, y));
+    if (isCustomGraphMode()) {
+      const sRaw = yToS(yP);
+      const sSn = Math.min(S_MAX, Math.max(0, Math.round(sRaw)));
+      const yGrid = sToY(sSn);
+      if (Math.abs(yGrid - yP) <= CHART_GRID_SNAP_PX) return yGrid;
+      return yP;
+    }
+    if (usesVelocityAxisMode()) {
+      const vRaw = yToV(yP);
+      const vGrid =
+        Math.round(vRaw / VELOCITY_AXIS_MPS_PER_DIV) *
+        VELOCITY_AXIS_MPS_PER_DIV;
+      const vSn = Math.min(velocityGraphMaxMps(), Math.max(0, vGrid));
+      const yGrid = vToY(vSn);
+      if (Math.abs(yGrid - yP) <= CHART_GRID_SNAP_PX) return yGrid;
+    } else {
+      const sRaw = yToS(yP);
+      const sSn = Math.min(S_MAX, Math.max(0, Math.round(sRaw)));
+      const yGrid = sToY(sSn);
+      if (Math.abs(yGrid - yP) <= CHART_GRID_SNAP_PX) return yGrid;
+    }
+    return yP;
+  }
+
+  function snapChartXYToGrid(x, y) {
+    return { x: snapChartXToTimeGrid(x), y: snapChartYToValueGrid(y) };
+  }
+
+  /**
+   * Dva nezávislé grafy (sdílený počátek [0,0]).
+   * @type {{ t: number, s: number }[]}
+   */
+  let points = [];
+  let points2 = [];
+
+  /** Počáteční rychlost [m/s]; null = uživatel ji zvolí klikem na svislou osu. */
+  let velocityV0 = { 1: null, 2: null };
+
+  /** Historie úprav grafu pro tlačítko Zpět. */
+  const UNDO_STACK_MAX = 40;
+  /** @type {{ points: { t: number, s: number }[], points2: { t: number, s: number }[], velocityV0: { 1: number|null, 2: number|null } }[]} */
+  const undoStack = [];
+  /** Snapshot před tažením — do historie se vloží až při skutečném posunu. */
+  let dragUndoSnapshot = null;
+
+  function cloneGraphPoints(arr) {
+    return arr.map(function (p) {
+      return { t: p.t, s: p.s };
+    });
+  }
+
+  function captureGraphSnapshot() {
+    return {
+      points: cloneGraphPoints(points),
+      points2: cloneGraphPoints(points2),
+      velocityV0: { 1: velocityV0[1], 2: velocityV0[2] },
+    };
+  }
+
+  function graphHasEditableState() {
+    return (
+      points.length > 0 ||
+      points2.length > 0 ||
+      velocityV0[1] != null ||
+      velocityV0[2] != null
+    );
+  }
+
+  function updateUndoButton() {
+    if (!btnUndo) return;
+    btnUndo.disabled = running || undoStack.length === 0;
+  }
+
+  function pushUndoSnapshot() {
+    undoStack.push(captureGraphSnapshot());
+    if (undoStack.length > UNDO_STACK_MAX) undoStack.shift();
+    updateUndoButton();
+  }
+
+  function clearUndoStack() {
+    undoStack.length = 0;
+    dragUndoSnapshot = null;
+    updateUndoButton();
+  }
+
+  function restoreGraphSnapshot(snap) {
+    points.length = 0;
+    points2.length = 0;
+    snap.points.forEach(function (p) {
+      points.push({ t: p.t, s: p.s });
+    });
+    snap.points2.forEach(function (p) {
+      points2.push({ t: p.t, s: p.s });
+    });
+    velocityV0[1] = snap.velocityV0[1];
+    velocityV0[2] = snap.velocityV0[2];
+  }
+
+  function undoLastGraphEdit() {
+    if (running || undoStack.length === 0) return;
+    const snap = undoStack.pop();
+    restoreGraphSnapshot(snap);
+    hideChartClickPreview();
+    simT = 0;
+    lastFrame = 0;
+    trackWheelPhaseDeg1 = 0;
+    trackWheelPhaseDeg2 = 0;
+    timerEl.textContent = formatTimer(0);
+    updateUndoButton();
+    updateActionButton();
+    redrawChart();
+  }
+
+  /** Šířka klikacího pásu u svislé osy pro volbu počáteční rychlosti. */
+  const AXIS_PICK_W = 36;
+  let chartClickPreviewGroup = null;
+  let chartClickPreviewCircle = null;
+
+  function graphIdFromPointsArr(arr) {
+    return arr === points2 ? 2 : 1;
+  }
+
+  function velocityV0ForGraph(g) {
+    const r = velocityV0[g];
+    if (r == null) return 0;
+    return Math.min(velocityGraphMaxMps(), Math.max(0, r));
+  }
+
+  /** Zobrazení a simulace druhého grafu (checkbox). */
+  let dualGraph = false;
+
+  /** Režim vlastního grafu bez cyklisty — uživatel nastaví osy ručně. */
+  let customGraphMode = false;
+
+  /** @type {{ xName: string, xUnit: string, xStep: number, yName: string, yUnit: string, yStep: number }} */
+  const customAxis = {
+    xName: "Čas",
+    xUnit: "s",
+    xStep: 1,
+    yName: "Osa Y",
+    yUnit: "",
+    yStep: 1,
+  };
+
+  /** @type {"start"|"cumulative"|"velocity"} zobrazení svislé osy a křivky. */
+  let yAxisMode = "start";
+
+  function isCustomGraphMode() {
+    return customGraphMode;
+  }
+
+  function usesVelocityAxisMode() {
+    return !isCustomGraphMode() && yAxisMode === "velocity";
+  }
+
+  function usesCumulativeAxisMode() {
+    return !isCustomGraphMode() && yAxisMode === "cumulative";
+  }
+
+  const CUSTOM_STEP_SPIN_DELTA = 0.1;
+  const CUSTOM_STEP_MIN = 0.1;
+
+  function stepCustomAxisInput(input, axisKey, direction) {
+    const current = customAxisStepPositive(input.value, customAxis[axisKey]);
+    const next = Math.max(
+      CUSTOM_STEP_MIN,
+      Number((current + direction * CUSTOM_STEP_SPIN_DELTA).toFixed(4))
+    );
+    customAxis[axisKey] = next;
+    input.value = formatDecimalCs(next);
+    redrawChart();
+  }
+
+  function bindCustomStepSpinner(input, axisKey) {
+    const wrap = input.closest(".custom-step-input");
+    if (!wrap) return;
+    const up = wrap.querySelector(".custom-step-up");
+    const down = wrap.querySelector(".custom-step-down");
+    if (up) {
+      up.addEventListener("click", function () {
+        if (!customGraphMode) return;
+        stepCustomAxisInput(input, axisKey, 1);
+      });
+    }
+    if (down) {
+      down.addEventListener("click", function () {
+        if (!customGraphMode) return;
+        stepCustomAxisInput(input, axisKey, -1);
+      });
+    }
+  }
+
+  function parseDecimalCs(raw) {
+    const normalized = String(raw ?? "")
+      .trim()
+      .replace(/\s/g, "")
+      .replace(",", ".");
+    if (normalized === "" || normalized === "." || normalized === "-") return NaN;
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function customAxisStepPositive(raw, fallback) {
+    const n = parseDecimalCs(raw);
+    if (!Number.isFinite(n) || n <= 0) return fallback;
+    return n;
+  }
+
+  function syncCustomAxisFromInputs(options) {
+    const formatInputs = !options || options.formatInputs !== false;
+    customAxis.xName = (customXName.value || "Osa X").trim() || "Osa X";
+    customAxis.xUnit = (customXUnit.value || "").trim();
+    customAxis.xStep = customAxisStepPositive(customXStep.value, customAxis.xStep);
+    customAxis.yName = (customYName.value || "Osa Y").trim() || "Osa Y";
+    customAxis.yUnit = (customYUnit.value || "").trim();
+    customAxis.yStep = customAxisStepPositive(customYStep.value, customAxis.yStep);
+    if (formatInputs) {
+      customXStep.value = formatDecimalCs(customAxis.xStep);
+      customYStep.value = formatDecimalCs(customAxis.yStep);
+    }
+  }
+
+  function syncGraphModeFromRadios() {
+    const r = document.querySelector('input[name="graphMode"]:checked');
+    customGraphMode = !!(r && r.value === "custom");
+  }
+
+  function updateModePanelsVisibility() {
+    axisYCyclistPanel.hidden = customGraphMode;
+    customGraphPanel.hidden = !customGraphMode;
+    dualGraphRow.hidden = customGraphMode;
+    trackSection.hidden = customGraphMode;
+    timerRow.hidden = customGraphMode;
+    chartEl.setAttribute(
+      "aria-label",
+      customGraphMode ? "Vlastní graf" : "Graf vzdálenost–čas"
+    );
+    if (customGraphMode) {
+      running = false;
+      cancelAnimationFrame(raf);
+      lastFrame = 0;
+    }
+    if (customGraphMode && dualGraph) {
+      dualGraph = false;
+      chkDualGraph.checked = false;
+      graphTargetWrap.hidden = true;
+      const r1 = document.querySelector('input[name="graphTarget"][value="1"]');
+      if (r1) r1.checked = true;
+      syncGraphTargetRadios();
+    }
+    updateActionButton();
+  }
+
+  function sanitizeFilenamePart(value) {
+    return (
+      String(value || "graf")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "graf"
+    );
+  }
+
+  function inlineSvgPresentationStyles(sourceEl, cloneEl) {
+    const props = [
+      "fill",
+      "stroke",
+      "stroke-width",
+      "stroke-dasharray",
+      "stroke-linecap",
+      "stroke-linejoin",
+      "opacity",
+      "font-size",
+      "font-family",
+      "font-weight",
+      "text-anchor",
+      "dominant-baseline",
+    ];
+    const cs = getComputedStyle(sourceEl);
+    props.forEach(function (prop) {
+      const val = cs.getPropertyValue(prop);
+      if (val) cloneEl.setAttribute(prop, val);
+    });
+  }
+
+  function saveChartAsImage() {
+    const svg = chartEl;
+    const clone = svg.cloneNode(true);
+    const srcEls = [svg].concat(Array.from(svg.querySelectorAll("*")));
+    const cloneEls = [clone].concat(Array.from(clone.querySelectorAll("*")));
+    for (let i = 0; i < srcEls.length && i < cloneEls.length; i++) {
+      inlineSvgPresentationStyles(srcEls[i], cloneEls[i]);
+    }
+
+    ["plot-hit-layer", "chart-time-indicator", "chart-time-indicator-2"].forEach(function (id) {
+      const el = clone.querySelector("#" + id);
+      if (el) el.remove();
+    });
+    const preview = clone.querySelector(".chart-click-preview");
+    if (preview) preview.remove();
+
+    const NS = "http://www.w3.org/2000/svg";
+    const bg = document.createElementNS(NS, "rect");
+    bg.setAttribute("x", "0");
+    bg.setAttribute("y", "0");
+    bg.setAttribute("width", String(W));
+    bg.setAttribute("height", String(H));
+    bg.setAttribute("fill", "#ffffff");
+    clone.insertBefore(bg, clone.firstChild);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+    const svgString = new XMLSerializer().serializeToString(clone);
+    const scale = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+
+    const img = new Image();
+    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0, W, H);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (pngBlob) {
+        if (!pngBlob) return;
+        const pngUrl = URL.createObjectURL(pngBlob);
+        const a = document.createElement("a");
+        a.href = pngUrl;
+        a.download =
+          "graf-" +
+          sanitizeFilenamePart(customAxis.xName) +
+          "-" +
+          sanitizeFilenamePart(customAxis.yName) +
+          ".png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(pngUrl);
+      }, "image/png");
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+
+  function formatDecimalCs(value) {
+    const rounded = Math.abs(value - Math.round(value)) < 1e-6 ? Math.round(value) : value;
+    if (typeof rounded === "number" && Number.isInteger(rounded)) {
+      return String(rounded);
+    }
+    const num = String(Number(rounded.toFixed(2))).replace(/\.?0+$/, "");
+    return num.replace(".", ",");
+  }
+
+  function formatAxisTickValue(value, unit) {
+    const num = formatDecimalCs(value);
+    return unit ? num + " " + unit : num;
+  }
+
+  function syncYAxisModeFromRadios() {
+    const r = document.querySelector('input[name="axisY"]:checked');
+    const val = r && r.value;
+    if (val === "cumulative" || val === "velocity") yAxisMode = val;
+    else yAxisMode = "start";
+  }
+
+  function syncGraphTargetRadios() {
+    document.querySelectorAll('input[name="graphTarget"]').forEach(function (el) {
+      el.disabled = !dualGraph;
+    });
+  }
+
+  let running = false;
+  let simT = 0;
+  let lastFrame = 0;
+  let raf = 0;
+  /** Kumulativní natočení kol (°) pro animaci — nuluje se při resetu nebo novém přehrání od začátku. */
+  let trackWheelPhaseDeg1 = 0;
+  let trackWheelPhaseDeg2 = 0;
+
+  function sortPointsArr(arr) {
+    if (!arr.length) return;
+    arr.sort((a, b) => a.t - b.t || a.s - b.s);
+    const eps = 0.03;
+    for (let i = 1; i < arr.length; i++) {
+      const lo = arr[i - 1].t + eps;
+      if (arr[i].t < lo) arr[i].t = lo;
+      arr[i].t = Math.min(T_MAX, arr[i].t);
+      const smax = isCustomGraphMode() || !usesVelocityAxisMode() ? S_MAX : velocityGraphMaxMps();
+      arr[i].s = Math.min(smax, Math.max(0, arr[i].s));
+    }
+    if (arr.length && arr[0].t < eps) arr[0].t = eps;
+
+    if (usesCumulativeAxisMode()) {
+      let minS = 0;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].s < minS) arr[i].s = minS;
+        minS = arr[i].s;
+        if (minS > S_MAX) {
+          arr[i].s = S_MAX;
+          minS = S_MAX;
+        }
+      }
+    }
+  }
+
+  /** Stejné zamítnutí jako při přidávání bodu (příliš blízko počátku / existujícímu uzlu). */
+  function wouldRejectNewPoint(targetArr, g, t, val) {
+    const nt = t / T_MAX;
+    const nScale = isCustomGraphMode() || !usesVelocityAxisMode() ? S_MAX : velocityGraphMaxMps();
+    const oriSpeed = !isCustomGraphMode() && usesVelocityAxisMode() ? velocityV0ForGraph(g) : 0;
+    const nearOrigin =
+      targetArr.length > 0 &&
+      nt * nt + Math.pow((val - oriSpeed) / nScale, 2) < 0.03 * 0.03;
+    if (nearOrigin) return true;
+    return targetArr.some(function (p) {
+      const dx = (p.t - t) / T_MAX;
+      const dy = (p.s - val) / nScale;
+      return dx * dx + dy * dy < 0.03 * 0.03;
+    });
+  }
+
+  /**
+   * Souřadnice uzlu po řazení a úpravách sortPointsArr — stejné jako po kliknutí.
+   */
+  function finalCoordsAfterHypotheticalAdd(targetArr, t, val) {
+    const trial = targetArr.map(function (p) {
+      return { t: p.t, s: p.s };
+    });
+    const newPt = { t, s: val };
+    trial.push(newPt);
+    sortPointsArr(trial);
+    return { t: newPt.t, s: newPt.s };
+  }
+
+  /** Počátek [0,0] + uživatelské body daného grafu. */
+  function verticesFrom(arr) {
+    sortPointsArr(arr);
+    if (arr.length === 0) return [];
+    return [{ t: 0, s: 0 }].concat(arr);
+  }
+
+  const LENGTH_DISPLAY_MULT = 10;
+  /** Jedna „úsečka“ trati v metrech (souhlasí s rozsahem osy vzdálenosti 0…S_MAX). */
+  const TRACK_SEGMENT_METERS = S_MAX * LENGTH_DISPLAY_MULT;
+  const JET_SPEED_THRESHOLD_MS = 14;
+
+  /** V režimu rychlosti ukládá každý bod {t, s} hodnotu s = rychlost v m/s (0…velocityGraphMaxMps()). */
+
+  function velocityKnotsFromUserPoints(arr, graphId) {
+    const g = graphId != null ? graphId : graphIdFromPointsArr(arr);
+    const raw = velocityV0[g];
+    const v0 = raw == null ? 0 : Math.min(velocityGraphMaxMps(), Math.max(0, raw));
+    const k = [{ t: 0, vg: v0 }];
+    for (let i = 0; i < arr.length; i++) {
+      k.push({ t: arr[i].t, vg: arr[i].s });
+    }
+    return k;
+  }
+
+  function positionKnotsFromVelocityUser(arr, graphId) {
+    const vk = velocityKnotsFromUserPoints(arr, graphId);
+    if (vk.length < 2) return [{ t: 0, s: 0 }];
+    const pos = [{ t: 0, s: 0 }];
+    let sAcc = 0;
+    for (let i = 0; i < vk.length - 1; i++) {
+      const a = vk[i];
+      const b = vk[i + 1];
+      const dt = b.t - a.t;
+      if (dt <= 1e-9) {
+        pos.push({ t: b.t, s: Math.max(0, sAcc) });
+        continue;
+      }
+      sAcc += (((a.vg + b.vg) / 2) * dt) / LENGTH_DISPLAY_MULT;
+      sAcc = Math.max(0, sAcc);
+      pos.push({ t: b.t, s: sAcc });
+    }
+    return pos;
+  }
+
+  function distanceAtFromVelocityUser(arr, t, graphId) {
+    const g = graphId != null ? graphId : graphIdFromPointsArr(arr);
+    sortPointsArr(arr);
+    if (!arr.length) return 0;
+    const vk = velocityKnotsFromUserPoints(arr, g);
+    const pos = positionKnotsFromVelocityUser(arr, g);
+    if (t <= 0) return 0;
+    const lastT = vk[vk.length - 1].t;
+    const lastS = pos[pos.length - 1].s;
+    if (t >= lastT) return lastS;
+    for (let i = 0; i < vk.length - 1; i++) {
+      const a = vk[i];
+      const b = vk[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const dt = b.t - a.t;
+        if (dt < 1e-9) return pos[i].s;
+        const tau = t - a.t;
+        const s0 = pos[i].s;
+        return (
+          s0 +
+          (a.vg * tau + ((b.vg - a.vg) / (2 * dt)) * tau * tau) / LENGTH_DISPLAY_MULT
+        );
+      }
+    }
+    return lastS;
+  }
+
+  function vGraphAtVelocityUser(arr, t, graphId) {
+    const g = graphId != null ? graphId : graphIdFromPointsArr(arr);
+    sortPointsArr(arr);
+    if (!arr.length) return 0;
+    const vk = velocityKnotsFromUserPoints(arr, g);
+    const last = vk[vk.length - 1];
+    if (t > last.t) return 0;
+    if (t <= 0) return 0;
+    for (let i = 0; i < vk.length - 1; i++) {
+      const a = vk[i];
+      const b = vk[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const dt = b.t - a.t;
+        if (dt < 1e-9) return a.vg;
+        const tau = t - a.t;
+        return a.vg + ((b.vg - a.vg) / dt) * tau;
+      }
+    }
+    return 0;
+  }
+
+  /** Libovolný lomený v(t) podle uživatelských uzlů (přímky mezi nimi). */
+  function velocityUserPolylinePointsString(arr, graphId) {
+    const g = graphId != null ? graphId : graphIdFromPointsArr(arr);
+    const raw = velocityV0[g];
+    if (raw == null && arr.length === 0) return "";
+    sortPointsArr(arr);
+    const v0 = raw == null ? 0 : Math.min(velocityGraphMaxMps(), Math.max(0, raw));
+    const pts = [tToX(0).toFixed(2) + "," + vToY(v0).toFixed(2)];
+    for (let i = 0; i < arr.length; i++) {
+      const vm = Math.min(velocityGraphMaxMps(), Math.max(0, arr[i].s));
+      pts.push(tToX(arr[i].t).toFixed(2) + "," + vToY(vm).toFixed(2));
+    }
+    return pts.join(" ");
+  }
+
+  function trackMetersFromDistanceAxis(distAxis) {
+    return distAxis * LENGTH_DISPLAY_MULT;
+  }
+
+  /**
+   * Pozice na trati v režimu rychlosti: celá dráha může být delší než 80 m,
+   * na trati se zobrazí zbytek po 80 m; přesně na násobcích 80 m = levý okraj (nové kolo).
+   */
+  function trackDisplayMetersFromAxis(distAxis) {
+    const m = trackMetersFromDistanceAxis(distAxis);
+    if (!usesVelocityAxisMode()) {
+      return Math.min(TRACK_SEGMENT_METERS, Math.max(0, m));
+    }
+    if (m <= TRACK_SEGMENT_METERS + 1e-9) {
+      return Math.min(m, TRACK_SEGMENT_METERS);
+    }
+    let w = m % TRACK_SEGMENT_METERS;
+    if (w < 1e-9) w = 0;
+    return w;
+  }
+
+  function trackDisplayAxisFromDistanceAxis(distAxis) {
+    return trackDisplayMetersFromAxis(distAxis) / LENGTH_DISPLAY_MULT;
+  }
+
+  /** Posun popisků na trati (0, 80, 160 … m) podle ujeté dráhy daného grafu. */
+  function trackLabelBaseMetersForArr(arr, t) {
+    if (!usesVelocityAxisMode()) return 0;
+    const m = trackMetersFromDistanceAxis(distanceAtFrom(arr, t));
+    if (m <= TRACK_SEGMENT_METERS + 1e-9) return 0;
+    return Math.floor(m / TRACK_SEGMENT_METERS) * TRACK_SEGMENT_METERS;
+  }
+
+  /** Po částech lineární s(t) mezi uzly; režim rychlosti = s z integrovaného v(t). */
+  function distanceAtFrom(arr, t) {
+    if (usesVelocityAxisMode())
+      return distanceAtFromVelocityUser(arr, t, graphIdFromPointsArr(arr));
+    const v = verticesFrom(arr);
+    if (v.length === 0) return 0;
+    if (t <= v[0].t) return v[0].s;
+    const last = v[v.length - 1];
+    if (t >= last.t) return last.s;
+    for (let i = 0; i < v.length - 1; i++) {
+      const a = v[i];
+      const b = v[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const u = (t - a.t) / (b.t - a.t || 1e-9);
+        return a.s + u * (b.s - a.s);
+      }
+    }
+    return last.s;
+  }
+
+  function simEndTimeFrom(arr) {
+    if (usesVelocityAxisMode()) {
+      sortPointsArr(arr);
+      if (arr.length < 1) return 0;
+      return Math.min(T_MAX, arr[arr.length - 1].t);
+    }
+    const v = verticesFrom(arr);
+    if (v.length < 2) return 0;
+    return Math.min(T_MAX, v[v.length - 1].t);
+  }
+
+  function simEndTime() {
+    const e1 = simEndTimeFrom(points);
+    if (!dualGraph) return e1;
+    return Math.max(e1, simEndTimeFrom(points2));
+  }
+
+  /** Režim vzdálenost: ds/dt v jednotkách osy / s. Režim rychlost: v v m/s. Pro t ≥ konec grafu → 0 v režimu rychlosti. */
+  function derivativeSignedAtFrom(arr, t) {
+    if (usesVelocityAxisMode())
+      return vGraphAtVelocityUser(arr, t, graphIdFromPointsArr(arr));
+    const v = verticesFrom(arr);
+    if (v.length < 2) return 0;
+    const last = v[v.length - 1];
+    if (t >= last.t) {
+      const a = v[v.length - 2];
+      const b = last;
+      const dt = b.t - a.t;
+      if (dt <= 1e-9) return 0;
+      return (b.s - a.s) / dt;
+    }
+    if (t <= v[0].t) {
+      const dt = v[1].t - v[0].t;
+      if (dt <= 1e-9) return 0;
+      return (v[1].s - v[0].s) / dt;
+    }
+    for (let i = 0; i < v.length - 1; i++) {
+      const a = v[i];
+      const b = v[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const dt = b.t - a.t;
+        if (dt <= 1e-9) return 0;
+        return (b.s - a.s) / dt;
+      }
+    }
+    return 0;
+  }
+
+  function speedDisplayAtFrom(arr, t) {
+    if (usesVelocityAxisMode()) {
+      if (!arr.length) return 0;
+      return Math.abs(derivativeSignedAtFrom(arr, t));
+    }
+    const v = verticesFrom(arr);
+    if (v.length < 2) return 0;
+    if (t >= v[v.length - 1].t) return 0;
+    return Math.abs(derivativeSignedAtFrom(arr, t)) * LENGTH_DISPLAY_MULT;
+  }
+
+  function buildJetGroup(NS) {
+    const j = document.createElementNS(NS, "g");
+    j.setAttribute("class", "cyclist-jet");
+    j.setAttribute("pointer-events", "none");
+    j.setAttribute("transform", "translate(11.2,27.5)");
+
+    const outer = document.createElementNS(NS, "path");
+    outer.setAttribute("d", "M0,-7 L-22,-2.5 L-26,0 L-22,2.5 L0,7 Z");
+    outer.setAttribute("fill", "#ff6b35");
+
+    const mid = document.createElementNS(NS, "path");
+    mid.setAttribute("d", "M0,-4 L-15,-1.2 L-18,0 L-15,1.2 L0,4 Z");
+    mid.setAttribute("fill", "#ff9800");
+
+    const inner = document.createElementNS(NS, "path");
+    inner.setAttribute("d", "M0,-2 L-10,-0.5 L-12,0 L-10,0.5 L0,2 Z");
+    inner.setAttribute("fill", "#ffeb3b");
+
+    const core = document.createElementNS(NS, "path");
+    core.setAttribute("d", "M0,-1 L-6,0 L0,1 Z");
+    core.setAttribute("fill", "#fff9c4");
+
+    j.appendChild(outer);
+    j.appendChild(mid);
+    j.appendChild(inner);
+    j.appendChild(core);
+    return j;
+  }
+
+  function syncJetPropulsion(riderG, ptsArr) {
+    if (!riderG) return;
+    const wantJet =
+      running &&
+      simEndTimeFrom(ptsArr) > 0 &&
+      speedDisplayAtFrom(ptsArr, simT) > JET_SPEED_THRESHOLD_MS;
+    const jet = riderG.querySelector(".cyclist-jet");
+    if (!wantJet) {
+      if (jet) jet.remove();
+      return;
+    }
+    if (!jet) {
+      riderG.insertBefore(buildJetGroup("http://www.w3.org/2000/svg"), riderG.firstChild);
+    }
+  }
+
+  function updateActionButton() {
+    if (isCustomGraphMode()) {
+      btnRun.textContent = "Uložit";
+      btnRun.disabled = false;
+      updateUndoButton();
+      return;
+    }
+    if (running) {
+      btnRun.textContent = "Pozastavit";
+      btnRun.disabled = false;
+      updateUndoButton();
+      return;
+    }
+    btnRun.textContent = "Spustit";
+    const ok = points.length >= 1 || (dualGraph && points2.length >= 1);
+    btnRun.disabled = !ok;
+    updateUndoButton();
+  }
+
+  /** Červený bod na grafu během / po simulaci – (t, s) = časomíra + dráha z grafu. */
+  function chartTimeIndicatorVisible() {
+    return (running || simT > 0) && simEndTime() > 0;
+  }
+
+  function chartIndicatorVerticalValue(arr, tDraw) {
+    if (usesVelocityAxisMode()) {
+      const dm = derivativeSignedAtFrom(arr, tDraw);
+      return Math.min(velocityGraphMaxMps(), Math.max(0, dm));
+    }
+    return distanceAtFrom(arr, tDraw);
+  }
+
+  /** Nejvyšší čas na nakreslené křivce (stejný konec jako polyline). */
+  function chartPlaybackUpperBoundT(arr) {
+    sortPointsArr(arr);
+    if (!arr.length) return 0;
+    if (usesVelocityAxisMode()) {
+      return Math.min(T_MAX, arr[arr.length - 1].t);
+    }
+    const v = verticesFrom(arr);
+    if (v.length < 2) return 0;
+    return Math.min(T_MAX, v[v.length - 1].t);
+  }
+
+  /**
+   * Pozice ukazatele: čas nikdy za poslední uzel; na konci přesně střed posledního uzlu
+   * (oprava vodorovného „jetí“ při s(t)=konst. za posledním bodem nebo float/simT).
+   */
+  function indicatorCoordsForGraph(arr, simTClampedGlobal) {
+    const tLim = chartPlaybackUpperBoundT(arr);
+    if (!(tLim > 0)) return null;
+    const tWant = Math.min(simTClampedGlobal, tLim);
+    const epsT = 5e-7;
+    if (tWant >= tLim - epsT) {
+      if (usesVelocityAxisMode()) {
+        const vm = Math.min(
+          velocityGraphMaxMps(),
+          Math.max(0, arr[arr.length - 1].s)
+        );
+        return { cx: tToX(arr[arr.length - 1].t), cyPlot: vm };
+      }
+      const v = verticesFrom(arr);
+      const lp = v[v.length - 1];
+      return { cx: tToX(lp.t), cyPlot: lp.s };
+    }
+    const yPlot = chartIndicatorVerticalValue(arr, tWant);
+    return { cx: tToX(tWant), cyPlot: yPlot };
+  }
+
+  function updateChartTimeIndicator() {
+    const dot = chartEl.querySelector("#chart-time-indicator");
+    const dot2 = chartEl.querySelector("#chart-time-indicator-2");
+
+    if (!chartTimeIndicatorVisible()) {
+      if (dot) dot.remove();
+      if (dot2) dot2.remove();
+      return;
+    }
+
+    const endT = simEndTime();
+    const simTClamped = Math.min(Math.max(0, simT), endT);
+
+    function placeIndicator(el, id, fill, stroke, arr) {
+      const coords = indicatorCoordsForGraph(arr, simTClamped);
+      if (!coords) {
+        if (el) el.remove();
+        return;
+      }
+      let d = el;
+      if (!d) {
+        d = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        d.setAttribute("id", id);
+        d.setAttribute("r", "6");
+        d.setAttribute("fill", fill);
+        d.setAttribute("stroke", stroke);
+        d.setAttribute("stroke-width", "2");
+        d.setAttribute("pointer-events", "none");
+        chartEl.appendChild(d);
+      }
+      d.setAttribute("cx", String(coords.cx));
+      d.setAttribute(
+        "cy",
+        String(usesVelocityAxisMode() ? vToY(coords.cyPlot) : sToY(coords.cyPlot))
+      );
+    }
+
+    const end1 = simEndTimeFrom(points);
+    if (end1 > 0) {
+      placeIndicator(
+        dot,
+        "chart-time-indicator",
+        GRAPH1_COLOR,
+        "#ffffff",
+        points
+      );
+    } else if (dot) {
+      dot.remove();
+    }
+
+    const end2 = dualGraph ? simEndTimeFrom(points2) : 0;
+    if (dualGraph && end2 > 0) {
+      placeIndicator(
+        dot2,
+        "chart-time-indicator-2",
+        GRAPH2_COLOR,
+        "#ffffff",
+        points2
+      );
+    } else if (dot2) {
+      dot2.remove();
+    }
+  }
+
+  function formatTimer(t) {
+    const sec = Math.floor(t);
+    const frac = Math.floor((t - sec) * 100);
+    const a = String(sec).padStart(2, "0");
+    const b = String(frac).padStart(2, "0");
+    return a + " : " + b;
+  }
+
+  function buildDefs(svg) {
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    defs.innerHTML =
+      '<marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">' +
+      '<path d="M0,0 L8,4 L0,8 Z" fill="#1e6bb8" /></marker>';
+    svg.appendChild(defs);
+  }
+
+  function drawGrid(svg) {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "grid");
+    g.setAttribute("pointer-events", "none");
+
+    for (let t = 0; t <= T_MAX; t += TIME_AXIS_STEP) {
+      const x = tToX(t);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x);
+      line.setAttribute("x2", x);
+      line.setAttribute("y1", mt);
+      line.setAttribute("y2", mt + ph);
+      line.setAttribute("stroke", "var(--grid)");
+      line.setAttribute("stroke-width", "1");
+      line.setAttribute("stroke-dasharray", "3 5");
+      g.appendChild(line);
+    }
+
+    for (let si = 0; si <= S_MAX; si++) {
+      const y = sToY(si);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", ml);
+      line.setAttribute("x2", ml + pw);
+      line.setAttribute("y1", y);
+      line.setAttribute("y2", y);
+      line.setAttribute("stroke", "var(--grid)");
+      line.setAttribute("stroke-width", "1");
+      line.setAttribute("stroke-dasharray", "3 5");
+      g.appendChild(line);
+    }
+
+    svg.appendChild(g);
+  }
+
+  function drawAxes(svg) {
+    const axisColor = "#1e6bb8";
+    const ax = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    ax.setAttribute("pointer-events", "none");
+
+    const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    yAxis.setAttribute("x1", ml);
+    yAxis.setAttribute("y1", mt + ph);
+    yAxis.setAttribute("x2", ml);
+    yAxis.setAttribute("y2", mt - 4);
+    yAxis.setAttribute("stroke", axisColor);
+    yAxis.setAttribute("stroke-width", "2");
+    yAxis.setAttribute("marker-end", "url(#arrowBlue)");
+    ax.appendChild(yAxis);
+
+    const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    xAxis.setAttribute("x1", ml);
+    xAxis.setAttribute("y1", mt + ph);
+    xAxis.setAttribute("x2", ml + pw + 6);
+    xAxis.setAttribute("y2", mt + ph);
+    xAxis.setAttribute("stroke", axisColor);
+    xAxis.setAttribute("stroke-width", "2");
+    xAxis.setAttribute("marker-end", "url(#arrowBlue)");
+    ax.appendChild(xAxis);
+
+    const xl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    xl.setAttribute("x", ml + pw / 2);
+    xl.setAttribute("y", H - 6);
+    xl.setAttribute("text-anchor", "middle");
+    xl.setAttribute("fill", axisColor);
+    xl.setAttribute("font-size", "14");
+    xl.textContent = isCustomGraphMode() ? customAxis.xName : "Čas";
+    ax.appendChild(xl);
+
+    /** Střed šipky Y osy (od špičky mt−4 po základ mt+ph); popisek vycentrovaný a vlevo od dílků. */
+    const yAxisLabelCy = (mt - 4 + mt + ph) / 2;
+    const yAxisLabelX = 16;
+    const yl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    yl.setAttribute("x", String(yAxisLabelX));
+    yl.setAttribute("y", String(yAxisLabelCy));
+    yl.setAttribute("text-anchor", "middle");
+    yl.setAttribute("dominant-baseline", "middle");
+    yl.setAttribute("fill", axisColor);
+    yl.setAttribute("font-size", "14");
+    yl.setAttribute(
+      "transform",
+      "rotate(-90 " + yAxisLabelX + " " + yAxisLabelCy + ")"
+    );
+    yl.textContent = isCustomGraphMode()
+      ? customAxis.yName
+      : usesCumulativeAxisMode()
+        ? "Celkově ujetá vzdálenost"
+        : usesVelocityAxisMode()
+          ? "Rychlost"
+          : "Vzdálenost od startu";
+    ax.appendChild(yl);
+
+    for (let t = 0; t <= T_MAX; t += TIME_AXIS_STEP) {
+      const x = tToX(t);
+      const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      tick.setAttribute("x1", x);
+      tick.setAttribute("x2", x);
+      tick.setAttribute("y1", mt + ph);
+      tick.setAttribute("y2", mt + ph + 6);
+      tick.setAttribute("stroke", axisColor);
+      ax.appendChild(tick);
+      const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lab.setAttribute("x", x);
+      lab.setAttribute("y", mt + ph + 22);
+      lab.setAttribute("text-anchor", "middle");
+      lab.setAttribute("font-size", "11");
+      lab.setAttribute("fill", "#444");
+      lab.textContent = isCustomGraphMode()
+        ? formatAxisTickValue(t * customAxis.xStep, customAxis.xUnit)
+        : String(t) + " s";
+      ax.appendChild(lab);
+    }
+
+    for (let si = 0; si <= S_MAX; si++) {
+      const y = sToY(si);
+      const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      tick.setAttribute("x1", ml - 6);
+      tick.setAttribute("x2", ml);
+      tick.setAttribute("y1", y);
+      tick.setAttribute("y2", y);
+      tick.setAttribute("stroke", axisColor);
+      ax.appendChild(tick);
+      const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lab.setAttribute("x", ml - 10);
+      lab.setAttribute("y", y + 4);
+      lab.setAttribute("text-anchor", "end");
+      lab.setAttribute("font-size", "11");
+      lab.setAttribute("fill", "#444");
+      lab.textContent = isCustomGraphMode()
+        ? formatAxisTickValue(si * customAxis.yStep, customAxis.yUnit)
+        : usesVelocityAxisMode()
+          ? String(si * VELOCITY_AXIS_MPS_PER_DIV) + " m/s"
+          : si * 10 + " m";
+      ax.appendChild(lab);
+    }
+
+    svg.appendChild(ax);
+  }
+
+  let handlesLayer = null;
+
+  /** Po úpravě grafu jezdci zůstanou v počátku dráhy (jen ve stavu bez běžící simulace). */
+  function resetPlaybackToStartIfPaused() {
+    if (running) return;
+    simT = 0;
+    lastFrame = 0;
+    timerEl.textContent = formatTimer(0);
+    trackWheelPhaseDeg1 = 0;
+    trackWheelPhaseDeg2 = 0;
+  }
+
+  function redrawChart() {
+    resetPlaybackToStartIfPaused();
+    chartEl.innerHTML = "";
+    buildDefs(chartEl);
+    drawGrid(chartEl);
+
+    drawAxes(chartEl);
+
+    sortPointsArr(points);
+    sortPointsArr(points2);
+    const v1 = verticesFrom(points);
+    const d1 =
+      !isCustomGraphMode() && usesVelocityAxisMode()
+        ? velocityUserPolylinePointsString(points, 1)
+        : v1.length >= 2
+          ? v1.map((p) => tToX(p.t).toFixed(2) + "," + sToY(p.s).toFixed(2)).join(" ")
+          : "";
+    const v2dual = dualGraph ? verticesFrom(points2) : [];
+    const d2 =
+      dualGraph && !isCustomGraphMode() && usesVelocityAxisMode()
+        ? velocityUserPolylinePointsString(points2, 2)
+        : dualGraph && v2dual.length >= 2
+          ? v2dual.map((p) => tToX(p.t).toFixed(2) + "," + sToY(p.s).toFixed(2)).join(" ")
+          : "";
+
+    /** Pod kolečky – klikací plocha. Viditelná výplň skoro nulová – Safari často nebere úplně průhledné plochy. */
+    const plotHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    plotHit.setAttribute("id", "plot-hit-layer");
+    plotHit.setAttribute("x", ml);
+    plotHit.setAttribute("y", mt);
+    plotHit.setAttribute("width", pw);
+    plotHit.setAttribute("height", ph);
+    plotHit.setAttribute("fill", "#ffffff");
+    plotHit.setAttribute("fill-opacity", "0.003");
+    plotHit.setAttribute("stroke", "none");
+    plotHit.setAttribute("pointer-events", "all");
+    chartEl.appendChild(plotHit);
+
+    bindPlotHit(plotHit);
+
+    if (usesVelocityAxisMode()) {
+      const axisPick = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      axisPick.setAttribute("x", String(ml - AXIS_PICK_W));
+      axisPick.setAttribute("y", String(mt));
+      axisPick.setAttribute("width", String(AXIS_PICK_W));
+      axisPick.setAttribute("height", String(ph));
+      axisPick.setAttribute("fill", "#ffffff");
+      axisPick.setAttribute("fill-opacity", "0.004");
+      axisPick.setAttribute("stroke", "none");
+      axisPick.setAttribute("pointer-events", "all");
+      axisPick.addEventListener("mousedown", function (ev) {
+        if (ev.button !== 0 || running) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        pickVelocityV0FromEvent(ev);
+      });
+      axisPick.addEventListener(
+        "touchstart",
+        function (ev) {
+          if (running) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          pickVelocityV0FromEvent(ev);
+        },
+        { passive: false }
+      );
+      chartEl.appendChild(axisPick);
+    }
+
+    const editGraph = dualGraph ? getActiveGraph() : 1;
+
+    handlesLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    handlesLayer.setAttribute("class", "handles");
+    if (!usesVelocityAxisMode()) {
+      const origin = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      origin.setAttribute("cx", tToX(0));
+      origin.setAttribute("cy", sToY(0));
+      origin.setAttribute("r", "7");
+      origin.setAttribute("fill", "#fff");
+      origin.setAttribute("stroke", "#444");
+      origin.setAttribute("stroke-width", "2");
+      origin.setAttribute("opacity", "0.95");
+      origin.style.cursor = "default";
+      origin.style.pointerEvents = "none";
+      origin.dataset.role = "origin";
+      handlesLayer.appendChild(origin);
+    }
+    if (usesVelocityAxisMode()) {
+      if (velocityV0[1] != null) {
+        const o1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        o1.setAttribute("cx", tToX(0));
+        o1.setAttribute("cy", vToY(velocityV0ForGraph(1)));
+        o1.setAttribute("r", "7");
+        o1.setAttribute("fill", "#fff");
+        o1.setAttribute("stroke", GRAPH1_COLOR);
+        o1.setAttribute("stroke-width", "2");
+        o1.setAttribute("opacity", "0.95");
+        o1.style.cursor = dualGraph && editGraph !== 1 ? "default" : "ns-resize";
+        o1.style.pointerEvents = dualGraph && editGraph !== 1 ? "none" : "auto";
+        o1.dataset.role = "velocity-origin";
+        o1.setAttribute("data-graph", "1");
+        handlesLayer.appendChild(o1);
+        bindVelocityOriginDrag(o1, 1);
+      }
+      if (dualGraph && velocityV0[2] != null) {
+        const o2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        o2.setAttribute("cx", tToX(0));
+        o2.setAttribute("cy", vToY(velocityV0ForGraph(2)));
+        o2.setAttribute("r", "7");
+        o2.setAttribute("fill", "#fff");
+        o2.setAttribute("stroke", GRAPH2_COLOR);
+        o2.setAttribute("stroke-width", "2");
+        o2.setAttribute("opacity", "0.95");
+        o2.style.cursor = editGraph !== 2 ? "default" : "ns-resize";
+        o2.style.pointerEvents = editGraph !== 2 ? "none" : "auto";
+        o2.dataset.role = "velocity-origin";
+        o2.setAttribute("data-graph", "2");
+        handlesLayer.appendChild(o2);
+        bindVelocityOriginDrag(o2, 2);
+      }
+    }
+    points.forEach(function (p, idx) {
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", tToX(p.t));
+      c.setAttribute(
+        "cy",
+        usesVelocityAxisMode()
+          ? vToY(Math.min(velocityGraphMaxMps(), Math.max(0, p.s)))
+          : sToY(p.s)
+      );
+      c.setAttribute("r", "7");
+      c.setAttribute("fill", "#fff");
+      c.setAttribute("stroke", GRAPH1_COLOR);
+      c.setAttribute("stroke-width", "2");
+      c.style.cursor = dualGraph && editGraph !== 1 ? "default" : "grab";
+      c.style.pointerEvents = dualGraph && editGraph !== 1 ? "none" : "auto";
+      c.setAttribute("data-index", String(idx));
+      c.setAttribute("data-graph", "1");
+      c.dataset.index = String(idx);
+      c.dataset.graph = "1";
+      bindUserCircleDrag(c, idx, 1);
+      handlesLayer.appendChild(c);
+    });
+    if (dualGraph) {
+      points2.forEach(function (p, idx) {
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", tToX(p.t));
+        c.setAttribute(
+          "cy",
+          usesVelocityAxisMode()
+            ? vToY(Math.min(velocityGraphMaxMps(), Math.max(0, p.s)))
+            : sToY(p.s)
+        );
+        c.setAttribute("r", "7");
+        c.setAttribute("fill", "#fff");
+        c.setAttribute("stroke", GRAPH2_COLOR);
+        c.setAttribute("stroke-width", "2");
+        c.style.cursor = editGraph !== 2 ? "default" : "grab";
+        c.style.pointerEvents = editGraph !== 2 ? "none" : "auto";
+        c.setAttribute("data-index", String(idx));
+        c.setAttribute("data-graph", "2");
+        c.dataset.index = String(idx);
+        c.dataset.graph = "2";
+        bindUserCircleDrag(c, idx, 2);
+        handlesLayer.appendChild(c);
+      });
+    }
+    chartEl.appendChild(handlesLayer);
+
+    /** Čára nad kolečky → graf vizuálně „protíná“ středy bodů. */
+    if (d1) {
+      const pl = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      pl.setAttribute("fill", "none");
+      pl.setAttribute("stroke", GRAPH1_COLOR);
+      pl.setAttribute("stroke-width", "2.5");
+      pl.setAttribute("stroke-linejoin", "round");
+      pl.setAttribute("stroke-linecap", "round");
+      pl.setAttribute("points", d1);
+      pl.setAttribute("pointer-events", "none");
+      chartEl.appendChild(pl);
+    }
+    if (d2) {
+      const pl = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      pl.setAttribute("fill", "none");
+      pl.setAttribute("stroke", GRAPH2_COLOR);
+      pl.setAttribute("stroke-width", "2.5");
+      pl.setAttribute("stroke-linejoin", "round");
+      pl.setAttribute("stroke-linecap", "round");
+      pl.setAttribute("points", d2);
+      pl.setAttribute("pointer-events", "none");
+      chartEl.appendChild(pl);
+    }
+
+    chartClickPreviewGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    chartClickPreviewGroup.setAttribute("class", "chart-click-preview");
+    chartClickPreviewGroup.setAttribute("pointer-events", "none");
+    chartClickPreviewGroup.style.display = "none";
+    chartClickPreviewCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    chartClickPreviewCircle.setAttribute("r", "7");
+    chartClickPreviewCircle.setAttribute("fill", "rgba(255,255,255,0.92)");
+    chartClickPreviewCircle.setAttribute("stroke", GRAPH1_COLOR);
+    chartClickPreviewCircle.setAttribute("stroke-width", "2");
+    chartClickPreviewCircle.setAttribute("stroke-dasharray", "4 3");
+    chartClickPreviewGroup.appendChild(chartClickPreviewCircle);
+    chartEl.appendChild(chartClickPreviewGroup);
+
+    updateChartTimeIndicator();
+    updateActionButton();
+    drawTrack();
+  }
+
+  const TW = 648;
+  /** Spodní okraj výřezu dráhy (souřadnice os Y); nálepky pod čárou používají TH. */
+  const TH = 82;
+  /** Horní rezerva viewBoxu dráhy (záporná souřadnice), aby byl vidět horní díl figurky. */
+  const TRACK_VIEW_Y_MIN = -34;
+  /** viewBox výška = TH − TRACK_VIEW_Y_MIN */
+  const TRACK_VIEW_HEIGHT = TH - TRACK_VIEW_Y_MIN;
+  /** Hlavní čára dráhy (osa červeného cyklisty). */
+  const TRACK_LINE_Y = 28;
+  /** Osa modrého cyklisty (režim Dva cyklisti). */
+  const TRACK_LINE2_Y = TRACK_LINE_Y + 28;
+  /** Šířka figurky cyklisty ve vlastních souřadnicích (viewBox šířka SVG, polovina pro centrovaní na dráze). */
+  const TRACK_RIDER_W = 57;
+  const TRACK_RIDER_HALF_W = TRACK_RIDER_W / 2;
+  /** Střed zadního kola v assetu (viewBox cyklista) — svisle zarovnáme na stejnou výšku náboje jako starý grafický jezdec. */
+  const RIDER_REAR_HUB_Y = 39.5322;
+  const RIDER_AXLE_ALIGN_Y = 27.5;
+  const RIDER_SVG_OFFSET_Y = RIDER_AXLE_ALIGN_Y - RIDER_REAR_HUB_Y;
+  /** Poloměr valivého kola v prostoru znaku (bez skluzu) — jen pro vizuální souklad s posunem po dráze. */
+  const RIDER_WHEEL_ROLL_RADIUS = 10.4;
+  /** První cyklista (červená helma) — nad osou. */
+  const TRACK_RIDER1_DY =
+    TRACK_LINE_Y - RIDER_AXLE_ALIGN_Y - RIDER_WHEEL_ROLL_RADIUS - 4;
+  /** Druhý cyklista (modrá helma) — nad svou osou. */
+  const TRACK_RIDER2_DY =
+    TRACK_LINE2_Y - RIDER_AXLE_ALIGN_Y - RIDER_WHEEL_ROLL_RADIUS - 4;
+  const WHEEL_HUB_FRONT_X = 45.5425;
+  const WHEEL_HUB_FRONT_Y = 39.5321;
+  const WHEEL_HUB_REAR_X = 11.2049;
+  const WHEEL_HUB_REAR_Y = 39.5322;
+
+  const RIDER_SVG_MARKUP = `<svg xmlns="http://www.w3.org/2000/svg" width="57" height="51" viewBox="0 0 57 51" fill="none" overflow="visible">
+<defs><clipPath id="__LEG_CLIP_ID__"><rect x="-5" y="29.39" width="70" height="25"/></clipPath></defs>
+<g class="cyclist-leg-rear" transform="translate(0,0)">
+<path d="M24.1306 15.1101L31.7197 20.219C32.4877 20.7348 32.7629 21.7335 32.369 22.5707L26.306 36.7799C25.9467 37.5446 25.0601 37.9055 24.2707 37.6089C23.4845 37.3139 23.0528 36.4668 23.2785 35.6576L25.8429 23.4425L17.9587 17.508" fill="white"/>
+<path d="M24.1306 15.1101L31.7197 20.219C32.4877 20.7348 32.7629 21.7335 32.369 22.5707L26.306 36.7799C25.9467 37.5446 25.0601 37.9055 24.2707 37.6089C23.4845 37.3139 23.0528 36.4668 23.2785 35.6576L25.8429 23.4425L17.9587 17.508" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<path d="M29.1792 18.6056C29.1792 18.6056 28.9501 21.8126 25.7678 23.1887L29.1792 18.6056Z" fill="white"/>
+<path d="M29.1792 18.6056C29.1792 18.6056 28.9501 21.8126 25.7678 23.1887" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+</g>
+<g class="cyclist-wheel-front" transform="rotate(0 ${WHEEL_HUB_FRONT_X} ${WHEEL_HUB_FRONT_Y})">
+<path d="M45.5418 48.743C50.6288 48.743 54.7526 44.6192 54.7526 39.5322C54.7526 34.4452 50.6288 30.3214 45.5418 30.3214C40.4549 30.3214 36.3311 34.4452 36.3311 39.5322C36.3311 44.6192 40.4549 48.743 45.5418 48.743Z" stroke="#B1B1B1" stroke-width="2.30723" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M45.5425 50.2426C51.4577 50.2426 56.253 45.4474 56.253 39.5321C56.253 33.6169 51.4577 28.8217 45.5425 28.8217C39.6273 28.8217 34.832 33.6169 34.832 39.5321C34.832 45.4474 39.6273 50.2426 45.5425 50.2426Z" stroke="#1D1D1B" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M55.3018 39.5322C55.3018 44.9212 50.933 49.2917 45.5423 49.2917C40.1516 49.2917 35.7827 44.9228 35.7827 39.5322C35.7827 34.1415 40.1516 29.7726 45.5423 29.7726" stroke="white" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M37.5173 39.5387H53.5443" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M45.5293 31.5244V47.5514" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M39.865 33.8712L51.1984 45.2046" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M51.1984 33.8712L39.865 45.2046" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M38.093 36.5509L52.9647 42.525" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M48.5163 32.1029L42.5422 46.9746" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M42.3828 32.1688L48.6749 46.9087" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M52.8986 36.3927L38.1587 42.6848" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+</g>
+<g class="cyclist-wheel-rear" transform="rotate(0 ${WHEEL_HUB_REAR_X} ${WHEEL_HUB_REAR_Y})">
+<path d="M11.2054 48.743C16.2924 48.743 20.4162 44.6192 20.4162 39.5322C20.4162 34.4452 16.2924 30.3214 11.2054 30.3214C6.11844 30.3214 1.99463 34.4452 1.99463 39.5322C1.99463 44.6192 6.11844 48.743 11.2054 48.743Z" stroke="#B1B1B1" stroke-width="2.30723" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M11.2049 50.2426C17.1201 50.2426 21.9153 45.4474 21.9153 39.5321C21.9153 33.6169 17.1201 28.8217 11.2049 28.8217C5.28963 28.8217 0.494385 33.6169 0.494385 39.5321C0.494385 45.4474 5.28963 50.2426 11.2049 50.2426Z" stroke="#1D1D1B" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M11.2046 29.7743C16.5937 29.7743 20.9642 34.1432 20.9642 39.5339C20.9642 44.9245 16.5953 49.2934 11.2046 49.2934C5.81397 49.2934 1.44507 44.9245 1.44507 39.5339" stroke="white" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M3.17847 39.5387H19.2054" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M11.1931 31.5244V47.5514" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M5.52612 33.8712L16.8595 45.2046" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M16.8595 33.8712L5.52612 45.2046" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M3.75732 36.5509L18.629 42.525" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M14.1791 32.1029L8.20508 46.9746" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M8.04712 32.1688L14.3376 46.9087" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M18.5631 36.3927L3.82153 42.6848" stroke="#1D1D1B" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+</g>
+<path d="M20.6526 23.2975H38.9176" stroke="#FF184A" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M45.5414 39.5322L37.949 20.4811C37.7248 19.9207 38.1385 19.3093 38.7417 19.3093H44.6169C46.3374 19.3093 47.7333 20.7036 47.7333 22.4257C47.7333 24.1463 46.339 25.5421 44.6169 25.5421H43.4715" stroke="#1D1D1B" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M39.625 24.7213L26.96 40.9939" stroke="#FF184A" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M19.3298 19.9042L26.9602 40.9939" stroke="#FF184A" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M22.3955 18.8116L16.1313 17.0911C15.7655 16.9905 15.4079 17.2822 15.4342 17.6613L15.4771 18.2826C15.5249 18.9632 16.1066 19.4823 16.7889 19.4527L22.3493 19.2055C22.5784 19.1956 22.6147 18.8726 22.3938 18.8116H22.3955Z" fill="#1D1D1B" stroke="#1D1D1B" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M20.6528 23.2975L11.241 39.5321L26.968 40.778" stroke="#FF184A" stroke-width="0.988811" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.2405 41.5114C12.3336 41.5114 13.2198 40.6252 13.2198 39.5321C13.2198 38.439 12.3336 37.5529 11.2405 37.5529C10.1474 37.5529 9.26123 38.439 9.26123 39.5321C9.26123 40.6252 10.1474 41.5114 11.2405 41.5114Z" fill="#1D1D1B"/>
+<path d="M11.2407 37.5545L27.3369 37.3995L26.2113 44.0872L10.7183 41.4652L11.2407 37.5545Z" fill="#1D1D1B"/>
+<path d="M45.5411 39.5322L37.9487 20.4811" stroke="#FF184A" stroke-width="0.988811" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M26.9676 44.168C28.8398 44.168 30.3576 42.6503 30.3576 40.778C30.3576 38.9058 28.8398 37.3881 26.9676 37.3881C25.0954 37.3881 23.5776 38.9058 23.5776 40.778C23.5776 42.6503 25.0954 44.168 26.9676 44.168Z" fill="#1D1D1B"/>
+<path d="M26.1291 43.3736L11.0695 40.9164C10.3262 40.7121 9.8862 39.9458 10.0873 39.2008C10.2636 38.5416 10.8898 38.1066 11.5705 38.1692L27.1953 38.2895C27.9023 38.3637 28.5467 38.7295 28.9736 39.2981C29.8882 40.5176 29.5405 42.2596 28.2286 43.0358L28.105 43.1083C27.5101 43.461 26.7982 43.5566 26.1307 43.3753L26.1291 43.3736Z" stroke="white" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M26.8768 43.3736C28.2603 43.3736 29.3818 42.2521 29.3818 40.8686C29.3818 39.4852 28.2603 38.3636 26.8768 38.3636C25.4933 38.3636 24.3718 39.4852 24.3718 40.8686C24.3718 42.2521 25.4933 43.3736 26.8768 43.3736Z" stroke="white" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M11.2132 40.7616C11.8859 40.7616 12.4311 40.2163 12.4311 39.5437C12.4311 38.8711 11.8859 38.3258 11.2132 38.3258C10.5406 38.3258 9.99536 38.8711 9.99536 39.5437C9.99536 40.2163 10.5406 40.7616 11.2132 40.7616Z" stroke="white" stroke-width="0.164802" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M38.8754 10.644C41.3147 10.644 43.2921 8.66663 43.2921 6.22736C43.2921 3.78809 41.3147 1.81067 38.8754 1.81067C36.4362 1.81067 34.4587 3.78809 34.4587 6.22736C34.4587 8.66663 36.4362 10.644 38.8754 10.644Z" fill="white" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<g class="cyclist-helmet">
+<path d="M43.7263 5.20228C43.7543 5.57143 43.4165 5.86148 43.0556 5.78073C40.9148 5.30445 34.4035 4.26785 31.2426 4.37991C28.5646 4.47385 33.3867 -0.361436 39.252 0.212074C42.9073 0.569694 43.606 3.64984 43.7263 5.20063V5.20228Z" fill="#FF184A" stroke="#FF184A" stroke-width="0.329604" stroke-miterlimit="10"/>
+</g>
+<g class="cyclist-leg-front" clip-path="url(#__LEG_CLIP_ID__)" transform="translate(0,0)">
+<path d="M31.342 24L31.66 44.25C31.69 45.02 31.12 45.68 30.35 45.77C29.5 45.86 28.78 45.28 28.68 44.48L26.8166 24Z" fill="white" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+</g>
+<path d="M39.5047 11.4038L40.4193 18.1706L46.8515 16.5984C47.5487 16.4352 48.254 16.8406 48.4633 17.5245C48.6792 18.2282 48.2952 18.9764 47.5981 19.2138L40.1952 21.4435C38.8603 21.8605 37.4381 21.1255 37.0063 19.7939C36.3075 17.635 35.823 16.0974 35.5181 15.1432C34.9133 13.2529 33.5257 13.6748 33.5257 13.6748C31.1542 13.7868 27.3324 14.2812 25.1125 14.6372C24.5209 14.7328 24.2605 15.4332 24.6412 15.8963C25.897 17.424 30.9976 27.5659 30.9976 27.5659C31.2102 28.1477 31.3256 28.7607 31.342 29.3804L26.8166 29.8896L17.9568 19.4181C17.9568 19.4181 15.1783 17.2592 15.7254 13.8C16.0896 11.5043 16.2132 10.2387 20.6794 8.31706C23.4777 7.11401 27.929 5.41161 33.0082 4.80184C35.8807 4.45575 39.3135 9.92882 39.5014 11.4054L39.5047 11.4038Z" fill="white" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<path d="M23.8462 26.3958C23.8462 26.3958 27.602 27.4555 28.9073 23.4211" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<path d="M35.52 15.1447C36.8104 15.3524 38.3019 15.5188 39.8411 13.7307L35.52 15.1447Z" fill="white"/>
+<path d="M35.52 15.1447C36.8104 15.3524 38.3019 15.5188 39.8411 13.7307" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<path d="M18.9447 9.15588C18.9447 9.15588 17.9114 12.7716 24.6847 14.7229L18.9447 9.15588Z" fill="white"/>
+<path d="M18.9447 9.15588C18.9447 9.15588 17.9114 12.7716 24.6847 14.7229" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<path d="M42.401 3.98273C42.401 3.98273 42.1554 1.77439 39.2104 1.43654C36.2654 1.0987 32.9529 2.93954 32.9529 2.93954" stroke="#803B50" stroke-width="0.329604" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M41.5093 4.20518C41.5093 4.20518 39.0027 2.46487 35.6111 3.43885" stroke="#803B50" stroke-width="0.329604" stroke-miterlimit="10" stroke-linecap="round"/>
+</svg>`;
+  const TRACK_X_MARGIN = TRACK_RIDER_HALF_W + 10;
+
+  function trackInnerWidth() {
+    return TW - 2 * TRACK_X_MARGIN;
+  }
+
+  function trackXFromDist(distAxis) {
+    const dPlot = trackDisplayAxisFromDistanceAxis(distAxis);
+    return TRACK_X_MARGIN + (dPlot / S_MAX) * trackInnerWidth();
+  }
+
+  function applyCyclistWheelTransforms(riderOuterG, phaseDeg) {
+    const sprite = riderOuterG && riderOuterG.querySelector("svg");
+    if (!sprite) return;
+    const deg = typeof phaseDeg === "number" && phaseDeg === phaseDeg ? phaseDeg : 0;
+    const front = sprite.querySelector(".cyclist-wheel-front");
+    const rear = sprite.querySelector(".cyclist-wheel-rear");
+    const tF =
+      "rotate(" +
+      deg +
+      " " +
+      WHEEL_HUB_FRONT_X +
+      " " +
+      WHEEL_HUB_FRONT_Y +
+      ")";
+    const tR =
+      "rotate(" + deg + " " + WHEEL_HUB_REAR_X + " " + WHEEL_HUB_REAR_Y + ")";
+    if (front) front.setAttribute("transform", tF);
+    if (rear) rear.setAttribute("transform", tR);
+  }
+
+  function refreshTrackRiderWheelAngles() {
+    if (trackRider) applyCyclistWheelTransforms(trackRider, trackWheelPhaseDeg1);
+    if (dualGraph && trackRider2)
+      applyCyclistWheelTransforms(trackRider2, trackWheelPhaseDeg2);
+  }
+
+  /** Houpání noh — pouze svislý translate. Front a Rear v opačné fázi (jako pedálování). */
+  const RIDER_LEG_GEAR_RATIO = 1.8;
+  const RIDER_LEG_AMPLITUDE = 2.4;
+  /** Při šlapání dolů se přední noha jinak posune moc níž — zde omezíme jen kladný translate (směr +Y). */
+  const RIDER_FRONT_LEG_DOWN_SCALE = 0.35;
+  /** Rotace siluety přední nohy kolem kyčle — plná sinusoida, koleno „jde“ nahoru i dolů v každém cyklu. */
+  const RIDER_FRONT_HIP_X = 31.342;
+  const RIDER_FRONT_HIP_Y = 24;
+  /** Max. úhel (°) kolem kyčle; skutečný průběh ±tato hodnota (ohýbání / natažení v rytmu šlapání). */
+  const RIDER_FRONT_KNEE_SWING_DEG = 14;
+
+  function applyCyclistLegMotion(riderOuterG, phaseDeg) {
+    const sprite = riderOuterG && riderOuterG.querySelector("svg");
+    if (!sprite) return;
+    const safe = typeof phaseDeg === "number" && phaseDeg === phaseDeg ? phaseDeg : 0;
+    const legPhaseRad = ((safe / RIDER_LEG_GEAR_RATIO) * Math.PI) / 180;
+    const legOsc = Math.sin(legPhaseRad);
+    const dyFront =
+      RIDER_LEG_AMPLITUDE *
+      legOsc *
+      (legOsc > 0 ? RIDER_FRONT_LEG_DOWN_SCALE : 1);
+    const dyRear = -RIDER_LEG_AMPLITUDE * legOsc;
+    const kneeDeg = legOsc * RIDER_FRONT_KNEE_SWING_DEG;
+    const fronts = sprite.getElementsByClassName("cyclist-leg-front");
+    const rears = sprite.getElementsByClassName("cyclist-leg-rear");
+    for (let i = 0; i < fronts.length; i++) {
+      fronts[i].setAttribute(
+        "transform",
+        "translate(0," +
+          dyFront +
+          ") rotate(" +
+          kneeDeg +
+          " " +
+          RIDER_FRONT_HIP_X +
+          " " +
+          RIDER_FRONT_HIP_Y +
+          ")"
+      );
+    }
+    for (let i = 0; i < rears.length; i++) {
+      rears[i].setAttribute("transform", "translate(0," + dyRear + ")");
+    }
+  }
+
+  function refreshTrackRiderLegPhases() {
+    if (trackRider) applyCyclistLegMotion(trackRider, trackWheelPhaseDeg1);
+    if (dualGraph && trackRider2)
+      applyCyclistLegMotion(trackRider2, trackWheelPhaseDeg2);
+  }
+
+  function applyCyclistHelmetColors(riderOuterG, fill, stroke) {
+    const sprite = riderOuterG && riderOuterG.querySelector("svg");
+    if (!sprite || !fill) return;
+    const wrap = sprite.querySelector(".cyclist-helmet");
+    if (!wrap) return;
+    const s = stroke || fill;
+    const paths = wrap.getElementsByTagName("path");
+    for (let i = 0; i < paths.length; i++) {
+      paths[i].setAttribute("fill", fill);
+      paths[i].setAttribute("stroke", s);
+    }
+  }
+
+  /** Cyklista jako vložené SVG — zarovnání náboje zadního kola na výšku dříve kreslené figurky. */
+  let trackRiderUidCounter = 0;
+  function createTrackRiderGroup(cx, ptsArr, wheelPhaseDeg, helmetOpts) {
+    const NS = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "track-rider");
+    g.setAttribute("pointer-events", "none");
+    g.setAttribute("transform", "translate(" + (cx - TRACK_RIDER_HALF_W) + ",0)");
+
+    const artWrap = document.createElementNS(NS, "g");
+    artWrap.setAttribute("transform", "translate(0," + RIDER_SVG_OFFSET_Y + ")");
+    const legClipId = "leg-clip-" + (++trackRiderUidCounter);
+    const markup = RIDER_SVG_MARKUP.replace(/__LEG_CLIP_ID__/g, legClipId);
+    const parsed = new DOMParser().parseFromString(markup, "image/svg+xml");
+    if (parsed.querySelector("parsererror")) {
+      console.warn("Chyba parsování SVG cyklista.");
+    } else {
+      artWrap.appendChild(document.importNode(parsed.documentElement, true));
+    }
+    g.appendChild(artWrap);
+
+    applyCyclistWheelTransforms(
+      g,
+      typeof wheelPhaseDeg === "number" ? wheelPhaseDeg : 0
+    );
+    applyCyclistLegMotion(
+      g,
+      typeof wheelPhaseDeg === "number" ? wheelPhaseDeg : 0
+    );
+    syncJetPropulsion(g, ptsArr);
+    if (helmetOpts && helmetOpts.fill) {
+      applyCyclistHelmetColors(g, helmetOpts.fill, helmetOpts.stroke);
+    }
+    return g;
+  }
+
+  let trackRider = null;
+  let trackRider2 = null;
+  let trackLine = null;
+  let trackRider1Marker = null;
+  let trackLine2 = null;
+  let trackRider2Marker = null;
+
+  function drawRider1TrackMarker(distAxis) {
+    const NS = "http://www.w3.org/2000/svg";
+    const cx = trackXFromDist(distAxis);
+    const ly = TRACK_LINE_Y;
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "track-rider1-marker");
+    g.setAttribute("pointer-events", "none");
+
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("cx", String(cx));
+    dot.setAttribute("cy", String(ly));
+    dot.setAttribute("r", "3.5");
+    dot.setAttribute("fill", "#FF184A");
+    g.appendChild(dot);
+
+    trackEl.appendChild(g);
+    trackRider1Marker = g;
+  }
+
+  function updateRider1TrackMarker() {
+    if (!trackRider1Marker) return;
+    if (!points.length) {
+      trackRider1Marker.style.display = "none";
+      return;
+    }
+    const dist = distanceAtFrom(points, simT);
+    const cx = trackXFromDist(dist);
+    const dot = trackRider1Marker.querySelector("circle");
+    if (dot) {
+      dot.setAttribute("cx", String(cx));
+      dot.setAttribute("cy", String(TRACK_LINE_Y));
+    }
+    trackRider1Marker.style.display = "";
+  }
+
+  function drawRider2TrackMarker(distAxis) {
+    const NS = "http://www.w3.org/2000/svg";
+    const cx = trackXFromDist(distAxis);
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "track-rider2-marker");
+    g.setAttribute("pointer-events", "none");
+
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("cx", String(cx));
+    dot.setAttribute("cy", String(TRACK_LINE2_Y));
+    dot.setAttribute("r", "3.5");
+    dot.setAttribute("fill", RIDER2_HELMET_FILL);
+    g.appendChild(dot);
+
+    trackEl.appendChild(g);
+    trackRider2Marker = g;
+  }
+
+  function updateRider2TrackMarker() {
+    if (!trackRider2Marker) return;
+    if (!dualGraph || !points2.length) {
+      trackRider2Marker.style.display = "none";
+      return;
+    }
+    const dist = distanceAtFrom(points2, simT);
+    const cx = trackXFromDist(dist);
+    const dot = trackRider2Marker.querySelector("circle");
+    if (dot) {
+      dot.setAttribute("cx", String(cx));
+      dot.setAttribute("cy", String(TRACK_LINE2_Y));
+    }
+    trackRider2Marker.style.display = "";
+  }
+
+  function drawTrackAxisScale(lineY, labelBase, labelY) {
+    const inner = trackInnerWidth();
+    const ly = lineY;
+    for (let si = 0; si <= S_MAX; si++) {
+      const x = TRACK_X_MARGIN + (si / S_MAX) * inner;
+      const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      tick.setAttribute("x1", x);
+      tick.setAttribute("x2", x);
+      tick.setAttribute("y1", String(ly));
+      tick.setAttribute("y2", String(ly + 10));
+      tick.setAttribute("stroke", "#444");
+      trackEl.appendChild(tick);
+      const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lab.setAttribute("font-size", "11");
+      lab.setAttribute("fill", "#444");
+      lab.textContent = si * 10 + labelBase + " m";
+      if (si === 0) {
+        lab.setAttribute("x", String(TRACK_X_MARGIN + 2));
+        lab.setAttribute("text-anchor", "start");
+      } else if (si === S_MAX) {
+        lab.setAttribute("x", String(TW - TRACK_X_MARGIN - 2));
+        lab.setAttribute("text-anchor", "end");
+      } else {
+        lab.setAttribute("x", String(x));
+        lab.setAttribute("text-anchor", "middle");
+      }
+      lab.setAttribute("y", String(labelY));
+      trackEl.appendChild(lab);
+    }
+  }
+
+  function drawTrackLine2() {
+    const NS = "http://www.w3.org/2000/svg";
+    trackLine2 = document.createElementNS(NS, "line");
+    trackLine2.setAttribute("x1", String(TRACK_X_MARGIN));
+    trackLine2.setAttribute("y1", String(TRACK_LINE2_Y));
+    trackLine2.setAttribute("x2", String(TW - TRACK_X_MARGIN));
+    trackLine2.setAttribute("y2", String(TRACK_LINE2_Y));
+    trackLine2.setAttribute("stroke", "#111");
+    trackLine2.setAttribute("stroke-width", "3");
+    trackEl.appendChild(trackLine2);
+  }
+
+  function drawTrack() {
+    if (isCustomGraphMode()) {
+      trackEl.innerHTML = "";
+      trackRider = null;
+      trackRider2 = null;
+      return;
+    }
+    trackEl.innerHTML = "";
+    trackEl.setAttribute("viewBox", "0 " + TRACK_VIEW_Y_MIN + " " + TW + " " + TRACK_VIEW_HEIGHT);
+    trackRider2 = null;
+    trackRider1Marker = null;
+    trackLine2 = null;
+    trackRider2Marker = null;
+    const ly = String(TRACK_LINE_Y);
+
+    trackLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    trackLine.setAttribute("x1", String(TRACK_X_MARGIN));
+    trackLine.setAttribute("y1", ly);
+    trackLine.setAttribute("x2", String(TW - TRACK_X_MARGIN));
+    trackLine.setAttribute("y2", ly);
+    trackLine.setAttribute("stroke", "#111");
+    trackLine.setAttribute("stroke-width", "3");
+    trackEl.appendChild(trackLine);
+
+    const t0 = running || simT > 0 ? simT : 0;
+    drawTrackAxisScale(
+      TRACK_LINE_Y,
+      trackLabelBaseMetersForArr(points, t0),
+      TRACK_LINE_Y + (dualGraph ? 18 : 22)
+    );
+
+    const dist1 = distanceAtFrom(points, t0);
+    const cx1 = trackXFromDist(dist1);
+    if (points.length >= 1) drawRider1TrackMarker(dist1);
+    trackRider = createTrackRiderGroup(cx1, points, trackWheelPhaseDeg1);
+    trackEl.appendChild(trackRider);
+
+    if (dualGraph) {
+      drawTrackLine2();
+      drawTrackAxisScale(
+        TRACK_LINE2_Y,
+        trackLabelBaseMetersForArr(points2, t0),
+        TRACK_LINE2_Y + 18
+      );
+      const dist2 = distanceAtFrom(points2, t0);
+      const cx2 = trackXFromDist(dist2);
+      if (points2.length >= 1) drawRider2TrackMarker(dist2);
+      trackRider2 = createTrackRiderGroup(cx2, points2, trackWheelPhaseDeg2, {
+        fill: RIDER2_HELMET_FILL,
+        stroke: RIDER2_HELMET_STROKE,
+      });
+      trackEl.appendChild(trackRider2);
+    }
+
+    updateTrackRiderPosition();
+  }
+
+  function updateTrackRiderPosition() {
+    if (trackRider) {
+      const cx = trackXFromDist(distanceAtFrom(points, simT));
+      const backward = derivativeSignedAtFrom(points, simT) < 0;
+      const dy = TRACK_RIDER1_DY;
+      const tr = backward
+        ? "translate(" + cx + "," + dy + ") scale(-1,1) translate(" + -TRACK_RIDER_HALF_W + ",0)"
+        : "translate(" + (cx - TRACK_RIDER_HALF_W) + "," + dy + ")";
+      trackRider.setAttribute("transform", tr);
+      syncJetPropulsion(trackRider, points);
+      updateRider1TrackMarker();
+    }
+    if (dualGraph && trackRider2) {
+      const cx = trackXFromDist(distanceAtFrom(points2, simT));
+      const backward = derivativeSignedAtFrom(points2, simT) < 0;
+      const dy = TRACK_RIDER2_DY;
+      const tr = backward
+        ? "translate(" + cx + "," + dy + ") scale(-1,1) translate(" + -TRACK_RIDER_HALF_W + ",0)"
+        : "translate(" + (cx - TRACK_RIDER_HALF_W) + "," + dy + ")";
+      trackRider2.setAttribute("transform", tr);
+      syncJetPropulsion(trackRider2, points2);
+      updateRider2TrackMarker();
+    } else if (trackRider2Marker) {
+      trackRider2Marker.style.display = "none";
+    }
+  }
+
+  function clientXY(ev) {
+    const touch = ev.touches && ev.touches[0];
+    const changed = ev.changedTouches && ev.changedTouches[0];
+    if (touch) return { clientX: touch.clientX, clientY: touch.clientY };
+    if (changed) return { clientX: changed.clientX, clientY: changed.clientY };
+    return { clientX: ev.clientX, clientY: ev.clientY };
+  }
+
+  /** Souřadnice v prostoru viewBox (správně i při měřítku SVG a „letterboxu“). */
+  function chartCoordsFromEvent(ev) {
+    const svg = chartEl;
+    const { clientX, clientY } = clientXY(ev);
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    try {
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const loc = pt.matrixTransform(ctm.inverse());
+        return { x: loc.x, y: loc.y };
+      }
+    } catch (err) {
+      /* fallback níže */
+    }
+    const r = svg.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    const rw = r.width || 1;
+    const rh = r.height || 1;
+    return {
+      x: (clientX - r.left) * (vb.width / rw) + vb.x,
+      y: (clientY - r.top) * (vb.height / rh) + vb.y,
+    };
+  }
+
+  function getActiveGraph() {
+    if (!dualGraph) return 1;
+    const r = document.querySelector('input[name="graphTarget"]:checked');
+    return r && String(r.value) === "2" ? 2 : 1;
+  }
+
+  let dragIdx = -1;
+  let dragGraph = 1;
+  /** Bez pohybu nesmí mouseup překreslit graf – jinak zmizí stejný <circle> a dblclick nevznikne. */
+  let dragMoved = false;
+  /** Tažení počáteční rychlosti v režimu rychlost (kolečko na ose t = 0). */
+  let dragVelocityOrigin = false;
+
+  function hideChartClickPreview() {
+    if (chartClickPreviewGroup) chartClickPreviewGroup.style.display = "none";
+  }
+
+  function updateChartClickPreviewFromEvent(ev) {
+    if (running) {
+      hideChartClickPreview();
+      return;
+    }
+    if (dragIdx >= 0 || dragVelocityOrigin) {
+      hideChartClickPreview();
+      return;
+    }
+    const { x, y } = chartCoordsFromEvent(ev);
+    const inPlot = x >= ml && x <= ml + pw && y >= mt && y <= mt + ph;
+    const inAxisStrip =
+      x >= ml - AXIS_PICK_W && x < ml && y >= mt && y <= mt + ph;
+    if (!inPlot && !inAxisStrip) {
+      hideChartClickPreview();
+      return;
+    }
+    if (!chartClickPreviewGroup || !chartClickPreviewCircle) return;
+
+    const g = getActiveGraph();
+    const arr = g === 2 ? points2 : points;
+    const v0Unset = usesVelocityAxisMode() && arr.length === 0 && velocityV0[g] == null;
+
+    if (v0Unset && (inPlot || inAxisStrip)) {
+      const ys = snapChartYToValueGrid(y);
+      const vm = yToV(ys);
+      chartClickPreviewCircle.setAttribute("cx", String(tToX(0)));
+      chartClickPreviewCircle.setAttribute("cy", String(vToY(vm)));
+      chartClickPreviewCircle.setAttribute("stroke", g === 2 ? GRAPH2_COLOR : GRAPH1_COLOR);
+      chartClickPreviewGroup.style.display = "";
+      return;
+    }
+
+    if (!inPlot) {
+      hideChartClickPreview();
+      return;
+    }
+
+    const snapped = snapChartXYToGrid(x, y);
+    const xClamped = snapped.x;
+    const t = xToT(xClamped);
+    const val = usesVelocityAxisMode() ? yToV(snapped.y) : yToS(snapped.y);
+
+    if (wouldRejectNewPoint(arr, g, t, val)) {
+      hideChartClickPreview();
+      return;
+    }
+
+    const fin = finalCoordsAfterHypotheticalAdd(arr, t, val);
+    const cx = tToX(fin.t);
+    const cy =
+      usesVelocityAxisMode()
+        ? vToY(fin.s)
+        : sToY(fin.s);
+
+    chartClickPreviewCircle.setAttribute("cx", String(cx));
+    chartClickPreviewCircle.setAttribute("cy", String(cy));
+    chartClickPreviewCircle.setAttribute("stroke", g === 2 ? GRAPH2_COLOR : GRAPH1_COLOR);
+    chartClickPreviewGroup.style.display = "";
+  }
+
+  function pickVelocityV0FromEvent(ev) {
+    if (running || !usesVelocityAxisMode()) return;
+    const g = getActiveGraph();
+    const arr = g === 2 ? points2 : points;
+    if (arr.length > 0) return;
+    const { x, y } = chartCoordsFromEvent(ev);
+    if (x < ml - AXIS_PICK_W || x > ml || y < mt || y > mt + ph) return;
+    const ys = snapChartYToValueGrid(y);
+    pushUndoSnapshot();
+    velocityV0[g] = yToV(ys);
+    hideChartClickPreview();
+    redrawChart();
+  }
+
+  function tryAddPointAtEvent(ev) {
+    if (running) return;
+    const { x, y } = chartCoordsFromEvent(ev);
+    if (x < ml || x > ml + pw || y < mt || y > mt + ph) return;
+    const snapped = snapChartXYToGrid(x, y);
+    const t = xToT(snapped.x);
+    const targetArr = getActiveGraph() === 2 ? points2 : points;
+    const g = graphIdFromPointsArr(targetArr);
+
+    if (usesVelocityAxisMode() && targetArr.length === 0 && velocityV0[g] == null) {
+      pushUndoSnapshot();
+      velocityV0[g] = yToV(snapChartYToValueGrid(y));
+      hideChartClickPreview();
+      redrawChart();
+      return;
+    }
+
+    const val =
+      usesVelocityAxisMode() ? yToV(snapped.y) : yToS(snapped.y);
+
+    if (wouldRejectNewPoint(targetArr, g, t, val)) return;
+
+    pushUndoSnapshot();
+    targetArr.push({ t, s: val });
+    sortPointsArr(targetArr);
+    redrawChart();
+  }
+
+  /** Jen plot vrstva – žádné závislosti na pointerevents vs. mouse kompatibilitě. */
+  function bindPlotHit(plotHit) {
+    plotHit.addEventListener("mousedown", function (ev) {
+      if (ev.button !== 0 || running) return;
+      ev.preventDefault();
+      tryAddPointAtEvent(ev);
+    });
+    plotHit.addEventListener(
+      "touchstart",
+      function (ev) {
+        if (running) return;
+        ev.preventDefault();
+        tryAddPointAtEvent(ev);
+      },
+      { passive: false }
+    );
+  }
+
+  function applyDrag(ev) {
+    if (running) return;
+    if (dragVelocityOrigin) {
+      if (!dragMoved && dragUndoSnapshot) {
+        undoStack.push(dragUndoSnapshot);
+        if (undoStack.length > UNDO_STACK_MAX) undoStack.shift();
+        dragUndoSnapshot = null;
+        updateUndoButton();
+      }
+      dragMoved = true;
+      const { y } = chartCoordsFromEvent(ev);
+      velocityV0[dragGraph] = Math.min(
+        velocityGraphMaxMps(),
+        Math.max(0, yToV(snapChartYToValueGrid(y)))
+      );
+      redrawChart();
+      return;
+    }
+    if (dragIdx < 0) return;
+    if (!dragMoved && dragUndoSnapshot) {
+      undoStack.push(dragUndoSnapshot);
+      if (undoStack.length > UNDO_STACK_MAX) undoStack.shift();
+      dragUndoSnapshot = null;
+      updateUndoButton();
+    }
+    dragMoved = true;
+    const arr = dragGraph === 2 ? points2 : points;
+    const { x, y } = chartCoordsFromEvent(ev);
+    let t = xToT(snapChartXToTimeGrid(x));
+    const yAdj = snapChartYToValueGrid(y);
+
+    const p = arr[dragIdx];
+    if (!p) return;
+
+    const prev =
+      dragIdx === 0
+        ? { t: 0, s: usesVelocityAxisMode() ? velocityV0ForGraph(dragGraph) : 0 }
+        : arr[dragIdx - 1];
+    const next = arr[dragIdx + 1];
+    const eps = 0.03;
+    if (prev) t = Math.max(prev.t + eps, t);
+    if (next) t = Math.min(next.t - eps, t);
+
+    if (usesVelocityAxisMode()) {
+      p.t = t;
+      p.s = yToV(yAdj);
+    } else {
+      p.t = t;
+      p.s = yToS(yAdj);
+      if (usesCumulativeAxisMode()) {
+        const hi = next ? next.s : S_MAX;
+        p.s = Math.max(prev.s, Math.min(hi, p.s));
+      }
+    }
+    sortPointsArr(arr);
+    dragIdx = arr.indexOf(p);
+    redrawChart();
+  }
+
+  function endDrag() {
+    dragIdx = -1;
+    dragGraph = 1;
+    dragVelocityOrigin = false;
+    dragUndoSnapshot = null;
+    document.removeEventListener("mousemove", applyDrag);
+    document.removeEventListener("mouseup", endDrag);
+    document.removeEventListener("touchmove", applyDrag);
+    document.removeEventListener("touchend", endDrag);
+    document.removeEventListener("touchcancel", endDrag);
+    if (dragMoved) redrawChart();
+    dragMoved = false;
+  }
+
+  function startCircleDrag(idx, graphId, ev) {
+    dragMoved = false;
+    dragVelocityOrigin = false;
+    dragUndoSnapshot = captureGraphSnapshot();
+    dragIdx = idx;
+    dragGraph = graphId;
+    hideChartClickPreview();
+    resetPlaybackToStartIfPaused();
+    updateTrackRiderPosition();
+    updateChartTimeIndicator();
+    document.addEventListener("mousemove", applyDrag);
+    document.addEventListener("mouseup", endDrag);
+    document.addEventListener("touchmove", applyDrag, { passive: false });
+    document.addEventListener("touchend", endDrag);
+    document.addEventListener("touchcancel", endDrag);
+  }
+
+  function startVelocityOriginDrag(graphId, ev) {
+    dragMoved = false;
+    dragVelocityOrigin = true;
+    dragUndoSnapshot = captureGraphSnapshot();
+    dragIdx = -1;
+    dragGraph = graphId;
+    hideChartClickPreview();
+    resetPlaybackToStartIfPaused();
+    updateTrackRiderPosition();
+    updateChartTimeIndicator();
+    document.addEventListener("mousemove", applyDrag);
+    document.addEventListener("mouseup", endDrag);
+    document.addEventListener("touchmove", applyDrag, { passive: false });
+    document.addEventListener("touchend", endDrag);
+    document.addEventListener("touchcancel", endDrag);
+  }
+
+  function bindVelocityOriginDrag(circle, graphId) {
+    circle.addEventListener("mousedown", function (ev) {
+      if (running || ev.button !== 0) return;
+      if (dualGraph && graphId !== getActiveGraph()) return;
+      ev.stopPropagation();
+      startVelocityOriginDrag(graphId, ev);
+    });
+    circle.addEventListener(
+      "touchstart",
+      function (ev) {
+        if (running) return;
+        if (dualGraph && graphId !== getActiveGraph()) return;
+        ev.stopPropagation();
+        startVelocityOriginDrag(graphId, ev);
+      },
+      { passive: false }
+    );
+  }
+
+  function bindUserCircleDrag(circle, idx, graphId) {
+    circle.addEventListener("mousedown", function (ev) {
+      if (running || ev.button !== 0) return;
+      if (dualGraph && graphId !== getActiveGraph()) return;
+      ev.stopPropagation();
+      startCircleDrag(idx, graphId, ev);
+    });
+    circle.addEventListener(
+      "touchstart",
+      function (ev) {
+        if (running) return;
+        if (dualGraph && graphId !== getActiveGraph()) return;
+        ev.stopPropagation();
+        startCircleDrag(idx, graphId, ev);
+      },
+      { passive: false }
+    );
+  }
+
+  chartEl.addEventListener("dblclick", function (ev) {
+    if (running) return;
+    const target = ev.target;
+    if (
+      !target ||
+      target.namespaceURI !== "http://www.w3.org/2000/svg" ||
+      target.localName !== "circle"
+    ) {
+      return;
+    }
+    const raw =
+      target.getAttribute("data-index") ||
+      (target.dataset ? target.dataset.index : "");
+    if (raw === undefined || raw === null || raw === "") return;
+    const idx = parseInt(raw, 10);
+    if (idx !== idx || idx < 0) return;
+    const gRaw = target.getAttribute("data-graph") || "1";
+    const graph = parseInt(gRaw, 10);
+    const arr = graph === 2 ? points2 : points;
+    pushUndoSnapshot();
+    arr.splice(idx, 1);
+    if (usesVelocityAxisMode() && !arr.length) velocityV0[graph] = null;
+    redrawChart();
+    ev.preventDefault();
+  });
+
+  function tick(now) {
+    if (!running) return;
+    if (!lastFrame) lastFrame = now;
+    const dt = (now - lastFrame) / 1000;
+    lastFrame = now;
+    simT += dt;
+    const endT = simEndTime();
+    if (endT <= 0 || simT >= endT) {
+      simT = endT;
+      running = false;
+      lastFrame = 0;
+      updateActionButton();
+    }
+    timerEl.textContent = formatTimer(simT);
+    if (dt > 0 && (points.length >= 1 || (dualGraph && points2.length >= 1))) {
+      const tUse = Math.max(0, simT);
+      const tPrev = Math.max(0, simT - dt);
+      const k = (180 / Math.PI) / RIDER_WHEEL_ROLL_RADIUS;
+      if (points.length >= 1) {
+        trackWheelPhaseDeg1 +=
+          (trackXFromDist(distanceAtFrom(points, tUse)) -
+            trackXFromDist(distanceAtFrom(points, tPrev))) *
+          k;
+      }
+      if (dualGraph && points2.length >= 1) {
+        trackWheelPhaseDeg2 +=
+          (trackXFromDist(distanceAtFrom(points2, tUse)) -
+            trackXFromDist(distanceAtFrom(points2, tPrev))) *
+          k;
+      }
+    }
+    if (usesVelocityAxisMode()) drawTrack();
+    else if (!isCustomGraphMode()) {
+      updateTrackRiderPosition();
+      refreshTrackRiderWheelAngles();
+      refreshTrackRiderLegPhases();
+    }
+    updateChartTimeIndicator();
+    if (running) raf = requestAnimationFrame(tick);
+  }
+
+  btnRun.addEventListener("click", function () {
+    if (isCustomGraphMode()) {
+      saveChartAsImage();
+      return;
+    }
+    if (running) {
+      running = false;
+      updateActionButton();
+      cancelAnimationFrame(raf);
+      lastFrame = 0;
+      if (usesVelocityAxisMode()) drawTrack();
+      else updateTrackRiderPosition();
+      updateChartTimeIndicator();
+      return;
+    }
+    if (points.length < 1 && !(dualGraph && points2.length >= 1)) return;
+    const endT = simEndTime();
+    if (endT > 0 && simT >= endT - 1e-6) {
+      simT = 0;
+      trackWheelPhaseDeg1 = 0;
+      trackWheelPhaseDeg2 = 0;
+    }
+    lastFrame = 0;
+    running = true;
+    updateActionButton();
+    timerEl.textContent = formatTimer(simT);
+    updateChartTimeIndicator();
+    if (usesVelocityAxisMode()) drawTrack();
+    else if (!isCustomGraphMode()) updateTrackRiderPosition();
+    raf = requestAnimationFrame(tick);
+  });
+
+  function resetGraphDataAndPlayback() {
+    running = false;
+    updateActionButton();
+    cancelAnimationFrame(raf);
+    lastFrame = 0;
+    simT = 0;
+    timerEl.textContent = formatTimer(0);
+    if (dragIdx >= 0 || dragVelocityOrigin) {
+      document.removeEventListener("mousemove", applyDrag);
+      document.removeEventListener("mouseup", endDrag);
+      document.removeEventListener("touchmove", applyDrag);
+      document.removeEventListener("touchend", endDrag);
+      document.removeEventListener("touchcancel", endDrag);
+    }
+    dragIdx = -1;
+    dragMoved = false;
+    dragGraph = 1;
+    dragVelocityOrigin = false;
+    dragUndoSnapshot = null;
+    points.length = 0;
+    points2.length = 0;
+    velocityV0[1] = null;
+    velocityV0[2] = null;
+    trackWheelPhaseDeg1 = 0;
+    trackWheelPhaseDeg2 = 0;
+  }
+
+  btnUndo.addEventListener("click", function () {
+    undoLastGraphEdit();
+  });
+
+  btnReset.addEventListener("click", function () {
+    if (graphHasEditableState()) pushUndoSnapshot();
+    resetGraphDataAndPlayback();
+    redrawChart();
+  });
+
+  chkDualGraph.addEventListener("change", function () {
+    dualGraph = chkDualGraph.checked;
+    graphTargetWrap.hidden = !dualGraph;
+    if (!dualGraph) {
+      const r1 = document.querySelector('input[name="graphTarget"][value="1"]');
+      if (r1) r1.checked = true;
+    }
+    syncGraphTargetRadios();
+    redrawChart();
+  });
+
+  document.querySelectorAll('input[name="graphTarget"]').forEach(function (el) {
+    el.addEventListener("change", function () {
+      if (dualGraph) redrawChart();
+    });
+  });
+
+  document.querySelectorAll('input[name="axisY"]').forEach(function (el) {
+    el.addEventListener("change", function () {
+      if (customGraphMode) return;
+      const prev = yAxisMode;
+      syncYAxisModeFromRadios();
+      const next = yAxisMode;
+      if (prev !== next) {
+        clearUndoStack();
+        resetGraphDataAndPlayback();
+      }
+      redrawChart();
+    });
+  });
+
+  document.querySelectorAll('input[name="graphMode"]').forEach(function (el) {
+    el.addEventListener("change", function () {
+      const prevCustom = customGraphMode;
+      syncGraphModeFromRadios();
+      syncCustomAxisFromInputs();
+      updateModePanelsVisibility();
+      if (prevCustom !== customGraphMode) {
+        clearUndoStack();
+        resetGraphDataAndPlayback();
+      }
+      redrawChart();
+    });
+  });
+
+  [customXName, customXUnit, customYName, customYUnit].forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("input", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+  });
+
+  [customXStep, customYStep].forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs();
+      redrawChart();
+    });
+    input.addEventListener("input", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs({ formatInputs: false });
+      redrawChart();
+    });
+    input.addEventListener("blur", function () {
+      if (!customGraphMode) return;
+      syncCustomAxisFromInputs();
+    });
+  });
+
+  btnHelp.addEventListener("click", function () {
+    helpDialog.showModal();
+  });
+  helpDialogClose.addEventListener("click", function () {
+    helpDialog.close();
+  });
+  helpDialog.addEventListener("click", function (ev) {
+    if (ev.target === helpDialog) helpDialog.close();
+  });
+
+  bindCustomStepSpinner(customXStep, "xStep");
+  bindCustomStepSpinner(customYStep, "yStep");
+
+  syncGraphTargetRadios();
+  syncYAxisModeFromRadios();
+  syncGraphModeFromRadios();
+  syncCustomAxisFromInputs();
+  updateModePanelsVisibility();
+
+  chartEl.addEventListener("mousemove", updateChartClickPreviewFromEvent);
+  chartEl.addEventListener("mouseleave", hideChartClickPreview);
+  chartEl.addEventListener("touchmove", updateChartClickPreviewFromEvent, { passive: true });
+
+  redrawChart();
+})();
+  </script>
+</body>
+</html>

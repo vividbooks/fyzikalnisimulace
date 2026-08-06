@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="lever-light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Páka — simulace</title>
+    <style>
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
+          format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: light;
+        --bg-base: #f8fafc;
+        --bg-glow-cyan: rgba(56, 189, 248, 0.12);
+        --bg-glow-violet: rgba(219, 39, 119, 0.06);
+        --bg: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --accent: #db2777;
+        --border: rgba(15, 23, 42, 0.12);
+        --border-subtle: rgba(148, 163, 184, 0.35);
+        --area-muted: rgba(241, 245, 249, 0.95);
+        --readout-bg: #f1f5f9;
+        /* Stejné jako COLORS.bg ve lever-app (plocha SVG přes celý layout box). */
+        --lever-scene-bg: #f1f5f9;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+
+      body {
+        overflow-x: hidden;
+        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        background-color: var(--bg-base);
+        background-image:
+          radial-gradient(ellipse 125% 95% at 50% -28%, var(--bg-glow-cyan), transparent 54%),
+          radial-gradient(ellipse 72% 58% at 108% 38%, var(--bg-glow-violet), transparent 50%),
+          radial-gradient(ellipse 58% 42% at -12% 82%, rgba(56, 189, 248, 0.06), transparent 44%),
+          linear-gradient(168deg, #f8fafc 0%, #f1f5f9 42%, #eef2f7 100%);
+        background-attachment: fixed;
+        color: var(--text);
+      }
+
+      #root {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .app.app--lever {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+      }
+
+      .sim-subheader {
+        position: relative;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px max(18px, env(safe-area-inset-right, 0px)) 12px
+          max(18px, env(safe-area-inset-left, 0px));
+        padding-top: max(12px, env(safe-area-inset-top, 0px));
+        border-bottom: 1px solid var(--border-subtle);
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        flex-shrink: 0;
+      }
+
+      .hub-back-to-sims {
+        display: inline-flex;
+        align-items: center;
+        align-self: center;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 9px 14px;
+        margin: 0;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--area-muted);
+        color: var(--text);
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .hub-back-to-sims:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: #fef3f8;
+      }
+
+      .sim-subheader-title {
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+
+      .stage {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        padding: 0;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* flex-basis: 0 — Safari/tablet správně zmenší výšku i přes „intrinsic“ SVG */
+      .stage-svg-scale-wrap {
+        flex: 1 1 0;
+        min-height: 0;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        aspect-ratio: var(--scene-ar, 1);
+      }
+
+      .stage-svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        background-color: var(--lever-scene-bg);
+        user-select: none;
+        touch-action: none;
+        overflow: hidden;
+      }
+
+      .clear-weights-btn-wrap {
+        position: absolute;
+        z-index: 6;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
+      .clear-weights-btn-wrap .clear-weights-btn {
+        pointer-events: auto;
+      }
+
+      .clear-weights-btn {
+        border: 1px solid rgba(219, 39, 119, 0.35);
+        background: #ffffff;
+        color: #9d174d;
+        padding: 11px 22px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 6px 22px rgba(15, 23, 42, 0.08);
+      }
+
+      .clear-weights-btn:hover {
+        border-color: rgba(219, 39, 119, 0.55);
+        background: #fef3f8;
+      }
+
+      .clear-weights-btn:active {
+        transform: translateY(1px);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" role="presentation" aria-label="Simulace páky"></div>
+    <script type="module" src="./lever-app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,2929 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fyzikální simulace</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+    }
+    /* Fenomen Sans Book — stejný zdroj jako geometry-app */
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+    body {
+      font-family: var(--font-app);
+      background: #ffffff;
+      color: #2a2226;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    #root {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      overflow: visible;
+    }
+    .app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      width: 100%;
+      overflow: visible;
+    }
+    .stage {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      background: #ffffff;
+      padding: 0;
+      position: relative;
+      overflow: visible;
+    }
+    .stage-svg-scale-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      width: 100%;
+      overflow: visible;
+    }
+    .stage-svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      user-select: none;
+      touch-action: none;
+      overflow: visible;
+      font-family: var(--font-app);
+    }
+    .clear-weights-btn-wrap {
+      position: absolute;
+      z-index: 3;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .clear-weights-btn-wrap .clear-weights-btn {
+      pointer-events: auto;
+    }
+    .clear-weights-btn {
+      border: 1px solid color-mix(in oklab, #5c1f2e 42%, transparent);
+      background: #fff;
+      color: #2a2226;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(42, 34, 38, 0.12);
+    }
+    .clear-weights-btn:active {
+      transform: translateY(1px);
+    }
+    .stage-hint {
+      position: absolute;
+      left: 50%;
+      top: calc(170px + max(14px, env(safe-area-inset-top, 0px)));
+      transform: translateX(-50%);
+      z-index: 3;
+      margin: 0;
+      max-width: min(92vw, 40rem);
+      padding: 0 18px;
+      text-align: center;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #5f6b76;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      pointer-events: none;
+    }
+
+    /* —— Přehled simulací (layout podobný geometry-app) —— */
+    .physics-hub {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      color: #4e5871;
+    }
+    .hub-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px 24px;
+      padding: 20px clamp(18px, 4vw, 40px) 8px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .hub-brand {
+      margin: 0;
+      font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+      font-weight: 700;
+      color: #4e5871;
+      letter-spacing: -0.02em;
+    }
+    .hub-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .hub-nav button {
+      font-family: inherit;
+      padding: 11px 22px;
+      border-radius: 9999px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 200ms, color 200ms, box-shadow 200ms, border-color 200ms;
+      border: 2px solid #4e5871;
+      background: #fff;
+      color: #4e5871;
+    }
+    .hub-nav button.is-active {
+      border-color: transparent;
+      background: #4d49f3;
+      color: #fff;
+      box-shadow: 0 10px 15px 0 #e0e7ff, 0 4px 6px 0 #e0e7ff;
+    }
+    .hub-nav button:hover:not(.is-active) {
+      background: #f8fafc;
+    }
+    .hub-main {
+      flex: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 16px clamp(18px, 4vw, 40px) 48px;
+    }
+    .hub-page-title {
+      margin: 8px 0 22px;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 700;
+      color: #4e5871;
+    }
+    .hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .sim-card {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      border-radius: 24px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 200ms, box-shadow 200ms;
+      isolation: isolate;
+    }
+    .sim-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    }
+    .sim-card:active {
+      transform: scale(0.98);
+    }
+    .sim-card-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 auto;
+      min-height: 140px;
+      padding: 16px;
+      background: transparent;
+    }
+    .sim-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      padding: 14px 20px;
+      background: transparent;
+    }
+    .sim-card-footer h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+      color: #4e5871;
+    }
+    .sim-card-arrow {
+      color: #4d49f3;
+      font-size: 18px;
+      font-weight: 600;
+      opacity: 0.55;
+      transition: opacity 200ms, transform 200ms;
+      flex-shrink: 0;
+    }
+    .sim-card:hover .sim-card-arrow {
+      opacity: 1;
+      transform: translateX(4px);
+    }
+    .hub-empty {
+      margin: 0;
+      padding: 28px 20px;
+      text-align: center;
+      color: #8b93a6;
+      font-size: 1.05rem;
+      background: #f8fafc;
+      border-radius: 20px;
+      border: 1px dashed #e2e8f0;
+    }
+
+    .app--lever {
+      min-height: 100vh;
+    }
+    .sim-subheader {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 18px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .sim-back-btn {
+      border: 2px solid #4e5871;
+      background: #fff;
+      color: #4e5871;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      transition: background 150ms;
+    }
+    .sim-back-btn:hover {
+      background: #f8fafc;
+    }
+    .sim-subheader-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #4e5871;
+    }
+
+    .app--embed {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-iframe-wrap {
+      flex: 1;
+      min-height: 0;
+      padding: 0 clamp(14px, 3vw, 24px) clamp(14px, 3vw, 24px);
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-iframe {
+      flex: 1;
+      width: 100%;
+      min-height: min(88vh, 960px);
+      border: 0;
+      border-radius: 16px;
+      background: #f6f8fb;
+      box-shadow: inset 0 0 0 1px #e5e7eb;
+    }
+    .sim-fullnav-placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #6b7280;
+      min-height: 40vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="root" role="presentation" aria-label="Fyzikální simulace"></div>
+
+  <script type="module">
+    import React, { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "https://esm.sh/react@18.3.1";
+    import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
+    import htm from "https://esm.sh/htm@3.1.1?deps=react@18.3.1";
+
+    const html = htm.bind(React.createElement);
+
+    /** Stejný font stack jako geometry-app (Fenomen Sans z Supabase). */
+    const FONT_STACK =
+      "'Fenomen Sans', ui-sans-serif, system-ui, sans-serif";
+
+    /**
+     * Logická šířka scény pro souřadnice osového bodu — viewBox se dopočítá tak,
+     * aby byla páka v celém rozsahu náklonu vždy vidět (včetně čísel háčků a podstavce).
+     */
+    const VIEW = { W: 960, H: 510 };
+
+    const COLORS = {
+      bg: "#FFFFFF",
+      beam: "#E63946",
+      pivot: "#5C1F2E",
+      pivotNeedle: "#813B50",
+      beamCradle: "#D3D3D3",
+      rope: "#5C1F2E",
+      baseOuter: "#E0E0E0",
+      baseInner: "#C0C0C0",
+      hole: "#FFFFFF",
+      /** Díra se závažím — tmavší rudá než tyč (#E63946). */
+      holeOccupied: "#9E1B30",
+      /** Neaktivní číslo háčku — šedá vs. vybrané (pivot). */
+      holeLabelMuted: "#a7aeb8",
+      /** Závaží — tmavě modrošedá (odlišná od červené tyče). */
+      weight: "#3d4d5c",
+    };
+
+    const SLOTS = 10;
+    const IDX = [...Array(SLOTS).keys()];
+
+    /** Celková délka tyče +100 % oproti původní hodnotě (`* 2`). Další `* 1.2` = +20 % rozestup háčků (bílé tečky). */
+    const BEAM_HALF = 296 * 0.7 * 1.5 * 1.3 * 2 * 1.2;
+    const BEAM_TH = 75;
+    const HOLE_R = 9;
+    const HOLE_DROP_HINT_DR = 8;
+    /** Čísla nad dírou na tyči (stejná výška bez ohledu na závaží pod ní). */
+    const HOLE_LABEL_GAP_ABOVE = 54;
+    /** Když puštění je jen malý pohyb od sebrání → kliknutí (×), ne vrácení na háček. */
+    const BEAM_DRAG_TAP_MAX_PX = 14;
+    const HOLE_LABEL_FONT = 20;
+    /** Maximum u vybrané díry (kurzor u tečky). */
+    const HOLE_LABEL_NUM_PEAK = 50;
+    /** Sousedé vlevo/vpravo od nejvýraznější díry — menší než plynulý „kopulec“. */
+    const HOLE_LABEL_NEIGHBOR_DAMP = 0.38;
+    /** Užší jádro → sousedé zůstanou menší, vybrané číslo výraznější. */
+    const HOLE_LABEL_FOCUS_SIGMA = 54;
+    /** Ikona přidat/odebrat u kurzoru — kruh + symbol (~50 % menší než původní). */
+    const HOVER_BADGE_R = 11;
+    /** Tmavý kruh pod + (cca 3× bílé kolečko) — výraznější nad dírou. */
+    const HOVER_BADGE_ADD_HALO_R = HOVER_BADGE_R * 3;
+    const HOVER_BADGE_STROKE_W = 1.2;
+    const HOVER_BADGE_ICON_SW = 1.55;
+    const HOVER_BADGE_PLUS_ARM = 4.75;
+    const HOVER_BADGE_X_EXTENT = 4.1;
+    const PIVOT = { x: VIEW.W / 2, y: 168 };
+    const MAX_TILT = (60 * Math.PI) / 180;
+
+    /** Závaží 2× oproti původní velikosti; provázky prodloužené, aby visela níž. */
+    const WEIGHT_W = 70;
+    const WEIGHT_H = 44;
+    /** Zakulacení rohů závaží (menší než polovina výšky → ne celá pilulka). */
+    const WEIGHT_CORNER_R = 8;
+    const ROPE_FROM_HOLE = 42 * 1.2 * 1.2;
+    /** Mezera „provázku“ mezi závažími ve sloupci (svisle). */
+    const ROPE_BETWEEN = 10;
+    /** Odsazení pod blokem závaží před dalším kusem — menší = těsnější sloupec. */
+    const STACK_AFTER_WEIGHT = 5;
+    const ROPE_STROKE_W = 5.25;
+
+    /**
+     * Jednotka ramene háčku od čepu. Háček č. k (label {k}) má rameno k×jednotka — pak
+     * např. 4 závaží na háčku 1 a 1 na háčku 4 dává stejný moment (4·1 = 1·4).
+     */
+    const HOOK_ARM_UNIT = (BEAM_HALF * 0.92) / SLOTS;
+
+    function holeX(side, i) {
+      const d = HOOK_ARM_UNIT * (i + 1);
+      return side === "left" ? -d : d;
+    }
+
+    /** Střed díry v souřadnicích tyče — provázek vychází odsud (srovnat s <circle cy=0>). */
+    function holeHangLocal(side, i) {
+      return { lx: holeX(side, i), ly: 0 };
+    }
+
+    /** Středy závaží ve světových souřadnicích (visí svisle pod dírou). */
+    function plumbStackCenters(side, i, n, theta) {
+      const { lx, ly } = holeHangLocal(side, i);
+      const anchor = toWorld(lx, ly, theta);
+      const wx = anchor.x;
+      let y = anchor.y;
+      const out = [];
+      for (let k = 0; k < n; k += 1) {
+        const ropeLen = k === 0 ? ROPE_FROM_HOLE : ROPE_BETWEEN;
+        y += ropeLen;
+        const cy = y + WEIGHT_H / 2;
+        out.push({ cx: wx, cy, top: y, bot: y + WEIGHT_H });
+        y += WEIGHT_H + STACK_AFTER_WEIGHT;
+      }
+      return out;
+    }
+
+    function toWorld(lx, ly, theta) {
+      const c = Math.cos(theta);
+      const s = Math.sin(theta);
+      /* Stejná lineární část jako matice v <Beam>: matrix(cos,sin,-sin,cos,Px,Py). */
+      return {
+        x: PIVOT.x + lx * c - ly * s,
+        y: PIVOT.y + lx * s + ly * c,
+      };
+    }
+
+    /** Kurzor u tečky (střed díry na tyči ve scéně) → 0…1 — fisheye jen pro díry, ne pro čísla nahoře. */
+    function hoverFocusAtHole(sx, sy, side, slotIdx, theta, sigma) {
+      if (sx == null || sy == null) return 0;
+      const hw = toWorld(holeX(side, slotIdx), 0, theta);
+      const d = Math.hypot(hw.x - sx, hw.y - sy);
+      let w = Math.exp(-(d * d) / (2 * sigma * sigma));
+      return w * w * (3 - 2 * w);
+    }
+
+    /** Moment od tíhy díky rameni (× jednotková tíha v díře), kolem čepu: Σ n_i·x_i; vlevo x < 0. */
+    function netMomentAboutPivot(L, R) {
+      let tau = 0;
+      for (let i = 0; i < SLOTS; i += 1) {
+        tau += Number(L[i] || 0) * holeX("left", i);
+        tau += Number(R[i] || 0) * holeX("right", i);
+      }
+      return tau;
+    }
+
+    function zeros() {
+      return Array.from({ length: SLOTS }, () => 0);
+    }
+
+    /**
+     * Referenční |τ|: po jednom jednotkovém závaží v každé díře na jedné straně (druhá strana prázdná).
+     * Úhel škálujeme oproti tomu — ne proti celkové hmotnosti (ta by přidávání závaží na stejné straně uměle zmenšovalo sklon).
+     */
+    const TAU_REF_ONE_SIDE_UNITS = (() => {
+      const L = zeros();
+      const R = zeros();
+      for (let i = 0; i < SLOTS; i += 1) R[i] = 1;
+      const t = Math.abs(netMomentAboutPivot(L, R));
+      return t > 1e-6 ? t : 1;
+    })();
+
+    /** τ = Σ n·x (x záporné vlevo): τ > 0 ⇒ převažuje pravá strana v souřadnicích tyče. */
+    function targetTheta(L, R) {
+      const tau = netMomentAboutPivot(L, R);
+      if (Math.abs(tau) < 1e-9) return 0;
+      const u = Math.max(
+        -1,
+        Math.min(1, tau / TAU_REF_ONE_SIDE_UNITS),
+      );
+      return u * MAX_TILT;
+    }
+
+    /** Špička u osy; měřítko 1,5× — výška podstavce je zahrnutá ve výpočtu viewBox (`SCENE_VIEW`). */
+    const STAND_ASSET = {
+      vbW: 48,
+      vbH: 107,
+      anchor: { x: 23.6105, y: 1.55 },
+      scale: 3.04 * 1.5,
+    };
+
+    const PIVOT_STAND_GROUP_TY = PIVOT.y + BEAM_TH / 2 + 0.5;
+    const STAND_FOOT_BOTTOM_Y =
+      PIVOT_STAND_GROUP_TY +
+      STAND_ASSET.scale * (STAND_ASSET.vbH - STAND_ASSET.anchor.y);
+    function PivotStand() {
+      const { anchor, scale } = STAND_ASSET;
+      const ty = PIVOT_STAND_GROUP_TY;
+      const t = `translate(${PIVOT.x},${ty}) scale(${scale}) translate(${-anchor.x},${-anchor.y})`;
+      return html`
+        <g transform=${t} style=${{ pointerEvents: "none" }}>
+          <path
+            fill="#E6E6E6"
+            d="M23.6105 106.307C36.6502 106.307 47.221 95.7365 47.221 82.6968C47.221 69.6571 36.6502 59.0863 23.6105 59.0863C10.5708 59.0863 0 69.6571 0 82.6968C0 95.7365 10.5708 106.307 23.6105 106.307Z"
+          />
+          <path
+            fill="#B2B2B2"
+            d="M23.6117 100.406C33.3923 100.406 41.3211 92.4773 41.3211 82.6967C41.3211 72.9161 33.3923 64.9873 23.6117 64.9873C13.8311 64.9873 5.90234 72.9161 5.90234 82.6967C5.90234 92.4773 13.8311 100.406 23.6117 100.406Z"
+          />
+          <path
+            fill="#813B50"
+            d="M34.8826 92.9576C29.042 98.7982 19.5797 98.7982 13.7451 92.9576C10.341 89.5536 8.78112 84.7105 9.56713 79.9582L22.4879 1.55086C22.8265 -0.516952 25.8073 -0.516952 26.1459 1.55086L39.0666 79.9582C39.8526 84.7105 38.2927 89.5536 34.8887 92.9576H34.8826Z"
+          />
+          <path
+            fill="#F03B50"
+            d="M12.9257 80.8344C12.9257 80.8344 12.8712 80.8344 12.8471 80.8284C12.5568 80.786 12.3513 80.5139 12.3996 80.2177L21.7834 17.8993C21.8257 17.6091 22.1038 17.4035 22.394 17.4519C22.6843 17.4942 22.8898 17.7663 22.8415 18.0626L13.4577 80.3809C13.4154 80.647 13.1917 80.8344 12.9257 80.8344V80.8344Z"
+          />
+        </g>`;
+    }
+
+    /** Půlkruh pod čepem — v soustavě tyče (otáčí se s ní). */
+    const CRADLE_R = 68;
+    const NEEDLE_USER_TIP_X = 2.40835;
+    const NEEDLE_USER_TIP_Y = 0.707408;
+    const NEEDLE_SCALE = 4.7;
+    /** Posun ručičky v pixelech (záporné = nahoru v soustavě tyče). */
+    const NEEDLE_OFFSET_Y = -8;
+
+    /** Zámeček nad osou: zamknuto ⇒ tyč setrvá v rovnováze (θ = 0) bez ohledu na závaží. */
+    const BEAM_LOCK_CX = PIVOT.x;
+    const BEAM_LOCK_CY = PIVOT.y - BEAM_TH / 2 - 56;
+    const BEAM_LOCK_HIT_W = 78;
+    const BEAM_LOCK_HIT_H = 94;
+    const BEAM_LOCK_TOP_Y = BEAM_LOCK_CY - BEAM_LOCK_HIT_H / 2;
+    /** „Páka je v rovnováze“ — nad zámkem (`dominantBaseline: bottom`). */
+    const BALANCE_LABEL_ABOVE_Y = BEAM_LOCK_TOP_Y - 14;
+
+    /** Ohraničení viditelné scény: páka v ±MAX_TILT, štítky, podstavec; spodek navíc pro závaží. */
+    const SCENE_PAD = 26;
+    /** Odhad výšky štítu čísla nad dírou (dominantBaseline middle, max. font ~ HOLE_LABEL_NUM_PEAK). */
+    const HOLE_LABEL_TOP_EXTENT = HOLE_LABEL_GAP_ABOVE + HOLE_LABEL_NUM_PEAK * 0.52;
+    /** Volný prostor pod nejnižším prvkem (podstavec) pro visící závaží. */
+    const SCENE_WEIGHT_MARGIN_BELOW = 300;
+
+    const SCENE_VIEW = (() => {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      const add = (wx, wy) => {
+        minX = Math.min(minX, wx);
+        maxX = Math.max(maxX, wx);
+        minY = Math.min(minY, wy);
+        maxY = Math.max(maxY, wy);
+      };
+      const standTy = PIVOT_STAND_GROUP_TY;
+      const { anchor, scale: sc, vbW, vbH } = STAND_ASSET;
+      const standCorners = [
+        [0, 0],
+        [vbW, 0],
+        [0, vbH],
+        [vbW, vbH],
+      ];
+      const thetas = [MAX_TILT, -MAX_TILT, 0];
+      const hw = BEAM_TH / 2;
+      for (const th of thetas) {
+        for (const [lx, ly] of [
+          [-BEAM_HALF, -hw],
+          [BEAM_HALF, -hw],
+          [BEAM_HALF, hw],
+          [-BEAM_HALF, hw],
+        ]) {
+          const p = toWorld(lx, ly, th);
+          add(p.x, p.y);
+        }
+        for (const lx of [-CRADLE_R, CRADLE_R, 0]) {
+          for (const ly of [hw, hw + CRADLE_R]) {
+            const p = toWorld(lx, ly, th);
+            add(p.x, p.y);
+          }
+        }
+        for (const side of ["left", "right"]) {
+          for (let i = 0; i < SLOTS; i++) {
+            const hx = holeX(side, i);
+            const h = toWorld(hx, 0, th);
+            add(h.x, h.y);
+            add(h.x, h.y - HOLE_LABEL_TOP_EXTENT);
+          }
+        }
+      }
+      for (const [lx, ly] of standCorners) {
+        const wx = PIVOT.x + sc * (lx - anchor.x);
+        const wy = standTy + sc * (ly - anchor.y);
+        add(wx, wy);
+      }
+      add(BEAM_LOCK_CX - BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY - BEAM_LOCK_HIT_H / 2);
+      add(BEAM_LOCK_CX + BEAM_LOCK_HIT_W / 2, BEAM_LOCK_CY + BEAM_LOCK_HIT_H / 2);
+      add(PIVOT.x - 280, BALANCE_LABEL_ABOVE_Y - 38);
+      add(PIVOT.x + 280, BALANCE_LABEL_ABOVE_Y + 2);
+      maxY += SCENE_WEIGHT_MARGIN_BELOW;
+      const px = SCENE_PAD;
+      return {
+        minX: minX - px,
+        minY: minY - px,
+        w: maxX - minX + 2 * px,
+        h: maxY - minY + 2 * px,
+      };
+    })();
+
+    /** +20 % vizuálně; `transform` na obalu místo na `<svg>` — špatný `getScreenCTM` na některých prohlížečích. */
+    const STAGE_SVG_SCALE = 1.2;
+    const STAGE_SVG_TRANSFORM_ORIGIN = `${((PIVOT.x - SCENE_VIEW.minX) / SCENE_VIEW.w) * 100}% ${((PIVOT.y - SCENE_VIEW.minY) / SCENE_VIEW.h) * 100}%`;
+
+    /** Mezera tlačítka „Sundat závaží“ pod spodek podstavce (obrazovka px). */
+    const CLEAR_WEIGHTS_BELOW_FOOT_PX = 8;
+
+    function hitBeamLock(px, py) {
+      return (
+        Math.abs(px - BEAM_LOCK_CX) <= BEAM_LOCK_HIT_W / 2 &&
+        Math.abs(py - BEAM_LOCK_CY) <= BEAM_LOCK_HIT_H / 2
+      );
+    }
+
+    /** Ikona zámečku nad páčkou (SVG, vyplněná a v barvě osy). */
+    function BeamLockIcon({ locked }) {
+      const b = COLORS.pivot;
+      const shackle = locked
+        ? html`<path
+            key="lock-shackle-shut"
+            d="M -16 4 L -16 -12 A 16 16 0 0 1 16 -12 L 16 4"
+            fill="none"
+            stroke=${b}
+            strokeWidth=${4.3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />`
+        : html`<path
+            key="lock-shackle-open"
+            d="M -16 4 L -16 -12 A 16 16 0 0 1 6 -22"
+            fill="none"
+            stroke=${b}
+            strokeWidth=${4.3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />`;
+      return html`
+        <g
+          key="beam-lock-icon-root"
+          transform=${`translate(${BEAM_LOCK_CX},${BEAM_LOCK_CY})`}
+          style=${{ pointerEvents: "none" }}
+        >
+          <title>
+            ${
+              locked
+                ? "Osa zamčena v rovnováze. Kliknutím odemknout."
+                : "Osa odemčena — páka reaguje na závaží. Kliknutím zamknout rovnováhu."
+            }
+          </title>
+          ${shackle}
+          <rect x="-19" y="4" width="38" height="30" rx="6" fill=${b} />
+          <circle cx=${0} cy=${19} r=${3.2} fill="rgba(255,255,255,0.34)" />
+          <rect x=${-1.2} y=${19} width=${2.4} height=${8} rx=${1} fill="rgba(255,255,255,0.34)" />
+        </g>
+      `;
+    }
+
+    function Beam({ theta, left, right, dropTargetHole, hoverPointer }) {
+      const c = Math.cos(theta);
+      const s = Math.sin(theta);
+      /** Stejná lineární část jako `toWorld` — jedna matrice místo translate+rotate(stupně). */
+      const beamMat = `matrix(${c}, ${s}, ${-s}, ${c}, ${PIVOT.x}, ${PIVOT.y})`;
+      const cyEdge = BEAM_TH / 2;
+      const cradleD = `M ${-CRADLE_R} ${cyEdge} A ${CRADLE_R} ${CRADLE_R} 0 0 0 ${CRADLE_R} ${cyEdge} Z`;
+      const holeFill = (n) =>
+        Number(n || 0) > 0 ? COLORS.holeOccupied : COLORS.hole;
+      const hintR = HOLE_R + HOLE_DROP_HINT_DR;
+      const sx = hoverPointer?.sx;
+      const sy = hoverPointer?.sy;
+      const dropHalo =
+        dropTargetHole &&
+        html`<circle key="drop-hint-1"
+          cx=${holeX(dropTargetHole.side, dropTargetHole.idx)} cy=${0} r=${hintR}
+          fill="rgba(255,255,255,0.42)" stroke=${COLORS.pivot} strokeWidth=${2.75}
+          style=${{ pointerEvents: "none" }}
+        />`;
+      return html`
+        <g key="beam-assembly">
+          <g transform=${beamMat}>
+            <rect x=${-BEAM_HALF} y=${-BEAM_TH / 2}
+              width=${BEAM_HALF * 2} height=${BEAM_TH}
+              rx=${BEAM_TH / 2} ry=${BEAM_TH / 2}
+              fill=${COLORS.beam} />
+            ${dropHalo}
+            ${IDX.map((i) => {
+              const wL = hoverFocusAtHole(
+                sx,
+                sy,
+                "left",
+                i,
+                theta,
+                HOLE_LABEL_FOCUS_SIGMA,
+              );
+              const wR = hoverFocusAtHole(
+                sx,
+                sy,
+                "right",
+                i,
+                theta,
+                HOLE_LABEL_FOCUS_SIGMA,
+              );
+              const eL = Math.min(1, wL ** 1.08);
+              const eR = Math.min(1, wR ** 1.08);
+              const rL = HOLE_R * (1 + 0.52 * eL);
+              const rR = HOLE_R * (1 + 0.52 * eR);
+              return html`
+                <g key=${`dh-${i}`}>
+                  <circle
+                    key=${`lh-${i}`}
+                    cx=${holeX("left", i)}
+                    cy=${0}
+                    r=${rL}
+                    fill=${holeFill(left[i])}
+                    stroke=${eL > 0.07 ? COLORS.pivot : "none"}
+                    strokeWidth=${1.3 + 2.8 * eL}
+                    style=${{ pointerEvents: "none" }}
+                  />
+                  <circle
+                    key=${`rh-${i}`}
+                    cx=${holeX("right", i)}
+                    cy=${0}
+                    r=${rR}
+                    fill=${holeFill(right[i])}
+                    stroke=${eR > 0.07 ? COLORS.pivot : "none"}
+                    strokeWidth=${1.3 + 2.8 * eR}
+                    style=${{ pointerEvents: "none" }}
+                  />
+                </g>
+              `;
+            })}
+            <path d=${cradleD} fill=${COLORS.beamCradle} style=${{ pointerEvents: "none" }} />
+            <g
+              transform=${`translate(0,${NEEDLE_OFFSET_Y}) scale(${NEEDLE_SCALE}) translate(${-NEEDLE_USER_TIP_X},${-NEEDLE_USER_TIP_Y})`}
+              style=${{ pointerEvents: "none" }}>
+              <path
+                fill=${COLORS.pivotNeedle}
+                d="M0.703315 0.707408C1.64652 -0.235803 3.17016 -0.235803 4.11337 0.707408C4.66358 1.25761 4.91148 2.03758 4.78451 2.80544L2.70461 15.442C2.6502 15.7746 2.17254 15.7746 2.11208 15.442L0.0321748 2.80544C-0.0947958 2.03758 0.159155 1.25761 0.703315 0.707408Z"
+              />
+            </g>
+          </g>
+        </g>`;
+    }
+
+    /** Čísla háčků — zvýraznění podle vzdálenosti od tečky; sousedé ±1 na stejné straně jsou záměrně menší. */
+    function HoleSlotLabels({ theta, showHoleLabels, hoverHint }) {
+      if (!showHoleLabels) return null;
+      const ff = FONT_STACK;
+      const texts = [];
+      const sx = hoverHint?.sx;
+      const sy = hoverHint?.sy;
+
+      const raw = { left: [], right: [] };
+      for (const side of ["left", "right"]) {
+        for (let i = 0; i < SLOTS; i += 1) {
+          let w = 0;
+          if (sx != null && sy != null) {
+            w = hoverFocusAtHole(sx, sy, side, i, theta, HOLE_LABEL_FOCUS_SIGMA);
+          }
+          raw[side].push(w);
+        }
+      }
+
+      let bestS = "left";
+      let bestI = 0;
+      let bestW = -1;
+      for (const side of ["left", "right"]) {
+        for (let i = 0; i < SLOTS; i += 1) {
+          const v = raw[side][i];
+          if (v > bestW) {
+            bestW = v;
+            bestS = side;
+            bestI = i;
+          }
+        }
+      }
+
+      for (const side of ["left", "right"]) {
+        for (let i = 0; i < SLOTS; i += 1) {
+          const a = toWorld(holeX(side, i), 0, theta);
+          const lx = a.x;
+          let ly = a.y - HOLE_LABEL_GAP_ABOVE;
+
+          let w = raw[side][i];
+          let wForSize = w;
+          if (
+            bestW > 1e-6 &&
+            side === bestS &&
+            Math.abs(i - bestI) === 1
+          ) {
+            wForSize = w * HOLE_LABEL_NEIGHBOR_DAMP;
+          }
+          const wSharp = Math.min(1, wForSize ** 1.35);
+          const dSize = HOLE_LABEL_NUM_PEAK - HOLE_LABEL_FONT;
+          ly -= dSize * 0.11 * wSharp;
+          const fs = HOLE_LABEL_FONT + dSize * wSharp;
+          const fw = 520 + Math.round((860 - 520) * wSharp);
+          const sw = 2 + 5.5 * wSharp;
+          const paintOrder = wSharp > 0.06 ? "stroke fill" : undefined;
+          const fillPct = Math.round(w * 100);
+          const fill = `color-mix(in oklab, ${COLORS.pivot} ${fillPct}%, ${COLORS.holeLabelMuted})`;
+
+          texts.push(html`
+            <text
+              key=${`${side}-hl-${i}`}
+              x=${lx}
+              y=${ly}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill=${fill}
+              stroke=${wSharp > 0.06 ? COLORS.bg : "none"}
+              strokeWidth=${sw}
+              paintOrder=${paintOrder}
+              fontSize=${fs}
+              fontWeight=${fw}
+              fontFamily=${ff}
+              style=${{ pointerEvents: "none" }}
+            >
+              ${i + 1}
+            </text>
+          `);
+        }
+      }
+
+      return html`<g key="hole-slot-labels" style=${{ pointerEvents: "none" }}>${texts}</g>`;
+    }
+
+    /** Přidat (+ v kroužku) / odebrat (× v kroužku) — u kurzoru nad dírou / závažím. */
+    function HoverActionBadge({ x, y, kind, rootKey = "hover-badge" }) {
+      const isAdd = kind === "add";
+      const iconColor = isAdd ? COLORS.pivot : COLORS.holeOccupied;
+      const a = HOVER_BADGE_PLUS_ARM;
+      const d = HOVER_BADGE_X_EXTENT;
+      return html`
+        <g
+          key=${rootKey}
+          transform=${`translate(${x},${y})`}
+          style=${{ pointerEvents: "none" }}>
+          ${
+            isAdd
+              ? html`<circle
+                  r=${HOVER_BADGE_ADD_HALO_R}
+                  fill=${COLORS.pivot}
+                  fillOpacity=${0.92}
+                  style=${{ pointerEvents: "none" }}
+                />`
+              : null
+          }
+          <circle
+            r=${HOVER_BADGE_R + 0.65}
+            fill="rgba(42, 34, 38, 0.12)"
+            cx=${0.45}
+            cy=${0.6}
+            style=${{ pointerEvents: "none" }}
+          />
+          <circle
+            r=${HOVER_BADGE_R}
+            fill="rgba(255,255,255,0.98)"
+            stroke=${COLORS.pivot}
+            strokeWidth=${HOVER_BADGE_STROKE_W}
+            style=${{ pointerEvents: "none" }}
+          />
+          ${
+            isAdd
+              ? html`<g
+                  stroke=${iconColor}
+                  strokeWidth=${HOVER_BADGE_ICON_SW}
+                  strokeLinecap="round"
+                  fill="none"
+                  style=${{ pointerEvents: "none" }}>
+                  <line x1=${-a} y1=${0} x2=${a} y2=${0} />
+                  <line x1=${0} y1=${-a} x2=${0} y2=${a} />
+                </g>`
+              : html`<g
+                  stroke=${iconColor}
+                  strokeWidth=${HOVER_BADGE_ICON_SW}
+                  strokeLinecap="round"
+                  fill="none"
+                  style=${{ pointerEvents: "none" }}>
+                  <line x1=${-d} y1=${-d} x2=${d} y2=${d} />
+                  <line x1=${d} y1=${-d} x2=${-d} y2=${d} />
+                </g>`
+          }
+        </g>
+      `;
+    }
+
+    function Stacks({ theta, counts, side }) {
+      const groups = IDX.map((i) => {
+        const n = Number(counts[i] || 0);
+        if (n <= 0) return null;
+
+        const { lx, ly } = holeHangLocal(side, i);
+        const anchor = toWorld(lx, ly, theta);
+        const wx = anchor.x;
+        let y = anchor.y;
+        let yBottomLast = anchor.y;
+        const yTops = [];
+        for (let k = 0; k < n; k += 1) {
+          const ropeLen = k === 0 ? ROPE_FROM_HOLE : ROPE_BETWEEN;
+          const yTopWeight = y + ropeLen;
+          yTops.push(yTopWeight);
+          yBottomLast = yTopWeight + WEIGHT_H;
+          y = yTopWeight + WEIGHT_H + STACK_AFTER_WEIGHT;
+        }
+        const pieces = [
+          html`<line key=${`rv-${side}-${i}`}
+            x1=${wx} y1=${anchor.y} x2=${wx} y2=${yBottomLast}
+            stroke=${COLORS.rope}
+            strokeWidth=${ROPE_STROKE_W}
+            strokeLinecap="round"
+            style=${{ pointerEvents: "none" }}
+          />`,
+        ];
+        for (let k = 0; k < n; k += 1) {
+          const yTopWeight = yTops[k];
+            pieces.push(html`
+            <rect key=${`bk-${side}-${i}-${k}`}
+              x=${wx - WEIGHT_W / 2}
+              y=${yTopWeight}
+              width=${WEIGHT_W}
+              height=${WEIGHT_H}
+              rx=${WEIGHT_CORNER_R}
+              ry=${WEIGHT_CORNER_R}
+              fill=${COLORS.weight}
+            />`);
+        }
+        return html`<g key=${`stk-${side}-${i}`}>${pieces}</g>`;
+      });
+      return html`<g>${groups.filter(Boolean)}</g>`;
+    }
+
+    /**
+     * Klepnutí → souřadnice ve viewBoxu. Nepoužíváme getScreenCTM().inverse() — s CSS škálováním
+     * rodiče (i některých verzí Safari/tabletů) dává nesprávnou matici.
+     */
+    function clientToLocalSvg(clientX, clientY, svg) {
+      if (!svg) return null;
+      const vb = svg.viewBox?.baseVal;
+      if (!vb || vb.width <= 0 || vb.height <= 0) return null;
+      const rect = svg.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
+      const dispW = vb.width * scale;
+      const dispH = vb.height * scale;
+      const tx = rect.left + (rect.width - dispW) / 2;
+      const ty = rect.top + (rect.height - dispH) / 2;
+      return {
+        x: vb.x + (clientX - tx) / scale,
+        y: vb.y + (clientY - ty) / scale,
+      };
+    }
+
+    /** Bod ve viewBoxu → client (viewport) px; sladěné s clientToLocalSvg. */
+    function userToClientXY(ux, uy, svg) {
+      if (!svg) return null;
+      const vb = svg.viewBox?.baseVal;
+      if (!vb || vb.width <= 0 || vb.height <= 0) return null;
+      const rect = svg.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
+      const dispW = vb.width * scale;
+      const dispH = vb.height * scale;
+      const tx = rect.left + (rect.width - dispW) / 2;
+      const ty = rect.top + (rect.height - dispH) / 2;
+      return {
+        x: tx + (ux - vb.x) * scale,
+        y: ty + (uy - vb.y) * scale,
+      };
+    }
+
+    /** Kategorie a dlaždice — výchozí panel: Základy. */
+    const PHYSICS_CATEGORIES = [
+      {
+        id: "zaklady",
+        title: "Základy",
+        tiles: [
+          {
+            id: "stlacovani_latek",
+            title: "Stlačování látek",
+            hash: "#/sim/stlacovani_latek",
+            previewColor: "#e8f4ff",
+          },
+          {
+            id: "mereni_delka",
+            title: "Měření délky",
+            hash: "#/sim/mereni_delka",
+            previewColor: "#eef7d8",
+          },
+          {
+            id: "mereni_hmotnost",
+            title: "Měření hmotnosti",
+            hash: "#/sim/mereni_hmotnost",
+            previewColor: "#fff2cc",
+          },
+          {
+            id: "rychlost",
+            title: "Rychlost",
+            hash: "#/sim/rychlost",
+            previewColor: "#fff0e8",
+          },
+          {
+            id: "auto_jizda",
+            title: "Rychlost, dráha, čas",
+            hash: "#/sim/auto_jizda",
+            previewColor: "#ffe8e8",
+          },
+          {
+            id: "graf_pohyb",
+            title: "Graf pohybu",
+            hash: "#/sim/graf_pohyb",
+            previewColor: "#e8fff4",
+          },
+          {
+            id: "hustota",
+            title: "Hustota",
+            hash: "#/sim/hustota",
+            previewColor: "#ecfdf5",
+          },
+          {
+            id: "teplota",
+            title: "Teplota",
+            hash: "#/sim/teplota",
+            previewColor: "#fff7ed",
+          },
+          {
+            id: "graf",
+            title: "Graf",
+            hash: "#/sim/graf",
+            previewColor: "#eef2ff",
+          },
+        ],
+      },
+      {
+        id: "sily",
+        title: "Síly",
+        tiles: [
+          {
+            id: "paka",
+            title: "Páka",
+            hash: "#/sim/paka",
+            previewColor: "#dcf3ff",
+          },
+          {
+            id: "skladani_sil",
+            title: "Skládání sil",
+            hash: "#/sim/skladani_sil",
+            previewColor: "#e8ecff",
+          },
+          {
+            id: "hra_newton",
+            title: "Newtonovy pohybové zákony",
+            hash: "#/sim/hra_newton",
+            previewColor: "#eaf4ff",
+          },
+        ],
+      },
+      {
+        id: "kapaliny",
+        title: "Kapaliny a plyny",
+        tiles: [
+          {
+            id: "vztlakova",
+            title: "Vztlaková síla",
+            hash: "#/sim/vztlakova",
+            previewColor: "#d4f0fc",
+          },
+        ],
+      },
+      {
+        id: "optika",
+        title: "Optika",
+        tiles: [
+          {
+            id: "cocky",
+            title: "Čočky",
+            hash: "#/sim/cocky",
+            previewColor: "#f0e8ff",
+          },
+          {
+            id: "skutecny_obraz",
+            title: "Hledání skutečného obrazu",
+            hash: "#/sim/skutecny_obraz",
+            previewColor: "#fdf4e8",
+          },
+          {
+            id: "optika_geometrie",
+            title: "Geometrická optika",
+            hash: "#/sim/optika_geometrie",
+            previewColor: "#e8f4ff",
+          },
+          {
+            id: "michani-barev",
+            title: "Míchání barev",
+            hash: "#/sim/michani-barev",
+            previewColor: "#ffe8f0",
+          },
+        ],
+      },
+      {
+        id: "energie",
+        title: "Energie",
+        tiles: [
+          {
+            id: "tepelna_kapacita_puvodni",
+            title: "Tepelná kapacita",
+            hash: "#/sim/tepelna_kapacita_puvodni",
+            previewColor: "#fff3e6",
+          },
+        ],
+      },
+    ];
+
+    /** Kategorie přehledu odpovídající simulaci — Přehled vrátí na stejný panel (např. Vztlaková síla → Kapaliny a plyny). */
+    const SIM_TO_HUB_CATEGORY = {
+      paka: "sily",
+      skladani_sil: "sily",
+      hra_newton: "sily",
+      vztlakova: "kapaliny",
+      graf_pohyb: "zaklady",
+      graf: "zaklady",
+      rychlost: "zaklady",
+      auto_jizda: "zaklady",
+      stlacovani_latek: "zaklady",
+      hustota: "zaklady",
+      teplota: "zaklady",
+      mereni_delka: "zaklady",
+      mereni_hmotnost: "zaklady",
+      tepelna_kapacita_puvodni: "energie",
+      skutecny_obraz: "optika",
+      cocky: "optika",
+    };
+
+    const HUB_CATEGORY_STORAGE_KEY = "physicsHubCategory";
+
+    function persistHubCategory(id) {
+      try {
+        sessionStorage.setItem(HUB_CATEGORY_STORAGE_KEY, id);
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
+    function readHubCategoryInitial() {
+      try {
+        const v = sessionStorage.getItem(HUB_CATEGORY_STORAGE_KEY);
+        if (v && PHYSICS_CATEGORIES.some((c) => c.id === v)) return v;
+      } catch (_) {
+        /* ignore */
+      }
+      return "zaklady";
+    }
+
+    function LeverCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="paka/card-lever.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function VztlakovaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="vztlakova_sila/card-buoyancy.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function GeometricOpticsIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="optika_geometrie/card-geometric-optics.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function SkutecnyObrazCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="skutecny-obraz/card-flame.svg"
+          x="48"
+          y="8"
+          width="36"
+          height="72"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function CockyCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="cocky/card-lens-rays.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function MichaniBarevCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <svg x="0" y="0" width="132" height="88" viewBox="0 0 400 340" preserveAspectRatio="xMidYMid meet" fill="none">
+          <defs>
+            <mask id="michani-mask-c">
+              <rect width="400" height="340" fill="black"/>
+              <circle cx="154" cy="150" r="101.2" fill="white"/>
+            </mask>
+            <mask id="michani-mask-m">
+              <rect width="400" height="340" fill="black"/>
+              <circle cx="246" cy="150" r="101.2" fill="white"/>
+            </mask>
+            <mask id="michani-mask-y">
+              <rect width="400" height="340" fill="black"/>
+              <circle cx="200" cy="226" r="101.2" fill="white"/>
+            </mask>
+            <mask id="michani-mask-cm">
+              <rect width="400" height="340" fill="black"/>
+              <circle cx="246" cy="150" r="101.2" fill="white" mask="url(#michani-mask-c)"/>
+            </mask>
+            <mask id="michani-mask-cy">
+              <rect width="400" height="340" fill="black"/>
+              <circle cx="200" cy="226" r="101.2" fill="white" mask="url(#michani-mask-c)"/>
+            </mask>
+            <mask id="michani-mask-my">
+              <rect width="400" height="340" fill="black"/>
+              <circle cx="200" cy="226" r="101.2" fill="white" mask="url(#michani-mask-m)"/>
+            </mask>
+            <mask id="michani-mask-cmy">
+              <rect width="400" height="340" fill="black"/>
+              <circle cx="200" cy="226" r="101.2" fill="white" mask="url(#michani-mask-cm)"/>
+            </mask>
+            <mask id="michani-mask-c-only">
+              <rect width="400" height="340" fill="white" mask="url(#michani-mask-c)"/>
+              <circle cx="246" cy="150" r="101.2" fill="black"/>
+              <circle cx="200" cy="226" r="101.2" fill="black"/>
+            </mask>
+            <mask id="michani-mask-m-only">
+              <rect width="400" height="340" fill="white" mask="url(#michani-mask-m)"/>
+              <circle cx="154" cy="150" r="101.2" fill="black"/>
+              <circle cx="200" cy="226" r="101.2" fill="black"/>
+            </mask>
+            <mask id="michani-mask-y-only">
+              <rect width="400" height="340" fill="white" mask="url(#michani-mask-y)"/>
+              <circle cx="154" cy="150" r="101.2" fill="black"/>
+              <circle cx="246" cy="150" r="101.2" fill="black"/>
+            </mask>
+            <mask id="michani-mask-cm-only">
+              <rect width="400" height="340" fill="white" mask="url(#michani-mask-cm)"/>
+              <circle cx="200" cy="226" r="101.2" fill="black"/>
+            </mask>
+            <mask id="michani-mask-cy-only">
+              <rect width="400" height="340" fill="white" mask="url(#michani-mask-cy)"/>
+              <circle cx="246" cy="150" r="101.2" fill="black"/>
+            </mask>
+            <mask id="michani-mask-my-only">
+              <rect width="400" height="340" fill="white" mask="url(#michani-mask-my)"/>
+              <circle cx="154" cy="150" r="101.2" fill="black"/>
+            </mask>
+          </defs>
+          <rect width="400" height="340" fill="#00ffff" mask="url(#michani-mask-c-only)"/>
+          <rect width="400" height="340" fill="#ff00ff" mask="url(#michani-mask-m-only)"/>
+          <rect width="400" height="340" fill="#ffff00" mask="url(#michani-mask-y-only)"/>
+          <rect width="400" height="340" fill="#0000ff" mask="url(#michani-mask-cm-only)"/>
+          <rect width="400" height="340" fill="#00ff00" mask="url(#michani-mask-cy-only)"/>
+          <rect width="400" height="340" fill="#ff0000" mask="url(#michani-mask-my-only)"/>
+          <rect width="400" height="340" fill="#000000" mask="url(#michani-mask-cmy)"/>
+        </svg>
+      </svg>`;
+    }
+
+    function GrafPohybCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <line x1="22" y1="66" x2="110" y2="66" stroke="#64748b" stroke-width="2" />
+        <line x1="22" y1="66" x2="22" y2="18" stroke="#64748b" stroke-width="2" />
+        <polyline
+          points="26,58 48,24 70,48 92,34 108,28"
+          fill="none"
+          stroke="#0d9488"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <circle cx="26" cy="58" r="3" fill="#0f766e" />
+        <circle cx="48" cy="24" r="2.5" fill="#0f766e" />
+        <circle cx="70" cy="48" r="2.5" fill="#0f766e" />
+        <circle cx="92" cy="34" r="2.5" fill="#0f766e" />
+        <circle cx="108" cy="28" r="3" fill="#0f766e" />
+      </svg>`;
+    }
+
+    function GrafCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <line x1="24" y1="68" x2="112" y2="68" stroke="#64748b" stroke-width="2" />
+        <line x1="24" y1="68" x2="24" y2="16" stroke="#64748b" stroke-width="2" />
+        <rect x="34" y="42" width="14" height="26" rx="2" fill="#6366f1" />
+        <rect x="56" y="28" width="14" height="40" rx="2" fill="#818cf8" />
+        <rect x="78" y="36" width="14" height="32" rx="2" fill="#4f46e5" />
+        <circle cx="40" cy="36" r="3.5" fill="#c7d2fe" stroke="#4338ca" stroke-width="2" />
+        <circle cx="62" cy="22" r="3.5" fill="#c7d2fe" stroke="#4338ca" stroke-width="2" />
+        <circle cx="84" cy="30" r="3.5" fill="#c7d2fe" stroke="#4338ca" stroke-width="2" />
+        <path d="M40 36 L62 22 L84 30" fill="none" stroke="#4338ca" stroke-width="2" />
+      </svg>`;
+    }
+
+    function RychlostCardIllustration() {
+      // Pes za kolem — stejné pořadí vrstev jako ve simulaci rychlost/.
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <line x1="14" y1="78" x2="118" y2="78" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+        <svg x="18" y="0" width="96" height="78" viewBox="-12 -4 102 130" preserveAspectRatio="xMidYMax meet" fill="none">
+<g id="dog-body">
+<path d="M71.9908 9.1049L85.9052 8.59357L82.6294 18.105L67.5923 21.1767L71.9908 9.1049Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.352413" stroke-miterlimit="10"/>
+<path d="M63.4017 65.1586L66.2661 81.9176L71.302 90.5139L74.9483 88.602C74.9483 88.602 70.257 87.8202 71.4761 66.4592C72.6916 45.0982 63.4017 65.1549 63.4017 65.1549V65.1586Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.2054 69.8828L28.5134 62.5501L37.1585 58.6225L49.209 33.5636L56.8943 27.8019L65.4505 41.3373L66.777 64.8029C66.777 64.8029 66.9771 75.7075 47.6119 90.2285C28.2466 104.75 39.7005 70.8647 39.7005 70.8647L27.2017 69.8902L27.2054 69.8828Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.7162 65.1585L57.5806 81.9175L62.6165 90.5138L66.2628 88.6018C66.2628 88.6018 61.9198 86.6899 61.138 66.459C60.3116 45.0795 54.7125 65.1548 54.7125 65.1548L54.7162 65.1585Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74.1106 6.51866C74.1106 6.51866 69.8603 2.95417 66.5698 3.22836C63.2793 3.50255 53.2706 14.0589 53.2706 14.0589L51.881 38.6509L45.7816 53.5499L60.2963 80.6429L78.6388 42.1709L77.9533 26.8125L74.1143 6.51866H74.1106Z" fill="#FFDB00"/>
+<path d="M71.8168 87.1308C71.8168 87.1308 75.5038 85.8673 78.2682 88.2684C81.0325 90.6694 79.6503 93.0815 78.4794 93.793C77.3084 94.5044 68.0001 94.9749 67.1997 90.599C66.7142 87.9423 65.0949 80.2649 64.4353 72.3616" fill="#FFDB00"/>
+<path d="M71.8168 87.1308C71.8168 87.1308 75.5038 85.8673 78.2682 88.2684C81.0325 90.6694 79.6503 93.0815 78.4794 93.793C77.3084 94.5044 68.0001 94.9749 67.1997 90.599C66.7142 87.9423 65.0949 80.2649 64.4353 72.3616" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M77.1898 20.0689C77.1898 20.0689 85.1048 34.69 77.2194 51.6342C73.2656 60.1342 72.9432 71.3167 72.9432 71.3167C72.9432 71.3167 69.5637 68.245 69.5637 63.8135" fill="#FFDB00"/>
+<path d="M77.1898 20.0689C77.1898 20.0689 85.1048 34.69 77.2194 51.6342C73.2656 60.1342 72.9432 71.3167 72.9432 71.3167C72.9432 71.3167 69.5637 68.245 69.5637 63.8135" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M61.8225 76.4374C62.786 75.1332 63.6716 73.7659 64.4238 72.3579C65.7208 69.9236 66.6138 67.3669 66.7806 64.7954C66.7806 64.7954 65.3984 70.4719 67.1585 70.4719C68.9187 70.4719 70.4305 56.3437 73.9508 49.9446" fill="#FFDB00"/>
+<path d="M61.8225 76.4374C62.786 75.1332 63.6716 73.7659 64.4238 72.3579C65.7208 69.9236 66.6138 67.3669 66.7806 64.7954C66.7806 64.7954 65.3984 70.4719 67.1585 70.4719C68.9187 70.4719 70.4305 56.3437 73.9508 49.9446" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M49.1903 88.7315C49.1903 88.7315 52.5401 86.3712 56.3198 82.6771Z" fill="#FFDB00"/>
+<path d="M49.1903 88.7315C49.1903 88.7315 52.5401 86.3712 56.3198 82.6771" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M30.2295 88.9428C30.2295 88.9428 -5.9071 83.9 1.30392 38.9733C1.47438 37.9062 2.9529 37.8469 3.10482 38.9178C4.23132 46.8804 6.63252 58.7336 11.346 64.0544C18.7756 72.4321 4.0905 71.9096 9.11895 51.9344C13.5916 34.1639 16.4411 72.899 16.4411 72.899C16.4411 72.899 16.0446 60.6937 20.936 53.8278C25.831 46.9619 15.2183 71.6429 28.625 80.0946" fill="#FFDB00"/>
+<path d="M30.2295 88.9428C30.2295 88.9428 -5.9071 83.9 1.30392 38.9733C1.47438 37.9062 2.9529 37.8469 3.10482 38.9178C4.23132 46.8804 6.63252 58.7336 11.346 64.0544C18.7756 72.4321 4.0905 71.9096 9.11895 51.9344C13.5916 34.1639 16.4411 72.899 16.4411 72.899C16.4411 72.899 16.0446 60.6937 20.936 53.8278C25.831 46.9619 15.2183 71.6429 28.625 80.0946" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M63.1344 87.4051C63.1344 87.4051 66.8215 86.1416 69.5858 88.5426C72.3502 90.9436 70.968 93.3558 69.797 94.0672C68.6261 94.7786 59.3177 95.2492 58.5173 90.8732C57.7169 86.4936 50.454 64.0173 50.9246 52.3827" fill="#FFDB00"/>
+<path d="M63.1344 87.4051C63.1344 87.4051 66.8215 86.1416 69.5858 88.5426C72.3502 90.9436 70.968 93.3558 69.797 94.0672C68.6261 94.7786 59.3177 95.2492 58.5173 90.8732C57.7169 86.4936 50.454 64.0173 50.9246 52.3827" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M60.5444 65.6291C60.5444 65.6291 61.6783 81.7656 64.9948 87.268" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M71.3649 69.4752C71.3649 69.4752 70.357 81.4914 73.6772 86.9938" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.5616 66.385C26.5616 66.385 24.253 73.2694 23.9047 78.694C23.145 90.5175 31.0749 94.1858 33.7911 94.5711C36.5073 94.9565 59.7708 95.5456 60.2525 94.3784C61.2419 91.9885 59.1705 86.8864 51.3666 90.0025C51.3666 90.0025 50.4513 87.4496 43.5256 88.6464C43.5256 88.6464 59.0964 71.8651 45.4117 67.6744" fill="#FFDB00"/>
+<path d="M26.5616 66.385C26.5616 66.385 24.253 73.2694 23.9047 78.694C23.145 90.5175 31.0749 94.1858 33.7911 94.5711C36.5073 94.9565 59.7708 95.5456 60.2525 94.3784C61.2419 91.9885 59.1705 86.8864 51.3666 90.0025C51.3666 90.0025 50.4513 87.4496 43.5256 88.6464C43.5256 88.6464 59.0964 71.8651 45.4117 67.6744" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.3903 28.8431C54.3903 28.8431 34.699 37.8358 32.9796 47.5029C32.9796 47.5029 40.2499 43.2603 41.9471 43.9903C44.5187 45.0945 27.3657 51.8084 24.7533 57.4108C24.7533 57.4108 31.3899 55.6731 32.9982 56.5438C32.9982 56.5438 21.6517 68.5267 24.6088 69.7828C26.3319 70.5164 28.7442 63.0095 37.4189 63.0095" fill="#FFDB00"/>
+<path d="M54.3903 28.8431C54.3903 28.8431 34.699 37.8358 32.9796 47.5029C32.9796 47.5029 40.2499 43.2603 41.9471 43.9903C44.5187 45.0945 27.3657 51.8084 24.7533 57.4108C24.7533 57.4108 31.3899 55.6731 32.9982 56.5438C32.9982 56.5438 21.6517 68.5267 24.6088 69.7828C26.3319 70.5164 28.7442 63.0095 37.4189 63.0095" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M75.8349 6.5334C75.8349 6.5334 68.0532 -1.15137 62.0057 1.9092Z" fill="#FFDB00"/>
+<path d="M75.8349 6.5334C75.8349 6.5334 68.0532 -1.15137 62.0057 1.9092" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M55.8247 13.7661C55.3763 22.7255 48.7989 30.9957 48.7989 30.9957L48.3505 23.3961C48.3505 23.3961 43.0219 34.4675 40.832 28.8762C39.0273 24.2706 42.9367 16.8378 44.9822 19.4574C46.998 22.04 33.3949 25.0005 33.3949 25.0005C33.3949 25.0005 39.8129 21.3545 41.9214 12.4248C44.0299 3.49131 53.8496 0.386279 57.7293 0.352931C63.1098 0.304762 65.3924 3.65805 65.3924 3.65805" fill="#FFDB00"/>
+<path d="M55.8247 13.7661C55.3763 22.7255 48.7989 30.9957 48.7989 30.9957L48.3505 23.3961C48.3505 23.3961 43.0219 34.4675 40.832 28.8762C39.0273 24.2706 42.9367 16.8378 44.9822 19.4574C46.998 22.04 33.3949 25.0005 33.3949 25.0005C33.3949 25.0005 39.8129 21.3545 41.9214 12.4248C44.0299 3.49131 53.8496 0.386279 57.7293 0.352931C63.1098 0.304762 65.3924 3.65805 65.3924 3.65805" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M68.2135 8.90509C68.7419 8.32342 68.5427 7.28192 67.7686 6.57882C66.9945 5.87573 65.9386 5.7773 65.4102 6.35897C64.8818 6.94064 65.081 7.98214 65.8551 8.68523C66.6292 9.38832 67.6851 9.48676 68.2135 8.90509Z" fill="#FF8158"/>
+<path d="M74.3565 6.8269C74.7542 6.38913 74.6037 5.60482 74.0205 5.0751C73.4373 4.54537 72.6421 4.47082 72.2445 4.90859C71.8468 5.34635 71.9972 6.13066 72.5804 6.66039C73.1637 7.19011 73.9588 7.26466 74.3565 6.8269Z" fill="#FF8158"/>
+<path d="M71.5577 6.91872C71.5577 6.91872 85.6833 5.24393 88.0734 5.58853C90.4635 5.93312 91.1268 10.2127 90.0596 14.396C88.9924 18.5793 88.6441 21.0099 87.6362 20.7691C86.6283 20.5282 87.21 15.9189 85.9872 15.7114C84.7644 15.5002 83.9602 22.2179 82.667 21.9955C81.3738 21.7732 79.5766 17.5677 81.3256 13.0991" fill="#FFDB00"/>
+<path d="M71.5577 6.91872C71.5577 6.91872 85.6833 5.24393 88.0734 5.58853C90.4635 5.93312 91.1268 10.2127 90.0596 14.396C88.9924 18.5793 88.6441 21.0099 87.6362 20.7691C86.6283 20.5282 87.21 15.9189 85.9872 15.7114C84.7644 15.5002 83.9602 22.2179 82.667 21.9955C81.3738 21.7732 79.5766 17.5677 81.3256 13.0991" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M90.2708 8.51199C90.2708 8.51199 91.464 5.24022 88.4625 4.83635C85.461 4.43247 87.7066 9.46795 90.2708 8.51199Z" fill="#FFDB00" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M80.6219 17.7901C80.6219 17.7901 77.0238 22.4291 76.7533 23.9964C76.7533 23.9964 75.0895 21.2841 74.7338 18.1606C74.7338 18.1606 73.6295 18.7127 73.3331 23.7C73.0366 28.6873 68.149 21.3842 70.5391 15.2112" fill="#FFDB00"/>
+<path d="M80.6219 17.7901C80.6219 17.7901 77.0238 22.4291 76.7533 23.9964C76.7533 23.9964 75.0895 21.2841 74.7338 18.1606C74.7338 18.1606 73.6295 18.7127 73.3331 23.7C73.0366 28.6873 68.149 21.3842 70.5391 15.2112" stroke="#FF8158" stroke-width="0.704825" stroke-linecap="round" stroke-linejoin="round"/>
+<g opacity="0.7">
+<path d="M40.509 41.2335C40.509 41.2335 49.1208 33.3004 62.1569 30.1287" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M44.4404 12.6546C44.4404 12.6546 46.1487 3.25797 59.2478 2.59473" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M71.9918 9.10496L85.2503 7.71918" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M32.972 53.6499C32.972 53.6499 39.8496 47.6992 48.6577 47.2361" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M38.1225 65.9848C38.1225 65.9848 25.8497 68.786 27.4505 82.9291" stroke="white" stroke-width="2.46689" stroke-miterlimit="10" stroke-linecap="round"/>
+</g>
+</g>
+<g id="wheel">
+<path d="M46.0512 116.757C63.0078 116.757 76.7538 103.011 76.7538 86.054C76.7538 69.0974 63.0078 55.3514 46.0512 55.3514C29.0946 55.3514 15.3486 69.0974 15.3486 86.054C15.3486 103.011 29.0946 116.757 46.0512 116.757Z" stroke="#B1B1B1" stroke-width="7.69075" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M46.0539 121.756C65.7713 121.756 81.7555 105.771 81.7555 86.054C81.7555 66.3366 65.7713 50.3524 46.0539 50.3524C26.3364 50.3524 10.3523 66.3366 10.3523 86.054C10.3523 105.771 26.3364 121.756 46.0539 121.756Z" stroke="#1D1D1B" stroke-width="3.29604" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M78.5854 86.054C78.5854 104.017 64.0224 118.586 46.0535 118.586C28.0846 118.586 13.5216 104.023 13.5216 86.054C13.5216 68.0851 28.0846 53.5221 46.0535 53.5221" stroke="white" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M19.3036 86.0759H72.7269" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M46.0098 59.3615V112.785" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M27.129 67.1841L64.9071 104.962" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M64.9071 67.1841L27.129 104.962" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M21.2222 76.1165L70.7946 96.0301" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M55.9663 61.2898L36.0527 110.862" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M35.5214 61.5095L56.4951 110.642" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M70.5742 75.5891L21.4413 96.5629" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/>
+</g>
+
+
+</svg>
+      </svg>`;
+    }
+
+    function AutoJizdaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <path d="M16 66h100" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+        <path d="M28 66h12M52 66h12M76 66h12M100 66h12" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 10" />
+        <svg x="8" y="8" width="116" height="62" viewBox="25 20 470 170" preserveAspectRatio="xMidYMax meet" fill="none">
+<path d="M114.42 150.696C114.42 169.145 129.376 184.1 147.823 184.1C166.272 184.1 181.228 169.145 181.228 150.696C181.228 132.248 166.272 117.293 147.823 117.293C129.376 117.293 114.42 132.248 114.42 150.696Z" fill="#1F2937"/>
+<path d="M114.42 150.696C114.42 169.145 129.376 184.1 147.823 184.1C166.272 184.1 181.228 169.145 181.228 150.696C181.228 132.248 166.272 117.293 147.823 117.293C129.376 117.293 114.42 132.248 114.42 150.696Z" stroke="#111827" stroke-width="3.56288" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M166.178 150.697C166.178 160.833 157.961 169.05 147.825 169.05C137.689 169.05 129.471 160.833 129.471 150.697C129.471 140.561 137.689 132.344 147.825 132.344C157.961 132.344 166.178 140.561 166.178 150.697Z" fill="#6B7280"/>
+<path d="M157.875 150.854C157.875 156.343 153.42 160.798 147.932 160.798L147.898 160.798C142.421 160.776 138 156.333 138 150.854C138 145.367 142.444 140.922 147.932 140.922L147.966 140.922C153.443 140.946 157.875 145.378 157.875 150.854Z" fill="#9CA3AF"/>
+<path d="M157.875 150.854C157.875 156.343 153.42 160.798 147.932 160.798L147.898 160.798C142.421 160.776 138 156.333 138 150.854C138 145.367 142.444 140.922 147.932 140.922L147.966 140.922C153.443 140.946 157.875 145.378 157.875 150.854Z" stroke="#4B5563" stroke-width="1.97524" stroke-miterlimit="10"/>
+<path d="M151.789 150.857C151.789 152.989 150.065 154.715 147.934 154.715C145.812 154.715 144.088 152.989 144.088 150.857C144.088 148.736 145.812 147.012 147.934 147.012C150.065 147.012 151.789 148.736 151.789 150.857Z" fill="#374151"/>
+<path d="M151.789 150.857C151.789 152.989 150.065 154.715 147.934 154.715C145.812 154.715 144.088 152.989 144.088 150.857C144.088 148.736 145.812 147.012 147.934 147.012C150.065 147.012 151.789 148.736 151.789 150.857Z" stroke="#1F2937" stroke-width="0.988201" stroke-miterlimit="10"/>
+<path d="M348.39 150.696C348.39 169.145 363.345 184.1 381.793 184.1C400.242 184.1 415.196 169.145 415.196 150.696C415.196 132.248 400.242 117.293 381.793 117.293C363.345 117.293 348.39 132.248 348.39 150.696Z" fill="#1F2937"/>
+<path d="M348.39 150.696C348.39 169.145 363.345 184.1 381.793 184.1C400.242 184.1 415.196 169.145 415.196 150.696C415.196 132.248 400.242 117.293 381.793 117.293C363.345 117.293 348.39 132.248 348.39 150.696Z" stroke="#111827" stroke-width="3.56288" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M400.146 150.697C400.146 160.833 391.929 169.05 381.793 169.05C371.657 169.05 363.44 160.833 363.44 150.697C363.44 140.561 371.657 132.344 381.793 132.344C391.929 132.344 400.146 140.561 400.146 150.697Z" fill="#6B7280"/>
+<path d="M391.845 150.854C391.845 156.343 387.389 160.798 381.901 160.798L381.867 160.798C376.391 160.776 371.969 156.333 371.969 150.854C371.969 145.367 376.413 140.922 381.901 140.922L381.936 140.922C387.412 140.946 391.845 145.378 391.845 150.854Z" fill="#9CA3AF"/>
+<path d="M391.845 150.854C391.845 156.343 387.389 160.798 381.901 160.798L381.867 160.798C376.391 160.776 371.969 156.333 371.969 150.854C371.969 145.367 376.413 140.922 381.901 140.922L381.936 140.922C387.412 140.946 391.845 145.378 391.845 150.854Z" stroke="#4B5563" stroke-width="1.97524" stroke-miterlimit="10"/>
+<path d="M385.757 150.857C385.757 152.989 384.034 154.715 381.902 154.715C379.78 154.715 378.057 152.989 378.057 150.857C378.057 148.736 379.78 147.012 381.902 147.012C384.034 147.012 385.757 148.736 385.757 150.857Z" fill="#374151"/>
+<path d="M385.757 150.857C385.757 152.989 384.034 154.715 381.902 154.715C379.78 154.715 378.057 152.989 378.057 150.857C378.057 148.736 379.78 147.012 381.902 147.012C384.034 147.012 385.757 148.736 385.757 150.857Z" stroke="#1F2937" stroke-width="0.988201" stroke-miterlimit="10"/>
+<path d="M38.3384 148.924L105.608 149.023L144.056 126.353L186.82 153.325L325.92 153.53C337.573 153.547 348.795 149.128 357.306 141.169L361.326 137.411C368.351 130.841 378.489 128.815 387.501 132.179L427.051 146.941C440.86 148.591 467.798 143.896 478.344 133.933C483.233 129.313 482.017 120.643 476.089 117.87L474.877 117.302L482.584 103.026C483.234 101.82 483.58 100.444 483.582 99.0413C483.587 95.3993 481.31 92.2358 478.09 91.4128L468.542 88.9696C455.105 85.5325 441.437 83.3125 427.671 82.3321L328.517 75.2644L317.129 75.2476L51.0831 74.8569C47.2491 74.8512 45.321 79.957 48.0275 82.9477L58.0178 93.9862L47.3398 95.4709C39.8005 96.5202 34.1426 103.577 34.1303 111.948C34.1194 119.339 38.5376 125.852 44.9759 127.931L47.1212 128.624L35.4587 141.069C32.7809 143.926 34.6126 148.919 38.3384 148.924Z" fill="#B91C1C"/>
+<path d="M38.3384 148.924L105.608 149.023L144.056 126.353L186.82 153.325L325.92 153.53C337.573 153.547 348.795 149.128 357.306 141.169L361.326 137.411C368.351 130.841 378.489 128.815 387.501 132.179L427.051 146.941C440.86 148.591 467.798 143.896 478.344 133.933C483.233 129.313 482.017 120.643 476.089 117.87L474.877 117.302L482.584 103.026C483.234 101.82 483.58 100.444 483.582 99.0413C483.587 95.3993 481.31 92.2358 478.09 91.4128L468.542 88.9696C455.105 85.5325 441.437 83.3125 427.671 82.3321L328.517 75.2644L317.129 75.2476L51.0831 74.8569C47.2491 74.8512 45.321 79.957 48.0275 82.9477L58.0178 93.9862L47.3398 95.4709C39.8005 96.5202 34.1426 103.577 34.1303 111.948C34.1194 119.339 38.5376 125.852 44.9759 127.931L47.1212 128.624L35.4587 141.069C32.7809 143.926 34.6126 148.919 38.3384 148.924Z" stroke="#DC2626" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M96.3981 104.414C96.3882 111.194 90.8827 116.682 84.1027 116.672C77.3215 116.662 71.8333 111.158 71.8433 104.378C71.8533 97.5978 77.3575 92.1096 84.1387 92.1196C90.9188 92.1296 96.4081 97.6338 96.3981 104.414Z" stroke="#F8FAFC" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="25.04 50.08 13.97 25.04 50.08 13.97"/>
+<path d="M484.139 92.9808L474.337 99.5206L484.121 106.081C485.752 107.175 487.944 106.008 487.947 104.043L487.96 95.0291C487.963 93.0632 485.773 91.8902 484.139 92.9808Z" fill="#FEF08A"/>
+<path d="M484.139 92.9808L474.337 99.5206L484.121 106.081C485.752 107.175 487.944 106.008 487.947 104.043L487.96 95.0291C487.963 93.0632 485.773 91.8902 484.139 92.9808Z" stroke="#EAB308" stroke-width="4.38114" stroke-miterlimit="10"/>
+<path d="M485.159 109.538C486.052 110.9 484.849 112.66 483.258 112.314C477.904 111.148 469.257 107.983 469.269 99.7016C469.282 90.3271 478.222 87.5433 483.556 86.7165C485.123 86.4732 486.238 88.1882 485.365 89.5115L485.188 89.779C481.234 95.7687 481.223 103.537 485.159 109.538Z" fill="#DC2626"/>
+<path d="M114.021 74.9518L51.0833 74.8594" stroke="#F8FAFC" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M464.389 87.9486C452.293 85.0896 440.02 83.2116 427.67 82.3321L361.943 77.6484" stroke="#F8FAFC" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M199.679 153.344L325.92 153.529" stroke="#FEE2E2" stroke-opacity="0.55" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.2491 134.887L35.4575 141.069" stroke="#E2E8F0" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.3386 95.4725C39.7993 96.5206 34.1414 103.579 34.1291 111.951" stroke="#E2E8F0" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M355.438 85.4619L318.943 53.2028C302.248 38.4449 281.491 30.3865 260.084 30.3551L193.189 30.2568C174.834 30.2299 157.333 38.8082 145.058 53.8459L121.97 82.1323L355.438 85.4619Z" fill="#EF4444"/>
+<path d="M355.438 85.4619L318.943 53.2028C302.248 38.4449 281.491 30.3865 260.084 30.3551L193.189 30.2568C174.834 30.2299 157.333 38.8082 145.058 53.8459L121.97 82.1323L355.438 85.4619Z" stroke="#B91C1C" stroke-width="5.63821" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M310.288 75.1562C316.168 75.1649 319.139 68.09 315.02 63.8914C304.51 53.1803 286.904 38.7039 268.499 38.6769L195.986 38.5704C188.612 38.5596 182.623 45.1388 182.611 53.2644L182.596 63.2581C182.587 69.7262 187.338 74.9756 193.208 74.9843L310.288 75.1562Z" fill="#FEE2E2"/>
+<path d="M381.816 88.669C379.105 88.0679 96.423 88.2498 96.423 88.2498Z" fill="#991B1B"/>
+<path d="M381.816 88.669C379.105 88.0679 96.423 88.2498 96.423 88.2498" stroke="#991B1B" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M381.816 88.669C379.105 88.0679 96.423 88.2498 96.423 88.2498" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="25.04 50.08 13.97 25.04 50.08 13.97"/>
+<path d="M450.667 113.474L210.511 113.121" stroke="#FECACA" stroke-opacity="0.45" stroke-width="36.0827" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M163.108 113.053L74.0247 112.922" stroke="#FECACA" stroke-opacity="0.45" stroke-width="36.0827" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M453.619 119.601L254.7 119.309" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M105.602 153.347C105.602 153.347 105.941 115.379 146.065 115.438C186.876 115.498 186.82 153.466 186.82 153.466L105.602 153.347Z" fill="#DC2626"/>
+<path d="M105.602 153.347C105.602 153.347 105.941 115.379 146.065 115.438C186.876 115.498 186.82 153.466 186.82 153.466L105.602 153.347Z" stroke="#991B1B" stroke-width="6.99771" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M180.859 153.318L129.399 153.242" stroke="#FEE2E2" stroke-opacity="0.55" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+<g opacity="0.55">
+<path d="M218.393 39.2401L207.255 74.3777L195.803 74.3608L207.035 39.2235L218.393 39.2401Z" fill="#FFF1F2"/>
+<path d="M218.393 39.2401L207.255 74.3777L195.803 74.3608L207.035 39.2235L218.393 39.2401Z" stroke="#FECDD3" stroke-width="1.23496" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M228.715 39.2566L217.577 74.3941L213.543 74.3882L224.775 39.2508L228.715 39.2566Z" fill="#FFF1F2"/>
+<path d="M228.715 39.2566L217.577 74.3941L213.543 74.3882L224.775 39.2508L228.715 39.2566Z" stroke="#FECDD3" stroke-width="1.23496" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path d="M427.05 146.942C440.859 148.593 467.797 143.896 478.343 133.933C483.232 129.314 482.016 120.644 476.088 117.871L474.876 117.305" stroke="#FEE2E2" stroke-opacity="0.55" stroke-width="6.98374" stroke-linecap="round" stroke-linejoin="round"/>
+
+
+</svg>
+        <circle cx="104" cy="28" r="14" fill="#fff" stroke="#111827" stroke-width="2" />
+        <path d="M104 28v-8" stroke="#dc2626" stroke-width="2" stroke-linecap="round" />
+        <circle cx="104" cy="28" r="2" fill="#111827" />
+      </svg>`;
+    }
+
+    function StlacovaniLatekCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <svg x="0" y="0" width="132" height="88" viewBox="100 280 1800 1500" preserveAspectRatio="xMidYMid meet" fill="none">
+<path d="M121.332 568.445C121.332 469.428 519.223 389.156 1010.04 389.156C1500.87 389.156 1898.76 469.428 1898.76 568.445" stroke="#1D1D1B" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1851.67 1525.42C1706.32 1460.53 1382.66 1415.37 1006.72 1415.37C638.671 1415.37 320.738 1458.65 171.158 1521.36" stroke="#1D1D1B" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+<g opacity="0.8">
+<path d="M1481.71 1579.33C1481.71 1636.22 1253.12 1682.33 971.141 1682.33C689.162 1682.33 460.57 1636.22 460.57 1579.33C460.57 1522.45 689.162 1476.33 971.141 1476.33C1253.12 1476.33 1481.71 1522.45 1481.71 1579.33Z" fill="#206CE8"/>
+<path d="M1510.75 1646.94C1510.75 1668.18 1425.41 1685.4 1320.14 1685.4C1214.86 1685.4 1129.52 1668.18 1129.52 1646.94C1129.52 1625.71 1214.86 1608.49 1320.14 1608.49C1425.41 1608.49 1510.75 1625.71 1510.75 1646.94Z" fill="#206CE8"/>
+<path d="M902.252 1506.92C902.252 1528.15 816.909 1545.37 711.636 1545.37C606.359 1545.37 521.02 1528.15 521.02 1506.92C521.02 1485.68 606.359 1468.46 711.636 1468.46C816.909 1468.46 902.252 1485.68 902.252 1506.92Z" fill="#206CE8"/>
+<path d="M1177.62 1666.18C1177.62 1693.85 1066.42 1716.29 929.251 1716.29C792.08 1716.29 680.881 1693.85 680.881 1666.18C680.881 1638.51 792.08 1616.08 929.251 1616.08C1066.42 1616.08 1177.62 1638.51 1177.62 1666.18Z" fill="#206CE8"/>
+</g>
+<path d="M1566.73 1609.09C1566.73 1614.88 1552.79 1619.56 1535.59 1619.56C1518.38 1619.56 1504.44 1614.88 1504.44 1609.09C1504.44 1603.31 1518.38 1598.62 1535.59 1598.62C1552.79 1598.62 1566.73 1603.31 1566.73 1609.09Z" fill="#206CE8"/>
+<path d="M624.674 1481.53V1183.35C624.674 1134.01 659.462 1091.51 707.83 1081.77L878.177 1047.45C950.68 1032.85 1025.36 1032.84 1097.86 1047.42L1268.71 1081.79C1317.09 1091.52 1351.89 1134.02 1351.89 1183.37V1480.13C1351.89 1529.47 1317.1 1571.96 1268.74 1581.71L1109.61 1613.76C1029.34 1629.93 946.659 1630.11 866.313 1614.3L708.282 1583.2C659.702 1573.63 624.674 1531.04 624.674 1481.53Z" fill="#58A1FF"/>
+<path d="M624.674 1481.53V1183.35C624.674 1134.01 659.462 1091.51 707.83 1081.77L878.177 1047.45C950.68 1032.85 1025.36 1032.84 1097.86 1047.42L1268.71 1081.79C1317.09 1091.52 1351.89 1134.02 1351.89 1183.37V1480.13C1351.89 1529.47 1317.1 1571.96 1268.74 1581.71L1109.61 1613.76C1029.34 1629.93 946.659 1630.11 866.313 1614.3L708.282 1583.2C659.702 1573.63 624.674 1531.04 624.674 1481.53Z" stroke="#206CE8" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1293.59 1126.73L1103.57 1165C1027.29 1180.37 948.716 1180.55 872.362 1165.52L646.812 1119.36" stroke="#206CE8" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M654.664 1120.97L931.345 1177.79C964.305 1184.44 988.009 1213.4 988.009 1247.03V1569.77" stroke="#206CE8" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1329.73 1119.36L1090.55 1168.45C1011.72 1184.45 988.01 1213.41 988.01 1247.04V1622.36" stroke="#206CE8" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+<g opacity="0.45">
+<path d="M1136.91 1197.09C1058.08 1213.1 1034.37 1242.06 1034.37 1275.69V1390.21" stroke="white" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path d="M1889.79 670.222C1889.79 768.137 1496.33 847.513 1010.96 847.513C525.598 847.513 132.137 768.137 132.137 670.222V471.49C132.137 373.571 525.598 294.199 1010.96 294.199C1496.33 294.199 1889.79 373.571 1889.79 471.49V670.222Z" fill="#E24052"/>
+<path d="M1890.01 469.817C1890.01 567.757 1496.45 647.151 1010.97 647.151C525.485 647.151 131.922 567.757 131.922 469.817C131.922 371.878 525.485 292.484 1010.97 292.484C1496.45 292.484 1890.01 371.878 1890.01 469.817Z" fill="#FF8157"/>
+<path d="M121.332 568.443V1597.04C121.332 1696.16 519.636 1776.52 1010.97 1776.52C1502.3 1776.52 1900.6 1696.16 1900.6 1597.04V568.443" stroke="#1D1D1B" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1898.75 580.826C1898.75 679.843 1500.86 760.115 1010.04 760.115C519.219 760.115 121.328 679.843 121.328 580.826" stroke="#1D1D1B" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </svg>`;
+    }
+
+    function HustotaCardIllustration() {
+      // Plocha s míčky — stejný vzhled jako ve simulaci hustota/.
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <svg x="16" y="4" width="100" height="80" viewBox="-10 -10 120 120" preserveAspectRatio="xMidYMid meet" fill="none">
+<defs>
+<radialGradient id="hub-hustota-ball-0" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(0 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(0 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(0 86% 34%)"/>
+</radialGradient>
+<radialGradient id="hub-hustota-ball-1" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(137.508 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(137.508 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(137.508 86% 34%)"/>
+</radialGradient>
+<radialGradient id="hub-hustota-ball-2" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(275.016 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(275.016 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(275.016 86% 34%)"/>
+</radialGradient>
+<radialGradient id="hub-hustota-ball-3" cx="35%" cy="35%" r="65%">
+<stop offset="0%" stop-color="hsl(52.524 92% 72%)"/>
+<stop offset="50%" stop-color="hsl(52.524 86% 52%)"/>
+<stop offset="100%" stop-color="hsl(52.524 86% 34%)"/>
+</radialGradient>
+</defs>
+<rect x="28" y="-3.5" width="44" height="3.5" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="28" y="100" width="44" height="3.5" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="-3.5" y="28" width="3.5" height="44" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="100" y="28" width="3.5" height="44" rx="1.75" fill="rgba(88,166,255,0.55)"/>
+<rect x="0" y="0" width="100" height="100" rx="1.6" fill="#0d1117" stroke="#58a6ff" stroke-width="0.8"/>
+<circle cx="71" cy="31" r="3.6" fill="url(#hub-hustota-ball-2)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="69.9" cy="29.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+<circle cx="30" cy="70" r="3.6" fill="url(#hub-hustota-ball-0)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="28.9" cy="68.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+<circle cx="42" cy="58" r="3.6" fill="url(#hub-hustota-ball-3)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="40.9" cy="56.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+<circle cx="62" cy="76" r="3.6" fill="url(#hub-hustota-ball-1)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
+<circle cx="60.9" cy="74.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
+        </svg>
+      </svg>`;
+    }
+
+    function TeplotaCardIllustration() {
+      // Teploměr — stejný SVG jako ve simulaci teplota/ (externí soubor kvůli maskám).
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="teplota/card-thermometer.svg"
+          x="32"
+          y="0"
+          width="68"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function MereniDelkyCardIllustration() {
+      // Pravítko — stejný vzhled jako ve simulaci mereni_delka/.
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <svg x="2" y="34" width="128" height="20" viewBox="0 0 520 68" preserveAspectRatio="xMidYMid meet" fill="none">
+
+<rect x="0.5" y="0.5" width="519" height="67" fill="#FFE8D4" stroke="#CC6600"/>
+<line x1="8.5" y1="1" x2="8.5" y2="21" stroke="#CC6600"/>
+<line x1="13.5" y1="1" x2="13.5" y2="11" stroke="#CC6600"/>
+<line x1="18.5" y1="1" x2="18.5" y2="11" stroke="#CC6600"/>
+<line x1="13.5" y1="1" x2="13.5" y2="11" stroke="#CC6600"/>
+<line x1="18.5" y1="1" x2="18.5" y2="11" stroke="#CC6600"/>
+<line x1="23.5" y1="1" x2="23.5" y2="11" stroke="#CC6600"/>
+<line x1="28.5" y1="1" x2="28.5" y2="11" stroke="#CC6600"/>
+<path d="M33.5 1V14" stroke="#CC6600"/>
+<line x1="38.5" y1="1" x2="38.5" y2="11" stroke="#CC6600"/>
+<line x1="43.5" y1="1" x2="43.5" y2="11" stroke="#CC6600"/>
+<line x1="48.5" y1="1" x2="48.5" y2="11" stroke="#CC6600"/>
+<line x1="53.5" y1="1" x2="53.5" y2="11" stroke="#CC6600"/>
+<line x1="58.5" y1="1" x2="58.5" y2="21" stroke="#CC6600"/>
+<line x1="63.5" y1="1" x2="63.5" y2="11" stroke="#CC6600"/>
+<line x1="68.5" y1="1" x2="68.5" y2="11" stroke="#CC6600"/>
+<line x1="63.5" y1="1" x2="63.5" y2="11" stroke="#CC6600"/>
+<line x1="68.5" y1="1" x2="68.5" y2="11" stroke="#CC6600"/>
+<line x1="73.5" y1="1" x2="73.5" y2="11" stroke="#CC6600"/>
+<line x1="78.5" y1="1" x2="78.5" y2="11" stroke="#CC6600"/>
+<path d="M83.5 1V14" stroke="#CC6600"/>
+<line x1="88.5" y1="1" x2="88.5" y2="11" stroke="#CC6600"/>
+<line x1="93.5" y1="1" x2="93.5" y2="11" stroke="#CC6600"/>
+<line x1="98.5" y1="1" x2="98.5" y2="11" stroke="#CC6600"/>
+<line x1="103.5" y1="1" x2="103.5" y2="11" stroke="#CC6600"/>
+<line x1="208.5" y1="1" x2="208.5" y2="21" stroke="#CC6600"/>
+<line x1="213.5" y1="1" x2="213.5" y2="11" stroke="#CC6600"/>
+<line x1="218.5" y1="1" x2="218.5" y2="11" stroke="#CC6600"/>
+<line x1="213.5" y1="1" x2="213.5" y2="11" stroke="#CC6600"/>
+<line x1="218.5" y1="1" x2="218.5" y2="11" stroke="#CC6600"/>
+<line x1="223.5" y1="1" x2="223.5" y2="11" stroke="#CC6600"/>
+<line x1="228.5" y1="1" x2="228.5" y2="11" stroke="#CC6600"/>
+<path d="M233.5 1V14" stroke="#CC6600"/>
+<line x1="238.5" y1="1" x2="238.5" y2="11" stroke="#CC6600"/>
+<line x1="243.5" y1="1" x2="243.5" y2="11" stroke="#CC6600"/>
+<line x1="248.5" y1="1" x2="248.5" y2="11" stroke="#CC6600"/>
+<line x1="253.5" y1="1" x2="253.5" y2="11" stroke="#CC6600"/>
+<line x1="258.5" y1="1" x2="258.5" y2="21" stroke="#CC6600"/>
+<line x1="263.5" y1="1" x2="263.5" y2="11" stroke="#CC6600"/>
+<line x1="268.5" y1="1" x2="268.5" y2="11" stroke="#CC6600"/>
+<line x1="263.5" y1="1" x2="263.5" y2="11" stroke="#CC6600"/>
+<line x1="268.5" y1="1" x2="268.5" y2="11" stroke="#CC6600"/>
+<line x1="273.5" y1="1" x2="273.5" y2="11" stroke="#CC6600"/>
+<line x1="278.5" y1="1" x2="278.5" y2="11" stroke="#CC6600"/>
+<path d="M283.5 1V14" stroke="#CC6600"/>
+<line x1="288.5" y1="1" x2="288.5" y2="11" stroke="#CC6600"/>
+<line x1="293.5" y1="1" x2="293.5" y2="11" stroke="#CC6600"/>
+<line x1="298.5" y1="1" x2="298.5" y2="11" stroke="#CC6600"/>
+<line x1="303.5" y1="1" x2="303.5" y2="11" stroke="#CC6600"/>
+<line x1="308.5" y1="1" x2="308.5" y2="21" stroke="#CC6600"/>
+<line x1="313.5" y1="1" x2="313.5" y2="11" stroke="#CC6600"/>
+<line x1="318.5" y1="1" x2="318.5" y2="11" stroke="#CC6600"/>
+<line x1="313.5" y1="1" x2="313.5" y2="11" stroke="#CC6600"/>
+<line x1="318.5" y1="1" x2="318.5" y2="11" stroke="#CC6600"/>
+<line x1="323.5" y1="1" x2="323.5" y2="11" stroke="#CC6600"/>
+<line x1="328.5" y1="1" x2="328.5" y2="11" stroke="#CC6600"/>
+<path d="M333.5 1V6V14" stroke="#CC6600"/>
+<line x1="338.5" y1="1" x2="338.5" y2="11" stroke="#CC6600"/>
+<line x1="343.5" y1="1" x2="343.5" y2="11" stroke="#CC6600"/>
+<line x1="348.5" y1="1" x2="348.5" y2="11" stroke="#CC6600"/>
+<line x1="353.5" y1="1" x2="353.5" y2="11" stroke="#CC6600"/>
+<line x1="358.5" y1="1" x2="358.5" y2="21" stroke="#CC6600"/>
+<line x1="363.5" y1="1" x2="363.5" y2="11" stroke="#CC6600"/>
+<line x1="368.5" y1="1" x2="368.5" y2="11" stroke="#CC6600"/>
+<line x1="363.5" y1="1" x2="363.5" y2="11" stroke="#CC6600"/>
+<line x1="368.5" y1="1" x2="368.5" y2="11" stroke="#CC6600"/>
+<line x1="373.5" y1="1" x2="373.5" y2="11" stroke="#CC6600"/>
+<line x1="378.5" y1="1" x2="378.5" y2="11" stroke="#CC6600"/>
+<path d="M383.5 1V14" stroke="#CC6600"/>
+<line x1="388.5" y1="1" x2="388.5" y2="11" stroke="#CC6600"/>
+<line x1="393.5" y1="1" x2="393.5" y2="11" stroke="#CC6600"/>
+<line x1="398.5" y1="1" x2="398.5" y2="11" stroke="#CC6600"/>
+<line x1="403.5" y1="1" x2="403.5" y2="11" stroke="#CC6600"/>
+<line x1="408.5" y1="1" x2="408.5" y2="21" stroke="#CC6600"/>
+<line x1="413.5" y1="1" x2="413.5" y2="11" stroke="#CC6600"/>
+<line x1="418.5" y1="1" x2="418.5" y2="11" stroke="#CC6600"/>
+<line x1="413.5" y1="1" x2="413.5" y2="11" stroke="#CC6600"/>
+<line x1="418.5" y1="1" x2="418.5" y2="11" stroke="#CC6600"/>
+<line x1="423.5" y1="1" x2="423.5" y2="11" stroke="#CC6600"/>
+<line x1="428.5" y1="1" x2="428.5" y2="11" stroke="#CC6600"/>
+<path d="M433.5 1V14" stroke="#CC6600"/>
+<line x1="438.5" y1="1" x2="438.5" y2="11" stroke="#CC6600"/>
+<line x1="443.5" y1="1" x2="443.5" y2="11" stroke="#CC6600"/>
+<line x1="448.5" y1="1" x2="448.5" y2="11" stroke="#CC6600"/>
+<line x1="453.5" y1="1" x2="453.5" y2="11" stroke="#CC6600"/>
+<line x1="458.5" y1="1" x2="458.5" y2="21" stroke="#CC6600"/>
+<line x1="463.5" y1="1" x2="463.5" y2="11" stroke="#CC6600"/>
+<line x1="468.5" y1="1" x2="468.5" y2="11" stroke="#CC6600"/>
+<line x1="463.5" y1="1" x2="463.5" y2="11" stroke="#CC6600"/>
+<line x1="468.5" y1="1" x2="468.5" y2="11" stroke="#CC6600"/>
+<line x1="473.5" y1="1" x2="473.5" y2="11" stroke="#CC6600"/>
+<line x1="478.5" y1="1" x2="478.5" y2="11" stroke="#CC6600"/>
+<path d="M483.5 1V14" stroke="#CC6600"/>
+<line x1="488.5" y1="1" x2="488.5" y2="11" stroke="#CC6600"/>
+<line x1="493.5" y1="1" x2="493.5" y2="11" stroke="#CC6600"/>
+<line x1="498.5" y1="1" x2="498.5" y2="11" stroke="#CC6600"/>
+<line x1="503.5" y1="1" x2="503.5" y2="11" stroke="#CC6600"/>
+<line x1="108.5" y1="1" x2="108.5" y2="21" stroke="#CC6600"/>
+<line x1="113.5" y1="1" x2="113.5" y2="11" stroke="#CC6600"/>
+<line x1="118.5" y1="1" x2="118.5" y2="11" stroke="#CC6600"/>
+<line x1="113.5" y1="1" x2="113.5" y2="11" stroke="#CC6600"/>
+<line x1="118.5" y1="1" x2="118.5" y2="11" stroke="#CC6600"/>
+<line x1="123.5" y1="1" x2="123.5" y2="11" stroke="#CC6600"/>
+<line x1="128.5" y1="1" x2="128.5" y2="11" stroke="#CC6600"/>
+<path d="M133.5 1V14" stroke="#CC6600"/>
+<line x1="138.5" y1="1" x2="138.5" y2="11" stroke="#CC6600"/>
+<line x1="143.5" y1="1" x2="143.5" y2="11" stroke="#CC6600"/>
+<line x1="148.5" y1="1" x2="148.5" y2="11" stroke="#CC6600"/>
+<line x1="153.5" y1="1" x2="153.5" y2="11" stroke="#CC6600"/>
+<line x1="158.5" y1="1" x2="158.5" y2="21" stroke="#CC6600"/>
+<line x1="163.5" y1="1" x2="163.5" y2="11" stroke="#CC6600"/>
+<line x1="168.5" y1="1" x2="168.5" y2="11" stroke="#CC6600"/>
+<line x1="163.5" y1="1" x2="163.5" y2="11" stroke="#CC6600"/>
+<line x1="168.5" y1="1" x2="168.5" y2="11" stroke="#CC6600"/>
+<line x1="173.5" y1="1" x2="173.5" y2="11" stroke="#CC6600"/>
+<line x1="178.5" y1="1" x2="178.5" y2="11" stroke="#CC6600"/>
+<path d="M183.5 1V14" stroke="#CC6600"/>
+<line x1="188.5" y1="1" x2="188.5" y2="11" stroke="#CC6600"/>
+<line x1="193.5" y1="1" x2="193.5" y2="11" stroke="#CC6600"/>
+<line x1="198.5" y1="1" x2="198.5" y2="11" stroke="#CC6600"/>
+<line x1="203.5" y1="1" x2="203.5" y2="11" stroke="#CC6600"/>
+<line x1="508.5" y1="1" x2="508.5" y2="21" stroke="#CC6600"/>
+<path d="M8.21 27.77C8.21 26.76 7.98 25.96 7.53 25.36C7.08 24.75 6.49 24.45 5.75 24.45C5.01 24.45 4.42 24.75 3.97 25.35C3.52 25.95 3.3 26.76 3.3 27.77C3.3 28.78 3.52 29.59 3.97 30.2C4.42 30.8 5.02 31.1 5.75 31.1C6.49 31.1 7.08 30.8 7.53 30.2C7.98 29.59 8.21 28.78 8.21 27.77ZM5.75 25.45C6.58 25.45 7.11 26.3 7.11 27.77C7.11 29.25 6.58 30.1 5.75 30.1C4.94 30.1 4.4 29.24 4.4 27.77C4.4 26.3 4.94 25.45 5.75 25.45ZM14.5061 25.99C13.7161 25.99 13.0861 26.24 12.6061 26.73C12.1361 27.22 11.8961 27.82 11.8961 28.55C11.8961 29.28 12.1361 29.89 12.6161 30.38C13.1061 30.87 13.7361 31.12 14.5261 31.12C15.2261 31.12 15.8061 30.85 16.2761 30.31L15.5761 29.63C15.3061 29.97 14.9461 30.14 14.5161 30.14C14.0761 30.14 13.7161 29.99 13.4361 29.69C13.1561 29.38 13.0161 29 13.0161 28.54C13.0161 28.07 13.1561 27.7 13.4361 27.41C13.7161 27.12 14.0761 26.97 14.5061 26.97C14.9961 26.97 15.4061 27.22 15.5961 27.53L16.2561 26.8C15.8061 26.26 15.2261 25.99 14.5061 25.99ZM23.0377 25.99C22.3477 25.99 21.7977 26.24 21.3777 26.74C21.0277 26.24 20.4977 25.99 19.7777 25.99C19.1977 25.99 18.6977 26.17 18.2877 26.53V26.18V26.1H17.2377V31H18.3377V28.01C18.3377 27.41 18.8577 26.97 19.4877 26.97C20.1177 26.97 20.5777 27.32 20.5777 28.03V31H21.6777V28.01C21.6777 27.41 22.1977 26.97 22.8277 26.97C23.4577 26.97 23.9177 27.32 23.9177 28.03V31H25.0177V27.72C25.0177 26.61 24.2777 25.99 23.0377 25.99Z" fill="black"/>
+<path d="M48.68 24.55V31H47.56V25.55H45.86L46.14 24.55H48.68ZM56.5061 25.99C57.2261 25.99 57.8061 26.26 58.2561 26.8L57.5961 27.53C57.4061 27.22 56.9961 26.97 56.5061 26.97C56.0761 26.97 55.7161 27.12 55.4361 27.41C55.1561 27.7 55.0161 28.07 55.0161 28.54C55.0161 29 55.1561 29.38 55.4361 29.69C55.7161 29.99 56.0761 30.14 56.5161 30.14C56.9461 30.14 57.3061 29.97 57.5761 29.63L58.2761 30.31C57.8061 30.85 57.2261 31.12 56.5261 31.12C55.7361 31.12 55.1061 30.87 54.6161 30.38C54.1361 29.89 53.8961 29.28 53.8961 28.55C53.8961 27.82 54.1361 27.22 54.6061 26.73C55.0861 26.24 55.7161 25.99 56.5061 25.99ZM65.0377 25.99C66.2777 25.99 67.0177 26.61 67.0177 27.72V31H65.9177V28.03C65.9177 27.32 65.4577 26.97 64.8277 26.97C64.1977 26.97 63.6777 27.41 63.6777 28.01V31H62.5777V28.03C62.5777 27.32 62.1177 26.97 61.4877 26.97C60.8577 26.97 60.3377 27.41 60.3377 28.01V31H59.2377V26.1H60.2877V26.18V26.53C60.6977 26.17 61.1977 25.99 61.7777 25.99C62.4977 25.99 63.0277 26.24 63.3777 26.74C63.7977 26.24 64.3477 25.99 65.0377 25.99Z" fill="black"/>
+<path d="M97.68 24.43C98.31 24.43 98.84 24.61 99.26 24.98C99.68 25.35 99.89 25.81 99.89 26.36C99.89 26.89 99.69 27.39 99.29 27.84C99.03 28.14 98.78 28.41 98.53 28.64L97.06 30H99.86V31H95.62L95.59 30.02C96.57 29.13 97.24 28.5 97.6 28.14C97.93 27.81 98.21 27.5 98.44 27.2C98.66 26.93 98.76 26.63 98.75 26.31C98.74 25.82 98.32 25.43 97.65 25.43C97.04 25.43 96.56 25.81 96.4 26.38L95.5 25.93C95.79 25.05 96.64 24.43 97.68 24.43ZM106.506 25.99C107.226 25.99 107.806 26.26 108.256 26.8L107.596 27.53C107.406 27.22 106.996 26.97 106.506 26.97C106.076 26.97 105.716 27.12 105.436 27.41C105.156 27.7 105.016 28.07 105.016 28.54C105.016 29 105.156 29.38 105.436 29.69C105.716 29.99 106.076 30.14 106.516 30.14C106.946 30.14 107.306 29.97 107.576 29.63L108.276 30.31C107.806 30.85 107.226 31.12 106.526 31.12C105.736 31.12 105.106 30.87 104.616 30.38C104.136 29.89 103.896 29.28 103.896 28.55C103.896 27.82 104.136 27.22 104.606 26.73C105.086 26.24 105.716 25.99 106.506 25.99ZM115.038 25.99C116.278 25.99 117.018 26.61 117.018 27.72V31H115.918V28.03C115.918 27.32 115.458 26.97 114.828 26.97C114.198 26.97 113.678 27.41 113.678 28.01V31H112.578V28.03C112.578 27.32 112.118 26.97 111.488 26.97C110.858 26.97 110.338 27.41 110.338 28.01V31H109.238V26.1H110.288V26.18V26.53C110.698 26.17 111.198 25.99 111.778 25.99C112.498 25.99 113.028 26.24 113.378 26.74C113.798 26.24 114.348 25.99 115.038 25.99Z" fill="black"/>
+<path d="M148.69 24.43C149.29 24.43 149.79 24.61 150.2 24.96C150.61 25.31 150.81 25.71 150.81 26.18C150.81 26.81 150.55 27.26 150.04 27.55C150.61 27.78 151.01 28.43 151.01 29.16C151.01 29.71 150.79 30.18 150.36 30.56C149.93 30.93 149.38 31.12 148.72 31.12C147.52 31.12 146.77 30.43 146.44 29.58L147.35 29.09C147.6 29.78 148.04 30.12 148.67 30.12C149.4 30.12 149.86 29.74 149.86 29.07C149.86 28.44 149.38 28.09 148.63 28.06H148.18V27.14C148.39 27.14 148.55 27.14 148.66 27.13C149.35 27.09 149.7 26.8 149.7 26.25C149.7 25.76 149.27 25.43 148.67 25.43C148.06 25.43 147.62 25.82 147.43 26.37L146.54 25.91C146.83 25.06 147.65 24.43 148.69 24.43ZM157.506 25.99C158.226 25.99 158.806 26.26 159.256 26.8L158.596 27.53C158.406 27.22 157.996 26.97 157.506 26.97C157.076 26.97 156.716 27.12 156.436 27.41C156.156 27.7 156.016 28.07 156.016 28.54C156.016 29 156.156 29.38 156.436 29.69C156.716 29.99 157.076 30.14 157.516 30.14C157.946 30.14 158.306 29.97 158.576 29.63L159.276 30.31C158.806 30.85 158.226 31.12 157.526 31.12C156.736 31.12 156.106 30.87 155.616 30.38C155.136 29.89 154.896 29.28 154.896 28.55C154.896 27.82 155.136 27.22 155.606 26.73C156.086 26.24 156.716 25.99 157.506 25.99ZM166.038 25.99C167.278 25.99 168.018 26.61 168.018 27.72V31H166.918V28.03C166.918 27.32 166.458 26.97 165.828 26.97C165.198 26.97 164.678 27.41 164.678 28.01V31H163.578V28.03C163.578 27.32 163.118 26.97 162.488 26.97C161.858 26.97 161.338 27.41 161.338 28.01V31H160.238V26.1H161.288V26.18V26.53C161.698 26.17 162.198 25.99 162.778 25.99C163.498 25.99 164.028 26.24 164.378 26.74C164.798 26.24 165.348 25.99 166.038 25.99Z" fill="black"/>
+<path d="M200.17 24.52V28.39H201.07V29.39H200.17V31H199.07V29.39H196.31L196.25 28.36L198.61 24.52H200.17ZM199.07 25.44L197.31 28.39H199.07V25.44ZM207.506 25.99C208.226 25.99 208.806 26.26 209.256 26.8L208.596 27.53C208.406 27.22 207.996 26.97 207.506 26.97C207.076 26.97 206.716 27.12 206.436 27.41C206.156 27.7 206.016 28.07 206.016 28.54C206.016 29 206.156 29.38 206.436 29.69C206.716 29.99 207.076 30.14 207.516 30.14C207.946 30.14 208.306 29.97 208.576 29.63L209.276 30.31C208.806 30.85 208.226 31.12 207.526 31.12C206.736 31.12 206.106 30.87 205.616 30.38C205.136 29.89 204.896 29.28 204.896 28.55C204.896 27.82 205.136 27.22 205.606 26.73C206.086 26.24 206.716 25.99 207.506 25.99ZM216.038 25.99C217.278 25.99 218.018 26.61 218.018 27.72V31H216.918V28.03C216.918 27.32 216.458 26.97 215.828 26.97C215.198 26.97 214.678 27.41 214.678 28.01V31H213.578V28.03C213.578 27.32 213.118 26.97 212.488 26.97C211.858 26.97 211.338 27.41 211.338 28.01V31H210.238V26.1H211.288V26.18V26.53C211.698 26.17 212.198 25.99 212.778 25.99C213.498 25.99 214.028 26.24 214.378 26.74C214.798 26.24 215.348 25.99 216.038 25.99Z" fill="black"/>
+<path d="M250.7 24.55V25.5H247.95L247.76 27.04C248.05 26.83 248.41 26.73 248.84 26.73C249.45 26.73 249.96 26.94 250.37 27.35C250.79 27.76 251 28.28 251 28.91C251 29.52 250.78 30.04 250.34 30.48C249.91 30.92 249.38 31.14 248.77 31.14C247.75 31.14 247.01 30.72 246.54 29.88L247.37 29.29C247.66 29.86 248.1 30.14 248.69 30.14C249.38 30.14 249.89 29.66 249.89 28.94C249.89 28.22 249.36 27.7 248.59 27.7C248.11 27.7 247.74 27.88 247.47 28.25L246.73 27.77L247.1 24.55H250.7ZM257.506 25.99C258.226 25.99 258.806 26.26 259.256 26.8L258.596 27.53C258.406 27.22 257.996 26.97 257.506 26.97C257.076 26.97 256.716 27.12 256.436 27.41C256.156 27.7 256.016 28.07 256.016 28.54C256.016 29 256.156 29.38 256.436 29.69C256.716 29.99 257.076 30.14 257.516 30.14C257.946 30.14 258.306 29.97 258.576 29.63L259.276 30.31C258.806 30.85 258.226 31.12 257.526 31.12C256.736 31.12 256.106 30.87 255.616 30.38C255.136 29.89 254.896 29.28 254.896 28.55C254.896 27.82 255.136 27.22 255.606 26.73C256.086 26.24 256.716 25.99 257.506 25.99ZM266.038 25.99C267.278 25.99 268.018 26.61 268.018 27.72V31H266.918V28.03C266.918 27.32 266.458 26.97 265.828 26.97C265.198 26.97 264.678 27.41 264.678 28.01V31H263.578V28.03C263.578 27.32 263.118 26.97 262.488 26.97C261.858 26.97 261.338 27.41 261.338 28.01V31H260.238V26.1H261.288V26.18V26.53C261.698 26.17 262.198 25.99 262.778 25.99C263.498 25.99 264.028 26.24 264.378 26.74C264.798 26.24 265.348 25.99 266.038 25.99Z" fill="black"/>
+<path d="M299.99 24.55L298.48 26.71L298.49 26.72C298.62 26.67 298.79 26.64 299 26.64C299.59 26.64 300.11 26.85 300.54 27.27C300.98 27.69 301.2 28.21 301.2 28.83C301.2 29.46 300.97 30 300.5 30.45C300.04 30.9 299.48 31.12 298.81 31.12C298.14 31.12 297.58 30.9 297.13 30.45C296.68 30 296.46 29.46 296.46 28.83C296.46 28.26 296.69 27.61 297.14 26.89L298.62 24.55H299.99ZM298.83 27.58C298.46 27.58 298.15 27.71 297.91 27.96C297.68 28.21 297.56 28.51 297.56 28.86C297.56 29.22 297.68 29.53 297.92 29.78C298.16 30.03 298.46 30.16 298.83 30.16C299.2 30.16 299.5 30.03 299.74 29.78C299.98 29.53 300.1 29.22 300.1 28.86C300.1 28.14 299.56 27.58 298.83 27.58ZM307.506 25.99C308.226 25.99 308.806 26.26 309.256 26.8L308.596 27.53C308.406 27.22 307.996 26.97 307.506 26.97C307.076 26.97 306.716 27.12 306.436 27.41C306.156 27.7 306.016 28.07 306.016 28.54C306.016 29 306.156 29.38 306.436 29.69C306.716 29.99 307.076 30.14 307.516 30.14C307.946 30.14 308.306 29.97 308.576 29.63L309.276 30.31C308.806 30.85 308.226 31.12 307.526 31.12C306.736 31.12 306.106 30.87 305.616 30.38C305.136 29.89 304.896 29.28 304.896 28.55C304.896 27.82 305.136 27.22 305.606 26.73C306.086 26.24 306.716 25.99 307.506 25.99ZM316.038 25.99C317.278 25.99 318.018 26.61 318.018 27.72V31H316.918V28.03C316.918 27.32 316.458 26.97 315.828 26.97C315.198 26.97 314.678 27.41 314.678 28.01V31H313.578V28.03C313.578 27.32 313.118 26.97 312.488 26.97C311.858 26.97 311.338 27.41 311.338 28.01V31H310.238V26.1H311.288V26.18V26.53C311.698 26.17 312.198 25.99 312.778 25.99C313.498 25.99 314.028 26.24 314.378 26.74C314.798 26.24 315.348 25.99 316.038 25.99Z" fill="black"/>
+<path d="M350.83 24.55L350.91 25.46L348.44 31.05H347.18L349.72 25.55H346.75V24.55H350.83ZM357.408 25.99C358.128 25.99 358.708 26.26 359.158 26.8L358.498 27.53C358.308 27.22 357.898 26.97 357.408 26.97C356.978 26.97 356.618 27.12 356.338 27.41C356.058 27.7 355.918 28.07 355.918 28.54C355.918 29 356.058 29.38 356.338 29.69C356.618 29.99 356.978 30.14 357.418 30.14C357.848 30.14 358.208 29.97 358.478 29.63L359.178 30.31C358.708 30.85 358.128 31.12 357.428 31.12C356.638 31.12 356.008 30.87 355.518 30.38C355.038 29.89 354.798 29.28 354.798 28.55C354.798 27.82 355.038 27.22 355.508 26.73C355.988 26.24 356.618 25.99 357.408 25.99ZM365.94 25.99C367.18 25.99 367.92 26.61 367.92 27.72V31H366.82V28.03C366.82 27.32 366.36 26.97 365.73 26.97C365.1 26.97 364.58 27.41 364.58 28.01V31H363.48V28.03C363.48 27.32 363.02 26.97 362.39 26.97C361.76 26.97 361.24 27.41 361.24 28.01V31H360.14V26.1H361.19V26.18V26.53C361.6 26.17 362.1 25.99 362.68 25.99C363.4 25.99 363.93 26.24 364.28 26.74C364.7 26.24 365.25 25.99 365.94 25.99Z" fill="black"/>
+<path d="M400.75 26.17C400.75 26.68 400.54 27.1 400.13 27.41C400.74 27.77 401.05 28.32 401.05 29.05C401.05 29.66 400.83 30.15 400.39 30.54C399.95 30.93 399.41 31.12 398.76 31.12C398.11 31.12 397.56 30.93 397.12 30.54C396.68 30.15 396.46 29.66 396.46 29.05C396.46 28.3 396.76 27.75 397.36 27.42C396.97 27.12 396.77 26.7 396.77 26.17C396.77 25.68 396.96 25.27 397.35 24.93C397.74 24.58 398.21 24.41 398.76 24.41C399.31 24.41 399.78 24.58 400.17 24.93C400.56 25.27 400.75 25.68 400.75 26.17ZM397.84 26.18C397.84 26.69 398.21 27.07 398.76 27.07C399.29 27.07 399.67 26.69 399.67 26.18C399.67 25.69 399.27 25.32 398.76 25.32C398.25 25.32 397.84 25.69 397.84 26.18ZM397.56 29.05C397.56 29.36 397.67 29.63 397.9 29.85C398.13 30.07 398.42 30.18 398.76 30.18C399.09 30.18 399.37 30.07 399.6 29.85C399.83 29.63 399.95 29.36 399.95 29.05C399.95 28.41 399.44 27.9 398.76 27.9C398.08 27.9 397.56 28.41 397.56 29.05ZM407.506 25.99C408.226 25.99 408.806 26.26 409.256 26.8L408.596 27.53C408.406 27.22 407.996 26.97 407.506 26.97C407.076 26.97 406.716 27.12 406.436 27.41C406.156 27.7 406.016 28.07 406.016 28.54C406.016 29 406.156 29.38 406.436 29.69C406.716 29.99 407.076 30.14 407.516 30.14C407.946 30.14 408.306 29.97 408.576 29.63L409.276 30.31C408.806 30.85 408.226 31.12 407.526 31.12C406.736 31.12 406.106 30.87 405.616 30.38C405.136 29.89 404.896 29.28 404.896 28.55C404.896 27.82 405.136 27.22 405.606 26.73C406.086 26.24 406.716 25.99 407.506 25.99ZM416.038 25.99C417.278 25.99 418.018 26.61 418.018 27.72V31H416.918V28.03C416.918 27.32 416.458 26.97 415.828 26.97C415.198 26.97 414.678 27.41 414.678 28.01V31H413.578V28.03C413.578 27.32 413.118 26.97 412.488 26.97C411.858 26.97 411.338 27.41 411.338 28.01V31H410.238V26.1H411.288V26.18V26.53C411.698 26.17 412.198 25.99 412.778 25.99C413.498 25.99 414.028 26.24 414.378 26.74C414.798 26.24 415.348 25.99 416.038 25.99Z" fill="black"/>
+<path d="M451.04 26.72C451.04 27.29 450.81 27.94 450.36 28.66L448.88 31H447.51L449.02 28.84L449.01 28.83C448.88 28.88 448.71 28.91 448.5 28.91C447.91 28.91 447.39 28.7 446.95 28.28C446.52 27.86 446.3 27.34 446.3 26.72C446.3 26.09 446.53 25.55 446.99 25.1C447.46 24.65 448.02 24.43 448.69 24.43C449.36 24.43 449.91 24.65 450.36 25.1C450.81 25.55 451.04 26.09 451.04 26.72ZM448.67 27.97C449.04 27.97 449.35 27.85 449.58 27.6C449.82 27.35 449.94 27.04 449.94 26.69C449.94 26.33 449.82 26.02 449.58 25.77C449.34 25.52 449.04 25.39 448.67 25.39C448.3 25.39 448 25.52 447.76 25.77C447.52 26.02 447.4 26.33 447.4 26.69C447.4 27.41 447.94 27.97 448.67 27.97ZM457.506 25.99C458.226 25.99 458.806 26.26 459.256 26.8L458.596 27.53C458.406 27.22 457.996 26.97 457.506 26.97C457.076 26.97 456.716 27.12 456.436 27.41C456.156 27.7 456.016 28.07 456.016 28.54C456.016 29 456.156 29.38 456.436 29.69C456.716 29.99 457.076 30.14 457.516 30.14C457.946 30.14 458.306 29.97 458.576 29.63L459.276 30.31C458.806 30.85 458.226 31.12 457.526 31.12C456.736 31.12 456.106 30.87 455.616 30.38C455.136 29.89 454.896 29.28 454.896 28.55C454.896 27.82 455.136 27.22 455.606 26.73C456.086 26.24 456.716 25.99 457.506 25.99ZM466.038 25.99C467.278 25.99 468.018 26.61 468.018 27.72V31H466.918V28.03C466.918 27.32 466.458 26.97 465.828 26.97C465.198 26.97 464.678 27.41 464.678 28.01V31H463.578V28.03C463.578 27.32 463.118 26.97 462.488 26.97C461.858 26.97 461.338 27.41 461.338 28.01V31H460.238V26.1H461.288V26.18V26.53C461.698 26.17 462.198 25.99 462.778 25.99C463.498 25.99 464.028 26.24 464.378 26.74C464.798 26.24 465.348 25.99 466.038 25.99Z" fill="black"/>
+<path d="M488.68 24.55V31H487.56V25.55H485.86L486.14 24.55H488.68ZM495.708 27.77C495.708 28.78 495.478 29.59 495.028 30.2C494.578 30.8 493.988 31.1 493.248 31.1C492.518 31.1 491.918 30.8 491.468 30.2C491.018 29.59 490.798 28.78 490.798 27.77C490.798 26.76 491.018 25.95 491.468 25.35C491.918 24.75 492.508 24.45 493.248 24.45C493.988 24.45 494.578 24.75 495.028 25.36C495.478 25.96 495.708 26.76 495.708 27.77ZM493.248 25.45C492.438 25.45 491.898 26.3 491.898 27.77C491.898 29.24 492.438 30.1 493.248 30.1C494.078 30.1 494.608 29.25 494.608 27.77C494.608 26.3 494.078 25.45 493.248 25.45ZM502.004 25.99C502.724 25.99 503.304 26.26 503.754 26.8L503.094 27.53C502.904 27.22 502.494 26.97 502.004 26.97C501.574 26.97 501.214 27.12 500.934 27.41C500.654 27.7 500.514 28.07 500.514 28.54C500.514 29 500.654 29.38 500.934 29.69C501.214 29.99 501.574 30.14 502.014 30.14C502.444 30.14 502.804 29.97 503.074 29.63L503.774 30.31C503.304 30.85 502.724 31.12 502.024 31.12C501.234 31.12 500.604 30.87 500.114 30.38C499.634 29.89 499.394 29.28 499.394 28.55C499.394 27.82 499.634 27.22 500.104 26.73C500.584 26.24 501.214 25.99 502.004 25.99ZM510.536 25.99C511.776 25.99 512.516 26.61 512.516 27.72V31H511.416V28.03C511.416 27.32 510.956 26.97 510.326 26.97C509.696 26.97 509.176 27.41 509.176 28.01V31H508.076V28.03C508.076 27.32 507.616 26.97 506.986 26.97C506.356 26.97 505.836 27.41 505.836 28.01V31H504.736V26.1H505.786V26.18V26.53C506.196 26.17 506.696 25.99 507.276 25.99C507.996 25.99 508.526 26.24 508.876 26.74C509.296 26.24 509.846 25.99 510.536 25.99Z" fill="black"/>
+<path d="M502.14 48.3647C502.193 48.0937 502.017 47.8309 501.746 47.7776L497.33 46.9093C497.059 46.856 496.796 47.0324 496.743 47.3034C496.69 47.5743 496.866 47.8372 497.137 47.8905L501.062 48.6623L500.29 52.5871C500.237 52.8581 500.413 53.1209 500.684 53.1742C500.955 53.2275 501.218 53.051 501.271 52.7801L502.14 48.3647ZM501.156 62.6385L500.872 63.0502L500.872 63.0502L501.156 62.6385ZM506.498 64.1441L506.521 64.6436V64.6436L506.498 64.1441ZM511.821 62.1543L511.512 61.7612L511.821 62.1543ZM501.649 48.2682L501.371 47.853C499.667 48.9967 498.363 50.6397 497.656 52.5378L498.124 52.7123L498.593 52.8868C499.226 51.1882 500.395 49.7122 501.928 48.6833L501.649 48.2682ZM498.124 52.7123L497.656 52.5378C496.949 54.4362 496.877 56.4888 497.456 58.3867L497.935 58.2407L498.413 58.0946C497.899 56.4125 497.96 54.5851 498.593 52.8868L498.124 52.7123ZM497.935 58.2407L497.456 58.3867C498.036 60.2849 499.235 61.9217 500.872 63.0502L501.156 62.6385L501.44 62.2269C499.988 61.2262 498.926 59.7764 498.413 58.0946L497.935 58.2407ZM501.156 62.6385L500.872 63.0502C502.509 64.1784 504.492 64.7357 506.521 64.6436L506.498 64.1441L506.475 63.6446C504.658 63.7271 502.892 63.2278 501.44 62.2269L501.156 62.6385ZM506.498 64.1441L506.521 64.6436C508.549 64.5515 510.517 63.8152 512.13 62.5473L511.821 62.1543L511.512 61.7612C510.061 62.9018 508.293 63.5621 506.475 63.6446L506.498 64.1441ZM511.821 62.1543L512.13 62.5473C513.742 61.2794 514.916 59.5456 515.472 57.6038L514.992 57.4661L514.511 57.3285C514.014 59.0641 512.962 60.6206 511.512 61.7612L511.821 62.1543ZM514.992 57.4661L515.472 57.6038C516.028 55.6615 515.937 53.6152 515.205 51.7733L514.741 51.9578L514.276 52.1423C514.924 53.7737 515.008 55.5932 514.511 57.3285L514.992 57.4661ZM514.741 51.9578L515.205 51.7733C514.474 49.9311 513.144 48.3974 511.418 47.4027L511.168 47.8359L510.918 48.2692C512.451 49.1521 513.628 50.5112 514.276 52.1423L514.741 51.9578Z" fill="#CC6600"/>
+        </svg>
+      </svg>`;
+    }
+
+    function MereniHmotnostiCardIllustration() {
+      // Rovnoramenné váhy — stejný vzhled jako ve simulaci mereni_hmotnost/.
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <svg x="28" y="2" width="76" height="84" viewBox="0 0 160 167" preserveAspectRatio="xMidYMid meet" fill="none">
+
+
+<path d="M149.772 146.356H10.2262L0.611328 156.072H159.387L149.772 146.356Z" fill="#C19E6E"/>
+<path d="M149.772 146.356H10.2262L0.611328 156.072H159.387L149.772 146.356Z" stroke="#9B6E42" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M159.387 156.071H0.611328V166.286H159.387V156.071Z" fill="#9B6E42"/>
+<path d="M159.387 156.071H0.611328V166.286H159.387V156.071Z" stroke="#9B6E42" stroke-width="1.22444" stroke-linejoin="round"/>
+<path d="M84.9348 144.358H76.0117L76.3178 6.96143H84.9348V144.358Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M83.1211 19.8325V133.111" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M80.4776 132.494C74.8268 132.494 70.0179 136.611 69.1485 142.194L68.2088 148.228C67.8904 150.279 69.476 152.131 71.5515 152.131H89.4098C91.4853 152.131 93.0709 150.279 92.7526 148.228L91.8128 142.194C90.9435 136.611 86.1345 132.494 80.4837 132.494H80.4776Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M75.7969 135.181C77.1927 134.44 78.7876 134.023 80.4773 134.023C85.4056 134.023 89.535 137.559 90.2942 142.429L91.2339 148.463C91.3197 149.004 91.1697 149.534 90.8115 149.953" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M113.187 12.0796C114.198 10.0318 113.325 7.55534 111.256 6.59722C103.251 2.88412 92.5343 0.612793 80.7553 0.612793C68.9762 0.612793 57.6869 3.00656 49.6209 6.89415C47.5945 7.87063 46.7741 10.3287 47.772 12.3429L50.3893 17.6294C51.3596 19.5915 53.7197 20.4486 55.7064 19.5273C62.2693 16.4845 71.0547 14.6234 80.7093 14.6234C90.364 14.6234 98.7728 16.4049 105.287 19.3313C107.27 20.2221 109.603 19.3589 110.564 17.409L113.191 12.0766L113.187 12.0796Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M75.9863 2.26906C77.5597 2.18641 79.1484 2.14355 80.7494 2.14355C91.8826 2.14355 102.486 4.21897 110.607 7.98411C111.232 8.27185 111.7 8.78918 111.93 9.43813C112.159 10.0871 112.116 10.785 111.813 11.4033" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M80.4727 0.918945V5.20447" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M80.4805 0.613281V4.8988" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M77.3398 0.808594L77.5327 4.95637" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M73.9805 0.836914L74.3784 5.12244" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M70.7285 1.24707L71.3162 5.39484" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M67.4805 1.57764L68.2825 5.77745" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M64.2305 2.29053L65.1978 6.28525" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M60.9824 2.96094L62.1426 6.9128" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M57.7305 3.71387L59.111 7.67798" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.6992 4.76367L56.2236 8.54718" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.5781 6L53.2372 9.61208" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.834 7.47607L50.5298 10.7545" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M83.7562 0.808594L83.5664 4.95637" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M87.1198 0.836914L86.7188 5.12244" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M90.369 1.24707L89.7812 5.39484" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M93.6176 1.57764L92.8125 5.77745" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M96.8657 2.29053L95.8984 6.28525" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M100.114 2.96094L98.9512 6.9128" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M103.366 3.71387L101.988 7.67798" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M106.399 4.76367L104.875 8.54718" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M109.522 6L107.863 9.61208" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M112.265 7.47607L110.566 10.7545" stroke="#803B50" stroke-width="0.612218" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M80.668 16.8359L80.9282 45.9132" stroke="#1D1D1C" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.2227 46.027C23.2227 44.7567 24.2481 43.722 25.5185 43.722L80.9303 41.4844L136.351 43.468C137.622 43.468 138.656 44.4934 138.656 45.7638C138.656 47.0341 137.631 48.0688 136.36 48.0688L80.9486 50.3064L25.5277 48.3228C24.2573 48.3228 23.2227 47.2974 23.2227 46.027Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M137.279 46.2354C137.279 45.5619 136.731 45.0201 136.058 45.0201L80.9336 43.1406L69.6719 43.462" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M80.9385 51.4483C83.9917 51.4483 86.4668 48.9731 86.4668 45.9199C86.4668 42.8667 83.9917 40.3916 80.9385 40.3916C77.8853 40.3916 75.4102 42.8667 75.4102 45.9199C75.4102 48.9731 77.8853 51.4483 80.9385 51.4483Z" fill="#FF8158" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M83.5131 16.1991L80.6418 5.9873C80.6418 5.9873 77.9817 15.7185 77.8164 16.2144H77.8531C77.8286 16.3644 77.8164 16.5174 77.8164 16.6705C77.8195 18.2439 79.099 19.5143 80.6693 19.5112C82.2427 19.5081 83.5131 18.2286 83.51 16.6583C83.51 16.5021 83.4978 16.3491 83.4733 16.2022H83.51L83.5131 16.1991Z" fill="#FF184A" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.7" d="M79.209 41.7905C82.068 41.7905 84.3853 43.3303 84.3853 45.2281" stroke="white" stroke-width="1.83665" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M134.955 45.7876C133.458 45.7876 132.246 46.9998 132.246 48.4967C132.246 50.3119 133.902 50.7129 134.879 51.1231C135.855 51.5333 137.664 51.8149 137.664 53.9148C137.664 55.4117 136.452 56.6238 134.955 56.6238" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M156.412 107.291V76.8085C156.412 64.9591 146.806 55.3564 134.96 55.3564C123.11 55.3564 113.508 64.9621 113.508 76.8085V107.291" stroke="#1D1D1C" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M134.955 56.6241C133.458 56.6241 132.246 55.4119 132.246 53.915" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M134.902 111.469C146.916 111.469 156.655 109.204 156.655 106.409C156.655 103.615 146.916 101.349 134.902 101.349C122.889 101.349 113.15 103.615 113.15 106.409C113.15 109.204 122.889 111.469 134.902 111.469Z" fill="#878787"/>
+<path d="M153.789 108.92C155.608 108.179 156.655 107.325 156.655 106.41C156.655 103.615 146.914 101.347 134.902 101.347C122.891 101.347 113.15 103.612 113.15 106.41C113.15 107.331 114.213 108.194 116.061 108.938" fill="#9D9D9C"/>
+<path d="M153.789 108.92C155.608 108.179 156.655 107.325 156.655 106.41C156.655 103.615 146.914 101.347 134.902 101.347C122.891 101.347 113.15 103.612 113.15 106.41C113.15 107.331 114.213 108.194 116.061 108.938" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M116.061 108.938C119.109 106.957 126.018 105.604 134.902 105.604C143.785 105.604 150.767 106.863 153.792 108.917" fill="#878787"/>
+<path d="M134.903 111.472C124.039 111.472 115.036 109.62 113.414 107.199L114.473 110.367C115.6 113.437 123.62 115.43 134.903 115.43C146.186 115.43 154.292 113.25 155.333 110.367L156.392 107.199C154.766 109.62 145.764 111.472 134.903 111.472Z" fill="#575756" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.043 46.1133C27.5399 46.1133 28.7521 47.3255 28.7521 48.8223C28.7521 50.6376 27.0961 51.0386 26.1196 51.4488C25.1431 51.8589 23.334 52.1406 23.334 54.2405C23.334 55.7373 24.5462 56.9495 26.043 56.9495" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.4941 107.005V77.1347C47.4941 65.2853 37.8884 55.6826 26.0419 55.6826C14.1925 55.6826 4.58984 65.2883 4.58984 77.1347V107.005" stroke="#1D1D1C" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.043 56.9498C27.5398 56.9498 28.752 55.7376 28.752 54.2407" stroke="#515151" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.0431 111.74C38.0565 111.74 47.7952 109.475 47.7952 106.68C47.7952 103.886 38.0565 101.62 26.0431 101.62C14.0298 101.62 4.29102 103.886 4.29102 106.68C4.29102 109.475 14.0298 111.74 26.0431 111.74Z" fill="#878787"/>
+<path d="M44.9359 109.187C46.7542 108.446 47.8011 107.592 47.8011 106.677C47.8011 103.882 38.0607 101.614 26.049 101.614C14.0373 101.614 4.29688 103.879 4.29688 106.677C4.29688 107.598 5.35907 108.461 7.20797 109.205" fill="#9D9D9C"/>
+<path d="M44.9359 109.187C46.7542 108.446 47.8011 107.592 47.8011 106.677C47.8011 103.882 38.0607 101.614 26.049 101.614C14.0373 101.614 4.29688 103.879 4.29688 106.677C4.29688 107.598 5.35907 108.461 7.20797 109.205" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.20117 109.205C10.25 107.225 17.1589 105.872 26.0422 105.872C34.9254 105.872 41.9078 107.13 44.9321 109.184" fill="#878787"/>
+<path d="M26.0435 111.74C15.1797 111.74 6.17706 109.888 4.55469 107.467L5.61382 110.635C6.7403 113.705 14.7604 115.698 26.0435 115.698C37.3267 115.698 45.4325 113.519 46.4732 110.635L47.5324 107.467C45.9069 109.888 36.9043 111.74 26.0435 111.74Z" fill="#575756" stroke="#575756" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M159.389 156.071H0.613281V166.286H159.389V156.071Z" fill="#9B6E42"/>
+<path d="M159.389 156.071H0.613281V166.286H159.389V156.071Z" stroke="#9B6E42" stroke-width="1.22444" stroke-linejoin="round"/>
+<path d="M80.4727 0.918945V5.20447" stroke="#803B50" stroke-width="1.22444" stroke-linecap="round" stroke-linejoin="round"/>
+
+        </svg>
+      </svg>`;
+    }
+
+    function SkladaniSilCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="skladani_sil/card-forces.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function HraNewtonCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="hra_newton/card-rocket.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function TepelnaKapacitaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="tepelna_kapacita_puvodni/assets/burner.svg"
+          x="20"
+          y="25"
+          width="62"
+          height="63"
+          preserveAspectRatio="xMidYMax meet"
+        />
+        <image
+          href="tepelna_kapacita_puvodni/assets/gold-brick.svg"
+          x="49"
+          y="9"
+          width="34"
+          height="20"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function HubCardIllustration({ tileId }) {
+      if (tileId === "paka") return html`<${LeverCardIllustration} />`;
+      if (tileId === "skladani_sil") return html`<${SkladaniSilCardIllustration} />`;
+      if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
+      if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
+      if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
+      if (tileId === "skutecny_obraz") return html`<${SkutecnyObrazCardIllustration} />`;
+      if (tileId === "cocky") return html`<${CockyCardIllustration} />`;
+      if (tileId === "michani-barev") return html`<${MichaniBarevCardIllustration} />`;
+      if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
+      if (tileId === "graf") return html`<${GrafCardIllustration} />`;
+      if (tileId === "rychlost") return html`<${RychlostCardIllustration} />`;
+      if (tileId === "auto_jizda") return html`<${AutoJizdaCardIllustration} />`;
+      if (tileId === "stlacovani_latek") return html`<${StlacovaniLatekCardIllustration} />`;
+      if (tileId === "hustota") return html`<${HustotaCardIllustration} />`;
+      if (tileId === "teplota") return html`<${TeplotaCardIllustration} />`;
+      if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
+      if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
+      if (tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
+      return null;
+    }
+
+    function PhysicsHub() {
+      const [activeId, setActiveId] = useState(readHubCategoryInitial);
+
+      const activeCat = useMemo(
+        () => PHYSICS_CATEGORIES.find((c) => c.id === activeId) ?? PHYSICS_CATEGORIES[0],
+        [activeId],
+      );
+
+      return html`
+        <div class="physics-hub">
+          <header class="hub-top">
+            <h1 class="hub-brand">Fyzikální simulace</h1>
+            <nav class="hub-nav" aria-label="Kategorie">
+              ${PHYSICS_CATEGORIES.map(
+                (c) => html`
+                  <button
+                    key=${c.id}
+                    type="button"
+                    class=${activeId === c.id ? "is-active" : ""}
+                    onClick=${() => {
+                      setActiveId(c.id);
+                      persistHubCategory(c.id);
+                    }}
+                  >
+                    ${c.title}
+                  </button>
+                `,
+              )}
+            </nav>
+          </header>
+          <div class="hub-main">
+            <h2 class="hub-page-title">${activeCat.title}</h2>
+            ${
+              activeCat.tiles.length === 0
+                ? html`<p class="hub-empty">
+                    V této kategorii zatím nic není — další simulace přidáme později.
+                  </p>`
+                : html`
+                    <div class="hub-grid">
+                      ${activeCat.tiles.map(
+                        (t) => html`
+                          <article
+                            key=${t.id}
+                            class="sim-card"
+                            style=${{ backgroundColor: t.previewColor }}
+                            role="button"
+                            tabindex="0"
+                            onClick=${() => {
+                              persistHubCategory(activeId);
+                              location.hash = t.hash.startsWith("#")
+                                ? t.hash
+                                : `#/${t.hash}`;
+                              queueMicrotask(() =>
+                                window.dispatchEvent(new Event("hashchange")),
+                              );
+                            }}
+                            onKeyDown=${(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                persistHubCategory(activeId);
+                                location.hash = t.hash.startsWith("#")
+                                  ? t.hash
+                                  : `#/${t.hash}`;
+                                queueMicrotask(() =>
+                                  window.dispatchEvent(new Event("hashchange")),
+                                );
+                              }
+                            }}
+                          >
+                            <div class="sim-card-preview">
+                              <${HubCardIllustration} tileId=${t.id} />
+                            </div>
+                            <div class="sim-card-footer">
+                              <h3>${t.title}</h3>
+                              <span class="sim-card-arrow" aria-hidden="true">→</span>
+                            </div>
+                          </article>
+                        `,
+                      )}
+                    </div>
+                  `
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    function parseSimFromHash() {
+      const h = (location.hash || "").replace(/^#\/?/, "");
+      const m = h.match(/^sim\/([^/?#]+)/);
+      return m ? m[1] : null;
+    }
+
+    function RootApp() {
+      /** Jen kvůli přerenderu po replaceState / popstate — React nečte URL sám. */
+      const [, routeTick] = useReducer((n) => n + 1, 0);
+      useEffect(() => {
+        const sync = () => routeTick();
+        window.addEventListener("hashchange", sync);
+        window.addEventListener("popstate", sync);
+        return () => {
+          window.removeEventListener("hashchange", sync);
+          window.removeEventListener("popstate", sync);
+        };
+      }, []);
+
+      const simId = parseSimFromHash();
+
+      useEffect(() => {
+        if (simId === "michani-barev") {
+          try {
+            window.location.replace(new URL("michani-barev/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("michani-barev/");
+          }
+          return;
+        }
+        if (simId === "vztlakova") {
+          try {
+            window.location.replace(new URL("vztlakova-sila.html", window.location.href).href);
+          } catch (_) {
+            window.location.replace("vztlakova-sila.html");
+          }
+          return;
+        }
+        if (simId === "paka") {
+          try {
+            window.location.replace(new URL("paka/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("paka/");
+          }
+          return;
+        }
+        if (simId === "skladani_sil") {
+          try {
+            window.location.replace(new URL("skladani_sil/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("skladani_sil/");
+          }
+          return;
+        }
+        if (simId === "hra_newton") {
+          try {
+            window.location.replace(new URL("hra_newton/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("hra_newton/");
+          }
+          return;
+        }
+        if (simId === "graf_pohyb") {
+          try {
+            window.location.replace(new URL("graf-pohybu/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("graf-pohybu/");
+          }
+          return;
+        }
+        if (simId === "graf") {
+          try {
+            window.location.replace(new URL("graf/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("graf/");
+          }
+          return;
+        }
+        if (simId === "rychlost") {
+          try {
+            window.location.replace(new URL("rychlost/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("rychlost/");
+          }
+          return;
+        }
+        if (simId === "auto_jizda") {
+          try {
+            window.location.replace(new URL("auto-jizda/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("auto-jizda/");
+          }
+          return;
+        }
+        if (simId === "stlacovani_latek") {
+          try {
+            window.location.replace(new URL("stlacovani-latek/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("stlacovani-latek/");
+          }
+          return;
+        }
+        if (simId === "hustota") {
+          try {
+            window.location.replace(new URL("hustota/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("hustota/");
+          }
+          return;
+        }
+        if (simId === "teplota") {
+          try {
+            window.location.replace(new URL("teplota/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("teplota/");
+          }
+          return;
+        }
+        if (simId === "skutecny_obraz") {
+          try {
+            window.location.replace(new URL("skutecny-obraz/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("skutecny-obraz/");
+          }
+          return;
+        }
+        if (simId === "cocky") {
+          try {
+            window.location.replace(new URL("cocky/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("cocky/");
+          }
+          return;
+        }
+        if (simId === "optika_geometrie") {
+          try {
+            window.location.replace(new URL("optika_geometrie/rysovani-app/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("optika_geometrie/rysovani-app/");
+          }
+          return;
+        }
+        if (simId === "mereni_delka") {
+          try {
+            window.location.replace(new URL("mereni_delka/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("mereni_delka/");
+          }
+          return;
+        }
+        if (simId === "mereni_hmotnost") {
+          try {
+            window.location.replace(new URL("mereni_hmotnost/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("mereni_hmotnost/");
+          }
+          return;
+        }
+        if (simId === "tepelna_kapacita") {
+          try {
+            window.location.replace(new URL("tepelna_kapacita/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("tepelna_kapacita/");
+          }
+          return;
+        }
+        if (simId === "tepelna_kapacita_puvodni") {
+          try {
+            window.location.replace(new URL("tepelna_kapacita_puvodni/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("tepelna_kapacita_puvodni/");
+          }
+          return;
+        }
+      }, [simId]);
+
+      const goToHub = useCallback(() => {
+        const sid = parseSimFromHash();
+        const cat = SIM_TO_HUB_CATEGORY[sid] || readHubCategoryInitial();
+        persistHubCategory(cat);
+
+        const path = `${location.pathname}${location.search}`;
+        try {
+          history.replaceState(null, "", path);
+        } catch (_) {
+          try {
+            location.hash = "";
+          } catch (_) {
+            /* např. přísný file:// */
+          }
+        }
+        if (/^#\/?sim\//.test(location.hash || "")) {
+          try {
+            location.hash = "";
+          } catch (_) { /* nop */ }
+        }
+        routeTick();
+      }, []);
+
+      if (simId === "vztlakova") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "paka") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "skladani_sil") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "hra_newton") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "michani-barev") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "graf_pohyb") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "graf") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "rychlost") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "auto_jizda") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "stlacovani_latek") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "hustota") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "teplota") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "skutecny_obraz") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "cocky") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "optika_geometrie") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "mereni_delka") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "mereni_hmotnost") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "tepelna_kapacita") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "tepelna_kapacita_puvodni") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      return html`<${PhysicsHub} />`;
+    }
+
+    function LeverSimApp({ onBack }) {
+      const [left, setLeft] = useState(() => zeros());
+      const [right, setRight] = useState(() => zeros());
+      const [dragPx, setDragPx] = useState(null);
+      const [theta, setTheta] = useState(0);
+      /** Kurzor: + u díry (add), × na závaží (remove). Při sloupci obojí. */
+      const [hoverHint, setHoverHint] = useState(null);
+      /** Zamknutá osa — tyč zůstane vodorovně (nezávisle na závažích). */
+      const [beamLocked, setBeamLocked] = useState(true);
+
+      const thetaRef = useRef(0);
+      thetaRef.current = theta;
+
+      const snapRef = useRef({ L: left, R: right });
+      snapRef.current = { L: left, R: right };
+
+      const dragRef = useRef(null);
+      const balanceSvgRef = useRef(null);
+      const stageRef = useRef(null);
+      /** Místo pointerdown při tažení závaží z tyče — pro rozlišení kliku vs. přesunu. */
+      const beamPickupClientRef = useRef(null);
+      /** Pozice obalu tlačítka „Sundat závaží“ vůči `.stage` (px). */
+      const [clearWeightsBtnPos, setClearWeightsBtnPos] = useState(null);
+
+      useEffect(() => {
+        let id;
+        const loop = () => {
+          const tgt = beamLocked
+            ? 0
+            : targetTheta(snapRef.current.L, snapRef.current.R);
+          setTheta((prev) => {
+            let n = prev + (tgt - prev) * 0.165;
+            if (Math.abs(n - tgt) < 1e-6) n = tgt;
+            return n;
+          });
+          id = requestAnimationFrame(loop);
+        };
+        id = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(id);
+      }, [beamLocked]);
+
+      const holesMeta = useMemo(() => {
+        const list = [];
+        const lyHole = 0;
+        for (let i = 0; i < SLOTS; i += 1) {
+          list.push({
+            side: "left",
+            idx: i,
+            lx: holeX("left", i),
+            ly: lyHole,
+            r: HOLE_R + 44,
+          });
+          list.push({
+            side: "right",
+            idx: i,
+            lx: holeX("right", i),
+            ly: lyHole,
+            r: HOLE_R + 44,
+          });
+        }
+        return list;
+      }, []);
+
+      const clientToBalance = useCallback((clientX, clientY) => {
+        return clientToLocalSvg(clientX, clientY, balanceSvgRef.current);
+      }, []);
+
+      const holeAt = useCallback(
+        (x, y) => {
+          const th = thetaRef.current;
+          let best = null;
+          let bestDist = Infinity;
+          for (let q = 0; q < holesMeta.length; q += 1) {
+            const h = holesMeta[q];
+            const w = toWorld(h.lx, h.ly, th);
+            const dist = Math.hypot(x - w.x, y - w.y);
+            if (dist <= h.r && dist < bestDist) {
+              bestDist = dist;
+              best = { side: h.side, idx: h.idx };
+            }
+          }
+          return best;
+        },
+        [holesMeta],
+      );
+
+      const columnAt = useCallback((x, y, L, R) => {
+        const th = thetaRef.current;
+        const hitR = Math.max(78, WEIGHT_W * 0.85);
+        let best = null;
+        let bestDist = Infinity;
+        for (let i = SLOTS - 1; i >= 0; i -= 1) {
+          for (const side of ["left", "right"]) {
+            const cnt = Number((side === "left" ? L[i] : R[i]) || 0);
+            if (!cnt) continue;
+            const centers = plumbStackCenters(side, i, cnt, th);
+            for (let k = centers.length - 1; k >= 0; k -= 1) {
+              const { cx, cy } = centers[k];
+              const dist = Math.hypot(x - cx, y - cy);
+              if (dist < hitR && dist < bestDist) {
+          bestDist = dist;
+                best = { side, idx: i, cx, cy, k };
+              }
+            }
+          }
+        }
+        return best;
+      }, []);
+
+      const refreshHoverHint = useCallback((clientX, clientY) => {
+        const p = clientToLocalSvg(clientX, clientY, balanceSvgRef.current);
+        if (!p) {
+          setHoverHint(null);
+          return;
+        }
+        if (dragRef.current) {
+          setHoverHint(null);
+          return;
+        }
+        const { L, R } = snapRef.current;
+        const w = columnAt(p.x, p.y, L, R);
+        const h = holeAt(p.x, p.y);
+        const th = thetaRef.current;
+
+        let add = null;
+        let remove = null;
+
+        if (h) {
+          add = { side: h.side, idx: h.idx };
+          const hw = toWorld(holeX(h.side, h.idx), 0, th);
+          /* Nad dírou = +; × jen když je prst blíž závaží než středu díry. */
+          if (
+            w &&
+            w.side === h.side &&
+            w.idx === h.idx &&
+            Math.hypot(p.x - w.cx, p.y - w.cy) < Math.hypot(p.x - hw.x, p.y - hw.y)
+          ) {
+            remove = { side: w.side, idx: w.idx, k: w.k };
+          }
+        } else if (w) {
+          remove = { side: w.side, idx: w.idx, k: w.k };
+          add = { side: w.side, idx: w.idx };
+        }
+
+        if (!add && !remove) {
+          setHoverHint(null);
+          return;
+        }
+        setHoverHint({ add, remove, clientX, clientY });
+      }, [columnAt, holeAt]);
+
+      function commitDrop(clientX, clientY) {
+        const d = dragRef.current;
+        const pickup = beamPickupClientRef.current;
+        beamPickupClientRef.current = null;
+        dragRef.current = null;
+        setDragPx(null);
+        if (!d) return;
+
+        const movedMuch =
+          !pickup ||
+          Math.hypot(clientX - pickup.x, clientY - pickup.y) >= BEAM_DRAG_TAP_MAX_PX;
+
+        const pBal = clientToBalance(clientX, clientY);
+        const x = pBal ? pBal.x : -1;
+        const y = pBal ? pBal.y : -1;
+
+        const h = pBal ? holeAt(x, y) : null;
+        if (h) {
+          const sameSlot = h.side === d.side && h.idx === d.idx;
+          if (sameSlot && !movedMuch) {
+          return;
+        }
+          const set = h.side === "left" ? setLeft : setRight;
+          set((prev) => {
+            const a = [...prev];
+            a[h.idx] += 1;
+            return a;
+          });
+          return;
+        }
+
+        /* Klik na × nad závažím: puštění je mimo kruh díry → holeAt null, jinak se závaží zbytečně vrátilo. */
+        if (!movedMuch) {
+          return;
+        }
+
+        const set = d.side === "left" ? setLeft : setRight;
+        set((prev) => {
+          const a = [...prev];
+          a[d.idx] += 1;
+          return a;
+        });
+      }
+
+      function clearAllWeights() {
+        dragRef.current = null;
+        beamPickupClientRef.current = null;
+        setDragPx(null);
+        setHoverHint(null);
+        thetaRef.current = 0;
+        setTheta(0);
+        setLeft(zeros());
+        setRight(zeros());
+      }
+
+      function onBalancePointerMove(e) {
+        refreshHoverHint(e.clientX, e.clientY);
+        if (!dragRef.current) return;
+        const pickup = beamPickupClientRef.current;
+        if (
+          pickup &&
+          Math.hypot(e.clientX - pickup.x, e.clientY - pickup.y) <
+            BEAM_DRAG_TAP_MAX_PX
+        ) {
+          return;
+        }
+        const p = clientToBalance(e.clientX, e.clientY);
+        if (!p) return;
+        setDragPx({ x: p.x, y: p.y });
+      }
+
+      function onBalancePointerUp(e) {
+        if (dragRef.current) {
+          commitDrop(e.clientX, e.clientY);
+        }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => refreshHoverHint(e.clientX, e.clientY));
+        });
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch (_) { /* nop */ }
+      }
+
+      function onBalancePointerCancel(e) {
+        const d = dragRef.current;
+        beamPickupClientRef.current = null;
+        if (d) {
+          dragRef.current = null;
+          setDragPx(null);
+          const set = d.side === "left" ? setLeft : setRight;
+          set((prev) => {
+            const a = [...prev];
+            a[d.idx] += 1;
+            return a;
+          });
+        }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => refreshHoverHint(e.clientX, e.clientY));
+        });
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch (_) { /* nop */ }
+      }
+
+      const showDropHints =
+        dragPx != null && dragRef.current != null;
+      const showHoleSlotNumbers = showDropHints || hoverHint != null;
+      const dropTargetHole =
+        showDropHints && dragPx ? holeAt(dragPx.x, dragPx.y) : null;
+
+      const balanceGhost =
+        dragPx &&
+        dragRef.current &&
+        html`<rect
+          x=${dragPx.x - WEIGHT_W / 2}
+          y=${dragPx.y - WEIGHT_H / 2}
+          width=${WEIGHT_W}
+          height=${WEIGHT_H}
+          rx=${WEIGHT_CORNER_R}
+          ry=${WEIGHT_CORNER_R}
+          fill=${COLORS.weight}
+          style=${{ pointerEvents: "none" }}
+        />`;
+
+      let hoverPointerLive = null;
+      let hoverAddPos = null;
+      let hoverRemovePos = null;
+      if (hoverHint) {
+        const p = clientToLocalSvg(
+          hoverHint.clientX,
+          hoverHint.clientY,
+          balanceSvgRef.current,
+        );
+        if (p) {
+          hoverPointerLive = { sx: p.x, sy: p.y };
+          if (hoverHint.add) {
+            const hw = toWorld(
+              holeX(hoverHint.add.side, hoverHint.add.idx),
+              0,
+              theta,
+            );
+            hoverAddPos = { x: hw.x, y: hw.y };
+          }
+          if (hoverHint.remove) {
+            const { side, idx, k } = hoverHint.remove;
+            const cnt = Number(
+              (side === "left" ? left[idx] : right[idx]) || 0,
+            );
+            if (cnt > 0 && k >= 0 && k < cnt) {
+              const centers = plumbStackCenters(side, idx, cnt, theta);
+              const c = centers[k];
+              if (c) hoverRemovePos = { x: c.cx, y: c.cy };
+            }
+          }
+        }
+      }
+
+      const hoverHud =
+        hoverHint &&
+        hoverPointerLive &&
+        (hoverAddPos || hoverRemovePos) &&
+        html`<g key="hover-hud-root" style=${{ pointerEvents: "none" }}>
+          ${hoverAddPos &&
+            html`<${HoverActionBadge}
+              rootKey="hover-badge-add"
+              x=${hoverAddPos.x}
+              y=${hoverAddPos.y}
+              kind="add"
+            />`}
+          ${hoverRemovePos &&
+            html`<${HoverActionBadge}
+              rootKey="hover-badge-remove"
+              x=${hoverRemovePos.x}
+              y=${hoverRemovePos.y}
+              kind="remove"
+            />`}
+        </g>`;
+
+      const totalWeights = useMemo(
+        () =>
+          IDX.reduce(
+            (s, i) => s + Number(left[i] || 0) + Number(right[i] || 0),
+            0,
+          ),
+        [left, right],
+      );
+
+      useLayoutEffect(() => {
+        if (totalWeights <= 0) {
+          setClearWeightsBtnPos(null);
+          return;
+        }
+        const update = () => {
+          const svg = balanceSvgRef.current;
+          const main = stageRef.current;
+          if (!svg || !main) return;
+          const sp = userToClientXY(PIVOT.x, STAND_FOOT_BOTTOM_Y, svg);
+          if (!sp) return;
+          const mr = main.getBoundingClientRect();
+          setClearWeightsBtnPos({
+            left: sp.x - mr.left,
+            top: sp.y - mr.top + CLEAR_WEIGHTS_BELOW_FOOT_PX,
+          });
+        };
+        update();
+        const ro = new ResizeObserver(update);
+        if (stageRef.current) ro.observe(stageRef.current);
+        window.addEventListener("resize", update);
+        return () => {
+          ro.disconnect();
+          window.removeEventListener("resize", update);
+        };
+      }, [totalWeights]);
+
+      const showBalancedLabel = useMemo(() => {
+        if (beamLocked) return false;
+        if (totalWeights === 0) return false;
+        const tau = netMomentAboutPivot(left, right);
+        const tauOk =
+          Math.abs(tau) <
+          Math.max(1.5, TAU_REF_ONE_SIDE_UNITS * 5e-5);
+        const angleOk = Math.abs(theta) < 0.055;
+        return tauOk && angleOk;
+      }, [beamLocked, totalWeights, left, right, theta]);
+
+      return html`
+        <div class="app app--lever">
+          ${onBack
+            ? html`<header class="sim-subheader">
+                <button
+                  type="button"
+                  class="sim-back-btn"
+                  onClick=${onBack}
+                  aria-label="Zpět na přehled simulací"
+                >
+                  ← Přehled
+                </button>
+                <h1 class="sim-subheader-title">Páka</h1>
+              </header>`
+            : null}
+          <main
+            class="stage"
+            ref=${(el) => {
+              stageRef.current = el;
+            }}
+          >
+            ${totalWeights === 0 &&
+              html`<p class="stage-hint" aria-live="polite">
+                Umístěte závaží kliknutím na bílé tečky na tyči.
+              </p>`}
+            <div
+              class="stage-svg-scale-wrap"
+              style=${{
+                transform: `scale(${STAGE_SVG_SCALE})`,
+                transformOrigin: STAGE_SVG_TRANSFORM_ORIGIN,
+              }}
+            >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stage-svg"
+              viewBox=${`${SCENE_VIEW.minX} ${SCENE_VIEW.minY} ${SCENE_VIEW.w} ${SCENE_VIEW.h}`}
+              preserveAspectRatio="xMidYMid meet"
+              ref=${(el) => {
+                balanceSvgRef.current = el;
+              }}
+              onPointerDown=${(e) => {
+                const p = clientToLocalSvg(e.clientX, e.clientY, balanceSvgRef.current);
+                if (!p) return;
+                if (hitBeamLock(p.x, p.y)) {
+                  setBeamLocked((v) => !v);
+                  return;
+                }
+                const th = thetaRef.current;
+                const c = columnAt(p.x, p.y, left, right);
+                const h = holeAt(p.x, p.y);
+
+                if (h) {
+                  let addAtHole = true;
+                  if (c) {
+                    const hw = toWorld(holeX(h.side, h.idx), 0, th);
+                    const dHole = Math.hypot(p.x - hw.x, p.y - hw.y);
+                    const dWeight = Math.hypot(p.x - c.cx, p.y - c.cy);
+                    if (c.side === h.side && c.idx === h.idx) {
+                      addAtHole = dHole <= dWeight;
+        } else {
+                      addAtHole = dHole < dWeight;
+                    }
+                  }
+                  if (addAtHole) {
+                    const set = h.side === "left" ? setLeft : setRight;
+                    set((prev) => {
+                      const a = [...prev];
+                      a[h.idx] += 1;
+                      return a;
+                    });
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() =>
+                        refreshHoverHint(e.clientX, e.clientY),
+                      );
+                    });
+                    return;
+                  }
+                }
+
+                if (c) {
+                  beamPickupClientRef.current = {
+                    x: e.clientX,
+                    y: e.clientY,
+                  };
+                  dragRef.current = { side: c.side, idx: c.idx };
+                  if (c.side === "left") {
+                    setLeft((prev) => {
+                      const a = [...prev];
+                      a[c.idx] = Math.max(0, a[c.idx] - 1);
+                      return a;
+                    });
+                  } else {
+                    setRight((prev) => {
+                      const a = [...prev];
+                      a[c.idx] = Math.max(0, a[c.idx] - 1);
+                      return a;
+                    });
+                  }
+                  refreshHoverHint(e.clientX, e.clientY);
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch (_) { /* nop */ }
+                  return;
+                }
+              }}
+              onPointerMove=${onBalancePointerMove}
+              onPointerUp=${onBalancePointerUp}
+              onPointerCancel=${onBalancePointerCancel}
+              onPointerLeave=${() => setHoverHint(null)}>
+              <rect
+                x=${SCENE_VIEW.minX}
+                y=${SCENE_VIEW.minY}
+                width=${SCENE_VIEW.w}
+                height=${SCENE_VIEW.h}
+                fill=${COLORS.bg}
+              />
+              <${PivotStand} />
+              <${Beam}
+                theta=${theta}
+                left=${left}
+                right=${right}
+                dropTargetHole=${dropTargetHole}
+                hoverPointer=${
+                  hoverPointerLive
+                    ? { sx: hoverPointerLive.sx, sy: hoverPointerLive.sy }
+                    : null
+                }
+              />
+              <${Stacks} theta=${theta} counts=${left} side="left" />
+              <${Stacks} theta=${theta} counts=${right} side="right" />
+              <${HoleSlotLabels}
+                theta=${theta}
+                showHoleLabels=${showHoleSlotNumbers}
+                hoverHint=${
+                  hoverPointerLive
+                    ? { sx: hoverPointerLive.sx, sy: hoverPointerLive.sy }
+                    : null
+                }
+              />
+              ${showBalancedLabel &&
+                html`<text
+                  key="balance-status"
+                  x=${PIVOT.x}
+                  y=${BALANCE_LABEL_ABOVE_Y}
+                  textAnchor="middle"
+                  dominantBaseline="bottom"
+                  fill=${COLORS.pivot}
+                  stroke=${COLORS.bg}
+                  strokeWidth=${6}
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
+                  fontSize=${32}
+                  fontWeight=${800}
+                  letterSpacing="-0.03em"
+                  fontFamily=${FONT_STACK}
+                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 3px 10px rgba(42, 34, 38, 0.35))" }}
+                  aria-live="polite"
+                >
+                  páka je v rovnováze
+                </text>`}
+              <${BeamLockIcon} locked=${beamLocked} />
+              ${balanceGhost}
+              ${hoverHud}
+            </svg>
+            </div>
+            ${totalWeights > 0 &&
+              clearWeightsBtnPos &&
+              html`<div
+                class="clear-weights-btn-wrap"
+                style=${{
+                  left: clearWeightsBtnPos.left,
+                  top: clearWeightsBtnPos.top,
+                }}
+              >
+                <button
+                  type="button"
+                  class="clear-weights-btn"
+                  onClick=${clearAllWeights}
+                >
+                  Sundat závaží
+                </button>
+              </div>`}
+          </main>
+        </div>`;
+    }
+
+    createRoot(document.getElementById("root")).render(html`<${RootApp} />`);
+  </script>
+</body>
+</html>
