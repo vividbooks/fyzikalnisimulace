@@ -1003,7 +1003,7 @@
           },
           {
             id: "mereni_delka",
-            title: "Měření délek",
+            title: "Měření délky",
             hash: "#/sim/mereni_delka",
             previewColor: "#eef7d8",
           },
@@ -1060,6 +1060,12 @@
             title: "Páka",
             hash: "#/sim/paka",
             previewColor: "#dcf3ff",
+          },
+          {
+            id: "skladani_sil",
+            title: "Skládání sil",
+            hash: "#/sim/skladani_sil",
+            previewColor: "#e8ecff",
           },
           {
             id: "hra_newton",
@@ -1128,6 +1134,7 @@
     /** Kategorie přehledu odpovídající simulaci — Přehled vrátí na stejný panel (např. Vztlaková síla → Kapaliny a plyny). */
     const SIM_TO_HUB_CATEGORY = {
       paka: "sily",
+      skladani_sil: "sily",
       hra_newton: "sily",
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
@@ -1845,6 +1852,25 @@
       </svg>`;
     }
 
+    function SkladaniSilCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="skladani_sil/card-forces.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HraNewtonCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1893,6 +1919,7 @@
 
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
+      if (tileId === "skladani_sil") return html`<${SkladaniSilCardIllustration} />`;
       if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
@@ -2042,6 +2069,14 @@
             window.location.replace(new URL("paka/", window.location.href).href);
           } catch (_) {
             window.location.replace("paka/");
+          }
+          return;
+        }
+        if (simId === "skladani_sil") {
+          try {
+            window.location.replace(new URL("skladani_sil/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("skladani_sil/");
           }
           return;
         }
@@ -2198,6 +2233,13 @@
         `;
       }
       if (simId === "paka") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "skladani_sil") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
