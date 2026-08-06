@@ -93,8 +93,8 @@ body.fields-mode--two .arena-controls {
 }
 
 body.fields-mode--two .arena-composite {
-  margin-right: 0;
-  margin-bottom: 0;
+  margin-right: 28px;
+  margin-bottom: 28px;
 }
 
 .field-unit.is-hidden {
@@ -303,7 +303,7 @@ body.fields-mode--two .arena-composite {
   display: inline-flex;
   align-items: stretch;
   margin-right: 56px;
-  margin-bottom: 48px;
+  margin-bottom: 56px;
   touch-action: none;
 }
 
@@ -396,7 +396,7 @@ canvas {
 }
 
 .arena-composite.show-resize-hint .resize-handle::after {
-  background: rgba(88, 166, 255, 0.45);
+  background: rgba(37, 99, 235, 0.8);
   animation: resize-handle-pulse 1.6s ease-in-out infinite;
 }
 
@@ -446,15 +446,16 @@ canvas {
 
 .resize-handle {
   position: absolute;
-  z-index: 2;
+  z-index: 6;
   touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .resize-handle.n,
 .resize-handle.s {
   left: 0;
   right: 0;
-  height: 14px;
+  height: 44px;
   cursor: ns-resize;
 }
 
@@ -462,44 +463,55 @@ canvas {
 .resize-handle.w {
   top: 0;
   bottom: 0;
-  width: 14px;
+  width: 44px;
   cursor: ew-resize;
 }
 
-.resize-handle.n { top: -7px; }
-.resize-handle.s { bottom: -7px; }
-.resize-handle.e { right: -7px; }
-.resize-handle.w { left: -7px; }
+.resize-handle.n { top: -22px; }
+.resize-handle.s { bottom: -22px; }
+.resize-handle.e { right: -22px; }
+.resize-handle.w { left: -22px; }
 
 .resize-handle::after {
   content: '';
   position: absolute;
-  background: rgba(88, 166, 255, 0);
-  border-radius: 4px;
-  transition: background 0.15s;
+  background: rgba(88, 166, 255, 0.55);
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  transition: background 0.15s, transform 0.15s;
 }
 
 .resize-handle:hover::after,
 .resize-handle.active::after {
-  background: rgba(88, 166, 255, 0.35);
+  background: rgba(37, 99, 235, 0.85);
 }
 
 .resize-handle.n::after,
 .resize-handle.s::after {
-  left: 25%;
-  right: 25%;
-  height: 4px;
+  left: 28%;
+  right: 28%;
+  height: 8px;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .resize-handle.e::after,
 .resize-handle.w::after {
-  top: 25%;
-  bottom: 25%;
-  width: 4px;
+  top: 28%;
+  bottom: 28%;
+  width: 8px;
   left: 50%;
   transform: translateX(-50%);
+}
+
+.resize-handle.active.n::after,
+.resize-handle.active.s::after {
+  transform: translateY(-50%) scaleY(1.25);
+}
+
+.resize-handle.active.e::after,
+.resize-handle.active.w::after {
+  transform: translateX(-50%) scaleX(1.25);
 }
 
 .stat-item--ball-count .ball-count-scrub-wrap,
@@ -511,8 +523,8 @@ canvas {
 .stat-item--area .channel-scrub {
   cursor: ew-resize;
   display: inline-block;
-  padding: 4px 2px;
-  margin: -4px -2px;
+  padding: 10px 6px;
+  margin: -10px -6px;
   border-radius: 10px;
   touch-action: none;
   user-select: none;
@@ -549,14 +561,16 @@ canvas {
 .stat-item--ball-count .channel-scrub-arrow,
 .stat-item--area .channel-scrub-arrow {
   flex-shrink: 0;
-  font-size: 0.72rem;
+  font-size: 1rem;
   font-weight: 900;
   line-height: 1;
   pointer-events: auto;
   cursor: pointer;
-  opacity: 0.45;
-  padding: 4px 2px;
-  margin: -4px -2px;
+  opacity: 0.55;
+  padding: 10px 8px;
+  margin: -10px -4px;
+  min-width: 36px;
+  min-height: 36px;
   border: none;
   background: transparent;
   font-family: inherit;

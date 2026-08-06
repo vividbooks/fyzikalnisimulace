@@ -23,12 +23,14 @@ const UI_OFFSET_Y = 15;
 
 const DEFAULT_FIELD_COUNT = 1;
 const MASK_HOLE_AREA_CM2 = 1;
-const MASK_BLUR_DOWNSCALE = 8;
+const MASK_BLUR_DOWNSCALE = 10;
+const MASK_FROST = 'rgba(13, 17, 23, 0.82)';
 
 const fields = [];
 let activeFieldCount = DEFAULT_FIELD_COUNT;
 let maskEnabled = false;
 let pauseEnabled = false;
+let currentUiScale = BASE_UI_SCALE;
 
 function getFieldCount() {
   return activeFieldCount;
@@ -182,6 +184,7 @@ function updateViewportFit() {
     scale = Math.min(scale, availableWidth / contentWidth);
   }
 
+  currentUiScale = scale;
   appShell.style.transform = `translateY(${UI_OFFSET_Y}px) scale(${scale})`;
   appShell.style.transformOrigin = 'top center';
 }
@@ -289,11 +292,14 @@ class Field {
     if (!this.maskBuffers) {
       const create = () => {
         const canvas = document.createElement('canvas');
-        return { canvas, ctx: canvas.getContext('2d') };
+        // iOS Safari někdy nezkopíruje obsah canvasu, který není ve DOMu.
+        canvas.setAttribute('aria-hidden', 'true');
+        canvas.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;';
+        document.body.appendChild(canvas);
+        return { canvas, ctx: canvas.getContext('2d', { willReadFrequently: false }) };
       };
       this.maskBuffers = {
         scene: create(),
-        balls: create(),
         blurA: create(),
         blurB: create(),
       };
@@ -307,7 +313,6 @@ class Field {
     const halfHeight = Math.max(1, Math.ceil(this.height / 2));
 
     resize(this.maskBuffers.scene, this.width, this.height);
-    resize(this.maskBuffers.balls, this.width, this.height);
     resize(this.maskBuffers.blurA, halfWidth, halfHeight);
     resize(this.maskBuffers.blurB, halfWidth, halfHeight);
 
@@ -678,10 +683,13 @@ class Field {
   }
 
   resizeDelta(edge, dx, dy) {
-    if (edge === 'e') return dx;
-    if (edge === 'w') return -dx;
-    if (edge === 's') return dy;
-    if (edge === 'n') return -dy;
+    const scale = currentUiScale || 1;
+    const sx = dx / scale;
+    const sy = dy / scale;
+    if (edge === 'e') return sx;
+    if (edge === 'w') return -sx;
+    if (edge === 's') return sy;
+    if (edge === 'n') return -sy;
     return 0;
   }
 
@@ -818,9 +826,9 @@ class Field {
     this.ctx.restore();
   }
 
-  // Blur je poskládaný z opakovaného zmenšení a zpětného zvětšení, protože
-  // Safari na iPadu spolehlivě neaplikuje ctx.filter ani CSS filter na canvas.
-  drawBlurredScene(buffers) {
+  // Soft blur bez filter API: opakované zmenšení + zvětšení (Safari na iPadu
+  // ctx.filter/CSS filter u canvasu spolehlivě neaplikuje).
+  drawSoftBackground(buffers) {
     let source = buffers.scene.canvas;
     let sourceWidth = this.width;
     let sourceHeight = this.height;
@@ -849,35 +857,42 @@ class Field {
     this.ctx.drawImage(source, 0, 0, sourceWidth, sourceHeight, 0, 0, this.width, this.height);
   }
 
+  drawMaskFrost(x, y, side) {
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.rect(0, 0, this.width, this.height);
+    this.ctx.rect(x, y, side, side);
+    this.ctx.fillStyle = MASK_FROST;
+    this.ctx.fill('evenodd');
+    this.ctx.restore();
+  }
+
   drawWithMask() {
     if (this.width <= 0 || this.height <= 0) return;
 
-    const buffers = this.ensureMaskBuffers();
-
-    buffers.balls.ctx.clearRect(0, 0, this.width, this.height);
-    this.drawBalls(buffers.balls.ctx);
-
-    buffers.scene.ctx.clearRect(0, 0, this.width, this.height);
-    this.drawSquareDividers(buffers.scene.ctx);
-    buffers.scene.ctx.drawImage(buffers.balls.canvas, 0, 0);
-
-    this.ctx.clearRect(0, 0, this.width, this.height);
-    this.drawBlurredScene(buffers);
-
-    const side = Math.round(this.getMaskHoleSidePx());
+    const side = Math.max(1, Math.round(this.getMaskHoleSidePx()));
     const x = Math.round(this.maskHoleX);
     const y = Math.round(this.maskHoleY);
+    const buffers = this.ensureMaskBuffers();
+
+    buffers.scene.ctx.clearRect(0, 0, this.width, this.height);
+    this.drawScene(buffers.scene.ctx);
+
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    // 1) měkké pozadí (když selže, frezová clona stejně zakryje okolí)
+    this.drawSoftBackground(buffers);
+    // 2) tmavá clona mimo okno — spolehlivé na iPad Safari
+    this.drawMaskFrost(x, y, side);
+    // 3) ostré okno 1 cm²
     const clippedWidth = Math.min(side, this.width - x);
     const clippedHeight = Math.min(side, this.height - y);
-
     if (clippedWidth > 0 && clippedHeight > 0) {
       this.ctx.drawImage(
-        buffers.balls.canvas,
+        buffers.scene.canvas,
         x, y, clippedWidth, clippedHeight,
         x, y, clippedWidth, clippedHeight
       );
     }
-
     this.drawMaskHoleBorder(x, y, side);
   }
 
