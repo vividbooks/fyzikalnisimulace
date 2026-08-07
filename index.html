@@ -1014,6 +1014,12 @@
             previewColor: "#fff2cc",
           },
           {
+            id: "mereni_casu",
+            title: "Měření času",
+            hash: "#/sim/mereni_casu",
+            previewColor: "#fff5eb",
+          },
+          {
             id: "rychlost",
             title: "Rychlost",
             hash: "#/sim/rychlost",
@@ -1160,6 +1166,7 @@
       teplota: "zaklady",
       mereni_delka: "zaklady",
       mereni_hmotnost: "zaklady",
+      mereni_casu: "zaklady",
       tepelna_kapacita_puvodni: "energie",
       skutecny_obraz: "optika",
       cocky: "optika",
@@ -1792,6 +1799,25 @@
       </svg>`;
     }
 
+    function MereniCasuCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="mereni_casu/card-hourglass.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function MereniHmotnostiCardIllustration() {
       // Rovnoramenné váhy — stejný vzhled jako ve simulaci mereni_hmotnost/.
       return html`<svg
@@ -1989,6 +2015,7 @@
       if (tileId === "teplota") return html`<${TeplotaCardIllustration} />`;
       if (tileId === "mereni_delka") return html`<${MereniDelkyCardIllustration} />`;
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
+      if (tileId === "mereni_casu") return html`<${MereniCasuCardIllustration} />`;
       if (tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
       return null;
     }
@@ -2254,6 +2281,14 @@
           }
           return;
         }
+        if (simId === "mereni_casu") {
+          try {
+            window.location.replace(new URL("mereni_casu/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("mereni_casu/");
+          }
+          return;
+        }
         if (simId === "tepelna_kapacita") {
           try {
             window.location.replace(new URL("tepelna_kapacita/", window.location.href).href);
@@ -2422,6 +2457,13 @@
         `;
       }
       if (simId === "mereni_hmotnost") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "mereni_casu") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

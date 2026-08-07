@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Měření času</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="assets/lottie.min.js"></script>
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <div class="app-root" data-app-mode="hourglass">
+    <aside class="left-panel">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <h1 class="panel-title">Měření času</h1>
+        <div class="mode-switch" role="tablist" aria-label="Režim simulace">
+          <button
+            type="button"
+            class="mode-switch__btn is-active"
+            data-mode="hourglass"
+            role="tab"
+            aria-selected="true"
+          >
+            Přesýpací hodiny
+          </button>
+          <button
+            type="button"
+            class="mode-switch__btn"
+            data-mode="stopwatch"
+            role="tab"
+            aria-selected="false"
+          >
+            Stopky
+          </button>
+        </div>
+      </div>
+
+      <div class="hourglass-panel">
+        <p class="panel-text">
+          Klepnutím na hodiny se hodiny přetočí.
+        </p>
+        <div class="panel-actions">
+          <button type="button" class="action-btn action-btn--primary" id="flip-all-hourglasses">
+            Otočit všechny hodiny
+          </button>
+        </div>
+      </div>
+
+      <div class="stopwatch-panel">
+        <div class="panel-section panel-section--center">
+          <div class="subject-control" role="group" aria-label="Indikátor stopek">
+            <button
+              type="button"
+              class="subject-btn is-active"
+              data-indicator="pendulum"
+              aria-pressed="true"
+            >
+              Kyvadlo
+            </button>
+            <button
+              type="button"
+              class="subject-btn"
+              data-indicator="heart"
+              aria-pressed="false"
+            >
+              Srdce
+            </button>
+          </div>
+        </div>
+
+        <div class="stopwatch-readout" aria-live="polite">
+          <span class="stopwatch-label">Čas</span>
+          <time class="stopwatch-time" id="panel-time-main" datetime="PT0S">00 : 00,00</time>
+        </div>
+
+        <div class="panel-actions">
+          <button type="button" class="action-btn action-btn--primary" id="btn-start">
+            Spustit
+          </button>
+          <button type="button" class="action-btn" id="btn-lap">
+            Mezičas
+          </button>
+          <button type="button" class="action-btn graph-secondary" id="btn-reset">
+            Reset
+          </button>
+        </div>
+
+        <div class="laps-panel" id="laps-panel" hidden>
+          <span class="panel-label">Mezičasy</span>
+          <div class="laps-list" id="stopwatch-laps"></div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <div class="board-stage" aria-label="Simulace měření času">
+        <div class="stage stage--hourglass">
+          <div class="hourglass-unit hourglass-unit--xlarge">
+            <div class="lottie" role="button" tabindex="0" aria-label="Otočit velké hodiny"></div>
+          </div>
+          <div class="hourglass-unit hourglass-unit--large">
+            <div class="lottie" role="button" tabindex="0" aria-label="Otočit střední hodiny"></div>
+          </div>
+          <div class="hourglass-unit hourglass-unit--small">
+            <div class="lottie" role="button" tabindex="0" aria-label="Otočit malé hodiny"></div>
+          </div>
+        </div>
+
+        <div class="stage stage--stopwatch hidden">
+          <div class="stopwatch-stage">
+            <div class="stopwatch-visual" id="stopwatch-visual" aria-hidden="true"></div>
+            <div class="indicator-readout indicator-readout--pendulum" id="pendulum-readout">
+              <span class="indicator-readout__label">Doba jednoho kyvu</span>
+              <div class="indicator-answer">
+                <div class="indicator-answer-row" id="pendulum-answer-row">
+                  <div class="indicator-answer-field">
+                    <input
+                      type="text"
+                      id="pendulum-answer"
+                      class="app-numeric-input"
+                      readonly
+                      inputmode="none"
+                      autocomplete="off"
+                      aria-label="Doba jednoho kyvu"
+                      data-period-key="pendulum"
+                    />
+                    <span class="indicator-answer-unit" aria-hidden="true">s</span>
+                  </div>
+                </div>
+                <p class="indicator-answer-feedback" id="pendulum-feedback" aria-live="polite"></p>
+              </div>
+            </div>
+            <div class="indicator-readout indicator-readout--heart hidden" id="heart-readout">
+              <span class="indicator-readout__label">Doba jednoho tepu</span>
+              <div class="indicator-answer">
+                <div class="indicator-answer-row" id="heart-answer-row">
+                  <div class="indicator-answer-field">
+                    <input
+                      type="text"
+                      id="heart-answer"
+                      class="app-numeric-input"
+                      readonly
+                      inputmode="none"
+                      autocomplete="off"
+                      aria-label="Doba jednoho tepu"
+                      data-period-key="heart"
+                    />
+                    <span class="indicator-answer-unit" aria-hidden="true">s</span>
+                  </div>
+                </div>
+                <p class="indicator-answer-feedback" id="heart-feedback" aria-live="polite"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tableKeypadOverlay" class="table-keypad-overlay" hidden>
+    <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="tableKeypadTitle">
+      <p id="tableKeypadTitle" class="table-keypad-panel__title">Hodnota</p>
+      <div id="tableKeypadDisplay" class="table-keypad-panel__display" aria-live="polite">
+        <span id="tableKeypadDisplayValue" class="table-keypad-panel__value"></span>
+        <span id="tableKeypadDisplayUnit" class="table-keypad-panel__unit" aria-hidden="true">s</span>
+      </div>
+      <p id="tableKeypadError" class="table-keypad-panel__error" hidden></p>
+      <div class="table-math-keypad" id="tableMathKeypad" aria-label="Matematická klávesnice">
+        <div class="table-math-keypad__grid">
+          <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+          <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+          <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+          <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+          <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+          <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+          <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+          <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+          <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+          <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+          <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+          <button class="table-math-keypad__key" type="button" data-action="clear" aria-label="Smazat vše">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path
+                d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="table-keypad-panel__actions">
+        <button type="button" id="tableKeypadCancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path
+              d="M18 6L6 18M6 6l12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+        <button type="button" id="tableKeypadConfirm" class="table-keypad-panel__action table-keypad-panel__confirm" aria-label="Ověřit odpověď">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path
+              d="M5 12.5l5 5L19 7"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -34,6 +34,8 @@ jobs:
           test -f silomer_2/main.js
           test -f tlak/index.html
           test -f tlak/main.js
+          test -f mereni_casu/index.html
+          test -f mereni_casu/main.js
           test -f optika_geometrie/index.html
           test -d optika_geometrie/rysovani-app
           test -f README.md

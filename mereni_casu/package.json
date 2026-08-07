@@ -1,0 +1,12 @@
+{
+  "name": "mereni_casu",
+  "version": "1.0.0",
+  "description": "Měření času – přesýpací hodiny a stopky",
+  "private": true,
+  "scripts": {
+    "dev": "live-server . --port=8766 --open=/index.html --wait=300"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
