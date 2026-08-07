@@ -1056,10 +1056,10 @@
         title: "Síly",
         tiles: [
           {
-            id: "paka",
-            title: "Páka",
-            hash: "#/sim/paka",
-            previewColor: "#dcf3ff",
+            id: "silomer_2",
+            title: "Siloměr",
+            hash: "#/sim/silomer_2",
+            previewColor: "#eef7ff",
           },
           {
             id: "skladani_sil",
@@ -1068,16 +1068,22 @@
             previewColor: "#e8ecff",
           },
           {
-            id: "silomer_2",
-            title: "Siloměr",
-            hash: "#/sim/silomer_2",
-            previewColor: "#eef7ff",
+            id: "tlak",
+            title: "Tlak",
+            hash: "#/sim/tlak",
+            previewColor: "#e8ecff",
           },
           {
             id: "hra_newton",
             title: "Newtonovy pohybové zákony",
             hash: "#/sim/hra_newton",
             previewColor: "#eaf4ff",
+          },
+          {
+            id: "paka",
+            title: "Páka",
+            hash: "#/sim/paka",
+            previewColor: "#dcf3ff",
           },
         ],
       },
@@ -1142,6 +1148,7 @@
       paka: "sily",
       skladani_sil: "sily",
       silomer_2: "sily",
+      tlak: "sily",
       hra_newton: "sily",
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
@@ -1897,6 +1904,25 @@
       </svg>`;
     }
 
+    function TlakCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="tlak/card-tlak.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HraNewtonCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1947,6 +1973,7 @@
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
       if (tileId === "skladani_sil") return html`<${SkladaniSilCardIllustration} />`;
       if (tileId === "silomer_2") return html`<${SilomerCardIllustration} />`;
+      if (tileId === "tlak") return html`<${TlakCardIllustration} />`;
       if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
@@ -2112,6 +2139,14 @@
             window.location.replace(new URL("silomer_2/", window.location.href).href);
           } catch (_) {
             window.location.replace("silomer_2/");
+          }
+          return;
+        }
+        if (simId === "tlak") {
+          try {
+            window.location.replace(new URL("tlak/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("tlak/");
           }
           return;
         }
@@ -2282,6 +2317,13 @@
         `;
       }
       if (simId === "silomer_2") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "tlak") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

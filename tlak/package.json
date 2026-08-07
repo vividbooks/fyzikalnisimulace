@@ -1,0 +1,13 @@
+{
+  "name": "tlak",
+  "version": "1.0.0",
+  "description": "Tlak — interaktivní simulace tlaku",
+  "license": "MIT",
+  "scripts": {
+    "start": "npx --yes serve . -l 3475",
+    "dev": "npm start"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
