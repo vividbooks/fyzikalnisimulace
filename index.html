@@ -1038,6 +1038,18 @@
             previewColor: "#e8fff4",
           },
           {
+            id: "obsah",
+            title: "Obsah",
+            hash: "#/sim/obsah",
+            previewColor: "#eef7ee",
+          },
+          {
+            id: "objem",
+            title: "Objem",
+            hash: "#/sim/objem",
+            previewColor: "#eef2f8",
+          },
+          {
             id: "hustota",
             title: "Hustota",
             hash: "#/sim/hustota",
@@ -1158,6 +1170,8 @@
       hra_newton: "sily",
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
+      obsah: "zaklady",
+      objem: "zaklady",
       graf: "zaklady",
       rychlost: "zaklady",
       auto_jizda: "zaklady",
@@ -1818,6 +1832,44 @@
       </svg>`;
     }
 
+    function ObsahCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="obsah/card-obsah.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function ObjemCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="objem/card-objem.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function MereniHmotnostiCardIllustration() {
       // Rovnoramenné váhy — stejný vzhled jako ve simulaci mereni_hmotnost/.
       return html`<svg
@@ -2007,6 +2059,8 @@
       if (tileId === "cocky") return html`<${CockyCardIllustration} />`;
       if (tileId === "michani-barev") return html`<${MichaniBarevCardIllustration} />`;
       if (tileId === "graf_pohyb") return html`<${GrafPohybCardIllustration} />`;
+      if (tileId === "obsah") return html`<${ObsahCardIllustration} />`;
+      if (tileId === "objem") return html`<${ObjemCardIllustration} />`;
       if (tileId === "graf") return html`<${GrafCardIllustration} />`;
       if (tileId === "rychlost") return html`<${RychlostCardIllustration} />`;
       if (tileId === "auto_jizda") return html`<${AutoJizdaCardIllustration} />`;
@@ -2190,6 +2244,22 @@
             window.location.replace(new URL("graf-pohybu/", window.location.href).href);
           } catch (_) {
             window.location.replace("graf-pohybu/");
+          }
+          return;
+        }
+        if (simId === "obsah") {
+          try {
+            window.location.replace(new URL("obsah/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("obsah/");
+          }
+          return;
+        }
+        if (simId === "objem") {
+          try {
+            window.location.replace(new URL("objem/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("objem/");
           }
           return;
         }
@@ -2380,6 +2450,20 @@
         `;
       }
       if (simId === "graf_pohyb") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "obsah") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "objem") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

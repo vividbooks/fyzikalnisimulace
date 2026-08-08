@@ -1,0 +1,16 @@
+{
+  "name": "obsah",
+  "version": "1.0.0",
+  "description": "Obsah — vizualizace rozměrů a objektů",
+  "license": "MIT",
+  "scripts": {
+    "start": "serve . -l 3470",
+    "dev": "npm start"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
