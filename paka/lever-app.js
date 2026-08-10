@@ -3,7 +3,7 @@
     import htm from "https://esm.sh/htm@3.1.1?deps=react@18.3.1";
 
     const html = htm.bind(React.createElement);
-    /** Odkaz na přehled — stejný cíl jako dřívější navigace z `onBack`. */
+    /** Odkaz na přehled simulací v hubu. */
     const LEVER_HUB_HREF = new URL("../index.html", import.meta.url).href;
     /** Stejný font stack jako geometry-app (Fenomen Sans z Supabase). */
     const FONT_STACK =
@@ -138,6 +138,137 @@
 
     function zeros() {
       return Array.from({ length: SLOTS }, () => 0);
+    }
+
+    /** Badatelský úkol — pevná závaží na levé straně (slotIdx = dílek − 1). */
+    const RESEARCH_TASK_SITUATIONS = [
+      { count: 4, slotIdx: 2 },
+      { count: 2, slotIdx: 4 },
+      { count: 2, slotIdx: 5 },
+      { count: 4, slotIdx: 3 },
+    ];
+    const RESEARCH_FIXED_SIDE = "left";
+    const SITUATION_ARROW_GAP = 72;
+    const SITUATION_ARROW_R = 36;
+
+    /** Kvízy 3–7: index 0 = vždy 1 závaží na odpovědi, index 1–4 = náhodně počet nebo dílek. */
+    const QUIZ_TASK_COUNT = 5;
+    const FINAL_TASK_PROMPT =
+      "Co musí platit pro počty závaží a jejich vzdálenosti od osy otáčení, aby platilo, že je páka v rovnováze?";
+    /** V odpovědních boxech vždy číslo menší než 11. */
+    const QUIZ_ANSWER_MAX = 10;
+
+    function generateQuizTask(quizIdx) {
+      const forceAnswerCount = quizIdx === 0 ? 1 : null;
+
+      for (let attempt = 0; attempt < 300; attempt += 1) {
+        const fixedSide = Math.random() < 0.5 ? "left" : "right";
+        const fixedCount = 2 + Math.floor(Math.random() * 5);
+        const fixedDistance = 2 + Math.floor(Math.random() * 8);
+        const moment = fixedCount * fixedDistance;
+        const pairs = [];
+
+        for (let d = 1; d <= QUIZ_ANSWER_MAX; d += 1) {
+          if (moment % d !== 0) continue;
+          const c = moment / d;
+          if (c < 1 || c > QUIZ_ANSWER_MAX) continue;
+          if (forceAnswerCount !== null && c !== forceAnswerCount) continue;
+          pairs.push({ count: c, distance: d });
+        }
+        if (!pairs.length) continue;
+
+        const pair = pairs[Math.floor(Math.random() * pairs.length)];
+        const askMode =
+          quizIdx === 0
+            ? "distance"
+            : Math.random() < 0.5
+              ? "distance"
+              : "count";
+
+        return {
+          fixedSide,
+          fixedCount,
+          fixedDistance,
+          fixedSlotIdx: fixedDistance - 1,
+          answerSide: fixedSide === "left" ? "right" : "left",
+          askMode,
+          givenCount: askMode === "distance" ? pair.count : null,
+          givenDistance: askMode === "count" ? pair.distance : null,
+          correctCount: pair.count,
+          correctDistance: pair.distance,
+        };
+      }
+
+      return {
+        fixedSide: "left",
+        fixedCount: 2,
+        fixedDistance: 4,
+        fixedSlotIdx: 3,
+        answerSide: "right",
+        askMode: "distance",
+        givenCount: 1,
+        givenDistance: null,
+        correctCount: 1,
+        correctDistance: 8,
+      };
+    }
+
+    function quizTaskPrompt(task) {
+      const fixedPart = `Na jedné straně páky visí ${task.fixedCount} závaží ve vzdálenosti ${task.fixedDistance} dílky od osy otáčení.`;
+      if (task.askMode === "distance") {
+        const weightPhrase =
+          task.givenCount === 1
+            ? "jedno závaží"
+            : `${task.givenCount} závaží`;
+        return `${fixedPart} Kam musíme na druhou stranu páky zavěsit ${weightPhrase} do jedné vzdálenosti od osy otáčení, aby byla páka v rovnováze?`;
+      }
+      return `${fixedPart} Kolik závaží musíme na druhou stranu páky zavěsit do vzdálenosti ${task.givenDistance} dílky od osy otáčení, aby byla páka v rovnováze?`;
+    }
+
+    function isQuizAnswerCorrect(task, count, distance) {
+      return (
+        count === task.correctCount && distance === task.correctDistance
+      );
+    }
+
+    const CONFETTI_COLORS = ["#22c55e", "#16a34a", "#4ade80", "#15803d", "#86efac"];
+
+    function ConfettiBurst({ burstKey }) {
+      const particles = useMemo(() => {
+        if (burstKey <= 0) return [];
+        return Array.from({ length: 52 }, (_, i) => {
+          const angle = (i / 52) * Math.PI * 2 + Math.random() * 0.45;
+          const dist = 90 + Math.random() * 190;
+          return {
+            id: `${burstKey}-${i}`,
+            tx: Math.cos(angle) * dist,
+            ty: Math.sin(angle) * dist - 40,
+            size: 5 + Math.random() * 9,
+            color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+            delay: Math.random() * 0.12,
+            rot: Math.round(Math.random() * 720),
+          };
+        });
+      }, [burstKey]);
+
+      if (burstKey <= 0 || !particles.length) return null;
+
+      return html`<div class="confetti-layer" aria-hidden="true">
+        ${particles.map((p) =>
+          html`<span
+            key=${p.id}
+            class="confetti-piece"
+            style=${{
+              "--tx": `${p.tx}px`,
+              "--ty": `${p.ty}px`,
+              "--size": `${p.size}px`,
+              "--color": p.color,
+              "--delay": `${p.delay}s`,
+              "--rot": `${p.rot}deg`,
+            }}
+          />`,
+        )}
+      </div>`;
     }
 
     /**
@@ -312,6 +443,11 @@
         add(PIVOT.x, STAND_FOOT_BOTTOM_Y);
         add(PIVOT.x - 40, STAND_FOOT_BOTTOM_Y + 24);
         add(PIVOT.x + 40, STAND_FOOT_BOTTOM_Y + 24);
+        const arrowExtent = SITUATION_ARROW_GAP + SITUATION_ARROW_R + 14;
+        add(PIVOT.x - BEAM_HALF - arrowExtent, PIVOT.y - SITUATION_ARROW_R);
+        add(PIVOT.x - BEAM_HALF - arrowExtent, PIVOT.y + SITUATION_ARROW_R);
+        add(PIVOT.x + BEAM_HALF + arrowExtent, PIVOT.y - SITUATION_ARROW_R);
+        add(PIVOT.x + BEAM_HALF + arrowExtent, PIVOT.y + SITUATION_ARROW_R);
       };
 
       const bbFull = hullCore([MAX_TILT, -MAX_TILT, 0]);
@@ -351,6 +487,59 @@
         Math.abs(dx) <= BEAM_LOCK_HIT_W / 2 &&
         Math.abs(dy) <= BEAM_LOCK_HIT_H / 2
       );
+    }
+
+    function situationArrowCenter(dir) {
+      const cx =
+        dir === "left"
+          ? PIVOT.x - BEAM_HALF - SITUATION_ARROW_GAP
+          : PIVOT.x + BEAM_HALF + SITUATION_ARROW_GAP;
+      return { cx, cy: PIVOT.y };
+    }
+
+    function hitSituationArrow(px, py, dir) {
+      const { cx, cy } = situationArrowCenter(dir);
+      return Math.hypot(px - cx, py - cy) <= SITUATION_ARROW_R + 8;
+    }
+
+    /** Šipky pro přepínání situací badatelského úkolu — vlevo a vpravo od tyče. */
+    function ResearchSituationArrows({ canPrev, canNext }) {
+      const mk = (dir, enabled) => {
+        const { cx, cy } = situationArrowCenter(dir);
+        const arm = 11;
+        const chevron =
+          dir === "left"
+            ? `M ${cx + arm * 0.45} ${cy - arm} L ${cx - arm * 0.55} ${cy} L ${cx + arm * 0.45} ${cy + arm}`
+            : `M ${cx - arm * 0.45} ${cy - arm} L ${cx + arm * 0.55} ${cy} L ${cx - arm * 0.45} ${cy + arm}`;
+        return html`
+          <g
+            key=${`situation-arrow-${dir}`}
+            style=${{ pointerEvents: "none", opacity: enabled ? 1 : 0.38 }}
+          >
+            <circle
+              cx=${cx}
+              cy=${cy}
+              r=${SITUATION_ARROW_R}
+              fill="rgba(255,255,255,0.96)"
+              stroke=${COLORS.pivot}
+              strokeWidth=${2.2}
+              style=${{ filter: "drop-shadow(0 3px 12px rgba(15, 23, 42, 0.12))" }}
+            />
+            <path
+              d=${chevron}
+              fill="none"
+              stroke=${COLORS.pivot}
+              strokeWidth=${3.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
+        `;
+      };
+      return html`<g key="research-situation-arrows">
+        ${mk("left", canPrev)}
+        ${mk("right", canNext)}
+      </g>`;
     }
 
     /** Ikona zámečku nad páčkou (SVG, vyplněná a v barvě osy). */
@@ -719,6 +908,24 @@
       const [hoverHint, setHoverHint] = useState(null);
       /** Zamknutá osa — tyč zůstane vodorovně (nezávisle na závažích). */
       const [beamLocked, setBeamLocked] = useState(true);
+      const [researchTaskOpen, setResearchTaskOpen] = useState(false);
+      const [taskKind, setTaskKind] = useState("research");
+      const [researchSituationIdx, setResearchSituationIdx] = useState(0);
+      const [quizTaskIdx, setQuizTaskIdx] = useState(0);
+      const [currentQuizTask, setCurrentQuizTask] = useState(null);
+      const [quizAnswerCount, setQuizAnswerCount] = useState("");
+      const [quizAnswerDistance, setQuizAnswerDistance] = useState("");
+      const [quizBoxState, setQuizBoxState] = useState(null);
+      const [quizAnswerApplied, setQuizAnswerApplied] = useState(false);
+      const [quizConfettiBurst, setQuizConfettiBurst] = useState(0);
+
+      const isQuizTask = taskKind === "quiz";
+      const isFinalTask = taskKind === "final";
+      const leverInteractive =
+        !researchTaskOpen || taskKind === "research" || isFinalTask;
+      const quizLeverDimmed = isQuizTask && !quizAnswerApplied;
+
+      const confettiFiredRef = useRef(false);
 
       const thetaRef = useRef(0);
       thetaRef.current = theta;
@@ -750,6 +957,28 @@
         id = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(id);
       }, [beamLocked]);
+
+      useEffect(() => {
+        if (!isQuizTask || !quizAnswerApplied || !currentQuizTask) return;
+        if (quizBoxState !== "ok") return;
+        if (confettiFiredRef.current) return;
+        const tau = netMomentAboutPivot(left, right);
+        const tauOk =
+          Math.abs(tau) <
+          Math.max(1.5, TAU_REF_ONE_SIDE_UNITS * 5e-5);
+        const angleOk = Math.abs(theta) < 0.055;
+        if (!tauOk || !angleOk) return;
+        confettiFiredRef.current = true;
+        setQuizConfettiBurst((n) => n + 1);
+      }, [
+        isQuizTask,
+        quizAnswerApplied,
+        quizBoxState,
+        currentQuizTask,
+        left,
+        right,
+        theta,
+      ]);
 
       const holesMeta = useMemo(() => {
         const list = [];
@@ -914,6 +1143,224 @@
         setTheta(0);
         setLeft(zeros());
         setRight(zeros());
+      }
+
+      function resetQuizUi() {
+        setQuizAnswerCount("");
+        setQuizAnswerDistance("");
+        setQuizBoxState(null);
+        setQuizAnswerApplied(false);
+        setQuizConfettiBurst(0);
+        confettiFiredRef.current = false;
+      }
+
+      function applyQuizFixedSetup(task) {
+        dragRef.current = null;
+        beamPickupClientRef.current = null;
+        setDragPx(null);
+        setHoverHint(null);
+        setLeft(zeros());
+        setRight(zeros());
+        if (task.fixedSide === "left") {
+          setLeft(() => {
+            const a = zeros();
+            a[task.fixedSlotIdx] = task.fixedCount;
+            return a;
+          });
+        } else {
+          setRight(() => {
+            const a = zeros();
+            a[task.fixedSlotIdx] = task.fixedCount;
+            return a;
+          });
+        }
+        setBeamLocked(false);
+      }
+
+      function enterQuizTask(idx) {
+        const task = generateQuizTask(idx);
+        setQuizTaskIdx(idx);
+        setTaskKind("quiz");
+        setCurrentQuizTask(task);
+        resetQuizUi();
+        applyQuizFixedSetup(task);
+      }
+
+      function applyQuizAnswerOnLever(task, answerCount, answerDistance) {
+        const slotIdx = answerDistance - 1;
+        setLeft(zeros());
+        setRight(zeros());
+        if (task.fixedSide === "left") {
+          setLeft(() => {
+            const a = zeros();
+            a[task.fixedSlotIdx] = task.fixedCount;
+            return a;
+          });
+          setRight(() => {
+            const a = zeros();
+            a[slotIdx] = answerCount;
+            return a;
+          });
+        } else {
+          setRight(() => {
+            const a = zeros();
+            a[task.fixedSlotIdx] = task.fixedCount;
+            return a;
+          });
+          setLeft(() => {
+            const a = zeros();
+            a[slotIdx] = answerCount;
+            return a;
+          });
+        }
+        setQuizAnswerApplied(true);
+        confettiFiredRef.current = false;
+        setQuizConfettiBurst(0);
+      }
+
+      function enterFinalTask() {
+        setTaskKind("final");
+        setCurrentQuizTask(null);
+        resetQuizUi();
+        dragRef.current = null;
+        beamPickupClientRef.current = null;
+        setDragPx(null);
+        setHoverHint(null);
+        clearAllWeights();
+        setBeamLocked(false);
+      }
+
+      function applyResearchSituation(idx) {
+        const situation = RESEARCH_TASK_SITUATIONS[idx];
+        if (!situation) return;
+        dragRef.current = null;
+        beamPickupClientRef.current = null;
+        setDragPx(null);
+        setHoverHint(null);
+        setLeft(zeros());
+        setRight(zeros());
+        if (RESEARCH_FIXED_SIDE === "left") {
+          setLeft(() => {
+            const a = zeros();
+            a[situation.slotIdx] = situation.count;
+            return a;
+          });
+        } else {
+          setRight(() => {
+            const a = zeros();
+            a[situation.slotIdx] = situation.count;
+            return a;
+          });
+        }
+      }
+
+      function startResearchTask() {
+        setTaskKind("research");
+        setResearchSituationIdx(0);
+        applyResearchSituation(0);
+        setBeamLocked(false);
+        setResearchTaskOpen(true);
+      }
+
+      function toggleResearchTask() {
+        if (researchTaskOpen) {
+          closeTaskPanel();
+          return;
+        }
+        startResearchTask();
+      }
+
+      function closeTaskPanel() {
+        setResearchTaskOpen(false);
+        setTaskKind("research");
+        setCurrentQuizTask(null);
+        resetQuizUi();
+        clearAllWeights();
+        setBeamLocked(true);
+      }
+
+      function goToPrevTaskKind() {
+        if (taskKind === "final") {
+          enterQuizTask(QUIZ_TASK_COUNT - 1);
+          return;
+        }
+        if (taskKind === "quiz" && quizTaskIdx > 0) {
+          enterQuizTask(quizTaskIdx - 1);
+          return;
+        }
+        if (taskKind !== "quiz") return;
+        setTaskKind("research");
+        setCurrentQuizTask(null);
+        setResearchSituationIdx(0);
+        applyResearchSituation(0);
+        setBeamLocked(false);
+        resetQuizUi();
+      }
+
+      function goToNextTaskKind() {
+        if (taskKind === "research") {
+          enterQuizTask(0);
+          return;
+        }
+        if (taskKind === "quiz" && quizTaskIdx < QUIZ_TASK_COUNT - 1) {
+          enterQuizTask(quizTaskIdx + 1);
+          return;
+        }
+        if (taskKind === "quiz" && quizTaskIdx === QUIZ_TASK_COUNT - 1) {
+          enterFinalTask();
+        }
+      }
+
+      function verifyQuizAnswer() {
+        if (!currentQuizTask) return;
+        const task = currentQuizTask;
+        let answerCount;
+        let answerDistance;
+
+        if (task.askMode === "distance") {
+          answerCount = task.givenCount;
+          answerDistance = Number.parseInt(quizAnswerDistance, 10);
+          if (
+            !Number.isFinite(answerDistance) ||
+            answerDistance < 1 ||
+            answerDistance > QUIZ_ANSWER_MAX
+          ) {
+            setQuizBoxState("err");
+            return;
+          }
+        } else {
+          answerDistance = task.givenDistance;
+          answerCount = Number.parseInt(quizAnswerCount, 10);
+          if (
+            !Number.isFinite(answerCount) ||
+            answerCount < 1 ||
+            answerCount > QUIZ_ANSWER_MAX
+          ) {
+            setQuizBoxState("err");
+            return;
+          }
+        }
+
+        applyQuizAnswerOnLever(task, answerCount, answerDistance);
+        setQuizBoxState(
+          isQuizAnswerCorrect(task, answerCount, answerDistance) ? "ok" : "err",
+        );
+      }
+
+      function goToPrevResearchSituation() {
+        setResearchSituationIdx((prev) => {
+          const next = Math.max(0, prev - 1);
+          if (next !== prev) applyResearchSituation(next);
+          return next;
+        });
+      }
+
+      function goToNextResearchSituation() {
+        setResearchSituationIdx((prev) => {
+          const next = Math.min(RESEARCH_TASK_SITUATIONS.length - 1, prev + 1);
+          if (next !== prev) applyResearchSituation(next);
+          return next;
+        });
       }
 
       function onBalancePointerMove(e) {
@@ -1086,6 +1533,13 @@
         return tauOk && angleOk;
       }, [beamLocked, totalWeights, left, right, theta]);
 
+      const quizInputClass = (base) =>
+        quizBoxState === "ok"
+          ? `${base} quiz-input--ok`
+          : quizBoxState === "err"
+            ? `${base} quiz-input--err`
+            : base;
+
       return html`
         <div class="app app--lever">
           <header class="sim-subheader">
@@ -1095,13 +1549,142 @@
               aria-label="Zpět na přehled simulací"
               >← Přehled simulací</a>
             <h1 class="sim-subheader-title">Páka</h1>
+            <button
+              type="button"
+              class="research-task-btn"
+              aria-pressed=${researchTaskOpen ? "true" : "false"}
+              onClick=${toggleResearchTask}
+            >
+              Badatelský úkol
+            </button>
           </header>
+          ${researchTaskOpen &&
+            html`<section
+              class="research-task-panel"
+              aria-labelledby="research-task-title"
+            >
+              <div class="research-task-panel-inner">
+                <div class="research-task-panel-header">
+                  <div class="research-task-title-row">
+                    <h2 class="research-task-panel-title" id="research-task-title">
+                      Badatelský úkol
+                    </h2>
+                    <div class="research-task-title-nav">
+                      <button
+                        type="button"
+                        class="task-nav-arrow"
+                        aria-label="Předchozí úkol"
+                        disabled=${taskKind === "research"}
+                        onClick=${goToPrevTaskKind}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        class="task-nav-arrow"
+                        aria-label="Další úkol"
+                        disabled=${taskKind === "final"}
+                        onClick=${goToNextTaskKind}
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="research-task-close"
+                    aria-label="Zavřít úkol"
+                    onClick=${closeTaskPanel}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div class="research-task-body">
+                  ${isFinalTask
+                    ? html`<p>${FINAL_TASK_PROMPT}</p>`
+                    : isQuizTask && currentQuizTask
+                    ? html`
+                        <p>${quizTaskPrompt(currentQuizTask)}</p>
+                        <div class="quiz-answers">
+                          <div class="quiz-field">
+                            <span class="quiz-field-label">Počet závaží</span>
+                            ${currentQuizTask.askMode === "distance"
+                              ? html`<div
+                                  class=${quizInputClass(
+                                    "quiz-input quiz-input--fixed",
+                                  )}
+                                  aria-readonly="true"
+                                >
+                                  ${currentQuizTask.givenCount}
+                                </div>`
+                              : html`<input
+                                  type="number"
+                                  class=${quizInputClass("quiz-input")}
+                                  min="1"
+                                  max=${QUIZ_ANSWER_MAX}
+                                  inputmode="numeric"
+                                  value=${quizAnswerCount}
+                                  onInput=${(e) => {
+                                    setQuizAnswerCount(e.target.value);
+                                    setQuizBoxState(null);
+                                  }}
+                                />`}
+                          </div>
+                          <label class="quiz-field">
+                            <span class="quiz-field-label">Vzdálenost (dílek)</span>
+                            ${currentQuizTask.askMode === "count"
+                              ? html`<div
+                                  class=${quizInputClass(
+                                    "quiz-input quiz-input--fixed",
+                                  )}
+                                  aria-readonly="true"
+                                >
+                                  ${currentQuizTask.givenDistance}
+                                </div>`
+                              : html`<input
+                                  type="number"
+                                  class=${quizInputClass("quiz-input")}
+                                  min="1"
+                                  max=${QUIZ_ANSWER_MAX}
+                                  inputmode="numeric"
+                                  value=${quizAnswerDistance}
+                                  onInput=${(e) => {
+                                    setQuizAnswerDistance(e.target.value);
+                                    setQuizBoxState(null);
+                                  }}
+                                />`}
+                          </label>
+                          <button
+                            type="button"
+                            class="quiz-verify-btn"
+                            onClick=${verifyQuizAnswer}
+                          >
+                            Ověřit
+                          </button>
+                        </div>
+                      `
+                    : html`<ol>
+                        <li>
+                          V každé z následujících situací zavěs na druhou stranu páky
+                          libovolný počet závaží do jedné vzdálenosti od osy otáčení tak,
+                          aby byla páka v rovnováze. (Všechna závaží zavěs pod sebe na
+                          jedno místo. Nezavěšuj je na různá místa páky.)
+                        </li>
+                        <li>
+                          Najdi co nejvíce řešení a vždy zapiš, kolik závaží a do jaké
+                          vzdálenosti jsi zavěsil(a).
+                        </li>
+                      </ol>`}
+                </div>
+              </div>
+            </section>`}
           <main
-            class="stage"
+            class=${quizLeverDimmed ? "stage stage--disabled" : "stage"}
             ref=${(el) => {
               stageRef.current = el;
             }}
           >
+            <${ConfettiBurst} burstKey=${isQuizTask ? quizConfettiBurst : 0} />
             <div
               class="stage-svg-scale-wrap"
               style=${{ "--scene-ar": `${SCENE_VIEW.w} / ${SCENE_VIEW.h}` }}
@@ -1116,8 +1699,25 @@
                 balanceSvgRef.current = el;
               }}
               onPointerDown=${(e) => {
+                if (!leverInteractive) return;
                 const p = clientToLocalSvg(e.clientX, e.clientY, balanceSvgRef.current);
                 if (!p) return;
+                if (researchTaskOpen && taskKind === "research") {
+                  if (
+                    hitSituationArrow(p.x, p.y, "left") &&
+                    researchSituationIdx > 0
+                  ) {
+                    goToPrevResearchSituation();
+                    return;
+                  }
+                  if (
+                    hitSituationArrow(p.x, p.y, "right") &&
+                    researchSituationIdx < RESEARCH_TASK_SITUATIONS.length - 1
+                  ) {
+                    goToNextResearchSituation();
+                    return;
+                  }
+                }
                 if (hitBeamLock(p.x, p.y)) {
                   setBeamLocked((v) => !v);
                   return;
@@ -1180,10 +1780,10 @@
                   return;
                 }
               }}
-              onPointerMove=${onBalancePointerMove}
-              onPointerUp=${onBalancePointerUp}
-              onPointerCancel=${onBalancePointerCancel}
-              onPointerLeave=${() => setHoverHint(null)}>
+              onPointerMove=${leverInteractive ? onBalancePointerMove : undefined}
+              onPointerUp=${leverInteractive ? onBalancePointerUp : undefined}
+              onPointerCancel=${leverInteractive ? onBalancePointerCancel : undefined}
+              onPointerLeave=${leverInteractive ? () => setHoverHint(null) : undefined}>
               <${PivotStand} />
               <${Beam}
                 theta=${theta}
@@ -1228,12 +1828,19 @@
                 >
                   páka je v rovnováze
                 </text>`}
+              ${researchTaskOpen &&
+                taskKind === "research" &&
+                html`<${ResearchSituationArrows}
+                  canPrev=${researchSituationIdx > 0}
+                  canNext=${researchSituationIdx < RESEARCH_TASK_SITUATIONS.length - 1}
+                />`}
               <${BeamLockIcon} locked=${beamLocked} />
               ${balanceGhost}
               ${hoverHud}
             </svg>
             </div>
             ${totalWeights > 0 &&
+              leverInteractive &&
               clearWeightsBtnPos &&
               html`<div
                 class="clear-weights-btn-wrap"
