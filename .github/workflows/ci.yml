@@ -40,6 +40,8 @@ jobs:
           test -f obsah/main.js
           test -f objem/index.html
           test -f objem/main.js
+          test -f druhy-pohybu/index.html
+          test -f druhy-pohybu/main.js
           test -f optika_geometrie/index.html
           test -d optika_geometrie/rysovani-app
           test -f README.md

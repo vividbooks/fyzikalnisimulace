@@ -1032,6 +1032,12 @@
             previewColor: "#ffe8e8",
           },
           {
+            id: "druhy_pohybu",
+            title: "Druhy pohybů",
+            hash: "#/sim/druhy_pohybu",
+            previewColor: "#eef2ff",
+          },
+          {
             id: "graf_pohyb",
             title: "Graf pohybu",
             hash: "#/sim/graf_pohyb",
@@ -1175,6 +1181,7 @@
       graf: "zaklady",
       rychlost: "zaklady",
       auto_jizda: "zaklady",
+      druhy_pohybu: "zaklady",
       stlacovani_latek: "zaklady",
       hustota: "zaklady",
       teplota: "zaklady",
@@ -1558,6 +1565,25 @@
         <circle cx="104" cy="28" r="14" fill="#fff" stroke="#111827" stroke-width="2" />
         <path d="M104 28v-8" stroke="#dc2626" stroke-width="2" stroke-linecap="round" />
         <circle cx="104" cy="28" r="2" fill="#111827" />
+      </svg>`;
+    }
+
+    function DruhyPohybuCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="druhy-pohybu/card-druhy-pohybu.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
       </svg>`;
     }
 
@@ -2064,6 +2090,7 @@
       if (tileId === "graf") return html`<${GrafCardIllustration} />`;
       if (tileId === "rychlost") return html`<${RychlostCardIllustration} />`;
       if (tileId === "auto_jizda") return html`<${AutoJizdaCardIllustration} />`;
+      if (tileId === "druhy_pohybu") return html`<${DruhyPohybuCardIllustration} />`;
       if (tileId === "stlacovani_latek") return html`<${StlacovaniLatekCardIllustration} />`;
       if (tileId === "hustota") return html`<${HustotaCardIllustration} />`;
       if (tileId === "teplota") return html`<${TeplotaCardIllustration} />`;
@@ -2287,6 +2314,14 @@
           }
           return;
         }
+        if (simId === "druhy_pohybu") {
+          try {
+            window.location.replace(new URL("druhy-pohybu/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("druhy-pohybu/");
+          }
+          return;
+        }
         if (simId === "stlacovani_latek") {
           try {
             window.location.replace(new URL("stlacovani-latek/", window.location.href).href);
@@ -2485,6 +2520,13 @@
         `;
       }
       if (simId === "auto_jizda") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "druhy_pohybu") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

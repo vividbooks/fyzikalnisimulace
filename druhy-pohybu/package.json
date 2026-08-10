@@ -1,0 +1,13 @@
+{
+  "name": "druhy-pohybu",
+  "version": "1.0.0",
+  "description": "Interaktivní simulace druhů pohybu — kuličky s různým charakterem pohybu",
+  "license": "MIT",
+  "scripts": {
+    "start": "npx --yes serve . -l 3460",
+    "dev": "npm start"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
