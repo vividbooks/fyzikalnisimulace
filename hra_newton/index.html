@@ -4066,6 +4066,14 @@
   function setPlayMode(mode) {
     if (playMode === mode && appMode === 'playing') return;
     playMode = mode;
+    won = false;
+    gameState = 'playing';
+    explosion = null;
+    bojEnemyFx = null;
+    boj1v1Announcement = null;
+    bojCountdownSecondsLeft = 0;
+    document.getElementById('winOverlay').classList.remove('show');
+    clearWinCelebration();
     setMobilePhase('setup');
     if (appMode === 'editing') appMode = 'playing';
     frictionMode = 'off';
@@ -4618,6 +4626,13 @@
     keys.clear();
     pointerDir = null;
     if (appMode === 'editing') appMode = 'playing';
+    won = false;
+    gameState = 'playing';
+    explosion = null;
+    bojEnemyFx = null;
+    boj1v1Announcement = null;
+    bojCountdownSecondsLeft = 0;
+    clearBojProjectiles();
     document.getElementById('winOverlay').classList.remove('show');
     clearWinCelebration();
     hideRaceNewRecordForm();
@@ -5144,6 +5159,8 @@
   function update(dt) {
     updateWinCelebration(dt);
     if (appMode === 'editing') return;
+    // V menu (setup) bitva/simulace neběží — jinak AI sestřelí hráče ještě před „Nová hra“.
+    if (mobilePhase !== 'playing') return;
     if (gameState === 'exploding') {
       updateExplosion(dt);
       return;
@@ -7192,7 +7209,7 @@
       syncHtmlControls();
     });
     uiEls.bojTrainingCountRange.addEventListener('change', () => {
-      if (isBojTraining() && playMode === 'boj') newGame();
+      if (isBojTraining() && playMode === 'boj' && mobilePhase === 'playing') newGame();
     });
   }
   if (uiEls.boj1v1WinsRange) {
@@ -7204,7 +7221,7 @@
       syncHtmlControls();
     });
     uiEls.boj1v1WinsRange.addEventListener('change', () => {
-      if (isBoj1v1() && playMode === 'boj') newGame();
+      if (isBoj1v1() && playMode === 'boj' && mobilePhase === 'playing') newGame();
     });
   }
   if (uiEls.bojMassRange) {
