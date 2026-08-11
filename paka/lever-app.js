@@ -233,6 +233,23 @@
 
     const CONFETTI_COLORS = ["#22c55e", "#16a34a", "#4ade80", "#15803d", "#86efac"];
 
+    function prefersTabletNoKeyboard() {
+      try {
+        if (window.matchMedia("(pointer: coarse)").matches) return true;
+        if (
+          navigator.maxTouchPoints > 0 &&
+          window.matchMedia("(hover: none)").matches
+        ) {
+          return true;
+        }
+      } catch (_) {
+        /* ignore */
+      }
+      return false;
+    }
+
+    const QUIZ_SUPPRESS_KEYBOARD = prefersTabletNoKeyboard();
+
     function ConfettiBurst({ burstKey }) {
       const particles = useMemo(() => {
         if (burstKey <= 0) return [];
@@ -1154,6 +1171,70 @@
         confettiFiredRef.current = false;
       }
 
+      function stepQuizAnswer(kind, delta) {
+        const isCount = kind === "count";
+        const current = isCount ? quizAnswerCount : quizAnswerDistance;
+        const parsed = Number.parseInt(current, 10);
+        const base = Number.isFinite(parsed) ? parsed : 0;
+        const next = Math.min(
+          QUIZ_ANSWER_MAX,
+          Math.max(1, base + delta),
+        );
+        if (isCount) setQuizAnswerCount(String(next));
+        else setQuizAnswerDistance(String(next));
+        setQuizBoxState(null);
+      }
+
+      function QuizStepInput({ kind, value, ariaLabel }) {
+        const parsed = Number.parseInt(value, 10);
+        const current = Number.isFinite(parsed) ? parsed : null;
+        const wrapClass = quizInputClass("quiz-step-input");
+        return html`
+          <div class=${wrapClass}>
+            <input
+              type="text"
+              class="quiz-input"
+              inputmode=${QUIZ_SUPPRESS_KEYBOARD ? "none" : "numeric"}
+              readOnly=${QUIZ_SUPPRESS_KEYBOARD}
+              autocomplete="off"
+              enterkeyhint="done"
+              aria-label=${ariaLabel}
+              value=${value}
+              onFocus=${(e) => {
+                if (QUIZ_SUPPRESS_KEYBOARD) e.target.blur();
+              }}
+              onInput=${(e) => {
+                if (QUIZ_SUPPRESS_KEYBOARD) return;
+                const raw = e.target.value.replace(/[^\d]/g, "");
+                if (kind === "count") setQuizAnswerCount(raw);
+                else setQuizAnswerDistance(raw);
+                setQuizBoxState(null);
+              }}
+            />
+            <span class="quiz-step-spin">
+              <button
+                type="button"
+                class="quiz-step-btn"
+                aria-label=${`Zvětšit ${ariaLabel}`}
+                disabled=${current != null && current >= QUIZ_ANSWER_MAX}
+                onClick=${() => stepQuizAnswer(kind, 1)}
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                class="quiz-step-btn"
+                aria-label=${`Zmenšit ${ariaLabel}`}
+                disabled=${current != null && current <= 1}
+                onClick=${() => stepQuizAnswer(kind, -1)}
+              >
+                ▼
+              </button>
+            </span>
+          </div>
+        `;
+      }
+
       function applyQuizFixedSetup(task) {
         dragRef.current = null;
         beamPickupClientRef.current = null;
@@ -1617,17 +1698,10 @@
                                 >
                                   ${currentQuizTask.givenCount}
                                 </div>`
-                              : html`<input
-                                  type="number"
-                                  class=${quizInputClass("quiz-input")}
-                                  min="1"
-                                  max=${QUIZ_ANSWER_MAX}
-                                  inputmode="numeric"
+                              : html`<${QuizStepInput}
+                                  kind="count"
                                   value=${quizAnswerCount}
-                                  onInput=${(e) => {
-                                    setQuizAnswerCount(e.target.value);
-                                    setQuizBoxState(null);
-                                  }}
+                                  ariaLabel="Počet závaží"
                                 />`}
                           </div>
                           <label class="quiz-field">
@@ -1641,17 +1715,10 @@
                                 >
                                   ${currentQuizTask.givenDistance}
                                 </div>`
-                              : html`<input
-                                  type="number"
-                                  class=${quizInputClass("quiz-input")}
-                                  min="1"
-                                  max=${QUIZ_ANSWER_MAX}
-                                  inputmode="numeric"
+                              : html`<${QuizStepInput}
+                                  kind="distance"
                                   value=${quizAnswerDistance}
-                                  onInput=${(e) => {
-                                    setQuizAnswerDistance(e.target.value);
-                                    setQuizBoxState(null);
-                                  }}
+                                  ariaLabel="Vzdálenost v dílcích"
                                 />`}
                           </label>
                           <button
