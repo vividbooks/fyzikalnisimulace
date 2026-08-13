@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Kladkostroj</title>
+    <style>
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      :root {
+        --panel-w: min(240px, max(220px, 22vw), calc(100vw - 16px));
+        --bg: #f4f5f8;
+        --panel-bg: #ffffff;
+        --text: #171923;
+        --muted: #6b7280;
+        --accent: #3d5a9a;
+        --border: #e8eaef;
+        --area-muted: #eceff5;
+        --readout-bg: #ffffff;
+        --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        --pulley-scale: 0.9;
+        --stock-tray-scale: 1;
+        --pulley-fixed-max: 125px;
+        --pulley-free-max: 116px;
+        --weight-max: 78px;
+        --rope-stroke-width: 5.4px;
+        --rope-stroke-width-draft: 4.5px;
+      }
+
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-app);
+      }
+
+      button {
+        font-family: inherit;
+      }
+
+      .app-root {
+        position: relative;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        padding: 8px;
+        padding-left: calc(8px + var(--panel-w) + 8px);
+        background: var(--bg);
+        overflow: hidden;
+      }
+
+      .left-panel {
+        position: fixed;
+        inset: 8px auto 8px 8px;
+        z-index: 100;
+        width: var(--panel-w);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      .panel-copy {
+        display: grid;
+        gap: 12px;
+        padding: 14px 12px 0;
+        flex-shrink: 0;
+      }
+
+      .hub-back-to-sims {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        padding: 9px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--area-muted);
+        color: var(--text);
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1;
+        text-decoration: none;
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+      }
+
+      .hub-back-to-sims:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--readout-bg);
+      }
+
+      .panel-title {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .panel-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .panel-actions--tools {
+        grid-template-columns: 1fr 1fr 1fr auto;
+      }
+
+      .panel-tools {
+        display: grid;
+        gap: 8px;
+      }
+
+      .panel-actions--tools-primary {
+        grid-template-columns: auto 1fr 1fr;
+      }
+
+      .panel-actions--tools-meta {
+        grid-template-columns: auto 1fr 1fr;
+      }
+
+      .panel-actions--sim {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .action-btn {
+        appearance: none;
+        min-height: 40px;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--area-muted);
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+      }
+
+      .action-btn--icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        min-width: 40px;
+        padding: 8px;
+      }
+
+      .action-btn:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--readout-bg);
+      }
+
+      .action-btn.is-active {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .action-btn.is-active:hover:not(:disabled) {
+        border-color: var(--accent);
+        background: #334e86;
+        color: #fff;
+      }
+
+      .action-btn.is-run.is-active {
+        border-color: #16a34a;
+        background: #16a34a;
+        color: #fff;
+      }
+
+      .action-btn.is-run.is-active:hover:not(:disabled) {
+        border-color: #15803d;
+        background: #15803d;
+        color: #fff;
+      }
+
+      /* Přepínač ve stavu „Spustit“ — jemné zelené podbarvení */
+      #tool-run:not(.is-run):not(:disabled) {
+        border-color: #86efac;
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      #tool-run:not(.is-run):hover:not(:disabled) {
+        border-color: #4ade80;
+        background: #bbf7d0;
+        color: #14532d;
+      }
+
+      /* Reset — červené podbarvení */
+      #tool-reset:not(:disabled) {
+        border-color: #fca5a5;
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      #tool-reset:hover:not(:disabled) {
+        border-color: #f87171;
+        background: #fecaca;
+        color: #991b1b;
+      }
+
+      #tool-reset:disabled {
+        opacity: 1;
+        border-color: #e8b4b4;
+        background: #f3d6d6;
+        color: #b07070;
+        cursor: not-allowed;
+      }
+
+      .action-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .action-btn__icon {
+        display: block;
+        width: 22px;
+        height: 22px;
+        color: currentColor;
+      }
+
+      .action-btn__icon img,
+      .action-btn__icon svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .stock-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 18px;
+        padding: 12px;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .stock-scaler {
+        flex: 0 0 auto;
+        min-height: 0;
+        width: 100%;
+        overflow: visible;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+
+      .stock-tray {
+        display: grid;
+        gap: 10px;
+        padding: 10px;
+        border: 1px dashed var(--border);
+        border-radius: 16px;
+        background: var(--area-muted);
+        min-height: 120px;
+        align-content: start;
+        width: 100%;
+        transform: scale(var(--stock-tray-scale, 1));
+        transform-origin: top center;
+        will-change: transform;
+      }
+
+      .stock-tray.is-drop-target {
+        border-color: #58a1ff;
+        background: #eef5ff;
+      }
+
+      .panel-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .stock-slot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 88px;
+        padding: 8px 8px 10px;
+        border-radius: 12px;
+        background: var(--panel-bg);
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+
+      .stock-slot__label {
+        flex: 0 0 100%;
+        text-align: center;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .stock-slot--weights {
+        min-height: 96px;
+      }
+
+      .workspace {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        border: 2px solid #000000;
+        border-radius: 22px;
+        background: #ffffff;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      #stage {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 20px;
+        background: #ffffff;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        overflow: hidden;
+      }
+
+      .app-root[data-tool="pencil"] #stage,
+      .app-root[data-tool="freehand"] #stage {
+        cursor: crosshair;
+      }
+
+      .app-root[data-tool="freehand"] .workspace,
+      .app-root[data-tool="freehand"] .stock-section,
+      .app-root[data-tool="freehand"] .workspace .pulley,
+      .app-root[data-tool="freehand"] .workspace .weight,
+      .app-root[data-tool="freehand"] .workspace .winch,
+      .app-root[data-tool="freehand"] .stock-section .pulley,
+      .app-root[data-tool="freehand"] .stock-section .weight,
+      .app-root[data-tool="freehand"] .stock-section .winch,
+      .app-root[data-tool="freehand"] #rope-layer,
+      .app-root[data-tool="freehand"] #rope-layer .rope-end-handle,
+      .app-root[data-tool="freehand"] #rope-layer .rope-path,
+      .app-root[data-tool="freehand"] .pulley:active,
+      .app-root[data-tool="freehand"] .pulley.is-dragging,
+      .app-root[data-tool="freehand"] .weight:active,
+      .app-root[data-tool="freehand"] .weight.is-dragging,
+      .app-root[data-tool="freehand"] .winch:active,
+      .app-root[data-tool="freehand"] .winch.is-dragging,
+      .app-root[data-tool="freehand"] .rope-end-handle.is-dragging {
+        cursor: crosshair;
+      }
+
+      .app-root[data-tool="freehand"] .freehand-confirm,
+      .app-root[data-tool="freehand"] .freehand-confirm .action-btn {
+        cursor: pointer;
+      }
+
+      .app-root[data-tool="run"] .stock-section {
+        opacity: 0.45;
+        filter: grayscale(0.35);
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .app-root[data-tool="erase"] #stage {
+        cursor: pointer;
+        touch-action: none;
+      }
+
+      .app-root[data-tool="pencil"] .pulley:not(.is-stock-template),
+      .app-root[data-tool="freehand"] .pulley:not(.is-stock-template) {
+        pointer-events: none;
+      }
+
+      .app-root[data-tool="erase"] .pulley,
+      .app-root[data-tool="erase"] .weight {
+        cursor: pointer;
+      }
+
+      .app-root[data-tool="erase"] .pulley.is-stock-template,
+      .app-root[data-tool="erase"] .weight.is-stock-template {
+        cursor: grab;
+        pointer-events: auto;
+      }
+
+      .pulley {
+        position: absolute;
+        z-index: 2;
+        cursor: grab;
+        touch-action: none;
+        line-height: 0;
+      }
+
+      .pulley.is-selected {
+        z-index: 4;
+      }
+
+      .pulley-resize-handle {
+        position: absolute;
+        z-index: 20;
+        width: 28px;
+        height: 28px;
+        margin-left: -14px;
+        margin-top: -14px;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        background: #ffffff;
+        color: var(--accent);
+        box-shadow: 0 1px 6px rgba(15, 23, 42, 0.16);
+        cursor: ew-resize;
+        touch-action: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 0;
+      }
+
+      .pulley-resize-handle[hidden] {
+        display: none !important;
+      }
+
+      .pulley-resize-handle svg {
+        display: block;
+        width: 14px;
+        height: 14px;
+        pointer-events: none;
+      }
+
+      .pulley-resize-handle.is-dragging,
+      .pulley-resize-handle:hover {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .pulley:active,
+      .pulley.is-dragging {
+        cursor: grabbing;
+        z-index: 10;
+      }
+
+      .pulley svg {
+        display: block;
+        pointer-events: none;
+        max-width: none;
+        height: auto;
+      }
+
+      .pulley--fixed {
+        transform-origin: 50% 0%;
+        will-change: transform;
+      }
+
+      .pulley--fixed svg {
+        width: calc(var(--pulley-fixed-max) * var(--pulley-scale));
+      }
+
+      .pulley--free {
+        transform: rotate(180deg);
+        transform-origin: 50% 50%;
+      }
+
+      .pulley--free svg {
+        width: calc(var(--pulley-free-max) * var(--pulley-scale));
+      }
+
+      .pulley.is-docked,
+      .pulley.is-stock-template,
+      .weight.is-docked,
+      .weight.is-stock-template {
+        position: relative;
+        left: auto !important;
+        top: auto !important;
+        z-index: 1;
+      }
+
+      .pulley.is-docked.pulley--fixed,
+      .pulley.is-stock-template.pulley--fixed {
+        transform: none;
+      }
+
+      .pulley.is-docked.pulley--fixed svg,
+      .pulley.is-stock-template.pulley--fixed svg {
+        width: 48px;
+      }
+
+      .pulley.is-docked.pulley--free,
+      .pulley.is-stock-template.pulley--free {
+        transform: rotate(180deg);
+        transform-origin: 50% 50%;
+      }
+
+      .pulley.is-docked.pulley--free svg,
+      .pulley.is-stock-template.pulley--free svg {
+        width: 40px;
+      }
+
+      .weight {
+        position: absolute;
+        z-index: 3;
+        cursor: grab;
+        touch-action: none;
+        line-height: 0;
+      }
+
+      .weight:active,
+      .weight.is-dragging {
+        cursor: grabbing;
+        z-index: 11;
+      }
+
+      .weight svg {
+        display: block;
+        pointer-events: none;
+        width: calc(var(--weight-max) * var(--pulley-scale));
+        height: auto;
+      }
+
+      .weight-label {
+        position: absolute;
+        left: 50%;
+        top: 68%;
+        transform: translate(-50%, -50%);
+        font-size: calc(11px * var(--pulley-scale, 1));
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.02em;
+        pointer-events: none;
+        line-height: 1;
+        user-select: none;
+        white-space: nowrap;
+      }
+
+      .weight.is-docked .weight-label,
+      .weight.is-stock-template .weight-label {
+        font-size: 8px;
+      }
+
+      .weight.is-docked svg,
+      .weight.is-stock-template svg {
+        width: 48px;
+      }
+
+      .winch {
+        position: absolute;
+        z-index: 6;
+        cursor: grab;
+        touch-action: none;
+        line-height: 0;
+      }
+
+      .winch:active,
+      .winch.is-dragging {
+        cursor: grabbing;
+        z-index: 12;
+      }
+
+      .winch svg {
+        display: block;
+        pointer-events: none;
+        width: 110px;
+        height: auto;
+      }
+
+      .winch.is-docked,
+      .winch.is-stock-template {
+        position: relative;
+        left: auto !important;
+        top: auto !important;
+        z-index: 1;
+      }
+
+      .winch.is-docked svg,
+      .winch.is-stock-template svg {
+        width: 72px;
+      }
+
+      .winch.is-snapping {
+        outline: 2px dashed #58a1ff;
+        outline-offset: 2px;
+        border-radius: 8px;
+      }
+
+      .winch-led {
+        fill: #5a5a5a;
+        stroke: #1d1d1b;
+        stroke-width: 1.4;
+        transition: fill 0.18s ease, filter 0.18s ease;
+      }
+
+      .winch.is-snapped .winch-led {
+        fill: #22c55e;
+        filter: drop-shadow(0 0 5px #4ade80);
+      }
+
+      .winch-light {
+        fill: none;
+        stroke: #ffffff;
+        transition: stroke 0.15s ease;
+      }
+
+      .winch.is-overload .winch-led {
+        fill: #ef4444;
+        filter: drop-shadow(0 0 5px #f87171);
+        animation: winch-led-overload 0.75s ease-in-out infinite;
+      }
+
+      @keyframes winch-led-overload {
+        0%,
+        100% {
+          fill: #ef4444;
+          opacity: 1;
+        }
+        50% {
+          fill: #ef4444;
+          opacity: 0.2;
+        }
+      }
+
+      .winch.is-winding .winch-light {
+        stroke: #22c55e;
+      }
+
+      .winch.is-overload .winch-light {
+        transition: none;
+        animation: winch-overload-blink 0.75s ease-in-out infinite;
+      }
+
+      @keyframes winch-overload-blink {
+        0%,
+        100% {
+          stroke: #ef4444;
+          opacity: 1;
+        }
+        50% {
+          stroke: #ef4444;
+          opacity: 0.15;
+        }
+      }
+
+      .winch-force-text {
+        fill: #4a43e8;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .app-root:not([data-tool="run"]) .winch-force-text {
+        visibility: hidden !important;
+      }
+
+      .winch-force-text.is-at-max,
+      .winch-force-text.is-overloaded {
+        fill: #dc2626;
+      }
+
+      .winch.is-overload .winch-force-text {
+        fill: #dc2626;
+        animation: winch-force-overload-blink 0.75s ease-in-out infinite;
+      }
+
+      @keyframes winch-force-overload-blink {
+        0%,
+        100% {
+          fill: #dc2626;
+          opacity: 1;
+        }
+        50% {
+          fill: #dc2626;
+          opacity: 0.15;
+        }
+      }
+
+      .winch.is-stock-template .winch-force-text,
+      .winch.is-docked .winch-force-text {
+        display: none;
+      }
+
+      .winch-overload-msg {
+        position: absolute;
+        inset: 0;
+        z-index: 14;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        pointer-events: none;
+        font-weight: 700;
+        font-size: clamp(1rem, 2.8vw, 1.35rem);
+        letter-spacing: -0.02em;
+        text-align: center;
+        color: #dc2626;
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .winch-overload-msg.is-visible {
+        visibility: visible;
+        animation: winch-overload-msg-blink 0.75s ease-in-out infinite;
+      }
+
+      @keyframes winch-overload-msg-blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.18;
+        }
+      }
+
+      .app-root[data-tool="pencil"] .winch:not(.is-stock-template),
+      .app-root[data-tool="freehand"] .winch:not(.is-stock-template) {
+        pointer-events: none;
+      }
+
+      .app-root[data-tool="erase"] .winch {
+        cursor: pointer;
+      }
+
+      .app-root[data-tool="erase"] .winch.is-stock-template {
+        cursor: grab;
+        pointer-events: auto;
+      }
+
+      .app-root[data-tool="run"] .winch {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .force-arrow.is-winch .force-arrow-shaft,
+      .force-arrow.is-winch .force-arrow-head {
+        stroke: #7c3aed;
+        fill: none;
+      }
+
+      .weight.is-snapping {
+        filter: drop-shadow(0 0 0 #58a1ff);
+        outline: 2px dashed #58a1ff;
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      .app-root[data-tool="pencil"] .weight:not(.is-stock-template),
+      .app-root[data-tool="freehand"] .weight:not(.is-stock-template) {
+        pointer-events: none;
+      }
+
+      .app-root[data-tool="run"] .workspace {
+        overflow: visible;
+      }
+
+      .app-root[data-tool="run"] #stage {
+        overflow: visible;
+      }
+
+      .app-root[data-tool="run"] .pulley,
+      .app-root[data-tool="run"] .weight,
+      .app-root[data-tool="run"] #rope-layer {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      #rope-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        pointer-events: none;
+      }
+
+      .app-root[data-tool="pencil"] #rope-layer,
+      .app-root[data-tool="freehand"] #rope-layer {
+        pointer-events: auto;
+        touch-action: none;
+      }
+
+      .app-root[data-tool="erase"] #rope-layer {
+        /* nechat none — jinak SVG překryje celou scénu a guma nezasáhne kladky/závaží */
+        pointer-events: none;
+        touch-action: none;
+      }
+
+      .app-root[data-tool="erase"] .rope-path {
+        pointer-events: stroke;
+        cursor: pointer;
+      }
+
+      .app-root[data-tool="erase"] .rope-end-handle {
+        display: none;
+      }
+
+      .rope-path {
+        fill: none;
+        stroke: #1d1d1b;
+        stroke-width: var(--rope-stroke-width);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .rope-path.is-draft {
+        stroke: #64748b;
+        stroke-width: var(--rope-stroke-width-draft);
+        opacity: 0.8;
+      }
+
+      .rope-path.is-draft.is-snapping {
+        stroke: #0f172a;
+        opacity: 1;
+      }
+
+      .rope-path.is-freehand-draft {
+        stroke: #475569;
+        stroke-width: var(--rope-stroke-width-draft);
+        opacity: 0.9;
+        stroke-dasharray: none;
+      }
+
+      .rope-path.is-freehand-pending {
+        stroke: #0f172a;
+        opacity: 1;
+      }
+
+      .freehand-confirm {
+        position: absolute;
+        left: 50%;
+        bottom: 16px;
+        z-index: 40;
+        display: flex;
+        gap: 8px;
+        transform: translateX(-50%);
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+      }
+
+      .freehand-confirm[hidden] {
+        display: none;
+      }
+
+      .freehand-confirm .action-btn {
+        min-width: 96px;
+      }
+
+      .freehand-confirm .action-btn--ok {
+        border-color: #16a34a;
+        background: #16a34a;
+        color: #fff;
+      }
+
+      .freehand-confirm .action-btn--ok:hover:not(:disabled) {
+        border-color: #15803d;
+        background: #15803d;
+        color: #fff;
+      }
+
+      .app-root[data-tool="move"] #rope-layer .rope-end-handle {
+        pointer-events: auto;
+        touch-action: none;
+      }
+
+      .app-root[data-tool="pencil"] #rope-layer .rope-end-handle,
+      .app-root[data-tool="freehand"] #rope-layer .rope-end-handle {
+        pointer-events: none;
+      }
+
+      .app-root[data-tool="freehand"].is-freehand-pending
+        #rope-layer
+        .rope-end-handle.is-pencil-hint,
+      .app-root[data-tool="freehand"].is-freehand-pending
+        #rope-layer
+        .rope-end-handle.is-freehand-pending-end {
+        pointer-events: auto;
+        cursor: crosshair;
+      }
+
+      .rope-end-handle.is-freehand-pending-end {
+        fill: rgba(239, 68, 68, 0.45);
+        stroke: #dc2626;
+        stroke-width: 2.5;
+      }
+
+      .rope-end-handle {
+        fill: rgba(88, 161, 255, 0.22);
+        stroke: #58a1ff;
+        stroke-width: 2;
+        cursor: grab;
+        pointer-events: none;
+        r: calc(var(--end-handle-r, 24px));
+      }
+
+      .rope-end-handle.is-pencil-hint {
+        fill: rgba(34, 197, 94, 0.38);
+        stroke: #16a34a;
+        stroke-width: 2.5;
+        animation: rope-end-pulse 1.6s ease-in-out infinite;
+      }
+
+      .app-root[data-tool="freehand"] .rope-end-handle.is-pencil-hint {
+        fill: rgba(239, 68, 68, 0.38);
+        stroke: #dc2626;
+        animation: rope-end-pulse-freehand 1.6s ease-in-out infinite;
+      }
+
+      @keyframes rope-end-pulse {
+        0%,
+        100% {
+          fill: rgba(34, 197, 94, 0.28);
+          stroke-opacity: 0.85;
+        }
+        50% {
+          fill: rgba(34, 197, 94, 0.5);
+          stroke-opacity: 1;
+        }
+      }
+
+      @keyframes rope-end-pulse-freehand {
+        0%,
+        100% {
+          fill: rgba(239, 68, 68, 0.28);
+          stroke-opacity: 0.85;
+        }
+        50% {
+          fill: rgba(239, 68, 68, 0.5);
+          stroke-opacity: 1;
+        }
+      }
+
+      .rope-end-handle.is-dragging {
+        cursor: grabbing;
+        fill: rgba(88, 161, 255, 0.42);
+      }
+
+      .rope-end-handle.is-snapping {
+        fill: rgba(15, 23, 42, 0.18);
+        stroke: #0f172a;
+      }
+
+      .rope-snap {
+        fill: none;
+        stroke: #58a1ff;
+        stroke-width: 2;
+        stroke-dasharray: 4 4;
+        pointer-events: none;
+      }
+
+      #force-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 15;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        pointer-events: none;
+      }
+
+      /* Režim Síly — scéna ztlumená, šipky sil plně viditelné */
+      .app-root.is-show-forces #stage > *:not(#force-overlay) {
+        opacity: 0.3;
+      }
+
+      .app-root.is-show-forces #force-overlay {
+        opacity: 1;
+      }
+
+      .force-arrow {
+        pointer-events: none;
+      }
+
+      .force-arrow-shaft {
+        fill: none;
+        stroke-width: 4.5;
+        stroke-linecap: round;
+      }
+
+      .force-arrow-head {
+        fill: none;
+        stroke-width: 4.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .force-arrow.is-gravity .force-arrow-shaft,
+      .force-arrow.is-gravity .force-arrow-head {
+        stroke: #ea580c;
+        fill: none;
+      }
+
+      .force-arrow.is-tension .force-arrow-shaft,
+      .force-arrow.is-tension .force-arrow-head {
+        stroke: #db2777;
+        fill: none;
+      }
+
+      .force-arrow.is-net .force-arrow-shaft,
+      .force-arrow.is-net .force-arrow-head {
+        stroke: #15803d;
+        fill: none;
+      }
+
+      .force-arrow-label {
+        font-size: 12px;
+        font-weight: 700;
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        paint-order: stroke fill;
+        stroke: #ffffff;
+        stroke-width: 3.5px;
+        stroke-linejoin: round;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .force-arrow.is-gravity .force-arrow-label {
+        fill: #c2410c;
+      }
+
+      .force-arrow.is-tension .force-arrow-label {
+        fill: #be185d;
+      }
+
+      .force-arrow.is-net .force-arrow-label {
+        fill: #166534;
+      }
+
+      .force-arrow.is-winch .force-arrow-label {
+        fill: #6d28d9;
+      }
+
+      .size-control {
+        display: grid;
+        gap: 8px;
+      }
+
+      .size-control.is-disabled .panel-label {
+        opacity: 0.45;
+      }
+
+      .size-control__row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      #pulley-size-slider {
+        width: 100%;
+        height: 6px;
+        min-width: 0;
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 999px;
+        background: var(--area-muted);
+        outline: none;
+      }
+
+      #pulley-size-slider:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      #pulley-size-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid var(--accent);
+        cursor: pointer;
+      }
+
+      #pulley-size-slider:disabled::-webkit-slider-thumb {
+        cursor: not-allowed;
+        border-color: var(--muted);
+      }
+
+      #pulley-size-slider::-moz-range-track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--area-muted);
+      }
+
+      #pulley-size-slider::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        background: #ffffff;
+        cursor: pointer;
+      }
+
+      #pulley-size-slider:disabled::-moz-range-thumb {
+        cursor: not-allowed;
+        border-color: var(--muted);
+      }
+
+      @media (max-width: 720px) {
+        :root {
+          --panel-w: min(200px, 42vw);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-root" data-tool="move">
+      <aside class="left-panel" aria-label="Ovládání simulace">
+        <div class="panel-copy">
+          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+          <h1 class="panel-title">Kladkostroj</h1>
+          <div class="panel-tools" aria-label="Nástroje">
+            <div class="panel-actions panel-actions--tools-meta">
+              <button
+                type="button"
+                id="tool-erase"
+                class="action-btn action-btn--icon"
+                aria-pressed="false"
+                aria-label="Guma"
+                title="Guma"
+              >
+                <span class="action-btn__icon" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"
+                    />
+                    <path d="M22 21H7" />
+                    <path d="m5 11 9 9" />
+                  </svg>
+                </span>
+              </button>
+              <button
+                type="button"
+                id="toggle-forces"
+                class="action-btn"
+                aria-pressed="false"
+              >
+                Síly
+              </button>
+              <button type="button" id="tool-undo" class="action-btn" disabled>
+                Zpět
+              </button>
+            </div>
+            <div class="panel-actions panel-actions--tools-primary">
+              <button
+                type="button"
+                id="tool-move"
+                class="action-btn action-btn--icon is-active"
+                aria-pressed="true"
+                aria-label="Posun"
+                title="Posun"
+              >
+                <span class="action-btn__icon" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2" />
+                    <path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2" />
+                    <path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8" />
+                    <path
+                      d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                type="button"
+                id="tool-rope"
+                class="action-btn"
+                aria-pressed="false"
+              >
+                Lano
+              </button>
+              <button
+                type="button"
+                id="tool-freehand"
+                class="action-btn"
+                aria-pressed="false"
+              >
+                Tužka
+              </button>
+            </div>
+            <div class="panel-actions panel-actions--sim" aria-label="Simulace">
+              <button
+                type="button"
+                id="tool-run"
+                class="action-btn"
+                aria-pressed="false"
+              >
+                Spustit
+              </button>
+              <button type="button" id="tool-reset" class="action-btn" disabled>
+                Reset
+              </button>
+            </div>
+          </div>
+          <div class="size-control">
+            <label class="panel-label" for="pulley-size-slider">Velikost</label>
+            <div class="size-control__row">
+              <input
+                type="range"
+                id="pulley-size-slider"
+                min="40"
+                max="100"
+                step="1"
+                value="90"
+                aria-valuemin="40"
+                aria-valuemax="100"
+                aria-valuenow="90"
+                aria-label="Velikost kladek, závaží a lana na ploše"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="stock-section">
+          <div class="stock-scaler" id="stock-scaler">
+          <div class="stock-tray" id="stock-tray" aria-label="Kladky a závaží">
+            <div class="stock-slot" id="stock-slot-fixed" data-slot="fixed">
+              <span class="stock-slot__label">Pevná kladka</span>
+              <div
+            class="pulley pulley--fixed is-stock-template"
+            id="stock-template-fixed"
+            data-kind="fixed"
+            role="img"
+            aria-label="Pevná kladka — vytáhnout"
+          >
+            <svg
+              width="276"
+              height="315"
+              viewBox="0 0 276 315"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.5898 176.404C10.5898 246.683 67.5605 303.654 137.839 303.654C208.118 303.654 265.089 246.683 265.089 176.404C265.089 106.125 208.118 49.1548 137.839 49.1548C67.5605 49.1548 10.5898 106.125 10.5898 176.404Z"
+                fill="#F03B50"
+              />
+              <path
+                d="M10.5898 176.404C10.5898 246.683 67.5605 303.654 137.839 303.654C208.118 303.654 265.089 246.683 265.089 176.404C265.089 106.125 208.118 49.1548 137.839 49.1548C67.5605 49.1548 10.5898 106.125 10.5898 176.404Z"
+                stroke="#F03B50"
+                stroke-width="21.18"
+                stroke-miterlimit="10"
+                stroke-linecap="round"
+              />
+              <path
+                d="M139.912 248.413V291.723"
+                stroke="white"
+                stroke-width="21.18"
+                stroke-miterlimit="10"
+                stroke-linecap="round"
+              />
+              <path
+                d="M96.3086 10.5898V174.982C96.3086 198.036 115 216.728 138.058 216.728C161.112 216.728 179.8 198.036 179.8 174.982V10.5898"
+                fill="#1D1D1B"
+              />
+              <path
+                d="M96.3086 10.5898V174.982C96.3086 198.036 115 216.728 138.058 216.728C161.112 216.728 179.8 198.036 179.8 174.982V10.5898"
+                stroke="#1D1D1B"
+                stroke-width="21.18"
+                stroke-miterlimit="10"
+                stroke-linecap="round"
+              />
+            </svg>
+          </div>
+            </div>
+            <div class="stock-slot" id="stock-slot-free" data-slot="free">
+              <span class="stock-slot__label">Volná kladka</span>
+              <div
+            class="pulley pulley--free is-stock-template"
+            id="stock-template-free"
+            data-kind="free"
+            role="img"
+            aria-label="Volná kladka — vytáhnout"
+          >
+            <svg
+              width="282"
+              height="434"
+              viewBox="0 0 282 434"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15.2495 292.717C15.2495 223.382 71.4595 167.177 140.789 167.177C210.124 167.177 266.329 223.382 266.329 292.717C266.329 362.052 210.124 418.257 140.789 418.257C71.4595 418.257 15.2495 362.052 15.2495 292.717Z"
+                fill="#58A1FF"
+              />
+              <path
+                d="M15.2495 292.717C15.2495 223.382 71.4595 167.177 140.789 167.177C210.124 167.177 266.329 223.382 266.329 292.717C266.329 362.052 210.124 418.257 140.789 418.257C71.4595 418.257 15.2495 362.052 15.2495 292.717Z"
+                stroke="#58A1FF"
+                stroke-width="30.4992"
+                stroke-miterlimit="10"
+                stroke-linecap="round"
+              />
+              <path
+                d="M35.6485 287.364C35.6485 298.344 44.5492 307.249 55.534 307.249C66.5137 307.249 75.4194 298.344 75.4194 287.364C75.4194 276.379 66.5137 267.479 55.534 267.479C44.5492 267.479 35.6485 276.379 35.6485 287.364Z"
+                fill="white"
+              />
+              <path
+                d="M143.314 103.887L143.29 117.3L142.995 281.162"
+                stroke="#1D1D1B"
+                stroke-width="30.4992"
+                stroke-miterlimit="10"
+                stroke-linecap="round"
+              />
+            </svg>
+          </div>
+            </div>
+            <div
+              class="stock-slot stock-slot--weights"
+              id="stock-slot-weights"
+              data-slot="weights"
+            >
+              <span class="stock-slot__label">Závaží</span>
+            </div>
+            <div
+              class="stock-slot stock-slot--winch"
+              id="stock-slot-winch"
+              data-slot="winch"
+            >
+              <span class="stock-slot__label">Naviják</span>
+            </div>
+          </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="workspace">
+        <div id="stage" aria-label="Plocha s kladkami">
+          <svg id="rope-layer" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        </div>
+        <div
+          id="freehand-confirm"
+          class="freehand-confirm"
+          hidden
+          role="group"
+          aria-label="Potvrzení lana z tužky"
+        >
+          <button type="button" id="freehand-confirm-ok" class="action-btn action-btn--ok">
+            Potvrdit
+          </button>
+          <button type="button" id="freehand-confirm-cancel" class="action-btn">
+            Zrušit
+          </button>
+        </div>
+        <div
+          id="winch-overload-msg"
+          class="winch-overload-msg"
+          hidden
+          aria-live="polite"
+        >
+          Příliš velká zátěž!
+        </div>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

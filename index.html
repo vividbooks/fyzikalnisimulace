@@ -1109,6 +1109,12 @@
             hash: "#/sim/paka",
             previewColor: "#dcf3ff",
           },
+          {
+            id: "kladkostroj",
+            title: "Kladkostroj",
+            hash: "#/sim/kladkostroj",
+            previewColor: "#ffe8ec",
+          },
         ],
       },
       {
@@ -1170,6 +1176,7 @@
     /** Kategorie přehledu odpovídající simulaci — Přehled vrátí na stejný panel (např. Vztlaková síla → Kapaliny a plyny). */
     const SIM_TO_HUB_CATEGORY = {
       paka: "sily",
+      kladkostroj: "sily",
       skladani_sil: "sily",
       silomer_2: "sily",
       tlak: "sily",
@@ -1223,6 +1230,25 @@
       >
         <image
           href="paka/card-lever.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function KladkostrojCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="kladkostroj/card-kladkostroj.svg"
           x="0"
           y="0"
           width="132"
@@ -2075,6 +2101,7 @@
 
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
+      if (tileId === "kladkostroj") return html`<${KladkostrojCardIllustration} />`;
       if (tileId === "skladani_sil") return html`<${SkladaniSilCardIllustration} />`;
       if (tileId === "silomer_2") return html`<${SilomerCardIllustration} />`;
       if (tileId === "tlak") return html`<${TlakCardIllustration} />`;
@@ -2231,6 +2258,14 @@
             window.location.replace(new URL("paka/", window.location.href).href);
           } catch (_) {
             window.location.replace("paka/");
+          }
+          return;
+        }
+        if (simId === "kladkostroj") {
+          try {
+            window.location.replace(new URL("kladkostroj/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("kladkostroj/");
           }
           return;
         }
@@ -2443,6 +2478,13 @@
         `;
       }
       if (simId === "paka") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "kladkostroj") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
