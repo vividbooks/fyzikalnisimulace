@@ -27,6 +27,24 @@
   const winchOverloadMsg = document.getElementById("winch-overload-msg");
   const stockTemplateFixed = document.getElementById("stock-template-fixed");
   const stockTemplateFree = document.getElementById("stock-template-free");
+  const modeMenu = document.getElementById("mode-menu");
+  const modeViewHome = document.getElementById("mode-view-home");
+  const modeViewPresets = document.getElementById("mode-view-presets");
+  const modeMenuBack = document.getElementById("mode-menu-back");
+  const modeHubBack = document.getElementById("mode-hub-back");
+  const modeChooseLab = document.getElementById("mode-choose-lab");
+  const modeChoosePresets = document.getElementById("mode-choose-presets");
+  const presetCards = document.getElementById("preset-cards");
+  const btnBackMenu = document.getElementById("btn-back-menu");
+  const panelModeTitle = document.getElementById("panel-mode-title");
+  const galleryPresetList = document.getElementById("gallery-preset-list");
+  const btnExportScene = document.getElementById("tool-export-scene");
+  const exportSceneRow = document.getElementById("export-scene-row");
+  /**
+   * Dev nástroj: kopírování scény z Laboratoře (pro předpřipravené kladkostroje).
+   * Obnovení: nastav na true.
+   */
+  const SHOW_SCENE_EXPORT = false;
 
   const EDGE_ROTATION = {
     top: 0,
@@ -8848,6 +8866,1214 @@
     );
   }
 
+  /** @type {"menu"|"lab"|"gallery"} */
+  let appMode = "menu";
+  /** @type {string | null} */
+  let activePresetId = null;
+
+  const PRESETS = [
+    { id: "pevna", title: "Pevná kladka" },
+    { id: "volna", title: "Volná kladka" },
+    { id: "kladkostroj1", title: "Kladkostroj 1" },
+    { id: "kladkostroj2", title: "Kladkostroj 2" },
+    { id: "kladkostroj3", title: "Kladkostroj 3" },
+    { id: "kladkostroj4", title: "Kladkostroj 4" },
+    { id: "kladkostroj5", title: "Kladkostroj 5" },
+    { id: "kladkostroj6", title: "Kladkostroj 6" },
+  ];
+
+  /** Scény uložené z Laboratoře (Uložit scénu) — načtou se přes restoreScene. */
+  const PRESET_EXPORTS = {
+    pevna: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 2,
+        weightSeq: 4,
+        winchSeq: 2,
+        globalStageScale: 0.9,
+        pulleys: [
+          {
+            id: "pulley-fixed-2",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "369.438px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 425.9375,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-4",
+            left: "440.039px",
+            top: "568.036px",
+            snap: { type: "rope", ropeIndex: 0, which: "end" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-2",
+            left: "245.516px",
+            top: "534.912px",
+            snap: { type: "rope", ropeIndex: 0, which: "start" },
+          },
+        ],
+        ropes: [
+          {
+            // Zjednodušeno z freehand tahu — zachován tvar přes wrapIds.
+            points: [
+              { x: 300.51556396484375, y: 546.404052734375 },
+              { x: 370.01, y: 63.89 },
+              { x: 481.8, y: 72.69 },
+              { x: 474.63526116071426, y: 580.5708772321428 },
+            ],
+            closed: false,
+            edgeSnap: { start: null, end: null },
+            wrapIds: ["pulley-fixed-2"],
+            d: "M300.52 546.40L370.01 63.89A56.18 56.18 0 0 1 481.80 72.69L474.64 580.57",
+          },
+        ],
+      },
+    },
+    volna: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 1,
+        weightSeq: 1,
+        winchSeq: 1,
+        globalStageScale: 0.9,
+        pulleys: [
+          {
+            id: "pulley-free-1",
+            kind: "free",
+            relativeScale: 1,
+            left: "334.617px",
+            top: "448.58px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-1",
+            left: "351.364px",
+            top: "558.249px",
+            snap: { type: "rod", pulleyId: "pulley-free-1" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-1",
+            left: "401.92px",
+            top: "0px",
+            snap: { type: "rope", ropeIndex: 0, which: "end" },
+          },
+        ],
+        ropes: [
+          {
+            points: [
+              { x: 323.30316162109375, y: 0 },
+              { x: 335.0770685640282, y: 506.48149314183416 },
+              { x: 438.703755746775, y: 506.5566299284423 },
+              { x: 456.919677734375, y: 0 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "edge",
+                edge: "top",
+                along: 323.30316162109375,
+              },
+              end: null,
+            },
+            wrapIds: ["pulley-free-1"],
+            d: "M323.30 0.00L334.79 502.07A52.12 52.12 0 0 0 438.98 502.74L456.92 0.00",
+          },
+        ],
+      },
+    },
+    kladkostroj1: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 4,
+        weightSeq: 6,
+        winchSeq: 3,
+        globalStageScale: 0.9,
+        pulleys: [
+          {
+            id: "pulley-fixed-3",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "281.984px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 338.484375,
+          },
+          {
+            id: "pulley-free-4",
+            kind: "free",
+            relativeScale: 1,
+            left: "423.377px",
+            top: "391.423px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-6",
+            left: "440.121px",
+            top: "501.093px",
+            snap: { type: "rod", pulleyId: "pulley-free-4" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-3",
+            left: "86.2969px",
+            top: "227.453px",
+            snap: { type: "rope", ropeIndex: 0, which: "start" },
+          },
+        ],
+        ropes: [
+          {
+            points: [
+              { x: 141.296875, y: 238.9453125 },
+              { x: 293.36931215504654, y: 37.997281234827724 },
+              { x: 394.18227458039627, y: 67.55326146972114 },
+              { x: 423.6892736178222, y: 447.7567238855782 },
+              { x: 527.7450499575804, y: 445.3875353744667 },
+              { x: 541.968505859375, y: 0 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: null,
+              end: {
+                type: "edge",
+                edge: "top",
+                along: 541.968505859375,
+              },
+            },
+            wrapIds: ["pulley-fixed-3", "pulley-free-4"],
+            d: "M141.30 238.95L293.37 38.00A56.18 56.18 0 0 1 394.18 67.55L423.69 447.76A52.12 52.12 0 0 0 527.75 445.39L541.97 0.00",
+          },
+        ],
+      },
+    },
+    kladkostroj2: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 6,
+        weightSeq: 7,
+        winchSeq: 4,
+        globalStageScale: 0.9,
+        pulleys: [
+          {
+            id: "pulley-fixed-5",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "368.398px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 424.8984375,
+          },
+          {
+            id: "pulley-free-6",
+            kind: "free",
+            relativeScale: 1,
+            left: "405.142px",
+            top: "414.206px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-7",
+            left: "421.887px",
+            top: "523.874px",
+            snap: { type: "rod", pulleyId: "pulley-free-6" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-4",
+            left: "52.7681px",
+            top: "367.678px",
+            snap: { type: "rope", ropeIndex: 0, which: "end" },
+          },
+        ],
+        ropes: [
+          {
+            points: [
+              { x: 424.58282470703125, y: 71.90038299560547 },
+              { x: 405.36117369011725, y: 463.9529512222259 },
+              { x: 509.3993371978471, y: 462.71641892903983 },
+              { x: 480.6161275263029, y: 67.81626630705085 },
+              { x: 380.65275299717644, y: 36.87810674849479 },
+              { x: 107.76806640625, y: 379.1700744628906 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-fixed-5",
+              },
+              end: null,
+            },
+            wrapIds: ["pulley-free-6", "pulley-fixed-5"],
+            d: "M424.58 71.90L405.36 463.95A52.12 52.12 0 1 0 509.40 462.72L480.62 67.82A56.18 56.18 0 0 0 380.65 36.88L107.77 379.17",
+          },
+        ],
+      },
+    },
+    kladkostroj3: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 3,
+        weightSeq: 1,
+        winchSeq: 1,
+        globalStageScale: 0.9,
+        pulleys: [
+          {
+            id: "pulley-fixed-1",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "260.008px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 316.5078125,
+          },
+          {
+            id: "pulley-free-2",
+            kind: "free",
+            relativeScale: 1,
+            left: "390.743px",
+            top: "287.5px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+          {
+            id: "pulley-free-3",
+            kind: "free",
+            relativeScale: 1,
+            left: "450.973px",
+            top: "467.485px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-1",
+            left: "467.715px",
+            top: "577.155px",
+            snap: { type: "rod", pulleyId: "pulley-free-3" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-1",
+            left: "59.1133px",
+            top: "475.652px",
+            snap: { type: "rope", ropeIndex: 0, which: "start" },
+          },
+        ],
+        ropes: [
+          {
+            points: [
+              { x: 114.11330000000001, y: 487.1445373134328 },
+              { x: 267.529895491081, y: 43.82207851765968 },
+              { x: 372.2438846708965, y: 68.07681834027059 },
+              { x: 391.0210488798048, y: 343.3413391805268 },
+              { x: 495.12024169399103, y: 341.18477510221305 },
+              { x: 504.22607421875, y: 0 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: null,
+              end: {
+                type: "edge",
+                edge: "top",
+                along: 504.22607421875,
+              },
+            },
+            wrapIds: ["pulley-fixed-1", "pulley-free-2"],
+            d: "M114.11 487.14L263.06 53.64A56.18 56.18 0 0 1 372.24 68.08L391.02 343.34A52.12 52.12 0 0 0 495.12 341.18L504.23 0.00",
+          },
+          {
+            points: [
+              { x: 443.0195007324219, y: 339.7942657470703 },
+              { x: 451.1788837038002, y: 522.1165755261844 },
+              { x: 552.9609044811461, y: 535.4342903848695 },
+              { x: 615.21875, y: 0 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-free-2",
+              },
+              end: {
+                type: "edge",
+                edge: "top",
+                along: 615.21875,
+              },
+            },
+            wrapIds: ["pulley-free-3"],
+            d: "M443.02 339.79L451.18 522.12A52.12 52.12 0 0 0 555.03 525.72L615.22 0.00",
+          },
+        ],
+      },
+    },
+    kladkostroj4: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 8,
+        weightSeq: 3,
+        winchSeq: 3,
+        globalStageScale: 1,
+        pulleys: [
+          {
+            id: "pulley-fixed-4",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "364.375px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 426.875,
+          },
+          {
+            id: "pulley-free-5",
+            kind: "free",
+            relativeScale: 0.6450719659978693,
+            left: "390.516px",
+            top: "175.724px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+          {
+            id: "pulley-free-6",
+            kind: "free",
+            relativeScale: 0.633258056640625,
+            left: "393.432px",
+            top: "351.704px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+          {
+            id: "pulley-free-8",
+            kind: "free",
+            relativeScale: 1,
+            left: "375.29px",
+            top: "463.193px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-3",
+            left: "393.894px",
+            top: "585.049px",
+            snap: { type: "rod", pulleyId: "pulley-free-8" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-3",
+            left: "81.8544px",
+            top: "410.308px",
+            snap: { type: "rope", ropeIndex: 0, which: "start" },
+          },
+        ],
+        ropes: [
+          {
+            // Zjednodušeno z freehand — body z vykreslené cesty + wrapIds.
+            points: [
+              { x: 136.85, y: 421.8 },
+              { x: 374.03, y: 46.54 },
+              { x: 489.23, y: 79.6 },
+              { x: 491.29, y: 521.03 },
+              { x: 375.53, y: 518.45 },
+              { x: 390.67, y: 211.37 },
+              { x: 465.33, y: 212.88 },
+              { x: 466.88, y: 388.18 },
+              { x: 394.26, y: 381.29 },
+              { x: 427.98, y: 213.21 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: null,
+              end: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-free-5",
+              },
+            },
+            wrapIds: [
+              "pulley-fixed-4",
+              "pulley-free-8",
+              "pulley-free-5",
+              "pulley-free-6",
+            ],
+            d: "M136.85 421.80L374.03 46.54A62.42 62.42 0 0 1 489.23 79.60L491.29 521.03A57.91 57.91 0 1 1 375.53 518.45L390.67 211.37A37.36 37.36 0 0 1 465.33 212.88L466.88 388.18A36.67 36.67 0 1 1 394.26 381.29L427.98 213.21",
+          },
+          {
+            points: [
+              { x: 426.8021240234375, y: 79.88931655883789 },
+              { x: 427.97784423828125, y: 213.2063446044922 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-fixed-4",
+              },
+              end: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-free-5",
+              },
+            },
+            wrapIds: [],
+            d: "M426.80 79.89 L427.98 213.21",
+          },
+          {
+            points: [
+              { x: 430.2112121582031, y: 388.5014953613281 },
+              { x: 433.3758544921875, y: 521.3034362792969 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-free-6",
+              },
+              end: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-free-8",
+              },
+            },
+            wrapIds: [],
+            d: "M430.21 388.50 L433.38 521.30",
+          },
+        ],
+      },
+    },
+    kladkostroj5: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 14,
+        weightSeq: 6,
+        winchSeq: 4,
+        globalStageScale: 0.87,
+        pulleys: [
+          {
+            id: "pulley-fixed-9",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "604.18px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 658.6796875,
+          },
+          {
+            id: "pulley-free-10",
+            kind: "free",
+            relativeScale: 1,
+            left: "725.289px",
+            top: "423.58px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+          {
+            id: "pulley-fixed-11",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "408.024px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 462.5244140625,
+          },
+          {
+            id: "pulley-fixed-12",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "199.393px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 253.8927001953125,
+          },
+          {
+            id: "pulley-free-13",
+            kind: "free",
+            relativeScale: 1,
+            left: "510.273px",
+            top: "426.639px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+          {
+            id: "pulley-free-14",
+            kind: "free",
+            relativeScale: 1,
+            left: "305.901px",
+            top: "425.285px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-4",
+            left: "322.082px",
+            top: "531.293px",
+            snap: { type: "rod", pulleyId: "pulley-free-14" },
+          },
+          {
+            id: "weight-5",
+            left: "526.45px",
+            top: "532.644px",
+            snap: { type: "rod", pulleyId: "pulley-free-13" },
+          },
+          {
+            id: "weight-6",
+            left: "741.473px",
+            top: "529.59px",
+            snap: { type: "rod", pulleyId: "pulley-free-10" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-4",
+            left: "38.012px",
+            top: "415.925px",
+            snap: { type: "rope", ropeIndex: 0, which: "end" },
+          },
+        ],
+        ropes: [
+          {
+            points: [
+              { x: 834.2578125, y: 0 },
+              { x: 826.1950749006587, y: 474.9905942467333 },
+              { x: 725.4652281663914, y: 475.70240041554825 },
+              { x: 712.7735029010897, y: 67.81380180635578 },
+              { x: 604.1907390037977, y: 70.43672513419095 },
+              { x: 611.1714445579828, y: 476.3238641743758 },
+              { x: 510.4233166168576, y: 476.4193891675848 },
+              { x: 516.6371672325809, y: 70.33375233109015 },
+              { x: 408.0267622964158, y: 69.34052878497067 },
+              { x: 406.81148156184116, y: 475.9892171043919 },
+              { x: 307.70489573058484, y: 488.64445115329926 },
+              { x: 201.1773413588153, y: 83.30699295116062 },
+              { x: 299.6904885536386, y: 98.39040312740264 },
+              { x: 93.01202392578125, y: 427.4173583984375 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "edge",
+                edge: "top",
+                along: 834.2578125,
+              },
+              end: null,
+            },
+            wrapIds: [
+              "pulley-free-10",
+              "pulley-fixed-9",
+              "pulley-free-13",
+              "pulley-fixed-11",
+              "pulley-free-14",
+              "pulley-fixed-12",
+            ],
+            d: "M834.26 0.00L826.20 474.99A50.38 50.38 0 0 1 725.47 475.70L712.77 67.81A54.31 54.31 0 0 0 604.19 70.44L611.17 476.32A50.38 50.38 0 1 1 510.42 476.42L516.64 70.33A54.31 54.31 0 1 0 408.03 69.34L406.81 475.99A50.38 50.38 0 1 1 306.05 475.60L308.01 69.77A54.31 54.31 0 0 0 201.56 54.33L93.01 427.42",
+          },
+        ],
+      },
+    },
+    kladkostroj6: {
+      version: 1,
+      stageWidth: 872,
+      stageHeight: 658,
+      scene: {
+        pulleySeq: 5,
+        weightSeq: 1,
+        winchSeq: 1,
+        globalStageScale: 0.9,
+        pulleys: [
+          {
+            id: "pulley-fixed-1",
+            kind: "fixed",
+            relativeScale: 1,
+            left: "193.391px",
+            top: "0px",
+            transform: "rotate(0deg)",
+            edge: "top",
+            along: 249.890625,
+          },
+          {
+            id: "pulley-free-2",
+            kind: "free",
+            relativeScale: 1,
+            left: "302.653px",
+            top: "177.4px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+          {
+            id: "pulley-free-3",
+            kind: "free",
+            relativeScale: 1,
+            left: "359.97px",
+            top: "332.362px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+          {
+            id: "pulley-free-5",
+            kind: "free",
+            relativeScale: 1,
+            left: "431.14px",
+            top: "477.357px",
+            transform: "",
+            edge: null,
+            along: null,
+          },
+        ],
+        weights: [
+          {
+            id: "weight-1",
+            left: "447.879px",
+            top: "587.022px",
+            snap: { type: "rod", pulleyId: "pulley-free-5" },
+          },
+        ],
+        winches: [
+          {
+            id: "winch-1",
+            left: "43.3516px",
+            top: "391.555px",
+            snap: { type: "rope", ropeIndex: 0, which: "start" },
+          },
+        ],
+        ropes: [
+          {
+            points: [
+              { x: 98.35159999999999, y: 403.0475373134328 },
+              { x: 195.48029302114736, y: 56.728949636746826 },
+              { x: 305.7470118549114, y: 72.95749676454089 },
+              { x: 302.81568444202395, y: 228.71984443536647 },
+              { x: 407.03370305100475, y: 230.78772785864788 },
+              { x: 411.8489990234375, y: 0 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: null,
+              end: {
+                type: "edge",
+                edge: "top",
+                along: 411.8489990234375,
+              },
+            },
+            wrapIds: ["pulley-fixed-1", "pulley-free-2"],
+            d: "M98.35 403.05L195.48 56.73A56.18 56.18 0 0 1 305.75 72.96L302.82 228.72A52.12 52.12 0 0 0 407.03 230.79L411.85 0.00",
+          },
+          {
+            points: [
+              { x: 354.9257507324219, y: 229.7005157470703 },
+              { x: 360.15577536588904, y: 386.4000259355155 },
+              { x: 464.2423100608109, y: 388.24070467334815 },
+              { x: 490.967529296875, y: 0 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-free-2",
+              },
+              end: {
+                type: "edge",
+                edge: "top",
+                along: 490.967529296875,
+              },
+            },
+            wrapIds: ["pulley-free-3"],
+            d: "M354.93 229.70L360.16 386.40A52.12 52.12 0 0 0 464.24 388.24L490.97 0.00",
+          },
+          {
+            points: [
+              { x: 412.2460632324219, y: 384.6614532470703 },
+              { x: 431.7152215614452, y: 536.2912159972542 },
+              { x: 535.2838288483074, y: 534.7073023731089 },
+              { x: 587.37646484375, y: 0 },
+            ],
+            closed: false,
+            edgeSnap: {
+              start: {
+                type: "pulleyCenter",
+                pulleyId: "pulley-free-3",
+              },
+              end: {
+                type: "edge",
+                edge: "top",
+                along: 587.37646484375,
+              },
+            },
+            wrapIds: ["pulley-free-5"],
+            d: "M412.25 384.66L431.72 536.29A52.12 52.12 0 0 0 535.28 534.71L587.38 0.00",
+          },
+        ],
+      },
+    },
+  };
+
+  function parseThumbPx(value) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function thumbPulleyGeom(p, globalScale) {
+    const s = (globalScale || 0.9) * (p.relativeScale || 1);
+    const meta = WHEEL[p.kind] || WHEEL.free;
+    const maxW = p.kind === "fixed" ? 125 : 116;
+    const dispW = maxW * s;
+    const left = parseThumbPx(p.left);
+    const top = parseThumbPx(p.top);
+    let cx;
+    let cy;
+    if (p.kind === "fixed" && p.edge === "top" && p.along != null) {
+      cx = p.along;
+      cy = (meta.cy / meta.vbW) * dispW;
+    } else {
+      cx = left + (meta.cx / meta.vbW) * dispW;
+      cy = top + (meta.cy / meta.vbW) * dispW;
+    }
+    return {
+      cx,
+      cy,
+      r: (meta.grooveR / meta.vbW) * dispW,
+      tipY:
+        p.kind === "free"
+          ? top + (FREE_ROD_TIP.y / 434) * ((434 / 282) * dispW)
+          : null,
+    };
+  }
+
+  /** Náhled scény ze JSON exportu — stejné souřadnice, zmenšené přes viewBox. */
+  function presetSchemaSvg(id) {
+    const payload = PRESET_EXPORTS[id];
+    if (!payload?.scene) return "";
+    const scene = payload.scene;
+    const stageW = payload.stageWidth || 872;
+    const stageH = payload.stageHeight || 658;
+    const g = scene.globalStageScale || 0.9;
+    const parts = [];
+    const bb = {
+      minX: Infinity,
+      minY: Infinity,
+      maxX: -Infinity,
+      maxY: -Infinity,
+    };
+    const include = (x, y, pad = 0) => {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      bb.minX = Math.min(bb.minX, x - pad);
+      bb.minY = Math.min(bb.minY, y - pad);
+      bb.maxX = Math.max(bb.maxX, x + pad);
+      bb.maxY = Math.max(bb.maxY, y + pad);
+    };
+    const stroke = Math.max(3.5, 5.4 * g);
+
+    for (const rope of scene.ropes || []) {
+      let d = (rope.d || "").trim();
+      if (!d && rope.points?.length) {
+        d = rope.points
+          .map(
+            (pt, i) =>
+              `${i === 0 ? "M" : "L"}${Number(pt.x).toFixed(2)} ${Number(
+                pt.y
+              ).toFixed(2)}`
+          )
+          .join("");
+      }
+      if (d) {
+        parts.push(
+          `<path d="${d}" fill="none" stroke="#1d1d1b" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"/>`
+        );
+      }
+      for (const pt of rope.points || []) include(pt.x, pt.y, 18);
+      for (const which of ["start", "end"]) {
+        const snap = rope.edgeSnap?.[which];
+        if (!snap || !(snap.type === "edge" || snap.edge)) continue;
+        let ax = snap.along;
+        let ay = 0;
+        if (snap.edge === "bottom") ay = stageH;
+        else if (snap.edge === "left") {
+          ax = 0;
+          ay = snap.along;
+        } else if (snap.edge === "right") {
+          ax = stageW;
+          ay = snap.along;
+        }
+        parts.push(
+          `<circle cx="${ax}" cy="${ay}" r="${Math.max(7, 9 * g)}" fill="#58A1FF" fill-opacity="0.4"/>`
+        );
+        include(ax, ay, 14);
+      }
+    }
+
+    for (const p of scene.pulleys || []) {
+      const geom = thumbPulleyGeom(p, g);
+      const fill = p.kind === "fixed" ? "#F03B50" : "#58A1FF";
+      if (p.kind === "free" && geom.tipY != null) {
+        parts.push(
+          `<line x1="${geom.cx}" y1="${geom.cy}" x2="${geom.cx}" y2="${geom.tipY}" stroke="#1d1d1b" stroke-width="${stroke}" stroke-linecap="round"/>`
+        );
+        include(geom.cx, geom.tipY, 10);
+      }
+      parts.push(
+        `<circle cx="${geom.cx}" cy="${geom.cy}" r="${geom.r}" fill="${fill}"/>`
+      );
+      include(geom.cx, geom.cy, geom.r + 6);
+    }
+
+    for (const w of scene.weights || []) {
+      const left = parseThumbPx(w.left);
+      const top = parseThumbPx(w.top);
+      const ww = 78 * g;
+      const wh = ww * (269 / 280);
+      const cx = left + ww * (138 / 280);
+      const y0 = top + wh * (59 / 269);
+      const y1 = top + wh;
+      parts.push(
+        `<circle cx="${cx}" cy="${top + wh * (50 / 269)}" r="${ww * (45 / 280)}" fill="none" stroke="#858585" stroke-width="${Math.max(2, 4 * g)}"/>` +
+          `<path d="M${left + ww * 0.05} ${y1} H${left + ww * 0.95} L${
+            left + ww * 0.82
+          } ${y0} H${left + ww * 0.18} Z" fill="#858585"/>`
+      );
+      include(left, top, 4);
+      include(left + ww, top + wh, 4);
+    }
+
+    for (const w of scene.winches || []) {
+      const left = parseThumbPx(w.left);
+      const top = parseThumbPx(w.top);
+      const bw = 110;
+      const bh = (132 / 134) * bw;
+      const cx = left + bw / 2;
+      const cy = top + bh * (50 / 132);
+      parts.push(
+        `<rect x="${left}" y="${top + bh * 0.36}" width="${bw}" height="${
+          bh * 0.62
+        }" rx="10" fill="#d9d9d9" stroke="#1d1d1b" stroke-width="1.5"/>` +
+          `<circle cx="${cx}" cy="${cy}" r="${bw * 0.37}" fill="#1d1d1b"/>` +
+          `<circle cx="${cx}" cy="${cy}" r="${bw * 0.16}" fill="#fff"/>`
+      );
+      include(left, top, 4);
+      include(left + bw, top + bh, 4);
+    }
+
+    if (!Number.isFinite(bb.minX)) {
+      bb.minX = 0;
+      bb.minY = 0;
+      bb.maxX = stageW;
+      bb.maxY = stageH;
+    }
+    const pad = 28;
+    const vx = Math.max(0, bb.minX - pad);
+    const vy = Math.max(0, bb.minY - pad);
+    const vw = Math.max(40, Math.min(stageW, bb.maxX + pad) - vx);
+    const vh = Math.max(40, Math.min(stageH, bb.maxY + pad) - vy);
+
+    return (
+      `<svg class="preset-card__schema" viewBox="${vx.toFixed(1)} ${vy.toFixed(
+        1
+      )} ${vw.toFixed(1)} ${vh.toFixed(
+        1
+      )}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">` +
+      parts.join("") +
+      `</svg>`
+    );
+  }
+
+  function scalePx(value, factor) {
+    if (value == null || value === "") return value;
+    const n = parseFloat(value);
+    if (Number.isNaN(n)) return value;
+    return `${n * factor}px`;
+  }
+
+  function scaleEdgeSnap(snap, sx, sy) {
+    if (!snap) return null;
+    const next = cloneJson(snap);
+    if (next.along != null && !Number.isNaN(next.along)) {
+      const edge = next.edge;
+      next.along =
+        edge === "left" || edge === "right" ? next.along * sy : next.along * sx;
+    }
+    return next;
+  }
+
+  /** Upraví exportovanou scénu na aktualní velikost plochy. */
+  function sceneFromExport(payload) {
+    if (!payload?.scene) return null;
+    const { width, height } = stageSize();
+    const srcW = payload.stageWidth || width;
+    const srcH = payload.stageHeight || height;
+    const sx = srcW > 0 ? width / srcW : 1;
+    const sy = srcH > 0 ? height / srcH : 1;
+    const scene = cloneJson(payload.scene);
+
+    for (const p of scene.pulleys || []) {
+      p.left = scalePx(p.left, sx);
+      p.top = scalePx(p.top, sy);
+      if (p.along != null && !Number.isNaN(p.along)) {
+        const edge = p.edge || "top";
+        p.along =
+          edge === "left" || edge === "right" ? p.along * sy : p.along * sx;
+      }
+    }
+    for (const w of scene.weights || []) {
+      w.left = scalePx(w.left, sx);
+      w.top = scalePx(w.top, sy);
+    }
+    for (const w of scene.winches || []) {
+      w.left = scalePx(w.left, sx);
+      w.top = scalePx(w.top, sy);
+    }
+    for (const r of scene.ropes || []) {
+      r.points = (r.points || []).map((pt) => ({
+        x: pt.x * sx,
+        y: pt.y * sy,
+      }));
+      if (r.edgeSnap) {
+        r.edgeSnap.start = scaleEdgeSnap(r.edgeSnap.start, sx, sy);
+        r.edgeSnap.end = scaleEdgeSnap(r.edgeSnap.end, sx, sy);
+      }
+      r.d = "";
+    }
+    return scene;
+  }
+
+  function loadExportedPreset(id) {
+    const payload = PRESET_EXPORTS[id];
+    if (!payload) return false;
+    const scene = sceneFromExport(payload);
+    if (!scene) return false;
+    restoreScene(scene);
+    return true;
+  }
+
+  function forceStageLayout() {
+    void stage.offsetWidth;
+    void stage.offsetHeight;
+  }
+
+  function buildPresetPevna() {
+    loadExportedPreset("pevna");
+  }
+
+  function buildPresetVolna() {
+    loadExportedPreset("volna");
+  }
+
+  function buildPresetKladkostroj1() {
+    loadExportedPreset("kladkostroj1");
+  }
+
+  function buildPresetKladkostroj2() {
+    loadExportedPreset("kladkostroj2");
+  }
+
+  function buildPresetKladkostroj3() {
+    loadExportedPreset("kladkostroj3");
+  }
+
+  function buildPresetKladkostroj4() {
+    loadExportedPreset("kladkostroj4");
+  }
+
+  function buildPresetKladkostroj5() {
+    loadExportedPreset("kladkostroj5");
+  }
+
+  function buildPresetKladkostroj6() {
+    loadExportedPreset("kladkostroj6");
+  }
+
+  function buildPresetById(id) {
+    if (id === "pevna") buildPresetPevna();
+    else if (id === "volna") buildPresetVolna();
+    else if (id === "kladkostroj1") buildPresetKladkostroj1();
+    else if (id === "kladkostroj2") buildPresetKladkostroj2();
+    else if (id === "kladkostroj3") buildPresetKladkostroj3();
+    else if (id === "kladkostroj4") buildPresetKladkostroj4();
+    else if (id === "kladkostroj5") buildPresetKladkostroj5();
+    else if (id === "kladkostroj6") buildPresetKladkostroj6();
+  }
+
+  function resetEditorState() {
+    if (running) stopSimulation();
+    discardFreehandPending();
+    clearPulleySelection();
+    historyStack = [];
+    actionBaseline = null;
+    preRunSnapshot = null;
+    runBlocked = false;
+    setTool("move");
+    updateHistoryButtons();
+  }
+
+  function syncGalleryPresetButtons() {
+    if (!galleryPresetList) return;
+    galleryPresetList.querySelectorAll(".gallery-preset-btn").forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.presetId === activePresetId);
+    });
+  }
+
+  function renderPresetMenus() {
+    if (presetCards) {
+      presetCards.innerHTML = "";
+      for (const preset of PRESETS) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "preset-card";
+        btn.dataset.presetId = preset.id;
+        btn.innerHTML =
+          presetSchemaSvg(preset.id) +
+          `<span class="preset-card__title">${preset.title}</span>`;
+        btn.addEventListener("click", () => enterGallery(preset.id));
+        presetCards.appendChild(btn);
+      }
+    }
+    if (galleryPresetList) {
+      galleryPresetList.innerHTML = "";
+      for (const preset of PRESETS) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "gallery-preset-btn";
+        btn.dataset.presetId = preset.id;
+        btn.textContent = preset.title;
+        btn.addEventListener("click", () => {
+          if (activePresetId === preset.id) return;
+          loadPresetScene(preset.id);
+        });
+        galleryPresetList.appendChild(btn);
+      }
+    }
+  }
+
+  function setMenuView(view) {
+    const presets = view === "presets";
+    if (modeViewHome) modeViewHome.hidden = presets;
+    if (modeViewPresets) modeViewPresets.hidden = !presets;
+    if (modeHubBack) modeHubBack.hidden = presets;
+    if (modeMenuBack) modeMenuBack.hidden = !presets;
+  }
+
+  function showModeMenu() {
+    resetEditorState();
+    historySuspended = true;
+    clearSceneObjects();
+    historySuspended = false;
+    appMode = "menu";
+    activePresetId = null;
+    if (appRoot) {
+      appRoot.dataset.appMode = "menu";
+      appRoot.classList.add("is-menu-hidden");
+    }
+    if (modeMenu) modeMenu.hidden = false;
+    setMenuView("home");
+    if (panelModeTitle) panelModeTitle.textContent = "Kladkostroj";
+    syncGalleryPresetButtons();
+  }
+
+  function hideModeMenu() {
+    if (modeMenu) modeMenu.hidden = true;
+    if (appRoot) appRoot.classList.remove("is-menu-hidden");
+  }
+
+  function enterLab() {
+    resetEditorState();
+    historySuspended = true;
+    clearSceneObjects();
+    historySuspended = false;
+    appMode = "lab";
+    activePresetId = null;
+    if (appRoot) appRoot.dataset.appMode = "lab";
+    hideModeMenu();
+    if (panelModeTitle) panelModeTitle.textContent = "Laboratoř";
+    syncRopeViewBox();
+    syncStockTrayScale();
+    updateForceArrows();
+    updateHistoryButtons();
+  }
+
+  function loadPresetScene(id) {
+    const preset = PRESETS.find((p) => p.id === id);
+    if (!preset) return;
+    resetEditorState();
+    historySuspended = true;
+    clearSceneObjects();
+    forceStageLayout();
+    buildPresetById(id);
+    rebuildAllRopes();
+    syncAllWeightsToSnap();
+    syncRopeEndHandles();
+    updateForceArrows();
+    historySuspended = false;
+    activePresetId = id;
+    if (panelModeTitle) panelModeTitle.textContent = preset.title;
+    syncGalleryPresetButtons();
+    updateHistoryButtons();
+  }
+
+  function enterGallery(id) {
+    appMode = "gallery";
+    if (appRoot) appRoot.dataset.appMode = "gallery";
+    hideModeMenu();
+    // Dvě snímky: nejdřív layout po odkrytí plochy, pak sestavení scény.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        syncRopeViewBox();
+        loadPresetScene(id);
+      });
+    });
+  }
+
   if (btnMove) {
     btnMove.addEventListener("click", () => setTool("move"));
   }
@@ -8874,9 +10100,62 @@
   if (btnForces) {
     btnForces.addEventListener("click", () => setShowForces(!showForces));
   }
+  if (btnExportScene) {
+    const exportVisible = SHOW_SCENE_EXPORT;
+    btnExportScene.hidden = !exportVisible;
+    if (exportSceneRow) exportSceneRow.hidden = !exportVisible;
+    if (exportVisible) {
+      btnExportScene.addEventListener("click", async () => {
+        const { width, height } = stageSize();
+        const payload = {
+          version: 1,
+          name: "kladkostroj-scene",
+          stageWidth: Math.round(width),
+          stageHeight: Math.round(height),
+          scene: captureScene(),
+        };
+        const text = JSON.stringify(payload, null, 2);
+        try {
+          await navigator.clipboard.writeText(text);
+          const prev = btnExportScene.textContent;
+          btnExportScene.textContent = "Zkopírováno";
+          setTimeout(() => {
+            btnExportScene.textContent = prev || "Uložit scénu";
+          }, 1600);
+        } catch (_) {
+          // Fallback: stáhnout soubor, když clipboard není dostupný
+          const blob = new Blob([text], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "kladkostroj-scena.json";
+          a.click();
+          URL.revokeObjectURL(url);
+          const prev = btnExportScene.textContent;
+          btnExportScene.textContent = "Staženo";
+          setTimeout(() => {
+            btnExportScene.textContent = prev || "Uložit scénu";
+          }, 1600);
+        }
+      });
+    }
+  }
   if (pulleySizeSlider) {
     pulleySizeSlider.addEventListener("input", onPulleySizeSliderInput);
     applyGlobalStageScale(Number(pulleySizeSlider.value) / 100);
+  }
+
+  if (modeChooseLab) {
+    modeChooseLab.addEventListener("click", () => enterLab());
+  }
+  if (modeChoosePresets) {
+    modeChoosePresets.addEventListener("click", () => setMenuView("presets"));
+  }
+  if (modeMenuBack) {
+    modeMenuBack.addEventListener("click", () => setMenuView("home"));
+  }
+  if (btnBackMenu) {
+    btnBackMenu.addEventListener("click", () => showModeMenu());
   }
 
   enablePencil();
@@ -8893,6 +10172,8 @@
   updateHistoryButtons();
   syncForcesToggleUi();
   bindStockTrayScaleSync();
+  renderPresetMenus();
+  showModeMenu();
 
   window.addEventListener("resize", () => {
     syncRopeViewBox();

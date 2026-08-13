@@ -109,6 +109,7 @@
       }
 
       .hub-back-to-sims {
+        appearance: none;
         display: inline-flex;
         align-items: center;
         align-self: flex-start;
@@ -117,10 +118,12 @@
         border-radius: 12px;
         background: var(--area-muted);
         color: var(--text);
+        font: inherit;
         font-size: 0.88rem;
         font-weight: 600;
         line-height: 1;
         text-decoration: none;
+        cursor: pointer;
         transition: border-color 0.15s, color 0.15s, background 0.15s;
       }
 
@@ -1146,20 +1149,360 @@
           --panel-w: min(200px, 42vw);
         }
       }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .mode-menu {
+        position: fixed;
+        inset: 0;
+        z-index: 400;
+        display: grid;
+        place-items: center;
+        padding: max(16px, env(safe-area-inset-top, 0px))
+          max(16px, env(safe-area-inset-right, 0px))
+          max(16px, env(safe-area-inset-bottom, 0px))
+          max(16px, env(safe-area-inset-left, 0px));
+        background:
+          radial-gradient(120% 80% at 10% 0%, #e8eef8 0%, transparent 55%),
+          radial-gradient(90% 70% at 100% 100%, #dde7f5 0%, transparent 50%),
+          var(--bg);
+        overflow: auto;
+      }
+
+      .mode-menu[hidden] {
+        display: none !important;
+      }
+
+      .mode-menu__panel {
+        width: min(720px, 100%);
+        display: grid;
+        gap: 18px;
+        padding: 22px;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: var(--panel-bg);
+      }
+
+      #mode-menu-title {
+        margin: 0;
+        text-align: center;
+        font-size: clamp(1.75rem, 4vw, 2.25rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+
+      .mode-menu__lead {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.35;
+      }
+
+      .mode-menu__label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .mode-cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .mode-card {
+        appearance: none;
+        display: grid;
+        gap: 6px;
+        min-height: 110px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--area-muted);
+        color: var(--text);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, color 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .mode-card--lab {
+        border-color: #c5dbf5;
+        background: linear-gradient(160deg, #f3f8ff 0%, #e4effc 100%);
+      }
+
+      .mode-card--presets {
+        border-color: #f0c8ce;
+        background: linear-gradient(160deg, #fff6f7 0%, #fde8eb 100%);
+      }
+
+      .mode-card--lab .mode-card__title {
+        color: #2f5f9a;
+      }
+
+      .mode-card--presets .mode-card__title {
+        color: #b83a4a;
+      }
+
+      .mode-card--lab .mode-card__desc {
+        color: #5a7394;
+      }
+
+      .mode-card--presets .mode-card__desc {
+        color: #8f5a62;
+      }
+
+      .mode-card:hover {
+        border-color: var(--accent);
+        background: var(--readout-bg);
+        color: var(--accent);
+      }
+
+      .mode-card--lab:hover {
+        border-color: #58a1ff;
+        background: linear-gradient(160deg, #ffffff 0%, #dcecff 100%);
+        color: #2f5f9a;
+        box-shadow: 0 6px 18px rgba(88, 161, 255, 0.16);
+      }
+
+      .mode-card--presets:hover {
+        border-color: #f03b50;
+        background: linear-gradient(160deg, #ffffff 0%, #ffd9df 100%);
+        color: #b83a4a;
+        box-shadow: 0 6px 18px rgba(240, 59, 80, 0.14);
+      }
+
+      .mode-card__title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .mode-card__desc {
+        font-size: 0.86rem;
+        font-weight: 400;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      .mode-card:hover .mode-card__desc {
+        color: inherit;
+        opacity: 0.9;
+      }
+
+      .preset-cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .preset-card {
+        appearance: none;
+        display: grid;
+        grid-template-rows: auto auto;
+        justify-items: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 0;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--area-muted);
+        color: var(--text);
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, color 0.15s;
+      }
+
+      .preset-card:hover {
+        border-color: var(--accent);
+        background: var(--readout-bg);
+        color: var(--accent);
+      }
+
+      .preset-card__schema {
+        display: block;
+        width: 100%;
+        height: 88px;
+        overflow: visible;
+        background: #fff;
+        border-radius: 10px;
+      }
+
+      .preset-card__title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+
+      .preset-card:hover .preset-card__schema {
+        opacity: 0.95;
+      }
+
+      @media (max-width: 720px) {
+        .preset-cards {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 420px) {
+        .preset-cards {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .mode-menu__nav {
+        position: fixed;
+        top: max(14px, env(safe-area-inset-top, 0px));
+        left: max(14px, env(safe-area-inset-left, 0px));
+        z-index: 410;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .app-root.is-menu-hidden {
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .app-root[data-app-mode="gallery"] [data-lab-only],
+      .app-root[data-app-mode="gallery"] .stock-section {
+        display: none !important;
+      }
+
+      .app-root[data-app-mode="gallery"] .panel-actions--tools-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .app-root[data-app-mode="lab"] .gallery-presets,
+      .app-root[data-app-mode="menu"] .gallery-presets {
+        display: none !important;
+      }
+
+      .gallery-presets {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .gallery-presets__label {
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .gallery-preset-btn {
+        appearance: none;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--area-muted);
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.86rem;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .gallery-preset-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--readout-bg);
+      }
+
+      .gallery-preset-btn.is-active {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      @media (max-width: 560px) {
+        .mode-cards {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="app-root" data-tool="move">
+    <div
+      id="mode-menu"
+      class="mode-menu"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mode-menu-title"
+    >
+      <div class="mode-menu__nav">
+        <a
+          href="../index.html"
+          id="mode-hub-back"
+          class="hub-back-to-sims"
+        >← Přehled simulací</a>
+        <button
+          type="button"
+          id="mode-menu-back"
+          class="hub-back-to-sims"
+          hidden
+        >
+          ← Zpět
+        </button>
+      </div>
+      <div class="mode-menu__panel">
+        <div>
+          <h1 id="mode-menu-title" class="panel-title">Kladkostroj</h1>
+        </div>
+
+        <div id="mode-view-home" class="mode-view">
+          <div class="mode-cards">
+            <button type="button" class="mode-card mode-card--lab" id="mode-choose-lab">
+              <span class="mode-card__title">Laboratoř</span>
+              <span class="mode-card__desc">
+                Sestav si vlastní kladkostroj.
+              </span>
+            </button>
+            <button
+              type="button"
+              class="mode-card mode-card--presets"
+              id="mode-choose-presets"
+            >
+              <span class="mode-card__title">Kladkostroje</span>
+              <span class="mode-card__desc">
+                Hotové soustavy připravené ke spuštění a pozorování.
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div id="mode-view-presets" class="mode-view" hidden>
+          <div class="preset-cards" id="preset-cards"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-root is-menu-hidden" data-tool="move" data-app-mode="menu">
       <aside class="left-panel" aria-label="Ovládání simulace">
         <div class="panel-copy">
-          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-          <h1 class="panel-title">Kladkostroj</h1>
+          <button type="button" id="btn-back-menu" class="hub-back-to-sims">
+            ← Menu
+          </button>
+          <h1 class="panel-title" id="panel-mode-title">Kladkostroj</h1>
           <div class="panel-tools" aria-label="Nástroje">
             <div class="panel-actions panel-actions--tools-meta">
               <button
                 type="button"
                 id="tool-erase"
                 class="action-btn action-btn--icon"
+                data-lab-only
                 aria-pressed="false"
                 aria-label="Guma"
                 title="Guma"
@@ -1190,11 +1533,20 @@
               >
                 Síly
               </button>
-              <button type="button" id="tool-undo" class="action-btn" disabled>
+              <button
+                type="button"
+                id="tool-undo"
+                class="action-btn"
+                data-lab-only
+                disabled
+              >
                 Zpět
               </button>
             </div>
-            <div class="panel-actions panel-actions--tools-primary">
+            <div
+              class="panel-actions panel-actions--tools-primary"
+              data-lab-only
+            >
               <button
                 type="button"
                 id="tool-move"
@@ -1252,8 +1604,21 @@
                 Reset
               </button>
             </div>
+            <div class="panel-actions" data-lab-only id="export-scene-row">
+              <button type="button" id="tool-export-scene" class="action-btn">
+                Uložit scénu
+              </button>
+            </div>
           </div>
-          <div class="size-control">
+          <div
+            class="gallery-presets"
+            id="gallery-presets"
+            aria-label="Výběr kladkostroje"
+          >
+            <span class="gallery-presets__label">Kladkostroj</span>
+            <div id="gallery-preset-list"></div>
+          </div>
+          <div class="size-control" data-lab-only>
             <label class="panel-label" for="pulley-size-slider">Velikost</label>
             <div class="size-control__row">
               <input
