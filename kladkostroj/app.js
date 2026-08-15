@@ -10,6 +10,7 @@
   const btnUndo = document.getElementById("tool-undo");
   const btnReset = document.getElementById("tool-reset");
   const btnForces = document.getElementById("toggle-forces");
+  const btnLengths = document.getElementById("toggle-lengths");
   const freehandConfirm = document.getElementById("freehand-confirm");
   const freehandConfirmOk = document.getElementById("freehand-confirm-ok");
   const freehandConfirmCancel = document.getElementById(
@@ -147,7 +148,7 @@
     return `${WEIGHT_SVG}<span class="weight-label" aria-hidden="true">${WEIGHT_LABEL_TEXT}</span>`;
   }
 
-  const WINCH_SVG = `<svg width="134" height="132" viewBox="0 0 134 132" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="48.5" width="133" height="83" rx="12" ry="12" fill="#D9D9D9" stroke="black"/><circle cx="67" cy="50" r="50" fill="black"/><g transform="translate(66.7016 49.7016)"><g class="winch-drum"><g transform="translate(-66.7016 -49.7016)"><path d="M66.6989 80.4041C83.6555 80.4041 97.4015 66.6581 97.4015 49.7015C97.4015 32.745 83.6555 18.999 66.6989 18.999C49.7423 18.999 35.9963 32.745 35.9963 49.7015C35.9963 66.6581 49.7423 80.4041 66.6989 80.4041Z" fill="white" stroke="#B1B1B1" stroke-width="7.69075" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.7016 85.4031C86.419 85.4031 102.403 69.419 102.403 49.7016C102.403 29.9841 86.419 14 66.7016 14C46.9841 14 31 29.9841 31 49.7016C31 69.419 46.9841 85.4031 66.7016 85.4031Z" stroke="#1D1D1B" stroke-width="3.29604" stroke-miterlimit="10" stroke-linecap="round"/><path d="M99.2331 49.7016C99.2331 67.665 84.6701 82.2335 66.7012 82.2335C48.7323 82.2335 34.1693 67.6705 34.1693 49.7016C34.1693 31.7327 48.7323 17.1697 66.7012 17.1697" stroke="white" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M39.9513 49.7234H93.3746" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.6575 23.0091V76.4324" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M47.7767 30.8317L85.5548 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M85.5548 30.8317L47.7767 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M41.8699 39.7641L91.4423 59.6777" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M76.614 24.9374L56.7005 74.5098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M56.1691 25.1571L77.1429 74.29" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M91.2219 39.2367L42.089 60.2105" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/></g></g></g><circle class="winch-light" cx="67" cy="50" r="43" stroke="white" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 14" fill="none"/><circle class="winch-led" cx="16" cy="118" r="6.5" fill="#5a5a5a" stroke="#1d1d1b" stroke-width="1.4"/><text class="winch-force-text" x="67" y="119.5" text-anchor="middle" dominant-baseline="central" fill="#4A43E8" font-size="15" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"></text></svg>`;
+  const WINCH_SVG = `<svg width="134" height="132" viewBox="0 0 134 132" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="48.5" width="133" height="83" rx="12" ry="12" fill="#D9D9D9" stroke="black"/><circle cx="67" cy="50" r="50" fill="black"/><g transform="translate(66.7016 49.7016)"><g class="winch-drum"><g transform="translate(-66.7016 -49.7016)"><path d="M66.6989 80.4041C83.6555 80.4041 97.4015 66.6581 97.4015 49.7015C97.4015 32.745 83.6555 18.999 66.6989 18.999C49.7423 18.999 35.9963 32.745 35.9963 49.7015C35.9963 66.6581 49.7423 80.4041 66.6989 80.4041Z" fill="white" stroke="#B1B1B1" stroke-width="7.69075" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.7016 85.4031C86.419 85.4031 102.403 69.419 102.403 49.7016C102.403 29.9841 86.419 14 66.7016 14C46.9841 14 31 29.9841 31 49.7016C31 69.419 46.9841 85.4031 66.7016 85.4031Z" stroke="#1D1D1B" stroke-width="3.29604" stroke-miterlimit="10" stroke-linecap="round"/><path d="M99.2331 49.7016C99.2331 67.665 84.6701 82.2335 66.7012 82.2335C48.7323 82.2335 34.1693 67.6705 34.1693 49.7016C34.1693 31.7327 48.7323 17.1697 66.7012 17.1697" stroke="white" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M39.9513 49.7234H93.3746" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.6575 23.0091V76.4324" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M47.7767 30.8317L85.5548 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M85.5548 30.8317L47.7767 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M41.8699 39.7641L91.4423 59.6777" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M76.614 24.9374L56.7005 74.5098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M56.1691 25.1571L77.1429 74.29" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M91.2219 39.2367L42.089 60.2105" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/></g></g></g><circle class="winch-light" cx="67" cy="50" r="43" stroke="white" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 14" fill="none"/><circle class="winch-led" cx="16" cy="118" r="6.5" fill="#5a5a5a" stroke="#1d1d1b" stroke-width="1.4"/><text class="winch-rope-text" x="26" y="119.5" text-anchor="start" dominant-baseline="central" fill="#1e293b" font-size="12" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"></text><text class="winch-force-text" x="118" y="119.5" text-anchor="end" dominant-baseline="central" fill="#4A43E8" font-size="15" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"></text></svg>`;
 
   const WINCH = {
     vbW: 134,
@@ -170,6 +171,8 @@
     (WINCH_MAX_FORCE_N / WEIGHT_FORCE_N) * WEIGHT_FORCE;
   /** Rychlost navíjení (zkrácení lana) v px/s. */
   const WINCH_REEL_SPEED = 90;
+  /** 10 px scény ≈ 1 cm namotaného lana. */
+  const ROPE_PX_PER_CM = 10;
   /** Otáčení bubnu při navíjení (stupně / s). */
   const WINCH_SPIN_DEG_PER_S = 130;
   /** Hmotnost modré kladky — zanedbatelná. */
@@ -200,10 +203,12 @@
   let physicsFrame = null;
   let lastPhysicsTime = 0;
   let forceLayer = null;
+  let measureLayer = null;
   const FORCE_ARROW_MAX = 900;
   const FORCE_ARROW_UNIT_LEN = 110;
   /** @type {boolean} */
   let showForces = false;
+  let showLengths = false;
   /**
    * Kvíz — u každé šipky síly je prázdné políčko, do kterého se doplňuje
    * velikost v newtonech. Odpovědi drží pořadí vykreslení šipek, aby přežily
@@ -1788,6 +1793,7 @@
       dragging: false,
       winding: false,
       spinAngle: 0,
+      woundLengthPx: 0,
     };
     winches.push(winch);
     enableWinchDrag(winch);
@@ -1897,6 +1903,7 @@
     const rope = winch.snap.rope;
     if (!rope?.el?.isConnected) {
       winch.snap = { type: "free" };
+      resetWinchWoundLength(winch);
       setWinchWinding(winch, false);
       return;
     }
@@ -5042,6 +5049,19 @@
     updateForceArrows();
   }
 
+  function syncLengthsToggleUi() {
+    if (!btnLengths) return;
+    btnLengths.classList.toggle("is-active", showLengths);
+    btnLengths.setAttribute("aria-pressed", String(showLengths));
+    if (appRoot) appRoot.classList.toggle("is-show-lengths", showLengths);
+  }
+
+  function setShowLengths(next) {
+    showLengths = !!next;
+    syncLengthsToggleUi();
+    updateForceArrows();
+  }
+
   /**
    * Uložené polohy kladek nejsou úplně svislé, takže tah v laně vyjde třeba
    * 73,8 N místo 75 N. V zadání se hodnota přitáhne k hezkému číslu, ale jen
@@ -5357,18 +5377,237 @@
     return (f / WEIGHT_FORCE) * WEIGHT_FORCE_N;
   }
 
+  function resetWinchWoundLength(winch) {
+    if (winch) winch.woundLengthPx = 0;
+  }
+
+  function formatWoundRopeLength(px) {
+    const cm = Math.max(0, px) / ROPE_PX_PER_CM;
+    if (cm < 0.05) return "0 cm";
+    if (cm >= 100) {
+      const m = cm / 100;
+      const rounded = m >= 10 ? Math.round(m) : Math.round(m * 10) / 10;
+      return `${String(rounded).replace(/\.0$/, "")} m`;
+    }
+    if (cm >= 10) return `${Math.round(cm)} cm`;
+    return `${Math.round(cm * 10) / 10} cm`;
+  }
+
+  function isStageWeight(weight) {
+    return (
+      weight?.el?.isConnected &&
+      !isStockTemplate(weight.el) &&
+      !isDocked(weight.el)
+    );
+  }
+
+  function captureWeightSimStarts() {
+    for (const weight of weights) {
+      if (!isStageWeight(weight)) {
+        weight.simStartHookY = null;
+        continue;
+      }
+      weight.simStartHookY = getWeightHookWorld(weight).y;
+    }
+  }
+
+  function formatWeightLift(deltaPx) {
+    const cm = deltaPx / ROPE_PX_PER_CM;
+    if (Math.abs(cm) < 0.05) return "0 cm";
+    const absCm = Math.abs(cm);
+    const value =
+      absCm >= 10 ? `${Math.round(absCm)} cm` : `${Math.round(absCm * 10) / 10} cm`;
+    return value;
+  }
+
+  function getWeightLiftDimLayout(weight, hook) {
+    const { width } = stageSize();
+    const w = weight.el.offsetWidth || 70;
+    const left = parseFloat(weight.el.style.left) || 0;
+    const offset = 16;
+    const useRight = left + w + offset + 40 < width - 8;
+    const dimX = useRight ? left + w + offset : left - offset;
+    const tickLen = 12;
+    const tickIn = useRight ? -tickLen : tickLen;
+    const startY = weight.simStartHookY;
+    const endY = hook.y;
+    const topY = Math.min(startY, endY);
+    const bottomY = Math.max(startY, endY);
+    const midY = (topY + bottomY) / 2;
+    const deltaPx = startY - endY;
+    const stroke = deltaPx > 0 ? "#4a43e8" : deltaPx < 0 ? "#dc2626" : "#64748b";
+    const labelX = useRight ? dimX + 8 : dimX - 8;
+    const labelAnchor = useRight ? "start" : "end";
+    return {
+      dimX,
+      useRight,
+      tickIn,
+      startY,
+      endY,
+      topY,
+      bottomY,
+      midY,
+      deltaPx,
+      stroke,
+      labelX,
+      labelAnchor,
+    };
+  }
+
+  function appendWeightLiftDimLabel(g, text, x, y, fill, anchor) {
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.classList.add("weight-lift-dim-label");
+    label.setAttribute("x", x.toFixed(1));
+    label.setAttribute("y", y.toFixed(1));
+    label.setAttribute("text-anchor", anchor);
+    label.setAttribute("dominant-baseline", "central");
+    label.setAttribute("fill", fill);
+    label.textContent = text;
+    g.appendChild(label);
+  }
+
+  function updateWeightLiftLabels() {
+    syncMeasureOverlay();
+    if (measureLayer) measureLayer.replaceChildren();
+    if (!showLengths) return;
+    for (const weight of weights) {
+      weight.el.querySelector(".weight-lift-text")?.remove();
+      if (!isStageWeight(weight) || weight.simStartHookY == null) continue;
+      drawWeightLiftGraphic(weight, getWeightHookWorld(weight));
+    }
+  }
+
+  function ensureMeasureLayer() {
+    let overlay = document.getElementById("measure-overlay");
+    if (!overlay) {
+      overlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      overlay.setAttribute("id", "measure-overlay");
+      overlay.setAttribute("aria-hidden", "true");
+      stage.appendChild(overlay);
+    }
+    let layer = overlay.querySelector("#measure-layer");
+    if (!layer) {
+      layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      layer.setAttribute("id", "measure-layer");
+      overlay.appendChild(layer);
+    }
+    measureLayer = layer;
+    return measureLayer;
+  }
+
+  function syncMeasureOverlay() {
+    const overlay = document.getElementById("measure-overlay");
+    if (!overlay) return;
+    const { width, height } = stageSize();
+    overlay.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    overlay.setAttribute("width", String(width));
+    overlay.setAttribute("height", String(height));
+    overlay.setAttribute("overflow", "visible");
+  }
+
+  function drawWeightLiftGraphic(weight, hook) {
+    const layout = getWeightLiftDimLayout(weight, hook);
+    const {
+      dimX,
+      tickIn,
+      startY,
+      endY,
+      topY,
+      bottomY,
+      midY,
+      deltaPx,
+      stroke,
+      labelX,
+      labelAnchor,
+    } = layout;
+    const layer = ensureMeasureLayer();
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.classList.add("weight-lift-dim");
+    g.setAttribute("data-weight-id", weight.el.id);
+
+    const labelText = formatWeightLift(deltaPx);
+    const labelY = Math.abs(deltaPx) >= 3 ? midY : endY;
+
+    if (Math.abs(deltaPx) >= 3) {
+      const startTick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      startTick.classList.add("weight-lift-dim-tick");
+      startTick.setAttribute("x1", (dimX + tickIn).toFixed(1));
+      startTick.setAttribute("y1", startY.toFixed(1));
+      startTick.setAttribute("x2", dimX.toFixed(1));
+      startTick.setAttribute("y2", startY.toFixed(1));
+      startTick.setAttribute("stroke", stroke);
+      g.appendChild(startTick);
+
+      const endTick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      endTick.classList.add("weight-lift-dim-tick");
+      endTick.setAttribute("x1", (dimX + tickIn).toFixed(1));
+      endTick.setAttribute("y1", endY.toFixed(1));
+      endTick.setAttribute("x2", dimX.toFixed(1));
+      endTick.setAttribute("y2", endY.toFixed(1));
+      endTick.setAttribute("stroke", stroke);
+      g.appendChild(endTick);
+
+      const dimLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      dimLine.classList.add("weight-lift-dim-line");
+      dimLine.setAttribute("x1", dimX.toFixed(1));
+      dimLine.setAttribute("y1", topY.toFixed(1));
+      dimLine.setAttribute("x2", dimX.toFixed(1));
+      dimLine.setAttribute("y2", bottomY.toFixed(1));
+      dimLine.setAttribute("stroke", stroke);
+      g.appendChild(dimLine);
+
+      const startDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      startDot.classList.add("weight-lift-dim-start");
+      startDot.setAttribute("cx", dimX.toFixed(1));
+      startDot.setAttribute("cy", startY.toFixed(1));
+      startDot.setAttribute("r", "3.5");
+      startDot.setAttribute("fill", stroke);
+      startDot.setAttribute("fill-opacity", "0.35");
+      startDot.setAttribute("stroke", stroke);
+      startDot.setAttribute("stroke-width", "1.5");
+      g.appendChild(startDot);
+    }
+
+    appendWeightLiftDimLabel(g, labelText, labelX, labelY, stroke, labelAnchor);
+    layer.appendChild(g);
+  }
+
   function ensureWinchForceLabel(winch) {
     const svg = winch.el.querySelector("svg");
     let label = winch.el.querySelector(".winch-force-text");
     if (!label && svg) {
       label = document.createElementNS("http://www.w3.org/2000/svg", "text");
       label.classList.add("winch-force-text");
-      label.setAttribute("x", "67");
+      svg.appendChild(label);
+    }
+    if (!label) return null;
+    label.setAttribute("x", "118");
+    label.setAttribute("y", "119.5");
+    label.setAttribute("text-anchor", "end");
+    label.setAttribute("dominant-baseline", "central");
+    label.setAttribute("fill", "#4A43E8");
+    label.setAttribute("font-size", "15");
+    label.setAttribute("font-weight", "700");
+    label.setAttribute(
+      "font-family",
+      "ui-sans-serif, system-ui, -apple-system, sans-serif"
+    );
+    return label;
+  }
+
+  function ensureWinchRopeLabel(winch) {
+    winch.el.querySelector(".winch-rope-length")?.remove();
+    const svg = winch.el.querySelector("svg");
+    let label = winch.el.querySelector(".winch-rope-text");
+    if (!label && svg) {
+      label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.classList.add("winch-rope-text");
+      label.setAttribute("x", "26");
       label.setAttribute("y", "119.5");
-      label.setAttribute("text-anchor", "middle");
+      label.setAttribute("text-anchor", "start");
       label.setAttribute("dominant-baseline", "central");
-      label.setAttribute("fill", "#4A43E8");
-      label.setAttribute("font-size", "15");
+      label.setAttribute("fill", "#1e293b");
+      label.setAttribute("font-size", "12");
       label.setAttribute("font-weight", "700");
       label.setAttribute(
         "font-family",
@@ -5420,11 +5659,32 @@
     }
   }
 
+  function updateWinchRopeLabels() {
+    for (const winch of winches) {
+      const label = ensureWinchRopeLabel(winch);
+      if (!label) continue;
+      const attached =
+        !isDocked(winch.el) &&
+        !isStockTemplate(winch.el) &&
+        winch.snap?.type === "rope" &&
+        !!winch.snap.rope?.el?.isConnected;
+      if (!attached || quiz.active) {
+        label.textContent = "";
+        label.style.visibility = "hidden";
+        continue;
+      }
+      label.textContent = formatWoundRopeLength(winch.woundLengthPx || 0);
+      label.style.visibility = showLengths ? "visible" : "hidden";
+    }
+  }
+
   function updateForceArrows() {
     syncForceOverlay();
     quiz.slotSeq = 0;
     const system = buildRopeSystem();
     updateWinchForceLabels(system);
+    updateWinchRopeLabels();
+    updateWeightLiftLabels();
     clearForceArrows();
     if (!showForces) {
       if (quiz.active) {
@@ -5794,10 +6054,13 @@
       setWinchWinding(winch, canReel ? "winding" : "overload");
       if (canReel) {
         const minLen = 40;
+        const prevLen = rope.sim.restLength;
         rope.sim.restLength = Math.max(
           minLen,
-          rope.sim.restLength - WINCH_REEL_SPEED * dt
+          prevLen - WINCH_REEL_SPEED * dt
         );
+        winch.woundLengthPx =
+          (winch.woundLengthPx || 0) + (prevLen - rope.sim.restLength);
       }
     }
   }
@@ -6523,6 +6786,7 @@
   }
 
   function applyWinchSnap(winch, target) {
+    resetWinchWoundLength(winch);
     winch.snap = {
       type: "rope",
       rope: target.rope,
@@ -6575,6 +6839,7 @@
       winch.dragging = true;
       pointerId = e.pointerId;
       winch.snap = { type: "free" };
+      resetWinchWoundLength(winch);
       setWinchWinding(winch, false);
       winch.el.classList.add("is-dragging");
       winch.el.setPointerCapture(e.pointerId);
@@ -6976,9 +7241,11 @@
     const oldWinch = winchOnRopeEnd(rope, which);
     if (oldWinch && oldWinch !== winch) {
       oldWinch.snap = { type: "free" };
+      resetWinchWoundLength(oldWinch);
       setWinchWinding(oldWinch, false);
     }
     rope.edgeSnap[which] = null;
+    resetWinchWoundLength(winch);
     winch.snap = { type: "rope", rope, which };
     const hook = getWinchHookWorld(winch);
     if (which === "start") rope.points[0] = { ...hook };
@@ -9038,6 +9305,8 @@
     running = true;
     for (const pulley of pulleys) pulley.vel = { x: 0, y: 0 };
     for (const weight of weights) weight.vel = { x: 0, y: 0 };
+    for (const winch of winches) resetWinchWoundLength(winch);
+    captureWeightSimStarts();
     initRopeSimulation();
     startSettling();
     clearEndHandles();
@@ -10622,6 +10891,10 @@
   if (btnForces) {
     btnForces.addEventListener("click", () => setShowForces(!showForces));
   }
+  if (btnLengths) {
+    btnLengths.addEventListener("click", () => setShowLengths(!showLengths));
+  }
+  syncLengthsToggleUi();
   if (btnExportScene) {
     const exportVisible = SHOW_SCENE_EXPORT;
     btnExportScene.hidden = !exportVisible;

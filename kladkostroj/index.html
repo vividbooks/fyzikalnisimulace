@@ -369,6 +369,18 @@
         isolation: isolate;
       }
 
+      .workspace__undo {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 50;
+        min-width: 0;
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+      }
+
       #stage {
         position: relative;
         width: 100%;
@@ -701,6 +713,12 @@
         user-select: none;
       }
 
+      .winch-rope-text {
+        fill: #1e293b;
+        pointer-events: none;
+        user-select: none;
+      }
+
       .app-root:not([data-tool="run"]) .winch-force-text {
         visibility: hidden !important;
       }
@@ -728,7 +746,21 @@
       }
 
       .winch.is-stock-template .winch-force-text,
-      .winch.is-docked .winch-force-text {
+      .winch.is-docked .winch-force-text,
+      .winch.is-stock-template .winch-rope-text,
+      .winch.is-docked .winch-rope-text {
+        display: none;
+      }
+
+      .app-root:not(.is-show-lengths) .winch-rope-text {
+        visibility: hidden !important;
+      }
+
+      .app-root[data-app-mode="quiz"] .winch-rope-text {
+        visibility: hidden !important;
+      }
+
+      .app-root:not(.is-show-lengths) #measure-overlay {
         display: none;
       }
 
@@ -1014,8 +1046,40 @@
         pointer-events: none;
       }
 
+      #measure-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        pointer-events: none;
+      }
+
+      .weight-lift-dim-line {
+        stroke-width: 2;
+        stroke-dasharray: 5 4;
+        stroke-linecap: round;
+      }
+
+      .weight-lift-dim-tick {
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+
+      .weight-lift-dim-label {
+        font-size: 12px;
+        font-weight: 700;
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        paint-order: stroke fill;
+        stroke: #ffffff;
+        stroke-width: 3.5px;
+        stroke-linejoin: round;
+        pointer-events: none;
+      }
+
       /* Režim Síly — scéna ztlumená, šipky sil plně viditelné */
-      .app-root.is-show-forces #stage > *:not(#force-overlay) {
+      .app-root.is-show-forces #stage > *:not(#force-overlay):not(#measure-overlay) {
         opacity: 0.3;
       }
 
@@ -1026,7 +1090,7 @@
       /* V kvízu je soustava zadání — musí zůstat čitelná */
       .app-root[data-app-mode="quiz"].is-show-forces
         #stage
-        > *:not(#force-overlay) {
+        > *:not(#force-overlay):not(#measure-overlay) {
         opacity: 0.55;
       }
 
@@ -1653,7 +1717,7 @@
       }
 
       .app-root[data-app-mode="gallery"] .panel-actions--tools-meta {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
       }
 
       .app-root[data-app-mode="lab"] .gallery-presets,
@@ -1911,12 +1975,11 @@
               </button>
               <button
                 type="button"
-                id="tool-undo"
+                id="toggle-lengths"
                 class="action-btn"
-                data-lab-only
-                disabled
+                aria-pressed="false"
               >
-                Zpět
+                Délky
               </button>
             </div>
             <div
@@ -2147,6 +2210,15 @@
       </aside>
 
       <div class="workspace">
+        <button
+          type="button"
+          id="tool-undo"
+          class="action-btn workspace__undo"
+          data-lab-only
+          disabled
+        >
+          Zpět
+        </button>
         <div id="stage" aria-label="Plocha s kladkami">
           <svg id="rope-layer" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
         </div>
