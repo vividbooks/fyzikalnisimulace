@@ -5475,13 +5475,17 @@
     const layer = ensureMeasureLayer();
     clearSvgLayer(layer);
     for (const winch of winches) {
-      winch.el.querySelector(".winch-rope-length")?.remove();
       winch.el.querySelector(".winch-rope-text")?.remove();
     }
     for (const weight of weights) {
       weight.el.querySelector(".weight-lift-text")?.remove();
     }
-    if (!showLengths) return;
+    if (!showLengths) {
+      for (const winch of winches) {
+        winch.el.querySelector(".winch-rope-length")?.remove();
+      }
+      return;
+    }
     updateWinchRopeLabels();
     updateWeightLiftLabels();
   }
@@ -5636,25 +5640,26 @@
   }
 
   function updateWinchRopeLabels() {
-    if (!showLengths || quiz.active) return;
-    const layer = ensureMeasureLayer();
     for (const winch of winches) {
       const attached =
+        showLengths &&
+        !quiz.active &&
         !isDocked(winch.el) &&
         !isStockTemplate(winch.el) &&
         winch.snap?.type === "rope" &&
         !!winch.snap.rope?.el?.isConnected;
-      if (!attached) continue;
-      const left = parseFloat(winch.el.style.left) || 0;
-      const top = parseFloat(winch.el.style.top) || 0;
-      const w = winch.el.offsetWidth || 0;
-      const h = winch.el.offsetHeight || 0;
-      const label = document.createElement("div");
-      label.className = "winch-rope-length";
+      let label = winch.el.querySelector(".winch-rope-length");
+      if (!attached) {
+        label?.remove();
+        continue;
+      }
+      if (!label) {
+        label = document.createElement("div");
+        label.className = "winch-rope-length";
+        label.setAttribute("aria-hidden", "true");
+        winch.el.appendChild(label);
+      }
       label.textContent = formatWoundRopeLength(winch.woundLengthPx || 0);
-      label.style.left = `${left + w / 2}px`;
-      label.style.top = `${top + h + 6}px`;
-      layer.appendChild(label);
     }
   }
 

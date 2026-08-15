@@ -618,6 +618,7 @@
         cursor: grab;
         touch-action: none;
         line-height: 0;
+        overflow: visible;
       }
 
       .winch:active,
@@ -717,15 +718,19 @@
 
       .winch-rope-length {
         position: absolute;
-        z-index: 1;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        margin-top: 6px;
         font-size: 12px;
         font-weight: 700;
         color: #1e293b;
         pointer-events: none;
-        line-height: 1;
+        line-height: 1.2;
         white-space: nowrap;
+        text-align: center;
         user-select: none;
-        transform: translateX(-50%);
         text-shadow:
           0 0 3px #fff,
           0 0 3px #fff,
@@ -1048,14 +1053,17 @@
         pointer-events: none;
       }
 
+      .app-root.is-show-lengths .workspace,
+      .app-root.is-show-lengths #stage {
+        overflow: visible;
+      }
+
       #measure-overlay {
         position: absolute;
         inset: 0;
         z-index: 14;
         overflow: visible;
         pointer-events: none;
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
       }
 
       #measure-overlay:not(.is-active) {
@@ -2368,6 +2376,6 @@
       </div>
     </div>
 
-    <script src="./app.js?v=lengths-html"></script>
+    <script src="./app.js?v=winch-length-below"></script>
   </body>
 </html>
