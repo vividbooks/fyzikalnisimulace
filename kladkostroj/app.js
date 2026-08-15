@@ -34,12 +34,26 @@
   const modeHubBack = document.getElementById("mode-hub-back");
   const modeChooseLab = document.getElementById("mode-choose-lab");
   const modeChoosePresets = document.getElementById("mode-choose-presets");
+  const modeChooseQuiz = document.getElementById("mode-choose-quiz");
   const presetCards = document.getElementById("preset-cards");
   const btnBackMenu = document.getElementById("btn-back-menu");
   const panelModeTitle = document.getElementById("panel-mode-title");
   const galleryPresetList = document.getElementById("gallery-preset-list");
   const btnExportScene = document.getElementById("tool-export-scene");
   const exportSceneRow = document.getElementById("export-scene-row");
+  const quizStatus = document.getElementById("quiz-status");
+  const btnQuizNew = document.getElementById("quiz-new");
+  const btnQuizReveal = document.getElementById("quiz-reveal");
+  const quizKeypadOverlay = document.getElementById("quiz-keypad-overlay");
+  const quizKeypadDisplay = document.getElementById("quiz-keypad-display");
+  const quizKeypadDisplayValue = document.getElementById("quiz-keypad-display-value");
+  const quizKeypadError = document.getElementById("quiz-keypad-error");
+  const quizKeypadConfirm = document.getElementById("quiz-keypad-confirm");
+  const quizKeypadCancel = document.getElementById("quiz-keypad-cancel");
+  const quizMathKeypad = document.getElementById("quiz-math-keypad");
+  const quizMathKeypadKeys = quizMathKeypad
+    ? quizMathKeypad.querySelectorAll(".quiz-math-keypad__key")
+    : [];
   /**
    * Dev nástroj: kopírování scény z Laboratoře (pro předpřipravené kladkostroje).
    * Obnovení: nastav na true.
@@ -190,6 +204,39 @@
   const FORCE_ARROW_UNIT_LEN = 110;
   /** @type {boolean} */
   let showForces = false;
+  /**
+   * Kvíz — u každé šipky síly je prázdné políčko, do kterého se doplňuje
+   * velikost v newtonech. Odpovědi drží pořadí vykreslení šipek, aby přežily
+   * překreslení (změna velikosti okna).
+   */
+  const QUIZ_TOLERANCE_N = 2;
+  const QUIZ_MAX_WEIGHTS = 4;
+  /** Nejdál od působiště, kam se políčko s otázkou posadí (px). */
+  const QUIZ_SLOT_ALONG_MAX = 58;
+  const QUIZ_CONFETTI_COLORS = [
+    "#059669",
+    "#10b981",
+    "#34d399",
+    "#6ee7b7",
+    "#047857",
+    "#a7f3d0",
+  ];
+  let quizCelebrationTimer = 0;
+  const quiz = {
+    active: false,
+    revealed: false,
+    completedCelebrated: false,
+    /** @type {Map<string, { value: number, correct: boolean, revealed?: boolean }>} */
+    answers: new Map(),
+    slotSeq: 0,
+    total: 0,
+    /** @type {string | null} */
+    openKey: null,
+    /** @type {string | null} */
+    lastId: null,
+    /** Text v klávesnici (české desetinné). */
+    draft: "",
+  };
   /** @type {string | null} */
   let selectedPulleyId = null;
   const PULLEY_CLICK_MOVE_PX = 6;
@@ -383,7 +430,7 @@
     }
   }
 
-  function restoreScene(snap) {
+  function restoreScene(snap, opts = {}) {
     if (!snap) return;
     clearSceneObjects();
     pulleySeq = snap.pulleySeq || 0;
@@ -462,7 +509,15 @@
       restoreWinchSnap(winches[i], snap.winches[i].snap);
     }
 
-    rebuildAllRopes();
+    forceStageLayout();
+    if (opts.skipRopeRebuild) {
+      for (const rope of ropes) {
+        syncRopeEdgePoints(rope);
+        syncRopeEndpointsFromWeights(rope);
+      }
+    } else {
+      rebuildAllRopes({ preserveWraps: !!opts.preserveWraps });
+    }
     syncAllWeightsToSnap();
     syncAllWinchesToSnap();
     syncRopeEndHandles();
@@ -4906,11 +4961,6 @@
     };
   }
 
-  /** Kreslit výslednici, jen když není nulová (jinak by to byl šum). */
-  function shouldDrawNetForce(nx, ny) {
-    return Math.hypot(nx, ny) > WEIGHT_FORCE * 0.002;
-  }
-
   function drawForceArrow(origin, fx, fy, kind) {
     const scaled = scaleForceArrow(fx, fy);
     if (!scaled) return;
@@ -4945,18 +4995,29 @@
 
     const newtons = simForceToNewtons(scaled.mag);
     if (newtons >= 0.5) {
-      const along = scaled.len < 36 ? 1.08 : 0.62;
+      let along = scaled.len < 36 ? 1.08 : 0.62;
+      // Dlouhá šipka může vyjít z plochy — políčko kvízu drž u působiště
+      if (quiz.active) along = Math.min(along, QUIZ_SLOT_ALONG_MAX / scaled.len);
       const px = origin.x + scaled.x * along;
       const py = origin.y + scaled.y * along;
       const side = scaled.len < 36 ? 0 : 13;
-      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      label.classList.add("force-arrow-label");
-      label.setAttribute("x", (px - Math.sin(ang) * side).toFixed(1));
-      label.setAttribute("y", (py + Math.cos(ang) * side).toFixed(1));
-      label.setAttribute("text-anchor", "middle");
-      label.setAttribute("dominant-baseline", "central");
-      label.textContent = `${Math.round(newtons)} N`;
-      g.appendChild(label);
+      const lx = px - Math.sin(ang) * side;
+      const ly = py + Math.cos(ang) * side;
+      if (quiz.active) {
+        g.appendChild(buildQuizSlot(lx, ly, newtons));
+      } else {
+        const label = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        label.classList.add("force-arrow-label");
+        label.setAttribute("x", lx.toFixed(1));
+        label.setAttribute("y", ly.toFixed(1));
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("dominant-baseline", "central");
+        label.textContent = `${Math.round(newtons)} N`;
+        g.appendChild(label);
+      }
     }
 
     layer.appendChild(g);
@@ -4979,6 +5040,317 @@
     showForces = !!next;
     syncForcesToggleUi();
     updateForceArrows();
+  }
+
+  /**
+   * Uložené polohy kladek nejsou úplně svislé, takže tah v laně vyjde třeba
+   * 73,8 N místo 75 N. V zadání se hodnota přitáhne k hezkému číslu, ale jen
+   * při malé odchylce — 12,5 N tak zůstane 13 N a nespadne na 10 N.
+   */
+  function niceQuizValue(newtons) {
+    for (const step of [25, 10]) {
+      const candidate = Math.round(newtons / step) * step;
+      if (candidate > 0 && Math.abs(candidate - newtons) <= newtons * 0.035) {
+        return candidate;
+      }
+    }
+    return Math.round(newtons);
+  }
+
+  /** Políčko u šipky — klíč drží pořadí vykreslení, aby odpovědi přežily překreslení. */
+  function buildQuizSlot(rawX, rawY, newtons) {
+    const key = `slot-${quiz.slotSeq}`;
+    const expected = niceQuizValue(newtons);
+    quiz.slotSeq += 1;
+    const answer = quiz.answers.get(key) || null;
+    const shown = answer ? `${formatQuizNumber(answer.value)} N` : "?";
+    const w = Math.max(26, 13 + shown.length * 7.4);
+    const h = 21;
+    const bounds = stageSize();
+    const x = clamp(rawX, w / 2 + 3, Math.max(w / 2 + 3, bounds.width - w / 2 - 3));
+    const y = clamp(rawY, h / 2 + 3, Math.max(h / 2 + 3, bounds.height - h / 2 - 3));
+
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.classList.add("force-quiz-slot");
+    if (answer?.correct) g.classList.add("is-correct");
+    else if (answer) g.classList.add("is-wrong");
+    if (quiz.openKey === key) g.classList.add("is-open");
+    g.dataset.quizKey = key;
+    g.dataset.quizExpected = String(expected);
+    g.dataset.quizX = x.toFixed(1);
+    g.dataset.quizY = y.toFixed(1);
+
+    const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    box.classList.add("force-quiz-slot__box");
+    box.setAttribute("x", (x - w / 2).toFixed(1));
+    box.setAttribute("y", (y - h / 2).toFixed(1));
+    box.setAttribute("width", w.toFixed(1));
+    box.setAttribute("height", String(h));
+    box.setAttribute("rx", "7");
+    g.appendChild(box);
+
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.classList.add("force-quiz-slot__text");
+    text.setAttribute("x", x.toFixed(1));
+    text.setAttribute("y", y.toFixed(1));
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("dominant-baseline", "central");
+    text.textContent = shown;
+    g.appendChild(text);
+
+    g.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (quiz.openKey && quiz.openKey !== key) closeQuizInput();
+      openQuizSlot(key);
+    });
+    return g;
+  }
+
+  function formatQuizNumber(value) {
+    return Number.isInteger(value)
+      ? String(value)
+      : value.toFixed(1).replace(".", ",");
+  }
+
+  function findQuizSlot(key) {
+    if (!forceLayer || !key) return null;
+    return forceLayer.querySelector(`.force-quiz-slot[data-quiz-key="${key}"]`);
+  }
+
+  function clearQuizKeypadError() {
+    if (quizKeypadError) {
+      quizKeypadError.hidden = true;
+      quizKeypadError.textContent = "";
+    }
+    if (quizKeypadDisplay) quizKeypadDisplay.classList.remove("is-invalid");
+  }
+
+  function showQuizKeypadError(message) {
+    if (quizKeypadError) {
+      quizKeypadError.hidden = false;
+      quizKeypadError.textContent = message;
+    }
+    if (quizKeypadDisplay) quizKeypadDisplay.classList.add("is-invalid");
+  }
+
+  function validateQuizKeypadDraft() {
+    const raw = quiz.draft.trim();
+    if (raw === "") return { ok: true };
+    const value = Number.parseFloat(raw.replace(",", "."));
+    if (!Number.isFinite(value)) {
+      return { ok: false, message: "Zadej platné číslo." };
+    }
+    if (value < 0) {
+      return { ok: false, message: "Hodnota nemůže být záporná." };
+    }
+    return { ok: true };
+  }
+
+  function updateQuizKeypadDisplay() {
+    if (quizKeypadDisplayValue) quizKeypadDisplayValue.textContent = quiz.draft;
+    const result = validateQuizKeypadDraft();
+    if (!result.ok) {
+      showQuizKeypadError(result.message);
+      return;
+    }
+    clearQuizKeypadError();
+  }
+
+  function insertQuizKeypadDraft(value) {
+    if (value === "," || value === ".") {
+      if (quiz.draft.includes(",") || quiz.draft.includes(".")) return;
+      value = ",";
+    }
+    if (quiz.draft.length >= 12) return;
+    quiz.draft += value;
+    updateQuizKeypadDisplay();
+  }
+
+  function clearQuizKeypadDraft() {
+    quiz.draft = "";
+    updateQuizKeypadDisplay();
+  }
+
+  function backspaceQuizKeypadDraft() {
+    quiz.draft = quiz.draft.slice(0, -1);
+    updateQuizKeypadDisplay();
+  }
+
+  function openQuizSlot(key) {
+    const slot = findQuizSlot(key);
+    if (!slot || !quizKeypadOverlay) return;
+    if (quiz.answers.get(key)?.correct) return;
+    quiz.openKey = key;
+    forceLayer.querySelectorAll(".force-quiz-slot").forEach((el) => {
+      el.classList.toggle("is-open", el === slot);
+    });
+    const previous = quiz.answers.get(key);
+    quiz.draft = previous ? formatQuizNumber(previous.value) : "";
+    clearQuizKeypadError();
+    updateQuizKeypadDisplay();
+    quizKeypadOverlay.hidden = false;
+  }
+
+  function closeQuizInput() {
+    quiz.openKey = null;
+    quiz.draft = "";
+    clearQuizKeypadError();
+    if (quizKeypadOverlay) quizKeypadOverlay.hidden = true;
+    if (quizKeypadDisplayValue) quizKeypadDisplayValue.textContent = "";
+    if (forceLayer) {
+      forceLayer.querySelectorAll(".force-quiz-slot.is-open").forEach((el) => {
+        el.classList.remove("is-open");
+      });
+    }
+  }
+
+  function submitQuizAnswer() {
+    const key = quiz.openKey;
+    const slot = findQuizSlot(key);
+    if (!slot) {
+      closeQuizInput();
+      return;
+    }
+    const result = validateQuizKeypadDraft();
+    if (!result.ok) {
+      showQuizKeypadError(result.message);
+      return;
+    }
+    const raw = quiz.draft.trim();
+    if (!raw) {
+      closeQuizInput();
+      return;
+    }
+    const value = Number.parseFloat(raw.replace(",", "."));
+    if (!Number.isFinite(value)) {
+      showQuizKeypadError("Zadej platné číslo.");
+      return;
+    }
+    const expected = parseFloat(slot.dataset.quizExpected) || 0;
+    // Šikmá lana posunou hodnotu o jednotky procent — malou odchylku ber
+    const tolerance = Math.max(QUIZ_TOLERANCE_N, expected * 0.06);
+    quiz.answers.set(key, {
+      value: Math.round(value * 10) / 10,
+      correct: Math.abs(value - expected) <= tolerance,
+    });
+    closeQuizInput();
+    updateForceArrows();
+  }
+
+  function handleQuizKeypadClick(event) {
+    const key = event.currentTarget;
+    if (!(key instanceof HTMLButtonElement) || key.disabled) return;
+    const action = key.getAttribute("data-action");
+    const value = key.getAttribute("data-value");
+    if (action === "clear") {
+      clearQuizKeypadDraft();
+      return;
+    }
+    if (action === "backspace") {
+      backspaceQuizKeypadDraft();
+      return;
+    }
+    if (value) insertQuizKeypadDraft(value);
+  }
+
+  function revealQuizSolution() {
+    if (!quiz.active || !forceLayer) return;
+    closeQuizInput();
+    forceLayer.querySelectorAll(".force-quiz-slot").forEach((slot) => {
+      const key = slot.dataset.quizKey;
+      if (!key || quiz.answers.get(key)?.correct) return;
+      quiz.answers.set(key, {
+        value: parseFloat(slot.dataset.quizExpected) || 0,
+        correct: true,
+        revealed: true,
+      });
+    });
+    quiz.revealed = true;
+    updateForceArrows();
+  }
+
+  function clearQuizCelebration() {
+    if (quizCelebrationTimer) {
+      window.clearTimeout(quizCelebrationTimer);
+      quizCelebrationTimer = 0;
+    }
+    const workspace = document.querySelector(".workspace");
+    workspace?.classList.remove("is-celebrating");
+    workspace?.querySelector(".quiz-celebration")?.remove();
+  }
+
+  function launchQuizGreenConfetti() {
+    const workspace = document.querySelector(".workspace");
+    if (!workspace) return;
+
+    clearQuizCelebration();
+
+    const left = workspace.clientWidth / 2;
+    const top = workspace.clientHeight / 2;
+
+    const layer = document.createElement("div");
+    layer.className = "quiz-celebration";
+    layer.setAttribute("aria-hidden", "true");
+
+    const burst = document.createElement("div");
+    burst.className = "quiz-confetti-burst";
+    burst.style.left = `${left}px`;
+    burst.style.top = `${top}px`;
+    layer.append(burst);
+
+    for (let i = 0; i < 80; i += 1) {
+      const piece = document.createElement("span");
+      piece.className = "quiz-confetti";
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 120 + Math.random() * 280;
+      piece.style.setProperty("--burst-x", `${Math.cos(angle) * distance}px`);
+      piece.style.setProperty("--burst-y", `${Math.sin(angle) * distance}px`);
+      piece.style.setProperty("--rotation", `${Math.random() * 720 - 360}deg`);
+      piece.style.setProperty("--size", `${6 + Math.random() * 10}px`);
+      piece.style.background = QUIZ_CONFETTI_COLORS[i % QUIZ_CONFETTI_COLORS.length];
+      piece.style.animationDelay = `${Math.random() * 0.12}s`;
+      burst.append(piece);
+    }
+
+    workspace.append(layer);
+    workspace.classList.add("is-celebrating");
+
+    quizCelebrationTimer = window.setTimeout(() => {
+      clearQuizCelebration();
+    }, 1800);
+  }
+
+  function formatQuizSuccessMessage(count) {
+    if (count === 1) return "Výborně! Síla je určena správně.";
+    if (count >= 2 && count <= 4) {
+      return `Výborně! Všechny ${count} síly jsou správně.`;
+    }
+    return `Výborně! Všech ${count} sil je určeno správně.`;
+  }
+
+  function updateQuizStatus() {
+    if (!quizStatus) return;
+    let filled = 0;
+    let correct = 0;
+    for (let i = 0; i < quiz.total; i += 1) {
+      const answer = quiz.answers.get(`slot-${i}`);
+      if (answer) filled += 1;
+      if (answer?.correct) correct += 1;
+    }
+    const done = quiz.total > 0 && correct >= quiz.total;
+    if (done && quiz.revealed) {
+      quizStatus.textContent = "Řešení zobrazeno — zkus další úkol.";
+    } else if (done) {
+      quizStatus.textContent = formatQuizSuccessMessage(quiz.total);
+      if (!quiz.completedCelebrated) {
+        quiz.completedCelebrated = true;
+        launchQuizGreenConfetti();
+      }
+    } else {
+      quizStatus.textContent = `Doplněno ${filled} / ${quiz.total}`;
+    }
+    quizStatus.classList.toggle("is-done", done && !quiz.revealed);
   }
 
   function simForceToNewtons(f) {
@@ -5050,19 +5422,25 @@
 
   function updateForceArrows() {
     syncForceOverlay();
+    quiz.slotSeq = 0;
     const system = buildRopeSystem();
     updateWinchForceLabels(system);
     clearForceArrows();
-    if (!showForces) return;
+    if (!showForces) {
+      if (quiz.active) {
+        quiz.total = 0;
+        updateQuizStatus();
+      }
+      return;
+    }
     // Těleso může viset na víc lanech — tíhu i výslednici kresli jednou
     const netByBody = new Map();
     for (const constraint of system.constraints) {
       drawRopeForces(constraint, netByBody);
     }
-    for (const entry of netByBody.values()) {
-      if (shouldDrawNetForce(entry.fx, entry.fy)) {
-        drawForceArrow(entry.origin, entry.fx, entry.fy, "net");
-      }
+    if (quiz.active) {
+      quiz.total = quiz.slotSeq;
+      updateQuizStatus();
     }
   }
 
@@ -6082,30 +6460,21 @@
     window.addEventListener("pointercancel", onUp);
   }
 
+  function bindStockSlotSpawn(slotEl, handler) {
+    if (!slotEl) return;
+    slotEl.addEventListener("pointerdown", (e) => {
+      handler(e);
+    });
+  }
+
   function enableStockSpawning() {
     ensureStockTemplatesInSlots();
-    const weightTpl = ensureWeightStockTemplate();
-    const winchTpl = ensureWinchStockTemplate();
-    if (stockTemplateFixed) {
-      stockTemplateFixed.addEventListener("pointerdown", (e) => {
-        beginPulleySpawnDrag("fixed", e);
-      });
-    }
-    if (stockTemplateFree) {
-      stockTemplateFree.addEventListener("pointerdown", (e) => {
-        beginPulleySpawnDrag("free", e);
-      });
-    }
-    if (weightTpl) {
-      weightTpl.addEventListener("pointerdown", (e) => {
-        beginWeightSpawnDrag(e);
-      });
-    }
-    if (winchTpl) {
-      winchTpl.addEventListener("pointerdown", (e) => {
-        beginWinchSpawnDrag(e);
-      });
-    }
+    ensureWeightStockTemplate();
+    ensureWinchStockTemplate();
+    bindStockSlotSpawn(stockSlotFixed, (e) => beginPulleySpawnDrag("fixed", e));
+    bindStockSlotSpawn(stockSlotFree, (e) => beginPulleySpawnDrag("free", e));
+    bindStockSlotSpawn(stockSlotWeights, (e) => beginWeightSpawnDrag(e));
+    bindStockSlotSpawn(stockSlotWinch, (e) => beginWinchSpawnDrag(e));
   }
 
   function enableStockMoveSwitch() {
@@ -6423,6 +6792,9 @@
     };
     const model = computeRopeModel(draft);
     if (model.wraps.length > 0) return;
+    // Uložené obepnutí (např. Kladkostroj 2) neshazuj, jen proto, že
+    // detekce po změně velikosti plochy wrap nenašla.
+    if ((rope.wrapIds || []).some((id) => !exclude.has(id))) return;
 
     rope.points = [startPt, endPt];
     rope.wrapIds = (rope.wrapIds || []).filter((id) => !exclude.has(id));
@@ -8599,9 +8971,9 @@
     syncRopeEndHandles();
   }
 
-  function rebuildAllRopes() {
+  function rebuildAllRopes(opts = {}) {
     for (const rope of ropes) {
-      if (rope.el.isConnected) rebuildRope(rope);
+      if (rope.el.isConnected) rebuildRope(rope, opts);
     }
     if (!running) updateForceArrows();
   }
@@ -9386,60 +9758,40 @@
     },
     kladkostroj5: {
       version: 1,
-      stageWidth: 872,
-      stageHeight: 658,
+      stageWidth: 1172,
+      stageHeight: 697,
       scene: {
         pulleySeq: 14,
-        weightSeq: 6,
-        winchSeq: 4,
-        globalStageScale: 0.87,
+        weightSeq: 7,
+        winchSeq: 3,
+        globalStageScale: 0.9,
         pulleys: [
-          {
-            id: "pulley-fixed-9",
-            kind: "fixed",
-            relativeScale: 1,
-            left: "604.18px",
-            top: "0px",
-            transform: "rotate(0deg)",
-            edge: "top",
-            along: 658.6796875,
-          },
-          {
-            id: "pulley-free-10",
-            kind: "free",
-            relativeScale: 1,
-            left: "725.289px",
-            top: "423.58px",
-            transform: "",
-            edge: null,
-            along: null,
-          },
           {
             id: "pulley-fixed-11",
             kind: "fixed",
             relativeScale: 1,
-            left: "408.024px",
+            left: "313.925px",
             top: "0px",
             transform: "rotate(0deg)",
             edge: "top",
-            along: 462.5244140625,
+            along: 370.425048828125,
           },
           {
             id: "pulley-fixed-12",
             kind: "fixed",
             relativeScale: 1,
-            left: "199.393px",
+            left: "655.269px",
             top: "0px",
             transform: "rotate(0deg)",
             edge: "top",
-            along: 253.8927001953125,
+            along: 711.7691040039062,
           },
           {
             id: "pulley-free-13",
             kind: "free",
             relativeScale: 1,
-            left: "510.273px",
-            top: "426.639px",
+            left: "481.299px",
+            top: "447.014px",
             transform: "",
             edge: null,
             along: null,
@@ -9448,8 +9800,8 @@
             id: "pulley-free-14",
             kind: "free",
             relativeScale: 1,
-            left: "305.901px",
-            top: "425.285px",
+            left: "823.701px",
+            top: "457.741px",
             transform: "",
             edge: null,
             along: null,
@@ -9457,68 +9809,56 @@
         ],
         weights: [
           {
-            id: "weight-4",
-            left: "322.082px",
-            top: "531.293px",
-            snap: { type: "rod", pulleyId: "pulley-free-14" },
-          },
-          {
-            id: "weight-5",
-            left: "526.45px",
-            top: "532.644px",
+            id: "weight-6",
+            left: "498.043px",
+            top: "556.679px",
             snap: { type: "rod", pulleyId: "pulley-free-13" },
           },
           {
-            id: "weight-6",
-            left: "741.473px",
-            top: "529.59px",
-            snap: { type: "rod", pulleyId: "pulley-free-10" },
+            id: "weight-7",
+            left: "840.442px",
+            top: "567.405px",
+            snap: { type: "rod", pulleyId: "pulley-free-14" },
           },
         ],
         winches: [
           {
-            id: "winch-4",
-            left: "38.012px",
-            top: "415.925px",
-            snap: { type: "rope", ropeIndex: 0, which: "end" },
+            id: "winch-3",
+            left: "119.145px",
+            top: "492.292px",
+            snap: { type: "rope", ropeIndex: 0, which: "start" },
           },
         ],
         ropes: [
           {
             points: [
-              { x: 834.2578125, y: 0 },
-              { x: 826.1950749006587, y: 474.9905942467333 },
-              { x: 725.4652281663914, y: 475.70240041554825 },
-              { x: 712.7735029010897, y: 67.81380180635578 },
-              { x: 604.1907390037977, y: 70.43672513419095 },
-              { x: 611.1714445579828, y: 476.3238641743758 },
-              { x: 510.4233166168576, y: 476.4193891675848 },
-              { x: 516.6371672325809, y: 70.33375233109015 },
-              { x: 408.0267622964158, y: 69.34052878497067 },
-              { x: 406.81148156184116, y: 475.9892171043919 },
-              { x: 307.70489573058484, y: 488.64445115329926 },
-              { x: 201.1773413588153, y: 83.30699295116062 },
-              { x: 299.6904885536386, y: 98.39040312740264 },
-              { x: 93.01202392578125, y: 427.4173583984375 },
+              { x: 174.14499999999998, y: 503.7845373134328 },
+              { x: 320.83243337043416, y: 44.90962854628235 },
+              { x: 425.84028762812216, y: 64.82016800429965 },
+              { x: 481.8704251915885, y: 505.878118242264 },
+              { x: 585.0422954663729, y: 507.52296950998107 },
+              { x: 655.9700117535434, y: 63.047102042031945 },
+              { x: 767.1887755773938, y: 64.85756453247252 },
+              { x: 824.264467114172, y: 516.5699693632363 },
+              { x: 927.8278987434899, y: 515.2752393640712 },
+              { x: 979.884765625, y: 0 },
             ],
             closed: false,
             edgeSnap: {
-              start: {
+              start: null,
+              end: {
                 type: "edge",
                 edge: "top",
-                along: 834.2578125,
+                along: 979.884765625,
               },
-              end: null,
             },
             wrapIds: [
-              "pulley-free-10",
-              "pulley-fixed-9",
-              "pulley-free-13",
               "pulley-fixed-11",
-              "pulley-free-14",
+              "pulley-free-13",
               "pulley-fixed-12",
+              "pulley-free-14",
             ],
-            d: "M834.26 0.00L826.20 474.99A50.38 50.38 0 0 1 725.47 475.70L712.77 67.81A54.31 54.31 0 0 0 604.19 70.44L611.17 476.32A50.38 50.38 0 1 1 510.42 476.42L516.64 70.33A54.31 54.31 0 1 0 408.03 69.34L406.81 475.99A50.38 50.38 0 1 1 306.05 475.60L308.01 69.77A54.31 54.31 0 0 0 201.56 54.33L93.01 427.42",
+            d: "M174.14 503.78L316.55 54.91A56.18 56.18 0 0 1 425.84 64.82L481.87 505.88A52.12 52.12 0 0 0 585.04 507.52L655.97 63.05A56.18 56.18 0 0 1 767.19 64.86L824.26 516.57A52.12 52.12 0 0 0 927.83 515.28L979.88 0.00",
           },
         ],
       },
@@ -9893,7 +10233,7 @@
     if (!payload) return false;
     const scene = sceneFromExport(payload);
     if (!scene) return false;
-    restoreScene(scene);
+    restoreScene(scene, { preserveWraps: true });
     return true;
   }
 
@@ -10005,6 +10345,7 @@
   }
 
   function showModeMenu() {
+    exitQuiz();
     resetEditorState();
     historySuspended = true;
     clearSceneObjects();
@@ -10027,6 +10368,7 @@
   }
 
   function enterLab() {
+    exitQuiz();
     resetEditorState();
     historySuspended = true;
     clearSceneObjects();
@@ -10050,7 +10392,6 @@
     clearSceneObjects();
     forceStageLayout();
     buildPresetById(id);
-    rebuildAllRopes();
     syncAllWeightsToSnap();
     syncRopeEndHandles();
     updateForceArrows();
@@ -10062,6 +10403,7 @@
   }
 
   function enterGallery(id) {
+    exitQuiz();
     appMode = "gallery";
     if (appRoot) appRoot.dataset.appMode = "gallery";
     hideModeMenu();
@@ -10072,6 +10414,186 @@
         loadPresetScene(id);
       });
     });
+  }
+
+  /**
+   * Kladkostroj 5 nese tři zátěže (počet závaží nemá smysl měnit),
+   * Kladkostroj 2 má uloženou polohu mimo rovnováhu — tahy v laně by
+   * v zadání nevycházely na hezká čísla.
+   */
+  const QUIZ_PRESET_IDS = PRESETS.map((p) => p.id).filter(
+    (id) => id !== "kladkostroj5" && id !== "kladkostroj2"
+  );
+
+  function enterQuiz() {
+    appMode = "quiz";
+    activePresetId = null;
+    if (appRoot) appRoot.dataset.appMode = "quiz";
+    hideModeMenu();
+    if (panelModeTitle) panelModeTitle.textContent = "Kvíz";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        syncRopeViewBox();
+        startQuizTask();
+      });
+    });
+  }
+
+  function exitQuiz() {
+    if (!quiz.active) return;
+    closeQuizInput();
+    clearQuizCelebration();
+    quiz.active = false;
+    quiz.revealed = false;
+    quiz.completedCelebrated = false;
+    quiz.answers.clear();
+    quiz.total = 0;
+    setShowForces(false);
+    // Kvíz si scénu mohl zmenšit — vrať výchozí měřítko plochy
+    applyGlobalStageScale(0.9, { skipRebuild: true });
+  }
+
+  /** Dvakrát za sebou stejné zadání působí jako by se nic nestalo. */
+  function pickQuizTask() {
+    let task = null;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      task = {
+        id: QUIZ_PRESET_IDS[Math.floor(Math.random() * QUIZ_PRESET_IDS.length)],
+        count: 1 + Math.floor(Math.random() * QUIZ_MAX_WEIGHTS),
+      };
+      if (task.id !== quiz.lastId) break;
+    }
+    quiz.lastId = task.id;
+    return task;
+  }
+
+  function startQuizTask() {
+    closeQuizInput();
+    clearQuizCelebration();
+    quiz.answers.clear();
+    quiz.revealed = false;
+    quiz.completedCelebrated = false;
+    quiz.total = 0;
+    quiz.active = true;
+    const task = pickQuizTask();
+    loadQuizScene(task.id, task.count);
+    setShowForces(true);
+  }
+
+  /** Když se sloupec závaží nevejde, zkus scénu o něco zmenšit. */
+  const QUIZ_SCENE_SCALES = [1, 0.92, 0.84, 0.76, 0.68];
+
+  function loadQuizScene(id, count) {
+    resetEditorState();
+    historySuspended = true;
+    for (const factor of QUIZ_SCENE_SCALES) {
+      clearSceneObjects();
+      forceStageLayout();
+      loadQuizPreset(id, factor);
+      syncAllWeightsToSnap();
+      // Geometrie lan zůstává z presetu, závaží navíc se jen přivěsí pod zátěž
+      let placed = weights.length;
+      while (placed < count && appendQuizWeight()) placed += 1;
+      for (const rope of ropes) {
+        syncRopeEdgePoints(rope);
+        syncRopeEndpointsFromWeights(rope);
+      }
+      if (placed >= count) break;
+    }
+    syncRopeEndHandles();
+    updateForceArrows();
+    historySuspended = false;
+    updateHistoryButtons();
+  }
+
+  function loadQuizPreset(id, factor) {
+    const payload = PRESET_EXPORTS[id];
+    if (!payload) return false;
+    const scene = sceneFromExport(payload);
+    if (!scene) return false;
+    if (factor !== 1) shrinkQuizScene(scene, factor);
+    restoreScene(scene, { preserveWraps: true });
+    return true;
+  }
+
+  /**
+   * Zmenší celou scénu ke stropu a ke střední ose. Je to podobnost, takže
+   * úhly lan — a tím i velikosti sil — zůstanou stejné.
+   */
+  function shrinkQuizScene(scene, factor) {
+    const cx = stageSize().width / 2;
+    const sx = (value) => cx + (value - cx) * factor;
+    const sy = (value) => value * factor;
+    const movePx = (item) => {
+      item.left = `${sx(parseFloat(item.left) || 0)}px`;
+      item.top = `${sy(parseFloat(item.top) || 0)}px`;
+    };
+    const moveAlong = (item) =>
+      item.edge === "left" || item.edge === "right"
+        ? sy(item.along)
+        : sx(item.along);
+
+    for (const pulley of scene.pulleys || []) {
+      movePx(pulley);
+      if (pulley.along != null && !Number.isNaN(pulley.along)) {
+        pulley.along = moveAlong(pulley);
+      }
+    }
+    for (const weight of scene.weights || []) movePx(weight);
+    for (const winch of scene.winches || []) movePx(winch);
+    for (const rope of scene.ropes || []) {
+      rope.points = (rope.points || []).map((pt) => ({
+        x: sx(pt.x),
+        y: sy(pt.y),
+      }));
+      for (const which of ["start", "end"]) {
+        const snap = rope.edgeSnap?.[which];
+        if (snap?.along != null && !Number.isNaN(snap.along)) {
+          snap.along = moveAlong(snap);
+        }
+      }
+    }
+    scene.globalStageScale = (scene.globalStageScale || 0.9) * factor;
+  }
+
+  /** Zátěž kvízu — závaží uvázané k lanu nebo nasazené na hák volné kladky. */
+  function quizLoadWeight() {
+    return (
+      weights.find((w) => w.snap.type === "rod" || w.snap.type === "rope") ||
+      null
+    );
+  }
+
+  function lowestWeightOfStack(root) {
+    let current = root;
+    for (let guard = 0; guard < QUIZ_MAX_WEIGHTS + 1; guard += 1) {
+      const next = weights.find(
+        (w) =>
+          w.snap.type === "weight" &&
+          w.snap.weight === current &&
+          w.snap.placement === "hang"
+      );
+      if (!next) break;
+      current = next;
+    }
+    return current;
+  }
+
+  /** Přivěsí další závaží pod zátěž. Nevejde-li se na plochu, vrátí false. */
+  function appendQuizWeight() {
+    const load = quizLoadWeight();
+    if (!load) return false;
+    const support = lowestWeightOfStack(load);
+    const weight = createWeightInstance();
+    weight.snap = { type: "weight", weight: support, placement: "hang" };
+    syncWeightToSnap(weight);
+    const bottom =
+      (parseFloat(weight.el.style.top) || 0) + (weight.el.offsetHeight || 67);
+    if (bottom > stageSize().height - 4) {
+      destroyWeight(weight);
+      return false;
+    }
+    return true;
   }
 
   if (btnMove) {
@@ -10151,12 +10673,63 @@
   if (modeChoosePresets) {
     modeChoosePresets.addEventListener("click", () => setMenuView("presets"));
   }
+  if (modeChooseQuiz) {
+    modeChooseQuiz.addEventListener("click", () => enterQuiz());
+  }
   if (modeMenuBack) {
     modeMenuBack.addEventListener("click", () => setMenuView("home"));
   }
   if (btnBackMenu) {
     btnBackMenu.addEventListener("click", () => showModeMenu());
   }
+  if (btnQuizNew) {
+    btnQuizNew.addEventListener("click", () => startQuizTask());
+  }
+  if (btnQuizReveal) {
+    btnQuizReveal.addEventListener("click", () => revealQuizSolution());
+  }
+  if (quizKeypadConfirm) {
+    quizKeypadConfirm.addEventListener("click", () => submitQuizAnswer());
+  }
+  if (quizKeypadCancel) {
+    quizKeypadCancel.addEventListener("click", () => closeQuizInput());
+  }
+  if (quizKeypadOverlay) {
+    quizKeypadOverlay.addEventListener("click", (event) => {
+      if (event.target === quizKeypadOverlay) closeQuizInput();
+    });
+  }
+  for (const keyBtn of quizMathKeypadKeys) {
+    keyBtn.addEventListener("mousedown", (event) => event.preventDefault());
+    keyBtn.addEventListener("click", handleQuizKeypadClick);
+  }
+  document.addEventListener("keydown", (event) => {
+    if (!quiz.openKey) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeQuizInput();
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      submitQuizAnswer();
+      return;
+    }
+    if (event.key === "Backspace") {
+      event.preventDefault();
+      backspaceQuizKeypadDraft();
+      return;
+    }
+    if (/^[0-9]$/.test(event.key)) {
+      event.preventDefault();
+      insertQuizKeypadDraft(event.key);
+      return;
+    }
+    if (event.key === "," || event.key === ".") {
+      event.preventDefault();
+      insertQuizKeypadDraft(",");
+    }
+  });
 
   enablePencil();
   enableFreehand();
