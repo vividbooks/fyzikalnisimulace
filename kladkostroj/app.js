@@ -5391,7 +5391,8 @@
   }
 
   function formatLengthCm(px) {
-    return `${Math.max(0, Math.round(Math.abs(px) / ROPE_PX_PER_CM))} cm`;
+    const cm = Math.round(Math.abs(Number(px) || 0) / ROPE_PX_PER_CM);
+    return `${cm < 0 ? 0 : cm} cm`;
   }
 
   function formatWoundRopeLength(px) {
