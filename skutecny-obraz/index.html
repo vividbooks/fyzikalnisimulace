@@ -960,6 +960,109 @@
       return { x: x - 16, y: top - 12, w: 32, h: (bottom - top) + 24 };
     }
 
+    // Safari na iPadu má ctx.filter u canvasu, ale blur se neaplikuje.
+    const CANVAS_FILTER_BLUR = (() => {
+      try {
+        const testCanvas = document.createElement("canvas");
+        testCanvas.width = 16;
+        testCanvas.height = 16;
+        const testCtx = testCanvas.getContext("2d");
+        if (!testCtx || !("filter" in testCtx)) return false;
+        testCtx.fillStyle = "#ff0000";
+        testCtx.fillRect(7, 7, 2, 2);
+        const edgeBefore = testCtx.getImageData(0, 7, 1, 1).data[0];
+        testCtx.clearRect(0, 0, 16, 16);
+        testCtx.fillStyle = "#ff0000";
+        testCtx.filter = "blur(4px)";
+        testCtx.fillRect(7, 7, 2, 2);
+        testCtx.filter = "none";
+        const edgeAfter = testCtx.getImageData(0, 7, 1, 1).data[0];
+        return edgeAfter > edgeBefore + 8;
+      } catch (_) {
+        return false;
+      }
+    })();
+
+    let flameBlurBuffers = null;
+
+    function ensureFlameBlurBuffers(w, h) {
+      const create = () => {
+        const bufferCanvas = document.createElement("canvas");
+        // iOS Safari někdy nezkopíruje obsah canvasu, který není ve DOMu.
+        bufferCanvas.setAttribute("aria-hidden", "true");
+        bufferCanvas.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+        document.body.appendChild(bufferCanvas);
+        return { canvas: bufferCanvas, ctx: bufferCanvas.getContext("2d") };
+      };
+      if (!flameBlurBuffers) {
+        flameBlurBuffers = { scene: create(), blurA: create(), blurB: create() };
+      }
+      for (const key of ["scene", "blurA", "blurB"]) {
+        const buffer = flameBlurBuffers[key];
+        if (buffer.canvas.width !== w) buffer.canvas.width = w;
+        if (buffer.canvas.height !== h) buffer.canvas.height = h;
+      }
+      return flameBlurBuffers;
+    }
+
+    function softBlurFlameCanvas(sourceCanvas, sourceW, sourceH, blurPx) {
+      const minDim = Math.max(
+        1,
+        Math.round(Math.min(sourceW, sourceH) / clamp(1 + blurPx / 6, 2, 14))
+      );
+      const buffers = ensureFlameBlurBuffers(sourceW, sourceH);
+      let source = sourceCanvas;
+      let width = sourceW;
+      let height = sourceH;
+      let slot = 0;
+      const pingPong = [buffers.blurA, buffers.blurB];
+
+      while (width > minDim || height > minDim) {
+        const nextW = Math.max(minDim, Math.ceil(width / 2));
+        const nextH = Math.max(minDim, Math.ceil(height / 2));
+        const target = pingPong[slot];
+        target.ctx.clearRect(0, 0, nextW, nextH);
+        target.ctx.imageSmoothingEnabled = true;
+        target.ctx.drawImage(source, 0, 0, width, height, 0, 0, nextW, nextH);
+        source = target.canvas;
+        width = nextW;
+        height = nextH;
+        slot = 1 - slot;
+      }
+
+      return { canvas: source, w: width, h: height };
+    }
+
+    function flameFlicker(x, baseY, height, onWhite, t) {
+      const H = clamp(Math.abs(height), 8, onWhite ? 1600 : 320);
+      const flicker = onWhite ? 0.005 : 0.008;
+      const flameW = H * (FLAME_SVG_W / FLAME_SVG_H);
+      return {
+        H,
+        dx: Math.sin(t * 0.010 + x * 0.02) * flameW * (flicker * 0.45),
+        dy: Math.sin(t * 0.013 + baseY * 0.02) * H * (flicker * 0.28),
+        rot: Math.sin(t * 0.009) * (flicker * 0.16),
+        sBreath: 1 + Math.sin(t * 0.017) * (flicker * 0.18)
+      };
+    }
+
+    function drawFlameShape(targetCtx, wickX, wickY, height, inverted, flicker, onWhite) {
+      const H = flicker.H;
+      const scale = H / FLAME_SVG_H;
+
+      targetCtx.save();
+      targetCtx.translate(wickX + flicker.dx, wickY + flicker.dy);
+      targetCtx.rotate(flicker.rot);
+      if (inverted) {
+        targetCtx.scale(scale * flicker.sBreath, -scale * flicker.sBreath);
+        targetCtx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
+      } else {
+        targetCtx.scale(scale * flicker.sBreath, scale * flicker.sBreath);
+        targetCtx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
+      }
+      targetCtx.restore();
+    }
+
     function drawFlame(x, baseY, height, opts = {}) {
       if (!flameSvgImage) return;
 
@@ -968,21 +1071,40 @@
       const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 1;
       const onWhite = opts.onWhite === true;
       const t = Number.isFinite(opts.t) ? opts.t : performance.now();
-      const H = clamp(Math.abs(height), 8, onWhite ? 1600 : 320);
-      const scale = H / FLAME_SVG_H;
+      const flicker = flameFlicker(x, baseY, height, onWhite, t);
+      const H = flicker.H;
+      const flameW = H * (FLAME_SVG_W / FLAME_SVG_H);
 
-      // Subtle flicker: tiny wobble + scale breathing + micro-rotation.
-      // Keep it very small so it doesn't look like shaking.
-      const flicker = onWhite ? 0.005 : 0.008;
-      const w = H * (FLAME_SVG_W / FLAME_SVG_H);
-      const dx = Math.sin(t * 0.010 + x * 0.02) * w * (flicker * 0.45);
-      const dy = Math.sin(t * 0.013 + baseY * 0.02) * H * (flicker * 0.28);
-      const rot = Math.sin(t * 0.009) * (flicker * 0.16);
-      const sBreath = 1 + Math.sin(t * 0.017) * (flicker * 0.18);
+      if (blur > 0.001 && !CANVAS_FILTER_BLUR) {
+        const pad = Math.ceil(blur * 1.2) + (onWhite ? 20 : 8);
+        const bufW = Math.ceil(flameW + pad * 2);
+        const bufH = Math.ceil(H + pad * 2);
+        const buffers = ensureFlameBlurBuffers(bufW, bufH);
+        const sctx = buffers.scene.ctx;
+        sctx.clearRect(0, 0, bufW, bufH);
+        const wickX = bufW / 2;
+        const wickY = inverted ? pad : bufH - pad;
+        drawFlameShape(sctx, wickX, wickY, height, inverted, flicker, onWhite);
+        const blurred = softBlurFlameCanvas(buffers.scene.canvas, bufW, bufH, blur);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        if (onWhite) {
+          ctx.shadowColor = "rgba(15, 23, 42, 0.14)";
+          ctx.shadowBlur = clamp(H * 0.04, 4, 18);
+          ctx.shadowOffsetY = 1;
+        }
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(blurred.canvas, 0, 0, blurred.w, blurred.h, x - wickX, baseY - wickY, bufW, bufH);
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.restore();
+        return;
+      }
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      if (blur > 0.001 && "filter" in ctx) {
+      if (blur > 0.001) {
         ctx.filter = `blur(${blur}px)`;
       }
       if (onWhite) {
@@ -991,16 +1113,7 @@
         ctx.shadowOffsetY = 1;
       }
 
-      ctx.translate(x + dx, baseY + dy);
-      ctx.rotate(rot);
-      if (inverted) {
-        // Wick at baseY (top), tip extends downward.
-        ctx.scale(scale * sBreath, -scale * sBreath);
-        ctx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
-      } else {
-        ctx.scale(scale * sBreath, scale * sBreath);
-        ctx.drawImage(flameSvgImage, -FLAME_SVG_W / 2, -FLAME_SVG_H, FLAME_SVG_W, FLAME_SVG_H);
-      }
+      drawFlameShape(ctx, x, baseY, height, inverted, flicker, onWhite);
 
       ctx.filter = "none";
       ctx.shadowColor = "transparent";
