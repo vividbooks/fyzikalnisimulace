@@ -148,7 +148,7 @@
     return `${WEIGHT_SVG}<span class="weight-label" aria-hidden="true">${WEIGHT_LABEL_TEXT}</span>`;
   }
 
-  const WINCH_SVG = `<svg width="134" height="132" viewBox="0 0 134 132" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="48.5" width="133" height="83" rx="12" ry="12" fill="#D9D9D9" stroke="black"/><circle cx="67" cy="50" r="50" fill="black"/><g transform="translate(66.7016 49.7016)"><g class="winch-drum"><g transform="translate(-66.7016 -49.7016)"><path d="M66.6989 80.4041C83.6555 80.4041 97.4015 66.6581 97.4015 49.7015C97.4015 32.745 83.6555 18.999 66.6989 18.999C49.7423 18.999 35.9963 32.745 35.9963 49.7015C35.9963 66.6581 49.7423 80.4041 66.6989 80.4041Z" fill="white" stroke="#B1B1B1" stroke-width="7.69075" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.7016 85.4031C86.419 85.4031 102.403 69.419 102.403 49.7016C102.403 29.9841 86.419 14 66.7016 14C46.9841 14 31 29.9841 31 49.7016C31 69.419 46.9841 85.4031 66.7016 85.4031Z" stroke="#1D1D1B" stroke-width="3.29604" stroke-miterlimit="10" stroke-linecap="round"/><path d="M99.2331 49.7016C99.2331 67.665 84.6701 82.2335 66.7012 82.2335C48.7323 82.2335 34.1693 67.6705 34.1693 49.7016C34.1693 31.7327 48.7323 17.1697 66.7012 17.1697" stroke="white" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M39.9513 49.7234H93.3746" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.6575 23.0091V76.4324" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M47.7767 30.8317L85.5548 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M85.5548 30.8317L47.7767 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M41.8699 39.7641L91.4423 59.6777" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M76.614 24.9374L56.7005 74.5098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M56.1691 25.1571L77.1429 74.29" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M91.2219 39.2367L42.089 60.2105" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/></g></g></g><circle class="winch-light" cx="67" cy="50" r="43" stroke="white" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 14" fill="none"/><circle class="winch-led" cx="16" cy="118" r="6.5" fill="#5a5a5a" stroke="#1d1d1b" stroke-width="1.4"/><text class="winch-rope-text" x="26" y="119.5" text-anchor="start" dominant-baseline="central" fill="#1e293b" font-size="12" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"></text><text class="winch-force-text" x="118" y="119.5" text-anchor="end" dominant-baseline="central" fill="#4A43E8" font-size="15" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"></text></svg>`;
+  const WINCH_SVG = `<svg width="134" height="132" viewBox="0 0 134 132" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="48.5" width="133" height="83" rx="12" ry="12" fill="#D9D9D9" stroke="black"/><circle cx="67" cy="50" r="50" fill="black"/><g transform="translate(66.7016 49.7016)"><g class="winch-drum"><g transform="translate(-66.7016 -49.7016)"><path d="M66.6989 80.4041C83.6555 80.4041 97.4015 66.6581 97.4015 49.7015C97.4015 32.745 83.6555 18.999 66.6989 18.999C49.7423 18.999 35.9963 32.745 35.9963 49.7015C35.9963 66.6581 49.7423 80.4041 66.6989 80.4041Z" fill="white" stroke="#B1B1B1" stroke-width="7.69075" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.7016 85.4031C86.419 85.4031 102.403 69.419 102.403 49.7016C102.403 29.9841 86.419 14 66.7016 14C46.9841 14 31 29.9841 31 49.7016C31 69.419 46.9841 85.4031 66.7016 85.4031Z" stroke="#1D1D1B" stroke-width="3.29604" stroke-miterlimit="10" stroke-linecap="round"/><path d="M99.2331 49.7016C99.2331 67.665 84.6701 82.2335 66.7012 82.2335C48.7323 82.2335 34.1693 67.6705 34.1693 49.7016C34.1693 31.7327 48.7323 17.1697 66.7012 17.1697" stroke="white" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M39.9513 49.7234H93.3746" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.6575 23.0091V76.4324" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M47.7767 30.8317L85.5548 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M85.5548 30.8317L47.7767 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M41.8699 39.7641L91.4423 59.6777" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M76.614 24.9374L56.7005 74.5098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M56.1691 25.1571L77.1429 74.29" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M91.2219 39.2367L42.089 60.2105" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/></g></g></g><circle class="winch-light" cx="67" cy="50" r="43" stroke="white" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 14" fill="none"/><circle class="winch-led" cx="16" cy="118" r="6.5" fill="#5a5a5a" stroke="#1d1d1b" stroke-width="1.4"/><text class="winch-force-text" x="118" y="119.5" text-anchor="end" dominant-baseline="central" fill="#4A43E8" font-size="15" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"></text></svg>`;
 
   const WINCH = {
     vbW: 134,
@@ -4950,7 +4950,7 @@
   }
 
   function clearForceArrows() {
-    if (forceLayer) forceLayer.replaceChildren();
+    clearSvgLayer(forceLayer);
   }
 
   /** Délka šipky je přímo úměrná velikosti síly (110 px na tíhu jednoho závaží). */
@@ -5059,7 +5059,21 @@
   function setShowLengths(next) {
     showLengths = !!next;
     syncLengthsToggleUi();
-    updateForceArrows();
+    const refreshLengths = () => {
+      syncMeasureOverlay();
+      updateForceArrows();
+    };
+    if (showLengths) {
+      requestAnimationFrame(() => requestAnimationFrame(refreshLengths));
+    } else {
+      refreshLengths();
+    }
+  }
+
+  function clearSvgLayer(layer) {
+    if (!layer) return;
+    if (typeof layer.replaceChildren === "function") layer.replaceChildren();
+    else while (layer.firstChild) layer.removeChild(layer.firstChild);
   }
 
   /**
@@ -5468,7 +5482,7 @@
 
   function updateWeightLiftLabels() {
     syncMeasureOverlay();
-    if (measureLayer) measureLayer.replaceChildren();
+    clearSvgLayer(measureLayer);
     if (!showLengths) return;
     for (const weight of weights) {
       weight.el.querySelector(".weight-lift-text")?.remove();
@@ -5596,24 +5610,13 @@
   }
 
   function ensureWinchRopeLabel(winch) {
-    winch.el.querySelector(".winch-rope-length")?.remove();
-    const svg = winch.el.querySelector("svg");
-    let label = winch.el.querySelector(".winch-rope-text");
-    if (!label && svg) {
-      label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      label.classList.add("winch-rope-text");
-      label.setAttribute("x", "26");
-      label.setAttribute("y", "119.5");
-      label.setAttribute("text-anchor", "start");
-      label.setAttribute("dominant-baseline", "central");
-      label.setAttribute("fill", "#1e293b");
-      label.setAttribute("font-size", "12");
-      label.setAttribute("font-weight", "700");
-      label.setAttribute(
-        "font-family",
-        "ui-sans-serif, system-ui, -apple-system, sans-serif"
-      );
-      svg.appendChild(label);
+    winch.el.querySelector(".winch-rope-text")?.remove();
+    let label = winch.el.querySelector(".winch-rope-length");
+    if (!label) {
+      label = document.createElement("span");
+      label.classList.add("winch-rope-length");
+      label.setAttribute("aria-hidden", "true");
+      winch.el.appendChild(label);
     }
     return label;
   }
@@ -5668,13 +5671,13 @@
         !isStockTemplate(winch.el) &&
         winch.snap?.type === "rope" &&
         !!winch.snap.rope?.el?.isConnected;
-      if (!attached || quiz.active) {
+      if (!attached || quiz.active || !showLengths) {
         label.textContent = "";
-        label.style.visibility = "hidden";
+        label.hidden = true;
         continue;
       }
       label.textContent = formatWoundRopeLength(winch.woundLengthPx || 0);
-      label.style.visibility = showLengths ? "visible" : "hidden";
+      label.hidden = false;
     }
   }
 
@@ -10892,7 +10895,10 @@
     btnForces.addEventListener("click", () => setShowForces(!showForces));
   }
   if (btnLengths) {
-    btnLengths.addEventListener("click", () => setShowLengths(!showLengths));
+    btnLengths.addEventListener("click", (e) => {
+      e.preventDefault();
+      setShowLengths(!showLengths);
+    });
   }
   syncLengthsToggleUi();
   if (btnExportScene) {
@@ -11025,6 +11031,7 @@
     syncRopeViewBox();
     syncStockTrayScale();
     syncForceOverlay();
+    syncMeasureOverlay();
     syncAllRopeEdgePoints();
     rebuildAllRopes();
     syncRopeEndHandles();

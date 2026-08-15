@@ -713,10 +713,22 @@
         user-select: none;
       }
 
-      .winch-rope-text {
-        fill: #1e293b;
+      .winch-rope-length {
+        position: absolute;
+        left: 6%;
+        bottom: 5%;
+        z-index: 1;
+        font-size: calc(10px * var(--pulley-scale, 1));
+        font-weight: 700;
+        color: #1e293b;
         pointer-events: none;
+        line-height: 1;
+        white-space: nowrap;
         user-select: none;
+      }
+
+      .winch-rope-length[hidden] {
+        display: none !important;
       }
 
       .app-root:not([data-tool="run"]) .winch-force-text {
@@ -747,21 +759,13 @@
 
       .winch.is-stock-template .winch-force-text,
       .winch.is-docked .winch-force-text,
-      .winch.is-stock-template .winch-rope-text,
-      .winch.is-docked .winch-rope-text {
+      .winch.is-stock-template .winch-rope-length,
+      .winch.is-docked .winch-rope-length {
         display: none;
       }
 
-      .app-root:not(.is-show-lengths) .winch-rope-text {
-        visibility: hidden !important;
-      }
-
-      .app-root[data-app-mode="quiz"] .winch-rope-text {
-        visibility: hidden !important;
-      }
-
-      .app-root:not(.is-show-lengths) #measure-overlay {
-        display: none;
+      .app-root[data-app-mode="quiz"] .winch-rope-length {
+        display: none !important;
       }
 
       .winch-overload-msg {
@@ -1049,11 +1053,17 @@
       #measure-overlay {
         position: absolute;
         inset: 0;
-        z-index: 4;
+        z-index: 14;
+        display: block;
         width: 100%;
         height: 100%;
         overflow: visible;
         pointer-events: none;
+        visibility: hidden;
+      }
+
+      .app-root.is-show-lengths #measure-overlay {
+        visibility: visible;
       }
 
       .weight-lift-dim-line {
@@ -1071,9 +1081,8 @@
         font-size: 12px;
         font-weight: 700;
         font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-        paint-order: stroke fill;
         stroke: #ffffff;
-        stroke-width: 3.5px;
+        stroke-width: 4px;
         stroke-linejoin: round;
         pointer-events: none;
       }
