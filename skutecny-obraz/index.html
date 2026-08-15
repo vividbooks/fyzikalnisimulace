@@ -960,84 +960,6 @@
       return { x: x - 16, y: top - 12, w: 32, h: (bottom - top) + 24 };
     }
 
-    let flameBlurBuffers = null;
-
-    function createHiddenCanvas() {
-      const bufferCanvas = document.createElement("canvas");
-      // iOS Safari někdy nezkopíruje obsah canvasu, který není ve DOMu.
-      bufferCanvas.setAttribute("aria-hidden", "true");
-      bufferCanvas.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
-      document.body.appendChild(bufferCanvas);
-      return { canvas: bufferCanvas, ctx: bufferCanvas.getContext("2d") };
-    }
-
-    function resizeHiddenCanvas(buffer, w, h) {
-      const width = Math.max(1, Math.round(w));
-      const height = Math.max(1, Math.round(h));
-      if (buffer.canvas.width !== width) buffer.canvas.width = width;
-      if (buffer.canvas.height !== height) buffer.canvas.height = height;
-      return buffer;
-    }
-
-    function ensureFlameBlurBuffers() {
-      if (!flameBlurBuffers) {
-        flameBlurBuffers = {
-          scene: createHiddenCanvas(),
-          small: createHiddenCanvas(),
-          composite: createHiddenCanvas()
-        };
-      }
-      return flameBlurBuffers;
-    }
-
-    // Safari/iPad ctx.filter blur neaplikuje. Měkké rozostření: zmenšení + otisky
-    // do kruhu (kroužek neostrosti), bez filter API.
-    function drawBlurredFlameBitmap(targetCtx, destX, destY, destW, destH, blurPx, alpha) {
-      const buffers = ensureFlameBlurBuffers();
-      const down = clamp(1 + blurPx / 8, 1.25, 10);
-      const smallW = Math.max(2, Math.round(destW / down));
-      const smallH = Math.max(2, Math.round(destH / down));
-      const small = resizeHiddenCanvas(buffers.small, smallW, smallH);
-      const composite = resizeHiddenCanvas(buffers.composite, destW, destH);
-
-      small.ctx.clearRect(0, 0, smallW, smallH);
-      small.ctx.imageSmoothingEnabled = true;
-      small.ctx.drawImage(buffers.scene.canvas, 0, 0, destW, destH, 0, 0, smallW, smallH);
-
-      const cctx = composite.ctx;
-      cctx.clearRect(0, 0, destW, destH);
-      cctx.imageSmoothingEnabled = true;
-
-      const innerCopies = clamp(Math.round(5 + blurPx / 7), 6, 12);
-      const outerCopies = blurPx > 16 ? clamp(Math.round(6 + blurPx / 10), 6, 10) : 0;
-      const stampCount = 1 + innerCopies + outerCopies;
-      const stampAlpha = 1 / (0.55 + stampCount * 0.38);
-
-      const stamp = (dx, dy, a) => {
-        cctx.globalAlpha = a;
-        cctx.drawImage(small.canvas, 0, 0, smallW, smallH, dx, dy, destW, destH);
-      };
-
-      stamp(0, 0, stampAlpha * 1.35);
-      for (let i = 0; i < innerCopies; i++) {
-        const angle = (i / innerCopies) * Math.PI * 2;
-        const radius = blurPx * 0.42;
-        stamp(Math.cos(angle) * radius, Math.sin(angle) * radius, stampAlpha);
-      }
-      for (let i = 0; i < outerCopies; i++) {
-        const angle = (i / outerCopies) * Math.PI * 2 + 0.3;
-        const radius = blurPx * 0.78;
-        stamp(Math.cos(angle) * radius, Math.sin(angle) * radius, stampAlpha * 0.75);
-      }
-      cctx.globalAlpha = 1;
-
-      targetCtx.save();
-      targetCtx.globalAlpha = alpha;
-      targetCtx.imageSmoothingEnabled = true;
-      targetCtx.drawImage(composite.canvas, destX, destY);
-      targetCtx.restore();
-    }
-
     function flameFlicker(x, baseY, height, onWhite, t) {
       const H = clamp(Math.abs(height), 8, onWhite ? 1600 : 320);
       const flicker = onWhite ? 0.005 : 0.008;
@@ -1051,7 +973,7 @@
       };
     }
 
-    function drawFlameShape(targetCtx, wickX, wickY, height, inverted, flicker, onWhite) {
+    function drawFlameShape(targetCtx, wickX, wickY, height, inverted, flicker) {
       const H = flicker.H;
       const scale = H / FLAME_SVG_H;
 
@@ -1068,6 +990,31 @@
       targetCtx.restore();
     }
 
+    // Mimo ohnisko není na stínítku ostrý tvar, ale kruh neostrosti — měkká teplá skvrna.
+    function drawDefocusBlob(targetCtx, cx, baseY, height, inverted, blurPx, alpha) {
+      const H = clamp(Math.abs(height), 8, 1600);
+      const flameW = H * (FLAME_SVG_W / FLAME_SVG_H);
+      const spread = blurPx * 0.52 + 8;
+      const centerY = inverted ? baseY + H * 0.44 : baseY - H * 0.44;
+      const rx = flameW * 0.44 + spread;
+      const ry = H * 0.48 + spread * 0.62;
+
+      targetCtx.save();
+      targetCtx.globalAlpha = alpha;
+      targetCtx.translate(cx, centerY);
+      targetCtx.scale(1, ry / Math.max(rx, 1));
+      const grad = targetCtx.createRadialGradient(0, 0, 0, 0, 0, rx);
+      grad.addColorStop(0, "rgba(255, 232, 110, 0.92)");
+      grad.addColorStop(0.38, "rgba(255, 176, 68, 0.52)");
+      grad.addColorStop(0.72, "rgba(255, 132, 54, 0.16)");
+      grad.addColorStop(1, "rgba(255, 120, 48, 0)");
+      targetCtx.fillStyle = grad;
+      targetCtx.beginPath();
+      targetCtx.arc(0, 0, rx, 0, Math.PI * 2);
+      targetCtx.fill();
+      targetCtx.restore();
+    }
+
     function drawFlame(x, baseY, height, opts = {}) {
       if (!flameSvgImage) return;
 
@@ -1077,26 +1024,32 @@
       const onWhite = opts.onWhite === true;
       const t = Number.isFinite(opts.t) ? opts.t : performance.now();
       const flicker = flameFlicker(x, baseY, height, onWhite, t);
-      const H = flicker.H;
-      const flameW = H * (FLAME_SVG_W / FLAME_SVG_H);
 
-      if (blur > 0.001) {
-        const pad = Math.ceil(blur * 1.7) + 24;
-        const bufW = Math.ceil(flameW + pad * 2);
-        const bufH = Math.ceil(H + pad * 2);
-        const buffers = ensureFlameBlurBuffers();
-        const scene = resizeHiddenCanvas(buffers.scene, bufW, bufH);
-        scene.ctx.clearRect(0, 0, bufW, bufH);
-        const wickX = bufW / 2;
-        const wickY = inverted ? pad : bufH - pad;
-        drawFlameShape(scene.ctx, wickX, wickY, height, inverted, flicker, onWhite);
-        drawBlurredFlameBitmap(ctx, x - wickX, baseY - wickY, bufW, bufH, blur, alpha);
+      if (blur > 0.001 && onWhite) {
+        const sharpness = clamp(1 - blur / 30, 0, 1);
+        if (sharpness <= 0.001) {
+          drawDefocusBlob(ctx, x, baseY, height, inverted, blur, alpha);
+          return;
+        }
+        if (sharpness >= 0.999) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          drawFlameShape(ctx, x, baseY, height, inverted, flicker);
+          ctx.restore();
+          return;
+        }
+        const blobAlpha = alpha * (1 - sharpness);
+        drawDefocusBlob(ctx, x, baseY, height, inverted, blur, blobAlpha);
+        ctx.save();
+        ctx.globalAlpha = alpha * sharpness;
+        drawFlameShape(ctx, x, baseY, height, inverted, flicker);
+        ctx.restore();
         return;
       }
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      drawFlameShape(ctx, x, baseY, height, inverted, flicker, onWhite);
+      drawFlameShape(ctx, x, baseY, height, inverted, flicker);
       ctx.restore();
     }
 
@@ -1620,8 +1573,8 @@
         let alphaPx = 1;
         if (image.type === "real") {
           const defocus = Math.abs(focusedInfo.focusDeltaPx);
-          blurPx = clamp(defocus * 0.22 + focusedInfo.blurPx, 0, 72);
-          alphaPx = clamp(1 - blurPx / 95, 0.40, 1);
+          blurPx = clamp(defocus * 0.14 + focusedInfo.blurPx * 0.7, 0, 36);
+          alphaPx = clamp(1 - blurPx / 55, 0.55, 1);
         } else {
           // Virtual image:
           // - for converging lens (do < f): fade out smoothly as it "disappears"
@@ -1734,7 +1687,7 @@
           focus.focusDeltaPx = state.screenX - xImgPlane;
           const tol = 6; // px tolerance for "sharp"
           focus.inFocus = Math.abs(focus.focusDeltaPx) <= tol;
-          focus.blurPx = clamp(Math.abs(focus.focusDeltaPx) * 0.18, 0, 40);
+          focus.blurPx = clamp(Math.abs(focus.focusDeltaPx) * 0.12, 0, 18);
           focus.imageHeightPx = state.candleHeight * Math.abs(imageSigned.m);
           // Always render; the preview clamps size to fit the white screen.
           focus.visible = true;
@@ -1743,7 +1696,7 @@
         // Use distance to the (virtual) image plane as a defocus proxy for preview effects.
         const xImgPlane = xLens + imageSigned.di; // di < 0 (left of lens)
         focus.focusDeltaPx = state.screenX - xImgPlane;
-        focus.blurPx = clamp(Math.abs(focus.focusDeltaPx) * 0.18, 0, 48);
+        focus.blurPx = clamp(Math.abs(focus.focusDeltaPx) * 0.12, 0, 22);
         focus.imageHeightPx = state.candleHeight * Math.abs(imageSigned.m);
       }
 
