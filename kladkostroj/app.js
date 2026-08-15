@@ -5647,12 +5647,13 @@
       if (!attached) continue;
       const left = parseFloat(winch.el.style.left) || 0;
       const top = parseFloat(winch.el.style.top) || 0;
+      const w = winch.el.offsetWidth || 0;
       const h = winch.el.offsetHeight || 0;
       const label = document.createElement("div");
       label.className = "winch-rope-length";
       label.textContent = formatWoundRopeLength(winch.woundLengthPx || 0);
-      label.style.left = `${left + 8}px`;
-      label.style.top = `${top + Math.max(0, h - 20)}px`;
+      label.style.left = `${left + w / 2}px`;
+      label.style.top = `${top + h + 6}px`;
       layer.appendChild(label);
     }
   }
