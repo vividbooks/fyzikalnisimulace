@@ -5390,16 +5390,12 @@
     if (winch) winch.woundLengthPx = 0;
   }
 
+  function formatLengthCm(px) {
+    return `${Math.max(0, Math.round(Math.abs(px) / ROPE_PX_PER_CM))} cm`;
+  }
+
   function formatWoundRopeLength(px) {
-    const cm = Math.max(0, px) / ROPE_PX_PER_CM;
-    if (cm < 0.05) return "0 cm";
-    if (cm >= 100) {
-      const m = cm / 100;
-      const rounded = m >= 10 ? Math.round(m) : Math.round(m * 10) / 10;
-      return `${String(rounded).replace(/\.0$/, "")} m`;
-    }
-    if (cm >= 10) return `${Math.round(cm)} cm`;
-    return `${Math.round(cm * 10) / 10} cm`;
+    return formatLengthCm(px);
   }
 
   function isStageWeight(weight) {
@@ -5421,12 +5417,7 @@
   }
 
   function formatWeightLift(deltaPx) {
-    const cm = deltaPx / ROPE_PX_PER_CM;
-    if (Math.abs(cm) < 0.05) return "0 cm";
-    const absCm = Math.abs(cm);
-    const value =
-      absCm >= 10 ? `${Math.round(absCm)} cm` : `${Math.round(absCm * 10) / 10} cm`;
-    return value;
+    return formatLengthCm(deltaPx);
   }
 
   function getWeightLiftDimLayout(weight, hook) {
