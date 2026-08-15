@@ -5050,24 +5050,19 @@
   }
 
   function syncLengthsToggleUi() {
-    if (!btnLengths) return;
-    btnLengths.classList.toggle("is-active", showLengths);
-    btnLengths.setAttribute("aria-pressed", String(showLengths));
+    if (btnLengths) {
+      btnLengths.classList.toggle("is-active", showLengths);
+      btnLengths.setAttribute("aria-pressed", String(showLengths));
+    }
     if (appRoot) appRoot.classList.toggle("is-show-lengths", showLengths);
+    const overlay = document.getElementById("measure-overlay");
+    if (overlay) overlay.classList.toggle("is-active", showLengths);
   }
 
   function setShowLengths(next) {
     showLengths = !!next;
     syncLengthsToggleUi();
-    const refreshLengths = () => {
-      syncMeasureOverlay();
-      updateForceArrows();
-    };
-    if (showLengths) {
-      requestAnimationFrame(() => requestAnimationFrame(refreshLengths));
-    } else {
-      refreshLengths();
-    }
+    updateLengthOverlays();
   }
 
   function clearSvgLayer(layer) {
@@ -5468,58 +5463,60 @@
     };
   }
 
-  function appendWeightLiftDimLabel(g, text, x, y, fill, anchor) {
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.classList.add("weight-lift-dim-label");
-    label.setAttribute("x", x.toFixed(1));
-    label.setAttribute("y", y.toFixed(1));
-    label.setAttribute("text-anchor", anchor);
-    label.setAttribute("dominant-baseline", "central");
-    label.setAttribute("fill", fill);
-    label.textContent = text;
-    g.appendChild(label);
+  function appendMeasureBox(parent, className, styles) {
+    const el = document.createElement("div");
+    el.className = className;
+    Object.assign(el.style, styles);
+    parent.appendChild(el);
+    return el;
+  }
+
+  function updateLengthOverlays() {
+    const layer = ensureMeasureLayer();
+    clearSvgLayer(layer);
+    for (const winch of winches) {
+      winch.el.querySelector(".winch-rope-length")?.remove();
+      winch.el.querySelector(".winch-rope-text")?.remove();
+    }
+    for (const weight of weights) {
+      weight.el.querySelector(".weight-lift-text")?.remove();
+    }
+    if (!showLengths) return;
+    updateWinchRopeLabels();
+    updateWeightLiftLabels();
   }
 
   function updateWeightLiftLabels() {
-    syncMeasureOverlay();
-    clearSvgLayer(measureLayer);
-    if (!showLengths) return;
+    const layer = ensureMeasureLayer();
     for (const weight of weights) {
-      weight.el.querySelector(".weight-lift-text")?.remove();
       if (!isStageWeight(weight) || weight.simStartHookY == null) continue;
-      drawWeightLiftGraphic(weight, getWeightHookWorld(weight));
+      drawWeightLiftGraphic(weight, getWeightHookWorld(weight), layer);
     }
   }
 
   function ensureMeasureLayer() {
     let overlay = document.getElementById("measure-overlay");
     if (!overlay) {
-      overlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      overlay.setAttribute("id", "measure-overlay");
+      overlay = document.createElement("div");
+      overlay.id = "measure-overlay";
       overlay.setAttribute("aria-hidden", "true");
       stage.appendChild(overlay);
+    } else if (overlay.namespaceURI === "http://www.w3.org/2000/svg") {
+      const htmlOverlay = document.createElement("div");
+      htmlOverlay.id = "measure-overlay";
+      htmlOverlay.setAttribute("aria-hidden", "true");
+      overlay.replaceWith(htmlOverlay);
+      overlay = htmlOverlay;
     }
-    let layer = overlay.querySelector("#measure-layer");
-    if (!layer) {
-      layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      layer.setAttribute("id", "measure-layer");
-      overlay.appendChild(layer);
-    }
-    measureLayer = layer;
+    measureLayer = overlay;
     return measureLayer;
   }
 
   function syncMeasureOverlay() {
-    const overlay = document.getElementById("measure-overlay");
-    if (!overlay) return;
-    const { width, height } = stageSize();
-    overlay.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    overlay.setAttribute("width", String(width));
-    overlay.setAttribute("height", String(height));
-    overlay.setAttribute("overflow", "visible");
+    ensureMeasureLayer();
   }
 
-  function drawWeightLiftGraphic(weight, hook) {
+  function drawWeightLiftGraphic(weight, hook, layer) {
     const layout = getWeightLiftDimLayout(weight, hook);
     const {
       dimX,
@@ -5534,55 +5531,43 @@
       labelX,
       labelAnchor,
     } = layout;
-    const layer = ensureMeasureLayer();
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.classList.add("weight-lift-dim");
-    g.setAttribute("data-weight-id", weight.el.id);
+    const g = document.createElement("div");
+    g.className = "weight-lift-dim";
+    g.dataset.weightId = weight.el.id;
+    g.style.color = stroke;
 
     const labelText = formatWeightLift(deltaPx);
     const labelY = Math.abs(deltaPx) >= 3 ? midY : endY;
 
     if (Math.abs(deltaPx) >= 3) {
-      const startTick = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      startTick.classList.add("weight-lift-dim-tick");
-      startTick.setAttribute("x1", (dimX + tickIn).toFixed(1));
-      startTick.setAttribute("y1", startY.toFixed(1));
-      startTick.setAttribute("x2", dimX.toFixed(1));
-      startTick.setAttribute("y2", startY.toFixed(1));
-      startTick.setAttribute("stroke", stroke);
-      g.appendChild(startTick);
-
-      const endTick = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      endTick.classList.add("weight-lift-dim-tick");
-      endTick.setAttribute("x1", (dimX + tickIn).toFixed(1));
-      endTick.setAttribute("y1", endY.toFixed(1));
-      endTick.setAttribute("x2", dimX.toFixed(1));
-      endTick.setAttribute("y2", endY.toFixed(1));
-      endTick.setAttribute("stroke", stroke);
-      g.appendChild(endTick);
-
-      const dimLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      dimLine.classList.add("weight-lift-dim-line");
-      dimLine.setAttribute("x1", dimX.toFixed(1));
-      dimLine.setAttribute("y1", topY.toFixed(1));
-      dimLine.setAttribute("x2", dimX.toFixed(1));
-      dimLine.setAttribute("y2", bottomY.toFixed(1));
-      dimLine.setAttribute("stroke", stroke);
-      g.appendChild(dimLine);
-
-      const startDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      startDot.classList.add("weight-lift-dim-start");
-      startDot.setAttribute("cx", dimX.toFixed(1));
-      startDot.setAttribute("cy", startY.toFixed(1));
-      startDot.setAttribute("r", "3.5");
-      startDot.setAttribute("fill", stroke);
-      startDot.setAttribute("fill-opacity", "0.35");
-      startDot.setAttribute("stroke", stroke);
-      startDot.setAttribute("stroke-width", "1.5");
-      g.appendChild(startDot);
+      const tickLeft = Math.min(dimX, dimX + tickIn);
+      appendMeasureBox(g, "weight-lift-dim-tick", {
+        left: `${tickLeft}px`,
+        top: `${startY}px`,
+        width: `${Math.abs(tickIn)}px`,
+      });
+      appendMeasureBox(g, "weight-lift-dim-tick", {
+        left: `${tickLeft}px`,
+        top: `${endY}px`,
+        width: `${Math.abs(tickIn)}px`,
+      });
+      appendMeasureBox(g, "weight-lift-dim-line", {
+        left: `${dimX}px`,
+        top: `${topY}px`,
+        height: `${Math.max(1, bottomY - topY)}px`,
+      });
+      appendMeasureBox(g, "weight-lift-dim-start", {
+        left: `${dimX}px`,
+        top: `${startY}px`,
+      });
     }
 
-    appendWeightLiftDimLabel(g, labelText, labelX, labelY, stroke, labelAnchor);
+    const label = appendMeasureBox(g, "weight-lift-dim-label", {
+      left: `${labelX}px`,
+      top: `${labelY}px`,
+    });
+    if (labelAnchor === "end") label.classList.add("is-end");
+    label.textContent = labelText;
     layer.appendChild(g);
   }
 
@@ -5606,18 +5591,6 @@
       "font-family",
       "ui-sans-serif, system-ui, -apple-system, sans-serif"
     );
-    return label;
-  }
-
-  function ensureWinchRopeLabel(winch) {
-    winch.el.querySelector(".winch-rope-text")?.remove();
-    let label = winch.el.querySelector(".winch-rope-length");
-    if (!label) {
-      label = document.createElement("span");
-      label.classList.add("winch-rope-length");
-      label.setAttribute("aria-hidden", "true");
-      winch.el.appendChild(label);
-    }
     return label;
   }
 
@@ -5663,21 +5636,24 @@
   }
 
   function updateWinchRopeLabels() {
+    if (!showLengths || quiz.active) return;
+    const layer = ensureMeasureLayer();
     for (const winch of winches) {
-      const label = ensureWinchRopeLabel(winch);
-      if (!label) continue;
       const attached =
         !isDocked(winch.el) &&
         !isStockTemplate(winch.el) &&
         winch.snap?.type === "rope" &&
         !!winch.snap.rope?.el?.isConnected;
-      if (!attached || quiz.active || !showLengths) {
-        label.textContent = "";
-        label.hidden = true;
-        continue;
-      }
+      if (!attached) continue;
+      const left = parseFloat(winch.el.style.left) || 0;
+      const top = parseFloat(winch.el.style.top) || 0;
+      const h = winch.el.offsetHeight || 0;
+      const label = document.createElement("div");
+      label.className = "winch-rope-length";
       label.textContent = formatWoundRopeLength(winch.woundLengthPx || 0);
-      label.hidden = false;
+      label.style.left = `${left + 8}px`;
+      label.style.top = `${top + Math.max(0, h - 20)}px`;
+      layer.appendChild(label);
     }
   }
 
@@ -5686,8 +5662,7 @@
     quiz.slotSeq = 0;
     const system = buildRopeSystem();
     updateWinchForceLabels(system);
-    updateWinchRopeLabels();
-    updateWeightLiftLabels();
+    updateLengthOverlays();
     clearForceArrows();
     if (!showForces) {
       if (quiz.active) {
@@ -10895,10 +10870,19 @@
     btnForces.addEventListener("click", () => setShowForces(!showForces));
   }
   if (btnLengths) {
-    btnLengths.addEventListener("click", (e) => {
-      e.preventDefault();
+    let lastLengthToggle = 0;
+    const toggleLengths = (e) => {
+      if (e) e.preventDefault();
+      const now = performance.now();
+      if (now - lastLengthToggle < 350) return;
+      lastLengthToggle = now;
       setShowLengths(!showLengths);
+    };
+    btnLengths.addEventListener("pointerup", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      toggleLengths(e);
     });
+    btnLengths.addEventListener("click", toggleLengths);
   }
   syncLengthsToggleUi();
   if (btnExportScene) {
