@@ -193,6 +193,12 @@
   const SWING_BODY_MASS = 1;
   /** Numerická pojistka na rychlost tělesa (px/s). */
   const MAX_BODY_SPEED = 4000;
+  /**
+   * Tlumení kývání závaží. Lineární člen utlumí zbytek, kvadratický
+   * stáhne velký výkyv — ne tak silně, aby se závaží skoro nehnula.
+   */
+  const SWING_DAMP = 1.6;
+  const SWING_DAMP_QUAD = 0.0035;
   /** Pod touto tolerancí (px) je lano považované za napnuté. */
   const ROPE_SLACK_TOL = 1.5;
   const SETTLE_MS = 100;
@@ -3969,11 +3975,15 @@
         continue;
       }
 
-      const legA = dist(s, tang.start);
-      const legB = dist(tang.end, e);
-      const total = legA + legB + 1e-6;
-      s = moveToward(s, tang.start, excess * (legA / total));
-      e = moveToward(e, tang.end, excess * (legB / total));
+      // Stejná závaží musí zůstat v klidu — korekci délky dělit podle 1/m,
+      // ne podle délky ramene (delší strana by jinak stoupala a kratší klesala).
+      const startMass = opts.startMass > 1e-8 ? opts.startMass : 1;
+      const endMass = opts.endMass > 1e-8 ? opts.endMass : 1;
+      const invS = 1 / startMass;
+      const invE = 1 / endMass;
+      const invSum = invS + invE;
+      s = moveToward(s, tang.start, excess * (invS / invSum));
+      e = moveToward(e, tang.end, excess * (invE / invSum));
     }
 
     return { start: s, end: e };
@@ -4088,6 +4098,15 @@
     );
   }
 
+  function ropeEndMasses(rope) {
+    const startW = weightOnRopeEnd(rope, "start");
+    const endW = weightOnRopeEnd(rope, "end");
+    return {
+      startMass: startW ? massOfWeightStack(startW) : 0,
+      endMass: endW ? massOfWeightStack(endW) : 0,
+    };
+  }
+
   /** Aktuální simulační bod konce lana — háček závaží, naviják, okraj nebo tah. */
   function getRopeSimEndpoint(rope, which) {
     const w = weightOnRopeEnd(rope, which);
@@ -4108,6 +4127,7 @@
     const corrected = enforceRopeLength(model, startPt, endPt, restLength, {
       startFixed: ropeEndIsFixed(rope, "start"),
       endFixed: ropeEndIsFixed(rope, "end"),
+      ...ropeEndMasses(rope),
     });
 
     if (startWinch) {
@@ -4190,6 +4210,7 @@
     const corrected = enforceRopeLength(model, startPt, endPt, restLength, {
       startFixed,
       endFixed,
+      ...ropeEndMasses(rope),
     });
 
     if (startWinch) corrected.start = getWinchHookWorld(startWinch);
@@ -5934,6 +5955,7 @@
       {
         startFixed: ropeEndIsFixed(rope, "start"),
         endFixed: ropeEndIsFixed(rope, "end"),
+        ...ropeEndMasses(rope),
       }
     );
 
@@ -5959,6 +5981,7 @@
         {
           startFixed: ropeEndIsFixed(rope, "start"),
           endFixed: ropeEndIsFixed(rope, "end"),
+          ...ropeEndMasses(rope),
         }
       );
       if (startWinch) corrected.start = getWinchHookWorld(startWinch);
@@ -6070,6 +6093,46 @@
     if (speed <= MAX_BODY_SPEED || speed < 1e-9) return;
     vel.x = (vel.x / speed) * MAX_BODY_SPEED;
     vel.y = (vel.y / speed) * MAX_BODY_SPEED;
+  }
+
+  /**
+   * Stejná závaží na jednom laně jsou v rovnováze — zruš vzájemný pohyb
+   * podél lana, který vzniká z numerické chyby (jedno by jinak stoupalo).
+   */
+  function lockEqualWeightRopes(system) {
+    for (const c of system.constraints) {
+      if (winchOnRopeEnd(c.rope, "start") || winchOnRopeEnd(c.rope, "end")) {
+        continue;
+      }
+      const pair = c.terms.filter((term) => term.kind === "weight");
+      if (pair.length !== 2) continue;
+      const [a, b] = pair;
+      if (Math.abs(a.mass - b.mass) > 1e-6) continue;
+      const va = a.obj?.vel;
+      const vb = b.obj?.vel;
+      if (!va || !vb) continue;
+      const ua = a.u || { x: 0, y: -1 };
+      const ub = b.u || { x: 0, y: -1 };
+      const alongA = va.x * ua.x + va.y * ua.y;
+      const alongB = vb.x * ub.x + vb.y * ub.y;
+      const mean = (alongA + alongB) / 2;
+      va.x += (mean - alongA) * ua.x;
+      va.y += (mean - alongA) * ua.y;
+      vb.x += (mean - alongB) * ub.x;
+      vb.y += (mean - alongB) * ub.y;
+    }
+  }
+
+  /** Ztlum vodorovné kývání závaží — svislý pohyb po laně nechá. */
+  function dampSwingVelocities(system, dt) {
+    for (const body of system.bodies.values()) {
+      if (body.kind !== "weight") continue;
+      const vel = body.obj?.vel;
+      if (!vel) continue;
+      const k = SWING_DAMP + SWING_DAMP_QUAD * Math.abs(vel.x);
+      vel.x *= Math.exp(-k * dt);
+      if (Math.abs(vel.x) < 2) vel.x = 0;
+    }
   }
 
   /**
@@ -9227,6 +9290,8 @@
     tickWinchSpin(dt);
     integrateBodyVelocities(system, dt);
     projectBodyVelocities(system);
+    lockEqualWeightRopes(system);
+    dampSwingVelocities(system, dt);
     moveFreePulleyBodies(system, dt);
     simulateRopes(dt);
     simulateFreePulleys(dt);
