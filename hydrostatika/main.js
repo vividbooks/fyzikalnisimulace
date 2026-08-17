@@ -30,6 +30,13 @@ const LIQUID_LABELS = {
   gasoline: "benzínu",
   glycerol: "glycerolu",
 };
+const LIQUID_TINT = {
+  water: "#206ce8",
+  gasoline: "#e0cc5a",
+  glycerol: "#5b9af0",
+};
+const BALL_UNDERWATER_D =
+  "M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z";
 const GRAVITY_N_PER_KG = 10;
 const MAX_DEPTH_M = 0.05;
 const BALL_POSITIONS_WIDE = [
@@ -492,15 +499,22 @@ function renderBalls() {
   syncBallStates();
   ballLayers.forEach((layer) => {
     layer.replaceChildren();
+    const underwater = layer.classList.contains("js-balls--water");
     for (let i = 0; i < ballCount; i += 1) {
-      const node = document.createElementNS("http://www.w3.org/2000/svg", "use");
-      node.setAttribute("href", layer.classList.contains("js-balls--water") ? "#ball-underwater" : "#ball");
       const ball = ballStates[i];
       const deg = (ball.angle * 180) / Math.PI;
-      node.setAttribute(
-        "transform",
-        `translate(${ball.x} ${ball.y}) rotate(${deg} ${BALL_CX} ${BALL_CY})`
-      );
+      const transform = `translate(${ball.x} ${ball.y}) rotate(${deg} ${BALL_CX} ${BALL_CY})`;
+      let node;
+      if (underwater) {
+        node = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        node.setAttribute("d", BALL_UNDERWATER_D);
+        node.setAttribute("fill", LIQUID_TINT[liquid]);
+        node.setAttribute("fill-opacity", "0.45");
+      } else {
+        node = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        node.setAttribute("href", "#ball");
+      }
+      node.setAttribute("transform", transform);
       layer.append(node);
     }
   });
@@ -632,6 +646,7 @@ function setLiquid(next) {
     btn.setAttribute("aria-pressed", String(active));
   });
   updateLiquidReadout();
+  renderBalls();
   if (attached && diskOffset > WATER_OFFSET) startFall();
 }
 
