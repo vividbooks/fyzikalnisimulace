@@ -17,29 +17,26 @@
       <section class="panel-section">
         <span class="panel-label">Kapalina</span>
         <div class="mode-switch mode-switch--3" role="group" aria-label="Kapalina">
-          <button class="mode-switch__btn is-active" type="button" data-liquid="water" aria-pressed="true">Voda</button>
-          <button class="mode-switch__btn" type="button" data-liquid="gasoline" aria-pressed="false">Benzín</button>
-          <button class="mode-switch__btn" type="button" data-liquid="glycerol" aria-pressed="false">Glycerol</button>
+          <button class="mode-switch__btn is-active" type="button" data-liquid="water" aria-pressed="true">voda</button>
+          <button class="mode-switch__btn" type="button" data-liquid="gasoline" aria-pressed="false">benzín</button>
+          <button class="mode-switch__btn" type="button" data-liquid="glycerol" aria-pressed="false">glycerol</button>
         </div>
-        <p class="panel-readout" id="liquidDensity" aria-live="polite">
-          Hustota: <span id="liquidDensityValue">1000</span> kg na m<sup>3</sup>
-        </p>
       </section>
 
       <section class="panel-section">
         <span class="panel-label">Válec</span>
         <div class="mode-switch" role="group" aria-label="Průměr válce">
-          <button class="mode-switch__btn is-active" type="button" data-tube="wide" aria-pressed="true">Široký</button>
-          <button class="mode-switch__btn" type="button" data-tube="narrow" aria-pressed="false">Úzký</button>
+          <button class="mode-switch__btn is-active" type="button" data-tube="wide" aria-pressed="true">široký</button>
+          <button class="mode-switch__btn" type="button" data-tube="narrow" aria-pressed="false">úzký</button>
         </div>
       </section>
 
       <section class="panel-section">
         <span class="panel-label">Kolečko</span>
         <div class="mode-switch mode-switch--3" role="group" aria-label="Velikost kolečka">
-          <button class="mode-switch__btn" type="button" data-disk="narrow" aria-pressed="false">Malé</button>
-          <button class="mode-switch__btn is-active" type="button" data-disk="wide" aria-pressed="true">Střední</button>
-          <button class="mode-switch__btn" type="button" data-disk="giant" aria-pressed="false">Velké</button>
+          <button class="mode-switch__btn" type="button" data-disk="narrow" aria-pressed="false">malé</button>
+          <button class="mode-switch__btn is-active" type="button" data-disk="wide" aria-pressed="true">střední</button>
+          <button class="mode-switch__btn" type="button" data-disk="giant" aria-pressed="false">velké</button>
         </div>
       </section>
 
@@ -68,11 +65,12 @@
       </section>
 
       <div class="panel-actions">
-        <button class="panel-action-btn" id="resetBtn" type="button">Reset</button>
+        <button class="panel-action-btn" id="resetBtn" type="button">RESET</button>
       </div>
     </aside>
 
     <div class="scene-workspace" aria-label="Pracovní plocha">
+      <div class="scene-stage">
       <div class="scene__wrap">
     <svg class="scene__svg" width="2108" height="2120" viewBox="0 0 2108 2120" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
@@ -241,6 +239,8 @@
         />
       </g>
     </svg>
+      </div>
+      <p class="aquarium-readout" id="liquidDensity" aria-live="polite">hustota vody: <span id="liquidDensityValue">1 000</span> kg na m<sup>3</sup></p>
       </div>
     </div>
   </main>

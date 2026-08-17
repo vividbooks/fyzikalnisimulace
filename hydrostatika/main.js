@@ -25,6 +25,11 @@ const LIQUIDS = {
   gasoline: 700,
   glycerol: 1300,
 };
+const LIQUID_LABELS = {
+  water: "vody",
+  gasoline: "benzínu",
+  glycerol: "glycerolu",
+};
 const GRAVITY_N_PER_KG = 10;
 const MAX_DEPTH_M = 0.05;
 const BALL_POSITIONS_WIDE = [
@@ -607,9 +612,14 @@ function applySetup() {
   resetScene();
 }
 
+function formatDensity(value) {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
 function updateLiquidReadout() {
-  const value = document.getElementById("liquidDensityValue");
-  if (value) value.textContent = String(LIQUIDS[liquid]);
+  const el = document.getElementById("liquidDensity");
+  if (!el) return;
+  el.innerHTML = `hustota ${LIQUID_LABELS[liquid]}: <span id="liquidDensityValue">${formatDensity(LIQUIDS[liquid])}</span> kg na m<sup>3</sup>`;
 }
 
 function setLiquid(next) {
