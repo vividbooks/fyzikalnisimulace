@@ -402,6 +402,19 @@ button {
   fill: #5b9af0;
 }
 
+.js-balls--water > use {
+  fill: #206ce8;
+  fill-opacity: 0.45;
+}
+
+.scene__svg[data-liquid="gasoline"] .js-balls--water > use {
+  fill: #e0cc5a;
+}
+
+.scene__svg[data-liquid="glycerol"] .js-balls--water > use {
+  fill: #5b9af0;
+}
+
 .js-depth-marker path,
 .js-depth-readout {
   fill: #ef3a50;
