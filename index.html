@@ -1122,6 +1122,12 @@
         title: "Kapaliny a plyny",
         tiles: [
           {
+            id: "hydrostatika",
+            title: "Hydrostatická tlaková síla",
+            hash: "#/sim/hydrostatika",
+            previewColor: "#fce4ec",
+          },
+          {
             id: "vztlakova",
             title: "Vztlaková síla",
             hash: "#/sim/vztlakova",
@@ -1181,6 +1187,7 @@
       silomer_2: "sily",
       tlak: "sily",
       hra_newton: "sily",
+      hydrostatika: "kapaliny",
       vztlakova: "kapaliny",
       graf_pohyb: "zaklady",
       obsah: "zaklady",
@@ -1249,6 +1256,25 @@
       >
         <image
           href="kladkostroj/card-kladkostroj.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function HydrostatikaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="hydrostatika/card-hydrostatika.svg"
           x="0"
           y="0"
           width="132"
@@ -2106,6 +2132,7 @@
       if (tileId === "silomer_2") return html`<${SilomerCardIllustration} />`;
       if (tileId === "tlak") return html`<${TlakCardIllustration} />`;
       if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
+      if (tileId === "hydrostatika") return html`<${HydrostatikaCardIllustration} />`;
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
       if (tileId === "skutecny_obraz") return html`<${SkutecnyObrazCardIllustration} />`;
@@ -2242,6 +2269,14 @@
             window.location.replace(new URL("michani-barev/", window.location.href).href);
           } catch (_) {
             window.location.replace("michani-barev/");
+          }
+          return;
+        }
+        if (simId === "hydrostatika") {
+          try {
+            window.location.replace(new URL("hydrostatika/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("hydrostatika/");
           }
           return;
         }
@@ -2470,6 +2505,13 @@
         routeTick();
       }, []);
 
+      if (simId === "hydrostatika") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
       if (simId === "vztlakova") {
         return html`
           <div class="app">

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hydrostatická tlaková síla</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="scene" aria-label="Hydrostatická tlaková síla">
+    <aside class="setup-panel">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <h1 class="panel-title">Hydrostatická tlaková síla</h1>
+      </div>
+
+      <section class="panel-section">
+        <span class="panel-label">Kapalina</span>
+        <div class="mode-switch mode-switch--3" role="group" aria-label="Kapalina">
+          <button class="mode-switch__btn is-active" type="button" data-liquid="water" aria-pressed="true">Voda</button>
+          <button class="mode-switch__btn" type="button" data-liquid="gasoline" aria-pressed="false">Benzín</button>
+          <button class="mode-switch__btn" type="button" data-liquid="glycerol" aria-pressed="false">Glycerol</button>
+        </div>
+        <p class="panel-readout" id="liquidDensity" aria-live="polite">
+          Hustota: <span id="liquidDensityValue">1000</span> kg na m<sup>3</sup>
+        </p>
+      </section>
+
+      <section class="panel-section">
+        <span class="panel-label">Válec</span>
+        <div class="mode-switch" role="group" aria-label="Průměr válce">
+          <button class="mode-switch__btn is-active" type="button" data-tube="wide" aria-pressed="true">Široký</button>
+          <button class="mode-switch__btn" type="button" data-tube="narrow" aria-pressed="false">Úzký</button>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <span class="panel-label">Kolečko</span>
+        <div class="mode-switch mode-switch--3" role="group" aria-label="Velikost kolečka">
+          <button class="mode-switch__btn" type="button" data-disk="narrow" aria-pressed="false">Malé</button>
+          <button class="mode-switch__btn is-active" type="button" data-disk="wide" aria-pressed="true">Střední</button>
+          <button class="mode-switch__btn" type="button" data-disk="giant" aria-pressed="false">Velké</button>
+        </div>
+      </section>
+
+      <section class="panel-section panel-section--balls">
+        <span class="panel-label">Kuličky</span>
+        <div class="ball-tray" aria-label="Zásobník kuliček">
+          <button class="ball-btn ball-btn--add" type="button" aria-label="Přidat kuličku do válce">
+            <svg viewBox="0 0 80 80" aria-hidden="true">
+              <path d="M40 12 L40 68" stroke="#2F9E44" stroke-width="16" stroke-linecap="round"/>
+              <path d="M12 40 L68 40" stroke="#2F9E44" stroke-width="16" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <svg class="ball-tray__preview" width="149" height="149" viewBox="0 0 149 149" fill="none" aria-hidden="true">
+            <path d="M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z" fill="#727272"/>
+            <path d="M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z" fill="#727272" stroke="black" stroke-width="7.05468" stroke-miterlimit="10" stroke-linecap="round"/>
+            <path d="M19.293 64.0651C19.293 33.8147 43.8168 9.28906 74.0708 9.28906Z" fill="#727272"/>
+            <path d="M19.293 74.0651C19.293 43.8147 43.8168 19.2891 74.0708 19.2891Z" fill="#727272"/>
+            <path d="M19.293 74.0651C19.293 43.8147 43.8168 19.2891 74.0708 19.2891" stroke="white" stroke-width="7.05468" stroke-miterlimit="10" stroke-linecap="round"/>
+          </svg>
+          <button class="ball-btn ball-btn--remove" type="button" aria-label="Odebrat kuličku z válce" disabled>
+            <svg viewBox="0 0 80 80" aria-hidden="true">
+              <path d="M12 40 L68 40" stroke="#E03131" stroke-width="16" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <div class="panel-actions">
+        <button class="panel-action-btn" id="resetBtn" type="button">Reset</button>
+      </div>
+    </aside>
+
+    <div class="scene-workspace" aria-label="Pracovní plocha">
+      <div class="scene__wrap">
+    <svg class="scene__svg" width="2108" height="2120" viewBox="0 0 2108 2120" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <g id="tube-red">
+          <g class="disk-wide">
+            <path d="M1168.14 1131.53C1168.14 1187.02 1058.9 1232 924.14 1232C789.384 1232 680.143 1187.02 680.143 1131.53C680.143 1076.04 789.384 1031.06 924.14 1031.06C1058.9 1031.06 1168.14 1076.04 1168.14 1131.53Z" fill="#DC5674"/>
+          </g>
+          <g class="disk-narrow">
+            <path d="M1094.94 1141.117C1094.94 1185.244 1018.47 1221.017 924.14 1221.017C829.811 1221.017 753.342 1185.244 753.342 1141.117C753.342 1096.99 829.811 1061.217 924.14 1061.217C1018.47 1061.217 1094.94 1096.99 1094.94 1141.117Z" fill="#DC5674"/>
+          </g>
+          <g class="disk-giant">
+            <path d="M1253.93 1131.53C1253.93 1206.53 1106.281 1267.325 924.14 1267.325C742.004 1267.325 594.354 1206.53 594.354 1131.53C594.354 1056.53 742.004 995.735 924.14 995.735C1106.281 995.735 1253.93 1056.53 1253.93 1131.53Z" fill="#DC5674"/>
+          </g>
+        </g>
+        <g id="tube-red-surface">
+          <g class="disk-wide">
+            <path d="M1168.14 1131.53C1168.14 1187.02 1058.9 1232 924.14 1232C789.384 1232 680.143 1187.02 680.143 1131.53C680.143 1076.04 789.384 1031.06 924.14 1031.06C1058.9 1031.06 1168.14 1076.04 1168.14 1131.53Z" fill="#CB4970"/>
+          </g>
+          <g class="disk-narrow">
+            <path d="M1094.94 1141.117C1094.94 1185.244 1018.47 1221.017 924.14 1221.017C829.811 1221.017 753.342 1185.244 753.342 1141.117C753.342 1096.99 829.811 1061.217 924.14 1061.217C1018.47 1061.217 1094.94 1096.99 1094.94 1141.117Z" fill="#CB4970"/>
+          </g>
+          <g class="disk-giant">
+            <path d="M1253.93 1131.53C1253.93 1206.53 1106.281 1267.325 924.14 1267.325C742.004 1267.325 594.354 1206.53 594.354 1131.53C594.354 1056.53 742.004 995.735 924.14 995.735C1106.281 995.735 1253.93 1056.53 1253.93 1131.53Z" fill="#CB4970"/>
+          </g>
+        </g>
+        <g id="tube-fill">
+          <g class="tube-wide">
+            <path d="M1105.13 527.919C1105.13 557.769 1022.3 581.97 920.108 581.97C817.921 581.97 735.082 557.769 735.082 527.919C735.082 527.919 746.14 472.006 920.108 472.707C1101.15 473.436 1105.13 527.919 1105.13 527.919Z" fill="white"/>
+            <path d="M1103.61 527.653V1123.92C1103.61 1153.77 1020.77 1177.97 918.583 1177.97C816.396 1177.97 733.557 1153.77 733.557 1123.92V536.934V527.653C733.557 557.503 816.396 581.708 918.583 581.708C1020.77 581.708 1103.61 557.503 1103.61 527.653Z" fill="white" fill-opacity="0.7"/>
+          </g>
+          <g class="tube-narrow">
+            <path d="M1029.62 527.936C1029.62 557.786 981.451 581.986 922.032 581.986C862.612 581.986 814.443 557.786 814.443 527.936C814.443 527.936 820.873 472.023 922.032 472.724C1027.3 473.453 1029.62 527.936 1029.62 527.936Z" fill="white"/>
+            <path d="M1028.73 527.67V1123.936C1028.73 1153.786 980.565 1177.987 921.145 1177.987C861.726 1177.987 813.557 1153.786 813.557 1123.936V536.951V527.67C813.557 557.52 861.726 581.725 921.145 581.725C980.565 581.725 1028.73 557.52 1028.73 527.67Z" fill="white" fill-opacity="0.7"/>
+          </g>
+        </g>
+        <g id="tube-stroke">
+          <g class="tube-wide">
+            <path d="M918.582 1071.9C1020.77 1071.9 1103.61 1096.1 1103.61 1125.95" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M733.561 1125.95C733.561 1096.1 816.396 1071.9 918.58 1071.9" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1103.61 527.653V1123.92C1103.61 1153.77 1020.77 1177.97 918.583 1177.97C816.396 1177.97 733.557 1153.77 733.557 1123.92V536.934V527.653C733.557 557.503 816.396 581.708 918.583 581.708C1020.77 581.708 1103.61 557.503 1103.61 527.653Z" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1103.61 1125.95C1103.61 1155.8 1020.77 1180 918.583 1180C816.396 1180 733.557 1155.8 733.557 1125.95" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M733.557 527.653C733.557 497.803 816.396 473.602 918.579 473.602C1020.77 473.602 1103.61 497.803 1103.61 527.653" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <g class="tube-narrow">
+            <path d="M921.145 1071.917C980.564 1071.917 1028.73 1096.114 1028.73 1125.968" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M813.559 1125.964C813.559 1096.114 861.726 1071.913 921.143 1071.913" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1028.73 527.67V1123.936C1028.73 1153.786 980.565 1177.987 921.145 1177.987C861.726 1177.987 813.557 1153.786 813.557 1123.936V536.951V527.67C813.557 557.52 861.726 581.725 921.145 581.725C980.565 581.725 1028.73 557.52 1028.73 527.67Z" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1028.73 1125.964C1028.73 1155.815 980.565 1180.015 921.145 1180.015C861.726 1180.015 813.557 1155.815 813.557 1125.964" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M813.557 527.67C813.557 497.82 861.726 473.619 921.143 473.619C980.565 473.619 1028.73 497.82 1028.73 527.67" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </g>
+        <g id="tube-top-rim">
+          <g class="tube-wide">
+            <path d="M733.557 527.653C733.557 497.803 816.396 473.602 918.579 473.602C1020.77 473.602 1103.61 497.803 1103.61 527.653" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <g class="tube-narrow">
+            <path d="M813.557 527.67C813.557 497.82 861.726 473.619 921.143 473.619C980.565 473.619 1028.73 497.82 1028.73 527.67" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </g>
+        <g id="tube-body">
+          <use href="#tube-fill"/>
+          <use href="#tube-stroke"/>
+        </g>
+        <g id="tank-outline">
+          <path d="M1719.67 1900.6L663.05 2102.85C627.646 2110.31 594.352 2083.3 594.352 2047.12V1099.11L1782.4 869.172V1823.27C1782.4 1860.64 1756.23 1892.9 1719.67 1900.6Z" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M505.018 2073.91C536.882 2089.4 574.569 2121.62 663.05 2102.85" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10.6191 766.39L594.355 1099.12V2026.07C594.355 2068.19 550.211 2095.74 512.376 2077.23L67.3991 1812.37C32.6536 1795.38 10.6191 1760.08 10.6191 1721.4V766.39ZM1782.4 869.172L1202.5 533L10.6191 766.39M1202.5 533V851.5" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <g id="tank-outline-front">
+          <path d="M1719.67 1900.6L663.05 2102.85C627.646 2110.31 594.352 2083.3 594.352 2047.12V1099.11L1782.4 869.172V1823.27C1782.4 1860.64 1756.23 1892.9 1719.67 1900.6Z" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M505.018 2073.91C536.882 2089.4 574.569 2121.62 663.05 2102.85" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10.6191 766.39L594.355 1099.12V2026.07C594.355 2068.19 550.211 2095.74 512.376 2077.23L67.3991 1812.37C32.6536 1795.38 10.6191 1760.08 10.6191 1721.4V766.39" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <g id="ball">
+          <path d="M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z" fill="#727272"/>
+          <path d="M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z" fill="#727272" stroke="black" stroke-width="7.05468" stroke-miterlimit="10" stroke-linecap="round"/>
+          <path d="M19.293 64.0651C19.293 33.8147 43.8168 9.28906 74.0708 9.28906Z" fill="#727272"/>
+          <path d="M19.293 74.0651C19.293 43.8147 43.8168 19.2891 74.0708 19.2891Z" fill="#727272"/>
+          <path d="M19.293 74.0651C19.293 43.8147 43.8168 19.2891 74.0708 19.2891" stroke="white" stroke-width="7.05468" stroke-miterlimit="10" stroke-linecap="round"/>
+        </g>
+        <g id="ball-underwater">
+          <path class="js-liquid-tint" d="M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z" fill="#206CE8" fill-opacity="0.45"/>
+        </g>
+        <mask id="mask-water" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="9" y="850" width="1775" height="1220">
+          <path d="M10.623 1083.07V1721.39C10.623 1721.39 20.3076 1778.79 52.3099 1803.28C84.3121 1827.78 488.731 2063.15 488.731 2063.15C488.731 2063.15 548.523 2124.77 701.554 2095.48C854.589 2066.19 1734.5 1895.9 1734.5 1895.9L1776.84 1864.14L1782.41 1812.95V1185.86C1782.41 1185.86 1756.15 1176 1693.45 1138.2C1677.28 1128.45 1657.14 1117 1611.37 1086.6C1579.39 1065.36 1526.03 1034.89 1486.2 1011.61C1418.08 971.787 1347.86 936.019 1295.66 904.799C1246.19 875.207 1206.89 854.093 1206.89 854.093L10.623 1083.07Z" fill="white"/>
+          <path d="M9.62109 1083.46L165.59 1168.58L368.446 1280.89L594.359 1405.18L819.376 1363.75L1142.9 1305.3L1496.16 1239.84L1783.4 1186.25L1620.49 1091.86L1395.34 961.706L1207.28 852.475L950.84 901.203L537.239 980.3L200.994 1046.55L9.62109 1083.46Z" fill="white"/>
+        </mask>
+      </defs>
+
+      <line x1="10.9011" y1="756.509" x2="1198.9" y2="526.509" stroke="#FF0000"/>
+
+      <path class="js-liquid-volume" d="M10.623 1083.07V1721.39C10.623 1721.39 20.3076 1778.79 52.3099 1803.28C84.3121 1827.78 488.731 2063.15 488.731 2063.15C488.731 2063.15 548.523 2124.77 701.554 2095.48C854.589 2066.19 1734.5 1895.9 1734.5 1895.9L1776.84 1864.14L1782.41 1812.95V1185.86C1782.41 1185.86 1756.15 1176 1693.45 1138.2C1677.28 1128.45 1657.14 1117 1611.37 1086.6C1579.39 1065.36 1526.03 1034.89 1486.2 1011.61C1418.08 971.787 1347.86 936.019 1295.66 904.799C1246.19 875.207 1206.89 854.093 1206.89 854.093L10.623 1083.07Z" fill="#58A1FF" fill-opacity="0.7"/>
+      <path class="js-liquid-surface" d="M9.62109 1083.46L165.59 1168.58L368.446 1280.89L594.359 1405.18L819.376 1363.75L1142.9 1305.3L1496.16 1239.84L1783.4 1186.25L1620.49 1091.86L1395.34 961.706L1207.28 852.475L950.84 901.203L537.239 980.3L200.994 1046.55L9.62109 1083.46Z" fill="#206CE8" fill-opacity="0.8"/>
+
+      <g class="js-disk">
+        <use href="#tube-red"/>
+      </g>
+      <mask id="mask0_2698_133" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="9" y="852" width="1775" height="554">
+        <path d="M9.62109 1083.46L165.59 1168.58L368.446 1280.89L594.359 1405.18L819.376 1363.75L1142.9 1305.3L1496.16 1239.84L1783.4 1186.25L1620.49 1091.86L1395.34 961.706L1207.28 852.475L950.84 901.203L537.239 980.3L200.994 1046.55L9.62109 1083.46Z" fill="#206CE8" fill-opacity="0.8"/>
+      </mask>
+      <g mask="url(#mask0_2698_133)">
+        <g class="js-disk">
+          <use href="#tube-red-surface"/>
+        </g>
+      </g>
+      <g class="js-tube" opacity="0.5">
+        <use href="#tube-fill"/>
+      </g>
+      <g class="js-tube" opacity="0.5">
+        <use href="#tube-stroke"/>
+      </g>
+      <g class="js-disk">
+        <g class="js-balls"></g>
+      </g>
+      <g mask="url(#mask-water)">
+        <g class="js-disk">
+          <g class="js-balls js-balls--water"></g>
+        </g>
+      </g>
+      <g class="js-tube">
+        <use href="#tube-top-rim"/>
+      </g>
+
+      <use href="#tank-outline"/>
+
+      <mask id="mask1_2698_133" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="288" y="0" width="1173" height="1247">
+        <path d="M1460.14 0L288.143 66L312.143 1168L724.143 1184C724.143 1184 734.142 1247.94 914.143 1246C1100.14 1244 1114.14 1176 1114.14 1176L1408.14 1170L1460.14 0Z" fill="white"/>
+      </mask>
+      <mask id="mask-opening-narrow" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="288" y="0" width="1173" height="1226">
+        <path d="M1460.14 0L288.143 66L312.143 1168L804.14 1184C804.14 1184 818 1226 914.14 1226C1054 1226 1034.14 1176 1034.14 1176L1408.14 1170L1460.14 0Z" fill="white"/>
+      </mask>
+      <g class="js-opening" mask="url(#mask1_2698_133)">
+        <g class="js-tube" opacity="0.5">
+          <use href="#tube-fill"/>
+        </g>
+        <g class="js-tube" opacity="0.5">
+          <use href="#tube-stroke"/>
+        </g>
+        <g class="js-disk">
+          <g class="js-balls"></g>
+        </g>
+        <g class="js-tube">
+          <use href="#tube-top-rim"/>
+        </g>
+      </g>
+      <g mask="url(#mask-water)">
+        <g class="js-disk">
+          <g class="js-balls js-balls--water"></g>
+        </g>
+      </g>
+      <use href="#tank-outline-front"/>
+
+      <g class="js-depth-marker" aria-label="Hloubka ponoru červeného kolečka">
+        <path d="M1820 1189L1925.75 1145.7V1232.3L1820 1189Z" fill="#EF3A50"/>
+        <text class="js-depth-readout" x="1962" y="1214" fill="#EF3A50" font-size="44">0 cm</text>
+      </g>
+
+      <g class="js-tube">
+        <rect
+          class="tube-hit"
+          x="680"
+          y="460"
+          width="500"
+          height="780"
+          fill="transparent"
+        />
+      </g>
+    </svg>
+      </div>
+    </div>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>

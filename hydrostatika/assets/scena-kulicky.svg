@@ -1,0 +1,87 @@
+<svg width="2054" height="2120" viewBox="-260 0 2054 2120" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect x="-260" y="0" width="2054" height="2120" fill="#ffffff"/>
+
+  <defs>
+    <g id="tube-red">
+      <path d="M1168.14 1131.53C1168.14 1187.02 1058.9 1232 924.14 1232C789.384 1232 680.143 1187.02 680.143 1131.53C680.143 1076.04 789.384 1031.06 924.14 1031.06C1058.9 1031.06 1168.14 1076.04 1168.14 1131.53Z" fill="#DC5674"/>
+    </g>
+    <g id="tube-red-surface">
+      <path d="M1168.14 1131.53C1168.14 1187.02 1058.9 1232 924.14 1232C789.384 1232 680.143 1187.02 680.143 1131.53C680.143 1076.04 789.384 1031.06 924.14 1031.06C1058.9 1031.06 1168.14 1076.04 1168.14 1131.53Z" fill="#CB4970"/>
+    </g>
+    <g id="tube-fill">
+      <path d="M1105.13 527.919C1105.13 557.769 1022.3 581.97 920.108 581.97C817.921 581.97 735.082 557.769 735.082 527.919C735.082 527.919 746.14 472.006 920.108 472.707C1101.15 473.436 1105.13 527.919 1105.13 527.919Z" fill="white"/>
+      <path d="M1103.61 527.653V1123.92C1103.61 1153.77 1020.77 1177.97 918.583 1177.97C816.396 1177.97 733.557 1153.77 733.557 1123.92V536.934V527.653C733.557 557.503 816.396 581.708 918.583 581.708C1020.77 581.708 1103.61 557.503 1103.61 527.653Z" fill="white" fill-opacity="0.7"/>
+    </g>
+    <g id="tube-stroke">
+      <path d="M918.582 1071.9C1020.77 1071.9 1103.61 1096.1 1103.61 1125.95" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M733.561 1125.95C733.561 1096.1 816.396 1071.9 918.58 1071.9" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M1103.61 527.653V1123.92C1103.61 1153.77 1020.77 1177.97 918.583 1177.97C816.396 1177.97 733.557 1153.77 733.557 1123.92V536.934V527.653C733.557 557.503 816.396 581.708 918.583 581.708C1020.77 581.708 1103.61 557.503 1103.61 527.653Z" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M1103.61 1125.95C1103.61 1155.8 1020.77 1180 918.583 1180C816.396 1180 733.557 1155.8 733.557 1125.95" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M733.557 527.653C733.557 497.803 816.396 473.602 918.579 473.602C1020.77 473.602 1103.61 497.803 1103.61 527.653" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="tube-top-rim">
+      <path d="M733.557 527.653C733.557 497.803 816.396 473.602 918.579 473.602C1020.77 473.602 1103.61 497.803 1103.61 527.653" stroke="#C5C5C5" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="tube-body">
+      <use href="#tube-fill" xlink:href="#tube-fill"/>
+      <use href="#tube-stroke" xlink:href="#tube-stroke"/>
+    </g>
+    <g id="ball">
+      <path d="M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z" fill="#727272"/>
+      <path d="M144.609 74.0653C144.609 113.025 113.027 144.607 74.0688 144.607C35.1094 144.607 3.52734 113.025 3.52734 74.0653C3.52734 35.1076 35.1094 3.52734 74.0688 3.52734C113.027 3.52734 144.609 35.1076 144.609 74.0653Z" fill="#727272" stroke="black" stroke-width="7.05468" stroke-miterlimit="10" stroke-linecap="round"/>
+      <path d="M19.293 74.0651C19.293 43.8147 43.8168 19.2891 74.0708 19.2891" stroke="white" stroke-width="7.05468" stroke-miterlimit="10" stroke-linecap="round"/>
+    </g>
+    <g id="icon-plus">
+      <path d="M40 12 L40 68" stroke="#2F9E44" stroke-width="16" stroke-linecap="round"/>
+      <path d="M12 40 L68 40" stroke="#2F9E44" stroke-width="16" stroke-linecap="round"/>
+    </g>
+    <g id="icon-minus">
+      <path d="M12 40 L68 40" stroke="#E03131" stroke-width="16" stroke-linecap="round"/>
+    </g>
+    <g id="balls-in-tube">
+      <use href="#ball" xlink:href="#ball" transform="translate(756.615 998.533)"/>
+      <use href="#ball" xlink:href="#ball" transform="translate(929.615 998.533)"/>
+      <use href="#ball" xlink:href="#ball" transform="translate(842.615 879.533)"/>
+      <use href="#ball" xlink:href="#ball" transform="translate(745.615 777.533)"/>
+      <use href="#ball" xlink:href="#ball" transform="translate(947.615 779.533)"/>
+    </g>
+  </defs>
+
+  <path d="M10.623 1083.07V1721.39C10.623 1721.39 20.3076 1778.79 52.3099 1803.28C84.3121 1827.78 488.731 2063.15 488.731 2063.15C488.731 2063.15 548.523 2124.77 701.554 2095.48C854.589 2066.19 1734.5 1895.9 1734.5 1895.9L1776.84 1864.14L1782.41 1812.95V1185.86C1782.41 1185.86 1756.15 1176 1693.45 1138.2C1677.28 1128.45 1657.14 1117 1611.37 1086.6C1579.39 1065.36 1526.03 1034.89 1486.2 1011.61C1418.08 971.787 1347.86 936.019 1295.66 904.799C1246.19 875.207 1206.89 854.093 1206.89 854.093L10.623 1083.07Z" fill="#58A1FF" fill-opacity="0.7"/>
+  <path d="M9.62109 1083.46L165.59 1168.58L368.446 1280.89L594.359 1405.18L819.376 1363.75L1142.9 1305.3L1496.16 1239.84L1783.4 1186.25L1620.49 1091.86L1395.34 961.706L1207.28 852.475L950.84 901.203L537.239 980.3L200.994 1046.55L9.62109 1083.46Z" fill="#206CE8" fill-opacity="0.8"/>
+
+  <use href="#tube-red" xlink:href="#tube-red"/>
+  <use href="#balls-in-tube" xlink:href="#balls-in-tube"/>
+
+  <g opacity="0.5">
+    <use href="#tube-body" xlink:href="#tube-body"/>
+  </g>
+  <use href="#tube-top-rim" xlink:href="#tube-top-rim"/>
+
+  <mask id="mask-water-surface" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="9" y="852" width="1775" height="554">
+    <path d="M9.62109 1083.46L165.59 1168.58L368.446 1280.89L594.359 1405.18L819.376 1363.75L1142.9 1305.3L1496.16 1239.84L1783.4 1186.25L1620.49 1091.86L1395.34 961.706L1207.28 852.475L950.84 901.203L537.239 980.3L200.994 1046.55L9.62109 1083.46Z" fill="#206CE8" fill-opacity="0.8"/>
+  </mask>
+  <g mask="url(#mask-water-surface)">
+    <use href="#tube-red-surface" xlink:href="#tube-red-surface"/>
+  </g>
+
+  <path d="M1719.67 1900.6L663.05 2102.85C627.646 2110.31 594.352 2083.3 594.352 2047.12V1099.11L1782.4 869.172V1823.27C1782.4 1860.64 1756.23 1892.9 1719.67 1900.6Z" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M505.018 2073.91C536.882 2089.4 574.569 2121.62 663.05 2102.85" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10.6191 766.39L594.355 1099.12V2026.07C594.355 2068.19 550.211 2095.74 512.376 2077.23L67.3991 1812.37C32.6536 1795.38 10.6191 1760.08 10.6191 1721.4V766.39ZM1775.5 871.5L1202.5 533L10.6191 766.39M1202.5 533V851.5" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <mask id="mask-opening" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="288" y="0" width="1173" height="1247">
+    <path d="M1460.14 0L288.143 66L312.143 1168L724.143 1184C724.143 1184 734.142 1247.94 914.143 1246C1100.14 1244 1114.14 1176 1114.14 1176L1408.14 1170L1460.14 0Z" fill="white"/>
+  </mask>
+  <g mask="url(#mask-opening)">
+    <g opacity="0.5">
+      <use href="#tube-body" xlink:href="#tube-body"/>
+    </g>
+    <use href="#tube-top-rim" xlink:href="#tube-top-rim"/>
+  </g>
+
+  <g id="zasobnik">
+    <use href="#icon-plus" xlink:href="#icon-plus" transform="translate(-193 790)"/>
+    <use href="#ball" xlink:href="#ball" transform="translate(-228 900)"/>
+    <use href="#icon-minus" xlink:href="#icon-minus" transform="translate(-193 1075)"/>
+  </g>
+</svg>

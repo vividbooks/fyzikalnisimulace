@@ -10,23 +10,14 @@
 </g>
 <path d="M 120 356 L 120 1240 A 36 36 0 0 0 156 1276 L 1044 1276 A 36 36 0 0 0 1080 1240 L 1080 356" fill="none" stroke="rgba(120, 180, 255, 0.55)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
 <path d="M 120 356 L 120 1240 A 36 36 0 0 0 156 1276 L 1044 1276 A 36 36 0 0 0 1080 1240 L 1080 356" fill="none" stroke="rgba(200, 225, 255, 0.82)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="600" y1="348.5345510625422" x2="600" y2="492.5345510625422" stroke="#8b96ab" stroke-width="6" stroke-linecap="round"/>
-<circle cx="600" cy="492.5345510625422" r="10" fill="#5eb8ff"/>
-<rect x="515.2672755312711" y="508.5345510625422" width="169.46544893745778" height="169.46544893745778" rx="20" ry="20" fill="#8a8f94" stroke="rgba(255, 255, 255, 0.55)" stroke-width="6.4"/>
-<circle cx="576.27" cy="569.54" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="600.00" cy="569.54" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="623.73" cy="569.54" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="576.27" cy="593.27" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="600.00" cy="593.27" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="623.73" cy="593.27" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="576.27" cy="616.99" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="600.00" cy="616.99" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
-<circle cx="623.73" cy="616.99" r="4.30" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.35)" stroke-width="1.10"/>
+<line x1="600" y1="348.5345510625422" x2="600" y2="407.8015" stroke="#8b96ab" stroke-width="6" stroke-linecap="round"/>
+<circle cx="600" cy="407.8015" r="10" fill="#5eb8ff"/>
+<rect x="430.5345" y="423.8015" width="338.93089787551556" height="338.93089787551556" rx="20" ry="20" fill="#8a8f94" stroke="rgba(255, 255, 255, 0.55)" stroke-width="6.4"/>
 
 <defs>
   <clipPath id="weightClip">
-    <rect x="515.2672755312711" y="508.5345510625422" width="169.46544893745778" height="169.46544893745778" rx="20" ry="20"/>
+    <rect x="430.5345" y="423.8015" width="338.93089787551556" height="338.93089787551556" rx="20" ry="20"/>
   </clipPath>
 </defs>
-<rect x="512.27" y="582.91" width="175.47" height="98.09" fill="rgba(59, 130, 246, 0.52)" clip-path="url(#weightClip)"/>
+<rect x="427.27" y="586" width="344.47" height="176.73" fill="rgba(59, 130, 246, 0.52)" clip-path="url(#weightClip)"/>
 </svg>

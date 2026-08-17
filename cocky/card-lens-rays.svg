@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 88" fill="none" aria-hidden="true">
-<path d="M 0.00 76.43 L 92.40 76.43 L 132.00 3.46" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
-<path d="M 0.00 60.22 L 92.40 60.22 L 132.00 23.73" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
-<path d="M 0.00 44.00 L 92.40 44.00 L 132.00 44.00" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
-<path d="M 0.00 27.78 L 92.40 27.78 L 132.00 64.27" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
-<path d="M 0.00 11.57 L 92.40 11.57 L 132.00 84.54" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
-<line x1="92.4" y1="6.77" x2="92.4" y2="81.23" stroke="#66d9ef" stroke-width="2.2" stroke-linecap="round"/>
-<path d="M 91.08 10.79 L 92.4 6.77 L 93.72 10.79" fill="none" stroke="#66d9ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M 91.08 77.21 L 92.4 81.23 L 93.72 77.21" fill="none" stroke="#66d9ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 0.00 76.43 L 92.40 76.43 L 132.00 3.46" fill="none" stroke="#f87171" stroke-width="1.25" stroke-linecap="round" opacity="0.45"/>
+<path d="M 0.00 60.22 L 92.40 60.22 L 132.00 23.73" fill="none" stroke="#f87171" stroke-width="1.25" stroke-linecap="round" opacity="0.45"/>
+<path d="M 0.00 44.00 L 92.40 44.00 L 132.00 44.00" fill="none" stroke="#f87171" stroke-width="1.25" stroke-linecap="round" opacity="0.45"/>
+<path d="M 0.00 27.78 L 92.40 27.78 L 132.00 64.27" fill="none" stroke="#f87171" stroke-width="1.25" stroke-linecap="round" opacity="0.45"/>
+<path d="M 0.00 11.57 L 92.40 11.57 L 132.00 84.54" fill="none" stroke="#f87171" stroke-width="1.25" stroke-linecap="round" opacity="0.45"/>
+<line x1="92.4" y1="6.77" x2="92.4" y2="81.23" stroke="#22d3ee" stroke-width="5" stroke-linecap="round"/>
+<path d="M 89.5 11.5 L 92.4 5.5 L 95.3 11.5" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 89.5 76.5 L 92.4 82.5 L 95.3 76.5" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
