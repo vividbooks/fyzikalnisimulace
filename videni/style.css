@@ -111,10 +111,7 @@ button {
 
 .hud-btn {
   appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
+  min-height: 36px;
   padding: 7px 14px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -122,14 +119,16 @@ button {
   color: var(--text);
   font-size: 0.86rem;
   font-weight: 600;
+  line-height: normal;
   cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .hud-btn--file {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
