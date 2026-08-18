@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Barevné vidění</title>
-    <link rel="stylesheet" href="style.css?v=channel-lock-1" />
+    <link rel="stylesheet" href="style.css?v=disorders-3" />
   </head>
   <body>
     <div class="app">
@@ -47,6 +47,29 @@
         </button>
         <div class="frame">
           <canvas id="view" aria-label="Zobrazený obrázek"></canvas>
+        </div>
+        <button
+          type="button"
+          id="photo-next"
+          class="photo-nav"
+          aria-label="Další fotografie"
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </main>
+
+      <footer class="dock">
+        <div class="dock-bar">
+          <div class="mode-toggle" role="group" aria-label="Režim zobrazení">
+            <button type="button" id="panel-rgb" class="mode-toggle-btn is-active" aria-pressed="true">
+              RGB
+            </button>
+            <button type="button" id="panel-disorders" class="mode-toggle-btn" aria-pressed="false">
+              Poruchy
+            </button>
+          </div>
           <button
             type="button"
             id="zoom-btn"
@@ -67,20 +90,7 @@
             </svg>
           </button>
         </div>
-        <button
-          type="button"
-          id="photo-next"
-          class="photo-nav"
-          aria-label="Další fotografie"
-        >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 5l7 7-7 7"></path>
-          </svg>
-        </button>
-      </main>
-
-      <footer class="dock">
-        <div class="channels" role="group" aria-label="Barevné složky">
+        <div class="channels" id="rgb-panel" role="group" aria-label="Barevné složky">
           <div
             class="channel-scrub"
             data-channel="red"
@@ -174,20 +184,27 @@
               <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit intenzitu modré">▶</button>
             </span>
           </div>
-          <button
-            type="button"
-            id="mode-rg-blind"
-            class="channel"
-            data-channel="rg-blind"
-            aria-pressed="false"
-          >
-            <span class="channel-dot" aria-hidden="true"></span>
-            Červeno-zelená slepota
+        </div>
+        <div class="channels disorders" id="disorder-panel" hidden role="group" aria-label="Poruchy barevného vidění">
+          <button type="button" class="channel is-on" data-disorder="none" aria-pressed="true">
+            Bez poruchy
+          </button>
+          <button type="button" class="channel" data-disorder="deuteranopia" aria-pressed="false">
+            Červeno-zelená
+          </button>
+          <button type="button" class="channel" data-disorder="protanopia" aria-pressed="false">
+            Červená
+          </button>
+          <button type="button" class="channel" data-disorder="tritanopia" aria-pressed="false">
+            Modro-žlutá
+          </button>
+          <button type="button" class="channel" data-disorder="achromatopsia" aria-pressed="false">
+            Úplná
           </button>
         </div>
       </footer>
     </div>
 
-    <script src="main.js?v=semafor-2"></script>
+    <script src="main.js?v=disorders-3"></script>
   </body>
 </html>

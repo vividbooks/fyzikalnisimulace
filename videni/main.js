@@ -23,7 +23,11 @@ const sourceButtons = {
   upload: document.getElementById("src-upload"),
 };
 
-const rgBlindBtn = document.getElementById("mode-rg-blind");
+const rgbPanel = document.getElementById("rgb-panel");
+const disorderPanel = document.getElementById("disorder-panel");
+const panelRgbBtn = document.getElementById("panel-rgb");
+const panelDisordersBtn = document.getElementById("panel-disorders");
+const disorderButtons = [...document.querySelectorAll("[data-disorder]")];
 const channelScrubs = {
   red: document.querySelector('.channel-scrub[data-channel="red"]'),
   green: document.querySelector('.channel-scrub[data-channel="green"]'),
@@ -36,7 +40,8 @@ const state = {
   intensity: { red: 100, green: 100, blue: 100 },
   savedIntensity: { red: 100, green: 100, blue: 100 },
   locked: { red: false, green: false, blue: false },
-  rgBlind: false,
+  panel: "rgb",
+  disorder: "none",
   pixels: null,
   zoomed: false,
 };
@@ -59,6 +64,48 @@ function channelGain(name) {
   return state.intensity[name] / 100;
 }
 
+// Machado 2009, severity 1.0
+const DISORDER_MATRIX = {
+  protanopia: [
+    [0.152286, 1.052583, -0.204868],
+    [0.114503, 0.786281, 0.099216],
+    [-0.003882, -0.048116, 1.051998],
+  ],
+  deuteranopia: [
+    [0.367322, 0.860646, -0.227968],
+    [0.280085, 0.672501, 0.047413],
+    [-0.01182, 0.04294, 0.968881],
+  ],
+  tritanopia: [
+    [1.255528, -0.076749, -0.178779],
+    [-0.078411, 0.930809, 0.147602],
+    [0.004759, 0.691367, 0.303874],
+  ],
+};
+
+function applyDisorder(data, kind) {
+  if (kind === "none") return;
+  if (kind === "achromatopsia") {
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue;
+      const gray = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      data[i] = data[i + 1] = data[i + 2] = clampByte(gray);
+    }
+    return;
+  }
+  const m = DISORDER_MATRIX[kind];
+  if (!m) return;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] === 0) continue;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    data[i] = clampByte(m[0][0] * r + m[0][1] * g + m[0][2] * b);
+    data[i + 1] = clampByte(m[1][0] * r + m[1][1] * g + m[1][2] * b);
+    data[i + 2] = clampByte(m[2][0] * r + m[2][1] * g + m[2][2] * b);
+  }
+}
+
 function render() {
   const source = state.pixels;
   if (!source) return;
@@ -67,17 +114,8 @@ function render() {
   const output = new ImageData(new Uint8ClampedArray(source.data), width, height);
   const data = output.data;
 
-  if (state.rgBlind) {
-    // Deuteranopia (Viénot 1999): red and green collapse into gray, brown or yellow.
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] === 0) continue;
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      data[i] = clampByte(0.367322 * r + 0.860646 * g - 0.227968 * b);
-      data[i + 1] = clampByte(0.280085 * r + 0.672501 * g + 0.047413 * b);
-      data[i + 2] = clampByte(-0.01182 * r + 0.04294 * g + 0.968881 * b);
-    }
+  if (state.panel === "disorders" && state.disorder !== "none") {
+    applyDisorder(data, state.disorder);
   } else {
     const redGain = channelGain("red");
     const greenGain = channelGain("green");
@@ -270,14 +308,6 @@ async function showFile(file) {
   render();
 }
 
-function setChannelDisabled(disabled) {
-  for (const scrub of Object.values(channelScrubs)) {
-    scrub.classList.toggle("is-disabled", disabled);
-    scrub.setAttribute("aria-disabled", String(disabled));
-    scrub.tabIndex = disabled ? -1 : 0;
-  }
-}
-
 function lockLabel(name, locked) {
   const color =
     name === "red" ? "červenou" : name === "green" ? "zelenou" : "modrou";
@@ -299,7 +329,7 @@ function syncChannelUi(name) {
 }
 
 function setChannelIntensity(name, value) {
-  if (state.rgBlind || state.locked[name]) return;
+  if (state.panel !== "rgb" || state.locked[name]) return;
   const next = Math.max(0, Math.min(100, Math.round(value)));
   if (next === state.intensity[name]) return;
   state.intensity[name] = next;
@@ -308,7 +338,7 @@ function setChannelIntensity(name, value) {
 }
 
 function toggleChannelLock(name) {
-  if (state.rgBlind) return;
+  if (state.panel !== "rgb") return;
   if (state.locked[name]) {
     state.locked[name] = false;
     state.intensity[name] = state.savedIntensity[name];
@@ -352,7 +382,7 @@ function bindChannelScrub(name) {
   }
 
   scrub.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || state.rgBlind || state.locked[name]) return;
+    if (event.button !== 0 || state.panel !== "rgb" || state.locked[name]) return;
     if (event.target.closest(".channel-scrub-arrow, .channel-lock")) return;
     dragging = true;
     pointerId = event.pointerId;
@@ -381,7 +411,7 @@ function bindChannelScrub(name) {
   });
 
   scrub.addEventListener("keydown", (event) => {
-    if (state.rgBlind) return;
+    if (state.panel !== "rgb") return;
     if (event.key === " " || event.key === "Enter") {
       if (event.target.closest(".channel-lock")) return;
       event.preventDefault();
@@ -406,7 +436,7 @@ function bindChannelScrub(name) {
   });
 
   scrub.addEventListener("wheel", (event) => {
-    if (state.rgBlind || state.locked[name]) return;
+    if (state.panel !== "rgb" || state.locked[name]) return;
     event.preventDefault();
     const step = event.shiftKey ? 5 : 1;
     applyValue(state.intensity[name] + (event.deltaY > 0 ? -step : step));
@@ -415,11 +445,25 @@ function bindChannelScrub(name) {
   syncChannelUi(name);
 }
 
-function toggleRgBlind() {
-  state.rgBlind = !state.rgBlind;
-  rgBlindBtn.classList.toggle("is-on", state.rgBlind);
-  rgBlindBtn.setAttribute("aria-pressed", String(state.rgBlind));
-  setChannelDisabled(state.rgBlind);
+function setPanel(panel) {
+  state.panel = panel;
+  const rgb = panel === "rgb";
+  rgbPanel.hidden = !rgb;
+  disorderPanel.hidden = rgb;
+  panelRgbBtn.classList.toggle("is-active", rgb);
+  panelRgbBtn.setAttribute("aria-pressed", String(rgb));
+  panelDisordersBtn.classList.toggle("is-active", !rgb);
+  panelDisordersBtn.setAttribute("aria-pressed", String(!rgb));
+  render();
+}
+
+function setDisorder(kind) {
+  state.disorder = kind;
+  for (const button of disorderButtons) {
+    const on = button.dataset.disorder === kind;
+    button.classList.toggle("is-on", on);
+    button.setAttribute("aria-pressed", String(on));
+  }
   render();
 }
 
@@ -427,7 +471,11 @@ for (const name of Object.keys(channelScrubs)) {
   bindChannelScrub(name);
 }
 
-rgBlindBtn.addEventListener("click", toggleRgBlind);
+panelRgbBtn.addEventListener("click", () => setPanel("rgb"));
+panelDisordersBtn.addEventListener("click", () => setPanel("disorders"));
+for (const button of disorderButtons) {
+  button.addEventListener("click", () => setDisorder(button.dataset.disorder));
+}
 
 sourceButtons.photo.addEventListener("click", () => {
   showPhoto().catch(() => {});
@@ -499,7 +547,7 @@ window.addEventListener("keydown", (event) => {
   }
 
   const key = event.key.toLowerCase();
-  if (key === "s") toggleRgBlind();
+  if (key === "p") setPanel(state.panel === "rgb" ? "disorders" : "rgb");
 });
 
 new ResizeObserver(() => {

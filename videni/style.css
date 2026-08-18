@@ -20,6 +20,9 @@
   --green: #2f9e44;
   --blue: #1971c2;
   --blind: #9a7b4f;
+  --protan: #a35a48;
+  --tritan: #6b7ea8;
+  --achroma: #6b7280;
 }
 
 * {
@@ -241,9 +244,7 @@ button {
 
 .zoom-btn {
   appearance: none;
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
+  flex: 0 0 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -268,13 +269,21 @@ button {
 }
 
 .app.is-zoomed .hud,
-.app.is-zoomed .dock {
-  display: none;
+.app.is-zoomed .mode-toggle,
+.app.is-zoomed .channels {
+  display: none !important;
 }
 
 .app.is-zoomed {
   grid-template-rows: 1fr;
   background: #111318;
+}
+
+.app.is-zoomed .dock {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding: 0;
 }
 
 .app.is-zoomed .stage {
@@ -306,8 +315,11 @@ button {
 }
 
 .app.is-zoomed .zoom-btn {
+  position: absolute;
   right: max(12px, env(safe-area-inset-right, 0px));
   bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  z-index: 6;
+  pointer-events: auto;
 }
 
 .app.is-zoomed .zoom-icon--in {
@@ -321,9 +333,52 @@ button {
 .dock {
   display: grid;
   justify-items: center;
+  gap: 12px;
   padding: 8px max(20px, env(safe-area-inset-right, 0px))
     max(20px, env(safe-area-inset-bottom, 0px))
     max(20px, env(safe-area-inset-left, 0px));
+}
+
+.dock-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-toggle-btn {
+  appearance: none;
+  min-width: 7.5rem;
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.mode-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.mode-toggle-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.mode-toggle-btn.is-active:hover {
+  color: #ffffff;
 }
 
 .channels {
@@ -332,6 +387,10 @@ button {
   justify-content: center;
   align-items: center;
   gap: 10px;
+}
+
+.channels[hidden] {
+  display: none !important;
 }
 
 .channel {
@@ -362,8 +421,24 @@ button {
   background: currentColor;
 }
 
-.channel[data-channel="rg-blind"] {
+.channel[data-disorder="none"] {
+  --on: var(--accent);
+}
+
+.channel[data-disorder="deuteranopia"] {
   --on: var(--blind);
+}
+
+.channel[data-disorder="protanopia"] {
+  --on: var(--protan);
+}
+
+.channel[data-disorder="tritanopia"] {
+  --on: var(--tritan);
+}
+
+.channel[data-disorder="achromatopsia"] {
+  --on: var(--achroma);
 }
 
 .channel.is-on {
@@ -512,6 +587,10 @@ button {
   box-shadow: none;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.disorders .channel {
+  min-width: 132px;
 }
 
 @media (max-width: 720px) {
