@@ -18,15 +18,15 @@
           <button type="button" id="src-photo" class="hud-btn is-active" aria-pressed="true">
             Fotografie
           </button>
-          <button type="button" id="src-upload" class="hud-btn">
+          <label class="hud-btn hud-btn--file" id="src-upload">
             Vlastní obrázek
-          </button>
-          <input
-            id="file-input"
-            type="file"
-            accept="image/*"
-            hidden
-          />
+            <input
+              id="file-input"
+              type="file"
+              accept="image/*"
+              aria-label="Vybrat vlastní obrázek"
+            />
+          </label>
         </div>
       </header>
 
@@ -91,6 +91,6 @@
       </footer>
     </div>
 
-    <script src="main.js"></script>
+    <script src="main.js?v=tablet-upload-1"></script>
   </body>
 </html>

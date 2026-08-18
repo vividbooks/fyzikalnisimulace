@@ -153,6 +153,39 @@ function loadImage(src) {
   });
 }
 
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Obrázek se nepodařilo načíst."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function imageFromFile(file) {
+  if (typeof createImageBitmap === "function") {
+    try {
+      return await createImageBitmap(file, { imageOrientation: "from-image" });
+    } catch (_) {
+      try {
+        return await createImageBitmap(file);
+      } catch (_) {
+        /* fallback below */
+      }
+    }
+  }
+
+  const url = URL.createObjectURL(file);
+  try {
+    return await loadImage(url);
+  } catch (_) {
+    const dataUrl = await readFileAsDataURL(file);
+    return loadImage(dataUrl);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 async function showPhoto() {
   setSourceActive("photo");
   const image = await loadImage(PHOTO_SRC);
@@ -161,21 +194,11 @@ async function showPhoto() {
 }
 
 async function showFile(file) {
-  const url = URL.createObjectURL(file);
-  try {
-    let image;
-    if (typeof createImageBitmap === "function") {
-      image = await createImageBitmap(file, { imageOrientation: "from-image" });
-    } else {
-      image = await loadImage(url);
-    }
-    setSourceActive("upload");
-    state.pixels = pixelsFromImage(image);
-    if (image.close) image.close();
-    render();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const image = await imageFromFile(file);
+  setSourceActive("upload");
+  state.pixels = pixelsFromImage(image);
+  if (image.close) image.close();
+  render();
 }
 
 function toggleChannel(name) {
@@ -194,10 +217,6 @@ sourceButtons.photo.addEventListener("click", () => {
   showPhoto().catch(() => {});
 });
 
-sourceButtons.upload.addEventListener("click", () => {
-  fileInput.click();
-});
-
 zoomBtn.addEventListener("click", () => {
   toggleFullscreen();
 });
@@ -210,12 +229,22 @@ function syncFullscreenState() {
   setZoomed(active === app);
 }
 
-fileInput.addEventListener("change", () => {
+let loadingFile = false;
+
+function onFileChosen() {
   const file = fileInput.files && fileInput.files[0];
+  if (!file || loadingFile) return;
   fileInput.value = "";
-  if (!file) return;
-  showFile(file).catch(() => {});
-});
+  loadingFile = true;
+  showFile(file)
+    .catch(() => {})
+    .finally(() => {
+      loadingFile = false;
+    });
+}
+
+fileInput.addEventListener("change", onFileChosen);
+fileInput.addEventListener("input", onFileChosen);
 
 window.addEventListener("keydown", (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return;
