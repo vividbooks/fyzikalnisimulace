@@ -1095,25 +1095,31 @@
             id: "tlak",
             title: "Tlak",
             hash: "#/sim/tlak",
-            previewColor: "#e8ecff",
+            previewColor: "#fff2cc",
           },
           {
             id: "hra_newton",
             title: "Newtonovy pohybové zákony",
             hash: "#/sim/hra_newton",
-            previewColor: "#eaf4ff",
+            previewColor: "#e8fff4",
           },
           {
             id: "paka",
             title: "Páka",
             hash: "#/sim/paka",
-            previewColor: "#dcf3ff",
+            previewColor: "#f0e8ff",
           },
           {
             id: "kladkostroj",
             title: "Kladkostroj",
             hash: "#/sim/kladkostroj",
             previewColor: "#ffe8ec",
+          },
+          {
+            id: "teziste",
+            title: "Těžiště",
+            hash: "#/sim/teziste",
+            previewColor: "#fdf4e8",
           },
         ],
       },
@@ -1158,6 +1164,12 @@
             previewColor: "#e8f4ff",
           },
           {
+            id: "videni",
+            title: "Barevné vidění",
+            hash: "#/sim/videni",
+            previewColor: "#ffe8e8",
+          },
+          {
             id: "michani-barev",
             title: "Míchání barev",
             hash: "#/sim/michani-barev",
@@ -1183,6 +1195,7 @@
     const SIM_TO_HUB_CATEGORY = {
       paka: "sily",
       kladkostroj: "sily",
+      teziste: "sily",
       skladani_sil: "sily",
       silomer_2: "sily",
       tlak: "sily",
@@ -1205,6 +1218,7 @@
       tepelna_kapacita_puvodni: "energie",
       skutecny_obraz: "optika",
       cocky: "optika",
+      videni: "optika",
     };
 
     const HUB_CATEGORY_STORAGE_KEY = "physicsHubCategory";
@@ -1265,6 +1279,25 @@
       </svg>`;
     }
 
+    function TezisteCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="teziste/card-teziste.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HydrostatikaCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1313,6 +1346,25 @@
       >
         <image
           href="optika_geometrie/card-geometric-optics.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
+    function BarevneVideniCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="videni/card-barevne-videni.svg"
           x="0"
           y="0"
           width="132"
@@ -2128,6 +2180,7 @@
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
       if (tileId === "kladkostroj") return html`<${KladkostrojCardIllustration} />`;
+      if (tileId === "teziste") return html`<${TezisteCardIllustration} />`;
       if (tileId === "skladani_sil") return html`<${SkladaniSilCardIllustration} />`;
       if (tileId === "silomer_2") return html`<${SilomerCardIllustration} />`;
       if (tileId === "tlak") return html`<${TlakCardIllustration} />`;
@@ -2135,6 +2188,7 @@
       if (tileId === "hydrostatika") return html`<${HydrostatikaCardIllustration} />`;
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
+      if (tileId === "videni") return html`<${BarevneVideniCardIllustration} />`;
       if (tileId === "skutecny_obraz") return html`<${SkutecnyObrazCardIllustration} />`;
       if (tileId === "cocky") return html`<${CockyCardIllustration} />`;
       if (tileId === "michani-barev") return html`<${MichaniBarevCardIllustration} />`;
@@ -2304,6 +2358,14 @@
           }
           return;
         }
+        if (simId === "teziste") {
+          try {
+            window.location.replace(new URL("teziste/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("teziste/");
+          }
+          return;
+        }
         if (simId === "skladani_sil") {
           try {
             window.location.replace(new URL("skladani_sil/", window.location.href).href);
@@ -2440,6 +2502,14 @@
           }
           return;
         }
+        if (simId === "videni") {
+          try {
+            window.location.replace(new URL("videni/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("videni/");
+          }
+          return;
+        }
         if (simId === "mereni_delka") {
           try {
             window.location.replace(new URL("mereni_delka/", window.location.href).href);
@@ -2527,6 +2597,13 @@
         `;
       }
       if (simId === "kladkostroj") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "teziste") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
@@ -2653,6 +2730,13 @@
         `;
       }
       if (simId === "optika_geometrie") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "videni") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

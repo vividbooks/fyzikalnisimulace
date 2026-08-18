@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Těžiště</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app" id="app" data-tool="move" data-guide-on="false">
+      <svg class="svg-sprite" aria-hidden="true">
+        <defs>
+          <g id="weight-art">
+            <circle cx="18.25" cy="18.25" r="18.25" fill="#A3A2A2" />
+            <path d="M27.125 14H9.625V26.125H27.125V14Z" fill="black" stroke="black" stroke-width="0.25" />
+            <ellipse cx="18.375" cy="14" rx="8.875" ry="2.25" fill="#6F6F6F" />
+            <path d="M22.25 13.75C22.25 14.4404 20.5151 15 18.375 15C16.2349 15 14.5 14.4404 14.5 13.75C14.5 13.0596 16.2349 12.5 18.375 12.5C20.5151 12.5 22.25 13.0596 22.25 13.75Z" fill="black" />
+            <ellipse cx="18.375" cy="26.25" rx="8.875" ry="2.25" fill="black" />
+            <path d="M23.6743 7.74377H13.0757V10.4048H23.6743V7.74377Z" fill="black" stroke="black" stroke-width="0.25" />
+            <ellipse cx="18.375" cy="7.74381" rx="5.375" ry="0.493807" fill="#6F6F6F" />
+            <ellipse cx="18.375" cy="10.4323" rx="5.375" ry="0.493807" fill="black" />
+            <path d="M16.875 11.875C17 11.625 16.875 10.875 16.875 10.875H19.875V11.875L21.625 13.375H15.125C15.125 13.375 16.75 12.125 16.875 11.875Z" fill="black" stroke="black" stroke-width="0.25" />
+            <path d="M19.9307 10.875C19.9307 10.875 19.8057 11.625 19.9307 11.875C20.0557 12.125 21.9307 13.375 21.9307 13.375" stroke="black" stroke-width="0.25" />
+          </g>
+        </defs>
+      </svg>
+      <header class="hud" aria-label="Ovládání">
+        <div class="hud-left">
+          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+          <h1 class="hud-title">Těžiště</h1>
+          <div class="shape-picker" role="group" aria-label="Výběr objektu"></div>
+          <button type="button" id="weight-supply" class="weight-supply" aria-label="Závaží">
+            <svg class="weight-icon" viewBox="0 0 37 37" fill="none" aria-hidden="true">
+              <use href="#weight-art" />
+            </svg>
+          </button>
+        </div>
+        <div class="hud-actions">
+          <button type="button" id="tool-guess-cm" class="hud-btn" aria-pressed="false">
+            Označit těžiště
+          </button>
+          <button type="button" id="tool-reshape" class="hud-btn" aria-pressed="false">
+            Změnit tvar
+          </button>
+          <button type="button" id="toggle-guide" class="hud-btn" aria-pressed="false">
+            Svislá přímka
+          </button>
+          <button type="button" id="tool-pencil" class="hud-btn" aria-pressed="false">
+            Tužka
+          </button>
+          <button type="button" id="clear-drawings-btn" class="hud-btn" disabled>
+            Smazat
+          </button>
+        </div>
+      </header>
+
+      <p id="guess-feedback" class="guess-feedback" hidden></p>
+      <div id="confetti" class="confetti" aria-hidden="true"></div>
+      <div id="weight-ghost" class="weight-ghost" hidden>
+        <svg class="weight-icon" viewBox="0 0 37 37" fill="none" aria-hidden="true">
+          <use href="#weight-art" />
+        </svg>
+      </div>
+
+      <svg
+        id="scene"
+        class="scene"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="Plocha s kolečkem a objektem"
+      >
+        <g id="world">
+          <clipPath id="holes-clip" clipPathUnits="userSpaceOnUse"></clipPath>
+          <g id="hook" class="hook"></g>
+
+          <g id="shape-group">
+            <clipPath id="shape-clip" clipPathUnits="userSpaceOnUse">
+              <path id="shape-clip-path"></path>
+            </clipPath>
+            <path id="shape-body" class="shape-body" />
+            <path id="shape-stroke" class="shape-stroke" />
+            <g id="drawings" clip-path="url(#shape-clip)"></g>
+            <g id="holes"></g>
+            <g id="weights"></g>
+            <g id="corners"></g>
+          </g>
+
+          <g id="hook-over" class="hook" clip-path="url(#holes-clip)"></g>
+
+          <g id="guess-layer" hidden></g>
+        </g>
+
+        <g id="guide-line" class="guide-line" aria-label="Svislá přímka">
+          <line id="guide-line-vis" class="guide-line-vis" />
+        </g>
+      </svg>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>

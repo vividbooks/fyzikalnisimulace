@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Barevné vidění</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hud" aria-label="Ovládání">
+        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <h1 class="hud-title">Barevné vidění</h1>
+        <div class="hud-actions">
+          <button type="button" id="src-photo" class="hud-btn is-active" aria-pressed="true">
+            Fotografie
+          </button>
+          <button type="button" id="src-upload" class="hud-btn">
+            Vlastní obrázek
+          </button>
+          <input
+            id="file-input"
+            type="file"
+            accept="image/*"
+            hidden
+          />
+        </div>
+      </header>
+
+      <main class="stage" aria-label="Obrázek s barevnými složkami">
+        <div class="frame">
+          <canvas id="view" aria-label="Zobrazený obrázek"></canvas>
+          <button
+            type="button"
+            id="zoom-btn"
+            class="zoom-btn"
+            aria-label="Zobrazit obrázek přes celou obrazovku prohlížeče"
+            aria-pressed="false"
+          >
+            <svg class="zoom-icon zoom-icon--in" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-4-4"></path>
+              <path d="M11 8v6"></path>
+              <path d="M8 11h6"></path>
+            </svg>
+            <svg class="zoom-icon zoom-icon--out" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-4-4"></path>
+              <path d="M8 11h6"></path>
+            </svg>
+          </button>
+        </div>
+      </main>
+
+      <footer class="dock">
+        <div class="channels" role="group" aria-label="Barevné složky">
+          <button
+            type="button"
+            id="ch-red"
+            class="channel is-on"
+            data-channel="red"
+            aria-pressed="true"
+          >
+            <span class="channel-dot" aria-hidden="true"></span>
+            Červená
+          </button>
+          <button
+            type="button"
+            id="ch-green"
+            class="channel is-on"
+            data-channel="green"
+            aria-pressed="true"
+          >
+            <span class="channel-dot" aria-hidden="true"></span>
+            Zelená
+          </button>
+          <button
+            type="button"
+            id="ch-blue"
+            class="channel is-on"
+            data-channel="blue"
+            aria-pressed="true"
+          >
+            <span class="channel-dot" aria-hidden="true"></span>
+            Modrá
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>
