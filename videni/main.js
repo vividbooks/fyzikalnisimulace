@@ -1,5 +1,11 @@
 const MAX_EDGE = 1600;
-const PHOTO_SRC = "assets/vzorek.png";
+const PHOTOS = [
+  { src: "assets/vzorek.png", label: "Zátiší" },
+  { src: "assets/mic-trava.jpg?v=long-grass-1", label: "Míč v trávě" },
+  { src: "assets/papriky.jpg", label: "Papriky" },
+  { src: "assets/vlci-maky.jpg", label: "Květiny" },
+  { src: "assets/papousek.jpg", label: "Papoušek" },
+];
 
 const view = document.getElementById("view");
 const app = document.querySelector(".app");
@@ -7,6 +13,8 @@ const stage = document.querySelector(".stage");
 const ctx = view.getContext("2d", { willReadFrequently: true });
 const fileInput = document.getElementById("file-input");
 const zoomBtn = document.getElementById("zoom-btn");
+const photoPrevBtn = document.getElementById("photo-prev");
+const photoNextBtn = document.getElementById("photo-next");
 
 const sourceButtons = {
   photo: document.getElementById("src-photo"),
@@ -22,6 +30,7 @@ const rgBlindBtn = document.getElementById("mode-rg-blind");
 
 const state = {
   source: "photo",
+  photoIndex: 0,
   red: true,
   green: true,
   blue: true,
@@ -32,6 +41,7 @@ const state = {
 
 function setSourceActive(name) {
   state.source = name;
+  app.classList.toggle("is-upload", name === "upload");
   for (const [key, button] of Object.entries(sourceButtons)) {
     const active = key === name;
     button.classList.toggle("is-active", active);
@@ -83,10 +93,16 @@ function fitViewToStage() {
   if (!source) return;
 
   const style = getComputedStyle(stage);
+  const gap = parseFloat(style.columnGap || style.gap) || 0;
+  const navSpace =
+    state.source === "photo"
+      ? photoPrevBtn.offsetWidth + photoNextBtn.offsetWidth + gap * 2
+      : 0;
   const maxW =
     stage.clientWidth -
     parseFloat(style.paddingLeft) -
-    parseFloat(style.paddingRight);
+    parseFloat(style.paddingRight) -
+    navSpace;
   const maxH =
     stage.clientHeight -
     parseFloat(style.paddingTop) -
@@ -202,11 +218,33 @@ async function imageFromFile(file) {
   }
 }
 
-async function showPhoto() {
-  setSourceActive("photo");
-  const image = await loadImage(PHOTO_SRC);
-  state.pixels = pixelsFromImage(image);
-  render();
+let loadingPhoto = false;
+
+async function showPhoto(index = state.photoIndex) {
+  if (loadingPhoto) return;
+  const nextIndex = (index + PHOTOS.length) % PHOTOS.length;
+  const photo = PHOTOS[nextIndex];
+  loadingPhoto = true;
+  try {
+    setSourceActive("photo");
+    const image = await loadImage(photo.src);
+    state.photoIndex = nextIndex;
+    state.pixels = pixelsFromImage(image);
+    view.setAttribute("aria-label", photo.label);
+    render();
+  } finally {
+    loadingPhoto = false;
+  }
+}
+
+function showNextPhoto() {
+  if (state.source !== "photo") return;
+  showPhoto(state.photoIndex + 1).catch(() => {});
+}
+
+function showPrevPhoto() {
+  if (state.source !== "photo") return;
+  showPhoto(state.photoIndex - 1).catch(() => {});
 }
 
 async function showFile(file) {
@@ -249,6 +287,9 @@ rgBlindBtn.addEventListener("click", toggleRgBlind);
 sourceButtons.photo.addEventListener("click", () => {
   showPhoto().catch(() => {});
 });
+
+photoPrevBtn.addEventListener("click", showPrevPhoto);
+photoNextBtn.addEventListener("click", showNextPhoto);
 
 zoomBtn.addEventListener("click", () => {
   toggleFullscreen();
@@ -295,6 +336,15 @@ window.addEventListener("keydown", (event) => {
     } else if (document.webkitExitFullscreen) {
       document.webkitExitFullscreen();
     }
+    return;
+  }
+
+  if (event.key === "ArrowLeft") {
+    showPrevPhoto();
+    return;
+  }
+  if (event.key === "ArrowRight") {
+    showNextPhoto();
     return;
   }
 
