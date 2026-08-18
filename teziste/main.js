@@ -1001,6 +1001,171 @@
     };
   }
 
+  let confettiBurst = null;
+  let confettiRaf = 0;
+
+  function confettiContext() {
+    if (!confettiLayer || confettiLayer.getContext == null) return null;
+    return confettiLayer.getContext("2d");
+  }
+
+  function resizeConfettiCanvas() {
+    if (!confettiLayer || confettiLayer.getContext == null) return { w: 0, h: 0, dpr: 1 };
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = confettiLayer.clientWidth;
+    const h = confettiLayer.clientHeight;
+    const pw = Math.max(1, Math.round(w * dpr));
+    const ph = Math.max(1, Math.round(h * dpr));
+    if (confettiLayer.width !== pw || confettiLayer.height !== ph) {
+      confettiLayer.width = pw;
+      confettiLayer.height = ph;
+    }
+    return { w, h, dpr };
+  }
+
+  function spawnConfettiBurst(particles, cx, cy, colors, strength) {
+    const count = Math.round(58 * strength);
+    for (let i = 0; i < count; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (220 + Math.random() * 480) * strength;
+      particles.push({
+        x: cx + (Math.random() - 0.5) * 36 * strength,
+        y: cy + (Math.random() - 0.5) * 36 * strength,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 60 * strength,
+        rot: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 14,
+        life: 2.4 + Math.random() * 1.8,
+        w: (8 + Math.random() * 12) * strength,
+        h: (5 + Math.random() * 8) * strength,
+        kind: Math.random() < 0.22 ? "star" : "rect",
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
+  function drawConfettiParticle(ctx, p) {
+    ctx.globalAlpha = Math.min(1, p.life);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 10;
+    if (p.kind === "star") {
+      const r = p.w * 0.55;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i += 1) {
+        const a = p.rot + (i * Math.PI * 2) / 5 - Math.PI / 2;
+        if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+        else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        const ia = a + Math.PI / 5;
+        ctx.lineTo(Math.cos(ia) * r * 0.42, Math.sin(ia) * r * 0.42);
+      }
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+
+  function stopConfetti() {
+    confettiBurst = null;
+    if (confettiRaf) {
+      cancelAnimationFrame(confettiRaf);
+      confettiRaf = 0;
+    }
+    const ctx = confettiContext();
+    if (ctx) ctx.clearRect(0, 0, confettiLayer.width, confettiLayer.height);
+  }
+
+  function tickConfetti(ts) {
+    if (!confettiBurst) {
+      confettiRaf = 0;
+      return;
+    }
+
+    const dt = confettiBurst.lastTs
+      ? Math.min(0.05, (ts - confettiBurst.lastTs) / 1000)
+      : 1 / 60;
+    confettiBurst.lastTs = ts;
+    confettiBurst.time += dt;
+    confettiBurst.flash = Math.max(0, confettiBurst.flash - dt * 1.6);
+    confettiBurst.pendingBursts = confettiBurst.pendingBursts.filter((burst) => {
+      if (confettiBurst.time >= burst.at) {
+        spawnConfettiBurst(
+          confettiBurst.particles,
+          confettiBurst.cx,
+          confettiBurst.cy,
+          confettiBurst.colors,
+          burst.strength
+        );
+        return false;
+      }
+      return true;
+    });
+
+    for (const ring of confettiBurst.rings) {
+      if (ring.delay > 0) {
+        ring.delay -= dt;
+        continue;
+      }
+      ring.r += ring.speed * dt;
+      ring.life -= dt * 0.95;
+    }
+    confettiBurst.rings = confettiBurst.rings.filter((ring) => ring.life > 0);
+
+    for (const p of confettiBurst.particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 320 * dt;
+      p.vx *= 0.988;
+      p.rot += p.spin * dt;
+      p.life -= dt;
+    }
+    confettiBurst.particles = confettiBurst.particles.filter((p) => p.life > 0);
+
+    const { w, h, dpr } = resizeConfettiCanvas();
+    const ctx = confettiContext();
+    if (ctx) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const { particles, rings, flash, cx, cy } = confettiBurst;
+      if (flash > 0) {
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.55);
+        glow.addColorStop(0, `rgba(255, 255, 255, ${flash * 0.55})`);
+        glow.addColorStop(0.35, `rgba(251, 191, 36, ${flash * 0.35})`);
+        glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, w, h);
+      }
+      for (const ring of rings) {
+        if (ring.delay > 0 || ring.life <= 0) continue;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(251, 191, 36, ${ring.life * 0.75})`;
+        ctx.lineWidth = ring.width * ring.life;
+        ctx.stroke();
+      }
+      for (const p of particles) {
+        if (p.life <= 0) continue;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        drawConfettiParticle(ctx, p);
+        ctx.restore();
+      }
+    }
+
+    if (
+      confettiBurst.time >= confettiBurst.duration &&
+      confettiBurst.particles.length === 0
+    ) {
+      stopConfetti();
+      return;
+    }
+    confettiRaf = requestAnimationFrame(tickConfetti);
+  }
+
   function burstConfetti(worldX, worldY) {
     if (!confettiLayer) return;
     const origin = worldToScreen(worldX, worldY);
@@ -1013,40 +1178,31 @@
       mixHex(fill, "#ffffff", 0.2),
       mixHex(fill, "#000000", 0.22),
       "#ffffff",
+      "#fbbf24",
+      "#fde047",
     ];
 
-    confettiLayer.replaceChildren();
-
-    const flash = document.createElement("span");
-    flash.className = "confetti-flash";
-    flash.style.left = `${origin.x}px`;
-    flash.style.top = `${origin.y}px`;
-    flash.style.background = `radial-gradient(circle, ${mixHex(fill, "#ffffff", 0.55)} 0%, ${fill} 42%, transparent 72%)`;
-    confettiLayer.append(flash);
-
-    const count = 160;
-    for (let i = 0; i < count; i += 1) {
-      const piece = document.createElement("span");
-      const kind = i % 5 === 0 ? "dot" : i % 4 === 0 ? "ribbon" : "piece";
-      piece.className = `confetti-piece confetti-${kind}`;
-      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.7;
-      const dist = 120 + Math.random() * 280;
-      piece.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
-      piece.style.setProperty("--dy", `${Math.sin(angle) * dist - 40}px`);
-      piece.style.setProperty("--fall", `${140 + Math.random() * 220}px`);
-      piece.style.setProperty("--rot", `${Math.random() * 900 - 450}deg`);
-      piece.style.left = `${origin.x}px`;
-      piece.style.top = `${origin.y}px`;
-      piece.style.background = colors[i % colors.length];
-      piece.style.animationDelay = `${Math.random() * 80}ms`;
-      piece.style.animationDuration = `${1400 + Math.random() * 700}ms`;
-      confettiLayer.append(piece);
-    }
-
-    window.clearTimeout(burstConfetti.timer);
-    burstConfetti.timer = window.setTimeout(() => {
-      confettiLayer.replaceChildren();
-    }, 2300);
+    const particles = [];
+    spawnConfettiBurst(particles, origin.x, origin.y, colors, 1);
+    confettiBurst = {
+      particles,
+      rings: [
+        { r: 0, life: 1, speed: 520, width: 5 },
+        { r: 0, life: 1, speed: 380, width: 3, delay: 0.08 },
+      ],
+      pendingBursts: [
+        { at: 0.14, strength: 0.9 },
+        { at: 0.32, strength: 0.75 },
+      ],
+      cx: origin.x,
+      cy: origin.y,
+      colors,
+      time: 0,
+      duration: 4.8,
+      flash: 1.35,
+      lastTs: 0,
+    };
+    if (!confettiRaf) confettiRaf = requestAnimationFrame(tickConfetti);
   }
 
   function clearGuessResult() {
@@ -1056,7 +1212,7 @@
     guessFeedback.hidden = true;
     guessFeedback.classList.remove("is-hit");
     guessFeedback.textContent = "";
-    if (confettiLayer) confettiLayer.replaceChildren();
+    stopConfetti();
   }
 
   function submitGuess(guessWorld) {
