@@ -1,7 +1,9 @@
 const MAX_EDGE = 1600;
 const PHOTOS = [
   { src: "assets/vzorek.png", label: "Zátiší" },
+  { src: "assets/pastelky.png", label: "Pastelky", transparent: true },
   { src: "assets/mic-trava.jpg?v=long-grass-1", label: "Míč v trávě" },
+  { src: "assets/semafor.png", label: "Semafor", transparent: true },
   { src: "assets/papriky.jpg", label: "Papriky" },
   { src: "assets/vlci-maky.jpg", label: "Květiny" },
   { src: "assets/papousek.jpg", label: "Papoušek" },
@@ -21,19 +23,19 @@ const sourceButtons = {
   upload: document.getElementById("src-upload"),
 };
 
-const channelButtons = {
-  red: document.getElementById("ch-red"),
-  green: document.getElementById("ch-green"),
-  blue: document.getElementById("ch-blue"),
-};
 const rgBlindBtn = document.getElementById("mode-rg-blind");
+const channelScrubs = {
+  red: document.querySelector('.channel-scrub[data-channel="red"]'),
+  green: document.querySelector('.channel-scrub[data-channel="green"]'),
+  blue: document.querySelector('.channel-scrub[data-channel="blue"]'),
+};
 
 const state = {
   source: "photo",
   photoIndex: 0,
-  red: true,
-  green: true,
-  blue: true,
+  intensity: { red: 100, green: 100, blue: 100 },
+  savedIntensity: { red: 100, green: 100, blue: 100 },
+  locked: { red: false, green: false, blue: false },
   rgBlind: false,
   pixels: null,
   zoomed: false,
@@ -53,6 +55,10 @@ function clampByte(value) {
   return value < 0 ? 0 : value > 255 ? 255 : value;
 }
 
+function channelGain(name) {
+  return state.intensity[name] / 100;
+}
+
 function render() {
   const source = state.pixels;
   if (!source) return;
@@ -64,6 +70,7 @@ function render() {
   if (state.rgBlind) {
     // Deuteranopia (Viénot 1999): red and green collapse into gray, brown or yellow.
     for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue;
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
@@ -71,11 +78,17 @@ function render() {
       data[i + 1] = clampByte(0.280085 * r + 0.672501 * g + 0.047413 * b);
       data[i + 2] = clampByte(-0.01182 * r + 0.04294 * g + 0.968881 * b);
     }
-  } else if (!state.red || !state.green || !state.blue) {
-    for (let i = 0; i < data.length; i += 4) {
-      if (!state.red) data[i] = 0;
-      if (!state.green) data[i + 1] = 0;
-      if (!state.blue) data[i + 2] = 0;
+  } else {
+    const redGain = channelGain("red");
+    const greenGain = channelGain("green");
+    const blueGain = channelGain("blue");
+    if (redGain !== 1 || greenGain !== 1 || blueGain !== 1) {
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) continue;
+        if (redGain !== 1) data[i] = clampByte(data[i] * redGain);
+        if (greenGain !== 1) data[i + 1] = clampByte(data[i + 1] * greenGain);
+        if (blueGain !== 1) data[i + 2] = clampByte(data[i + 2] * blueGain);
+      }
     }
   }
 
@@ -230,6 +243,7 @@ async function showPhoto(index = state.photoIndex) {
     const image = await loadImage(photo.src);
     state.photoIndex = nextIndex;
     state.pixels = pixelsFromImage(image);
+    view.classList.toggle("is-clear-bg", Boolean(photo.transparent));
     view.setAttribute("aria-label", photo.label);
     render();
   } finally {
@@ -251,23 +265,154 @@ async function showFile(file) {
   const image = await imageFromFile(file);
   setSourceActive("upload");
   state.pixels = pixelsFromImage(image);
+  view.classList.remove("is-clear-bg");
   if (image.close) image.close();
   render();
 }
 
 function setChannelDisabled(disabled) {
-  for (const button of Object.values(channelButtons)) {
-    button.disabled = disabled;
+  for (const scrub of Object.values(channelScrubs)) {
+    scrub.classList.toggle("is-disabled", disabled);
+    scrub.setAttribute("aria-disabled", String(disabled));
+    scrub.tabIndex = disabled ? -1 : 0;
   }
 }
 
-function toggleChannel(name) {
-  if (state.rgBlind) return;
-  state[name] = !state[name];
-  const button = channelButtons[name];
-  button.classList.toggle("is-on", state[name]);
-  button.setAttribute("aria-pressed", String(state[name]));
+function lockLabel(name, locked) {
+  const color =
+    name === "red" ? "červenou" : name === "green" ? "zelenou" : "modrou";
+  return locked
+    ? `Odemknout ${color}`
+    : `Zamknout ${color} na 0 %`;
+}
+
+function syncChannelUi(name) {
+  const scrub = channelScrubs[name];
+  const locked = state.locked[name];
+  const value = state.intensity[name];
+  const lockBtn = scrub.querySelector(".channel-lock");
+  scrub.classList.toggle("is-locked", locked);
+  scrub.querySelector(".channel-val").textContent = String(value);
+  scrub.setAttribute("aria-valuenow", String(value));
+  lockBtn.setAttribute("aria-pressed", String(locked));
+  lockBtn.setAttribute("aria-label", lockLabel(name, locked));
+}
+
+function setChannelIntensity(name, value) {
+  if (state.rgBlind || state.locked[name]) return;
+  const next = Math.max(0, Math.min(100, Math.round(value)));
+  if (next === state.intensity[name]) return;
+  state.intensity[name] = next;
+  syncChannelUi(name);
   render();
+}
+
+function toggleChannelLock(name) {
+  if (state.rgBlind) return;
+  if (state.locked[name]) {
+    state.locked[name] = false;
+    state.intensity[name] = state.savedIntensity[name];
+  } else {
+    state.savedIntensity[name] = state.intensity[name];
+    state.locked[name] = true;
+    state.intensity[name] = 0;
+  }
+  syncChannelUi(name);
+  render();
+}
+
+function bindChannelScrub(name) {
+  const scrub = channelScrubs[name];
+  let dragging = false;
+  let startX = 0;
+  let startValue = 0;
+  let pointerId = null;
+
+  function applyValue(value) {
+    setChannelIntensity(name, value);
+  }
+
+  function stopDragging() {
+    if (!dragging) return;
+    dragging = false;
+    pointerId = null;
+    window.removeEventListener("pointermove", onPointerMove, true);
+    window.removeEventListener("pointerup", onPointerUp, true);
+    window.removeEventListener("pointercancel", onPointerUp, true);
+  }
+
+  function onPointerMove(event) {
+    if (!dragging || event.pointerId !== pointerId) return;
+    applyValue(startValue + Math.round((event.clientX - startX) / 2));
+  }
+
+  function onPointerUp(event) {
+    if (!dragging || event.pointerId !== pointerId) return;
+    stopDragging();
+  }
+
+  scrub.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || state.rgBlind || state.locked[name]) return;
+    if (event.target.closest(".channel-scrub-arrow, .channel-lock")) return;
+    dragging = true;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startValue = state.intensity[name];
+    window.addEventListener("pointermove", onPointerMove, true);
+    window.addEventListener("pointerup", onPointerUp, true);
+    window.addEventListener("pointercancel", onPointerUp, true);
+  });
+
+  scrub.querySelector(".channel-lock").addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleChannelLock(name);
+  });
+
+  scrub.querySelector(".channel-scrub-arrow-dec").addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    applyValue(state.intensity[name] - 1);
+  });
+  scrub.querySelector(".channel-scrub-arrow-inc").addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    applyValue(state.intensity[name] + 1);
+  });
+
+  scrub.addEventListener("keydown", (event) => {
+    if (state.rgBlind) return;
+    if (event.key === " " || event.key === "Enter") {
+      if (event.target.closest(".channel-lock")) return;
+      event.preventDefault();
+      toggleChannelLock(name);
+      return;
+    }
+    if (state.locked[name]) return;
+    const step = event.shiftKey ? 5 : 1;
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+      event.preventDefault();
+      applyValue(state.intensity[name] - step);
+    } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+      event.preventDefault();
+      applyValue(state.intensity[name] + step);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      applyValue(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      applyValue(100);
+    }
+  });
+
+  scrub.addEventListener("wheel", (event) => {
+    if (state.rgBlind || state.locked[name]) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 5 : 1;
+    applyValue(state.intensity[name] + (event.deltaY > 0 ? -step : step));
+  }, { passive: false });
+
+  syncChannelUi(name);
 }
 
 function toggleRgBlind() {
@@ -278,8 +423,8 @@ function toggleRgBlind() {
   render();
 }
 
-for (const [name, button] of Object.entries(channelButtons)) {
-  button.addEventListener("click", () => toggleChannel(name));
+for (const name of Object.keys(channelScrubs)) {
+  bindChannelScrub(name);
 }
 
 rgBlindBtn.addEventListener("click", toggleRgBlind);
@@ -323,7 +468,12 @@ fileInput.addEventListener("input", onFileChosen);
 window.addEventListener("keydown", (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   const target = event.target;
-  if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.closest(".channel-scrub"))
+  ) {
     return;
   }
 
@@ -349,9 +499,6 @@ window.addEventListener("keydown", (event) => {
   }
 
   const key = event.key.toLowerCase();
-  if (key === "r") toggleChannel("red");
-  if (key === "g" || key === "z") toggleChannel("green");
-  if (key === "b" || key === "m") toggleChannel("blue");
   if (key === "s") toggleRgBlind();
 });
 

@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Barevné vidění</title>
-    <link rel="stylesheet" href="style.css?v=photo-gallery-2" />
+    <link rel="stylesheet" href="style.css?v=channel-lock-1" />
   </head>
   <body>
     <div class="app">
@@ -81,36 +81,99 @@
 
       <footer class="dock">
         <div class="channels" role="group" aria-label="Barevné složky">
-          <button
-            type="button"
-            id="ch-red"
-            class="channel is-on"
+          <div
+            class="channel-scrub"
             data-channel="red"
-            aria-pressed="true"
+            tabindex="0"
+            role="slider"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="100"
+            aria-label="Maximální intenzita červené"
           >
-            <span class="channel-dot" aria-hidden="true"></span>
-            Červená
-          </button>
-          <button
-            type="button"
-            id="ch-green"
-            class="channel is-on"
+            <button
+              type="button"
+              class="channel-lock"
+              aria-pressed="false"
+              aria-label="Zamknout červenou na 0 %"
+            >
+              <svg class="channel-lock-icon channel-lock-icon--open" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                <path d="M8 11V8a4 4 0 0 1 7.2-2.4"></path>
+              </svg>
+              <svg class="channel-lock-icon channel-lock-icon--shut" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+              </svg>
+            </button>
+            <span class="channel-scrub-inner">
+              <button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit intenzitu červené">◀</button>
+              <span class="channel-val" id="val-red">100</span><span class="channel-pct">%</span>
+              <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit intenzitu červené">▶</button>
+            </span>
+          </div>
+          <div
+            class="channel-scrub"
             data-channel="green"
-            aria-pressed="true"
+            tabindex="0"
+            role="slider"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="100"
+            aria-label="Maximální intenzita zelené"
           >
-            <span class="channel-dot" aria-hidden="true"></span>
-            Zelená
-          </button>
-          <button
-            type="button"
-            id="ch-blue"
-            class="channel is-on"
+            <button
+              type="button"
+              class="channel-lock"
+              aria-pressed="false"
+              aria-label="Zamknout zelenou na 0 %"
+            >
+              <svg class="channel-lock-icon channel-lock-icon--open" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                <path d="M8 11V8a4 4 0 0 1 7.2-2.4"></path>
+              </svg>
+              <svg class="channel-lock-icon channel-lock-icon--shut" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+              </svg>
+            </button>
+            <span class="channel-scrub-inner">
+              <button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit intenzitu zelené">◀</button>
+              <span class="channel-val" id="val-green">100</span><span class="channel-pct">%</span>
+              <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit intenzitu zelené">▶</button>
+            </span>
+          </div>
+          <div
+            class="channel-scrub"
             data-channel="blue"
-            aria-pressed="true"
+            tabindex="0"
+            role="slider"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="100"
+            aria-label="Maximální intenzita modré"
           >
-            <span class="channel-dot" aria-hidden="true"></span>
-            Modrá
-          </button>
+            <button
+              type="button"
+              class="channel-lock"
+              aria-pressed="false"
+              aria-label="Zamknout modrou na 0 %"
+            >
+              <svg class="channel-lock-icon channel-lock-icon--open" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                <path d="M8 11V8a4 4 0 0 1 7.2-2.4"></path>
+              </svg>
+              <svg class="channel-lock-icon channel-lock-icon--shut" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+              </svg>
+            </button>
+            <span class="channel-scrub-inner">
+              <button type="button" class="channel-scrub-arrow channel-scrub-arrow-dec" aria-label="Snížit intenzitu modré">◀</button>
+              <span class="channel-val" id="val-blue">100</span><span class="channel-pct">%</span>
+              <button type="button" class="channel-scrub-arrow channel-scrub-arrow-inc" aria-label="Zvýšit intenzitu modré">▶</button>
+            </span>
+          </div>
           <button
             type="button"
             id="mode-rg-blind"
@@ -125,6 +188,6 @@
       </footer>
     </div>
 
-    <script src="main.js?v=long-grass-1"></script>
+    <script src="main.js?v=semafor-2"></script>
   </body>
 </html>
