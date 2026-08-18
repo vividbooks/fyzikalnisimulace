@@ -19,6 +19,7 @@
   --red: #e03131;
   --green: #2f9e44;
   --blue: #1971c2;
+  --blind: #9a7b4f;
 }
 
 * {
@@ -336,6 +337,10 @@ button {
   --on: var(--blue);
 }
 
+.channel[data-channel="rg-blind"] {
+  --on: var(--blind);
+}
+
 .channel.is-on {
   background: var(--on);
   border-color: var(--on);
@@ -346,6 +351,16 @@ button {
 .channel:not(.is-on):hover {
   border-color: var(--on);
   color: var(--on);
+}
+
+.channel:disabled,
+.channel:disabled.is-on,
+.channel:disabled:hover {
+  background: #d7d9df;
+  border-color: #d7d9df;
+  color: #8b909a;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 @media (max-width: 720px) {

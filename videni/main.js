@@ -18,12 +18,14 @@ const channelButtons = {
   green: document.getElementById("ch-green"),
   blue: document.getElementById("ch-blue"),
 };
+const rgBlindBtn = document.getElementById("mode-rg-blind");
 
 const state = {
   source: "photo",
   red: true,
   green: true,
   blue: true,
+  rgBlind: false,
   pixels: null,
   zoomed: false,
 };
@@ -37,6 +39,10 @@ function setSourceActive(name) {
   }
 }
 
+function clampByte(value) {
+  return value < 0 ? 0 : value > 255 ? 255 : value;
+}
+
 function render() {
   const source = state.pixels;
   if (!source) return;
@@ -45,7 +51,17 @@ function render() {
   const output = new ImageData(new Uint8ClampedArray(source.data), width, height);
   const data = output.data;
 
-  if (!state.red || !state.green || !state.blue) {
+  if (state.rgBlind) {
+    // Deuteranopia (Viénot 1999): red and green collapse into gray, brown or yellow.
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      data[i] = clampByte(0.367322 * r + 0.860646 * g - 0.227968 * b);
+      data[i + 1] = clampByte(0.280085 * r + 0.672501 * g + 0.047413 * b);
+      data[i + 2] = clampByte(-0.01182 * r + 0.04294 * g + 0.968881 * b);
+    }
+  } else if (!state.red || !state.green || !state.blue) {
     for (let i = 0; i < data.length; i += 4) {
       if (!state.red) data[i] = 0;
       if (!state.green) data[i + 1] = 0;
@@ -201,7 +217,14 @@ async function showFile(file) {
   render();
 }
 
+function setChannelDisabled(disabled) {
+  for (const button of Object.values(channelButtons)) {
+    button.disabled = disabled;
+  }
+}
+
 function toggleChannel(name) {
+  if (state.rgBlind) return;
   state[name] = !state[name];
   const button = channelButtons[name];
   button.classList.toggle("is-on", state[name]);
@@ -209,9 +232,19 @@ function toggleChannel(name) {
   render();
 }
 
+function toggleRgBlind() {
+  state.rgBlind = !state.rgBlind;
+  rgBlindBtn.classList.toggle("is-on", state.rgBlind);
+  rgBlindBtn.setAttribute("aria-pressed", String(state.rgBlind));
+  setChannelDisabled(state.rgBlind);
+  render();
+}
+
 for (const [name, button] of Object.entries(channelButtons)) {
   button.addEventListener("click", () => toggleChannel(name));
 }
+
+rgBlindBtn.addEventListener("click", toggleRgBlind);
 
 sourceButtons.photo.addEventListener("click", () => {
   showPhoto().catch(() => {});
@@ -269,6 +302,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "r") toggleChannel("red");
   if (key === "g" || key === "z") toggleChannel("green");
   if (key === "b" || key === "m") toggleChannel("blue");
+  if (key === "s") toggleRgBlind();
 });
 
 new ResizeObserver(() => {
