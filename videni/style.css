@@ -132,15 +132,30 @@ button {
   overflow: hidden;
 }
 
-.hud-btn--file input {
+/* Clip the native file widget (button + "no file selected") so tablets
+   cannot paint that status text next to the styled label. */
+.hud-file-clip {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+}
+
+.hud-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
   margin: 0;
+  border: 0;
   opacity: 0;
-  cursor: pointer;
-  font-size: 0;
+}
+
+.hud-file-input::-webkit-file-upload-button,
+.hud-file-input::file-selector-button {
+  display: none;
 }
 
 .hud-btn:hover {

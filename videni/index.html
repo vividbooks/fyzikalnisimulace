@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Barevné vidění</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=hide-file-status-1" />
   </head>
   <body>
     <div class="app">
@@ -18,14 +18,18 @@
           <button type="button" id="src-photo" class="hud-btn is-active" aria-pressed="true">
             Fotografie
           </button>
-          <label class="hud-btn hud-btn--file" id="src-upload">
+          <label class="hud-btn hud-btn--file" id="src-upload" for="file-input">
             Vlastní obrázek
-            <input
-              id="file-input"
-              type="file"
-              accept="image/*"
-              aria-label="Vybrat vlastní obrázek"
-            />
+            <span class="hud-file-clip">
+              <input
+                id="file-input"
+                class="hud-file-input"
+                type="file"
+                accept="image/*"
+                tabindex="-1"
+                aria-label="Vybrat vlastní obrázek"
+              />
+            </span>
           </label>
         </div>
       </header>
