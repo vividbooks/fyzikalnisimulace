@@ -1224,6 +1224,28 @@
     );
   }
 
+  /** Konec lana pojede s háčkem navijáku nebo závaží, které na něm visí. */
+  function moveRopeEndWithHook(snap, hook) {
+    if (snap?.type !== "rope" || !hook) return;
+    const rope = snap.rope;
+    if (!rope?.el?.isConnected || !rope.points?.length) return;
+    ensureRopeEdgeSnap(rope);
+    rope.edgeSnap[snap.which] = null;
+    if (snap.which === "start") rope.points[0] = { ...hook };
+    else rope.points[rope.points.length - 1] = { ...hook };
+    rebuildRope(rope, { preserveWraps: true });
+    syncRopeEndHandles();
+    updateForceArrows();
+  }
+
+  function isOwnAttachedRopeEnd(body, rope, which) {
+    return (
+      body?.snap?.type === "rope" &&
+      body.snap.rope === rope &&
+      body.snap.which === which
+    );
+  }
+
   /** Synchronizuj body lana s háčky závaží přichycených ke koncům. */
   function syncRopeEndpointsFromWeights(rope) {
     for (const which of ["start", "end"]) {
@@ -2236,6 +2258,20 @@
   }
 
   /**
+   * Z osy, ve které je uvázaný konec lana, jde lano rovně — průchod, který
+   * v ose začíná, tedy není obepnutí. Bez ořezu by se tenhle dotyk vydával za
+   * první obepnutí kladky, opravdové obepnutí dál po laně by propadlo jako
+   * duplicitní a po přepočtu (změna velikosti plochy) by lano přeskočilo.
+   */
+  function trimWrapRunAtHub(points, run, wheel) {
+    const last = points.length - 1;
+    let { start, end } = run;
+    if (start === 0 && isPointInWheelHub(points[0], wheel)) start += 1;
+    if (end === last && isPointInWheelHub(points[last], wheel)) end -= 1;
+    return { start, end };
+  }
+
+  /**
    * Najde souvislé průchody kolem kladky a nahradí je čistým obloukem
    * podle tečen a směru tahu.
    */
@@ -2309,7 +2345,8 @@
     }
 
     const wraps = [];
-    for (const run of merged) {
+    for (const raw of merged) {
+      const run = trimWrapRunAtHub(points, raw, wheel);
       if (run.end <= run.start) continue;
       if (strokeLengthInsideBand(points, run, wheel, outer) >= WRAP_MIN_BAND_LENGTH) {
         wraps.push(run);
@@ -4082,6 +4119,22 @@
         restLength,
       };
       rope.el.setAttribute("d", buildRopeFromModel(model, startPt, endPt));
+    }
+  }
+
+  /**
+   * Po doběhu převezmi tvar, ve kterém lano skončilo. Body tahu jsou pořád
+   * z doby před spuštěním, takže by se obepnutí přepočítalo podle původní
+   * polohy kladek a lano by skočilo na druhou stranu kola.
+   */
+  function adoptSimulatedRopeShapes() {
+    for (const rope of ropes) {
+      const sim = rope.sim;
+      if (!sim || rope.closed || !rope.el.isConnected) continue;
+      const { pts } = modelChain(sim.model, sim.startPt, sim.endPt);
+      if (pts.length < 2) continue;
+      rope.points = pts.map((p) => ({ x: p.x, y: p.y }));
+      rope.wrapIds = sim.model.wraps.map((w) => w.wheelId).filter(Boolean);
     }
   }
 
@@ -6330,6 +6383,7 @@
     for (const rope of ropes) {
       if (!rope.el.isConnected || rope.closed) continue;
       for (const end of ropeEnds(rope)) {
+        if (isOwnAttachedRopeEnd(excludeWeight, rope, end.which)) continue;
         if (isRopeEndTaken(rope, end.which, excludeWeight, null)) continue;
         targets.push({
           type: "rope",
@@ -6489,7 +6543,9 @@
       weight.dragging = true;
       pointerId = e.pointerId;
       detachWeightsFrom(weight);
-      weight.snap = { type: "free" };
+      if (weight.snap.type !== "rope") {
+        weight.snap = { type: "free" };
+      }
       syncRopeEndHandles();
       weight.el.classList.add("is-dragging");
       weight.el.setPointerCapture(e.pointerId);
@@ -6511,6 +6567,7 @@
       const h = weight.el.offsetHeight || 67;
       weight.el.style.left = `${clamp(p.x - grabOffsetX, 0, Math.max(0, width - w))}px`;
       weight.el.style.top = `${clamp(p.y - grabOffsetY, 0, Math.max(0, height - h))}px`;
+      moveRopeEndWithHook(weight.snap, getWeightHookWorld(weight));
 
       const snap = findWeightSnapTarget(weight);
       if (snap) {
@@ -6539,7 +6596,10 @@
 
       const snap = findWeightSnapTarget(weight);
       if (snap) applyWeightSnap(weight, snap);
-      else updateForceArrows();
+      else {
+        moveRopeEndWithHook(weight.snap, getWeightHookWorld(weight));
+        updateForceArrows();
+      }
       endUserAction();
     }
 
@@ -6798,6 +6858,7 @@
     for (const rope of ropes) {
       if (!rope.el.isConnected || rope.closed) continue;
       for (const end of ropeEnds(rope)) {
+        if (isOwnAttachedRopeEnd(excludeWinch, rope, end.which)) continue;
         if (isRopeEndTaken(rope, end.which, null, excludeWinch)) continue;
         targets.push({
           type: "rope",
@@ -6877,8 +6938,10 @@
       dragging = true;
       winch.dragging = true;
       pointerId = e.pointerId;
-      winch.snap = { type: "free" };
-      resetWinchWoundLength(winch);
+      if (winch.snap.type !== "rope") {
+        winch.snap = { type: "free" };
+        resetWinchWoundLength(winch);
+      }
       setWinchWinding(winch, false);
       winch.el.classList.add("is-dragging");
       winch.el.setPointerCapture(e.pointerId);
@@ -6900,6 +6963,7 @@
       const h = winch.el.offsetHeight || 98;
       winch.el.style.left = `${clamp(p.x - grabOffsetX, 0, Math.max(0, width - w))}px`;
       winch.el.style.top = `${clamp(p.y - grabOffsetY, 0, Math.max(0, height - h))}px`;
+      moveRopeEndWithHook(winch.snap, getWinchHookWorld(winch));
       const snap = findWinchSnapTarget(winch);
       if (snap) {
         winch.el.classList.add("is-snapping");
@@ -6923,7 +6987,11 @@
       }
       const snap = findWinchSnapTarget(winch);
       if (snap) applyWinchSnap(winch, snap);
-      else syncRopeEndHandles();
+      else {
+        moveRopeEndWithHook(winch.snap, getWinchHookWorld(winch));
+        syncWinchAttachedLight(winch);
+        syncRopeEndHandles();
+      }
       updateForceArrows();
       endUserAction();
     }
@@ -9364,6 +9432,7 @@
     for (const pulley of pulleys) pulley.vel = { x: 0, y: 0 };
     for (const weight of weights) weight.vel = { x: 0, y: 0 };
     for (const winch of winches) setWinchWinding(winch, false);
+    adoptSimulatedRopeShapes();
     clearRopeSimulation();
     rebuildAllRopes();
     syncAllWeightsToSnap();
