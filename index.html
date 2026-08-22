@@ -1072,6 +1072,7 @@
             title: "Graf",
             hash: "#/sim/graf",
             previewColor: "#eef2ff",
+            hidden: true,
           },
         ],
       },
@@ -2248,7 +2249,7 @@
                   </p>`
                 : html`
                     <div class="hub-grid">
-                      ${activeCat.tiles.map(
+                      ${activeCat.tiles.filter((t) => !t.hidden).map(
                         (t) => html`
                           <article
                             key=${t.id}
