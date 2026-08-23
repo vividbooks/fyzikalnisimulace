@@ -38,6 +38,8 @@ jobs:
           test -f silomer_2/main.js
           test -f tlak/index.html
           test -f tlak/main.js
+          test -f treni/index.html
+          test -f treni/main.js
           test -f hydrostatika/index.html
           test -f hydrostatika/main.js
           test -f mereni_casu/index.html

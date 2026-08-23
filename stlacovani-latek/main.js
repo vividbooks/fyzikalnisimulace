@@ -15,7 +15,7 @@ const SCENES = {
     /** Od této části zdvihu je tažení dolů těžší (píst narazí na pevnou látku) */
     contactStart: 0.78,
     resistance: 0.72,
-    hint: "Táhni píst dolů nebo nahoru a zkus stlačit pevnou látku.",
+    hint: "Chytni táhlo a táhni píst dolů.",
     ariaLabel: "Lis s pevnou látkou",
   },
   liquid: {
@@ -24,7 +24,7 @@ const SCENES = {
     pumpYBottom: 1483.514,
     contactStart: 0.88,
     resistance: 0.35,
-    hint: "Táhni píst dolů nebo nahoru a zkus stlačit kapalinu.",
+    hint: "Chytni táhlo a zkus stlačit kapalinu.",
     ariaLabel: "Lis s kapalinou",
   },
   gas: {
@@ -33,7 +33,7 @@ const SCENES = {
     pumpYBottom: 1492,
     contactStart: 0.15,
     resistance: 0.22,
-    hint: "Táhni píst dolů nebo nahoru a zkus stlačit plynnou látku.",
+    hint: "Chytni táhlo a zkus stlačit plyn.",
     ariaLabel: "Lis s plynnou látkou",
   },
 };
@@ -118,14 +118,8 @@ const GAS_PARTICLE_SIZE_FALLBACK = 11;
 const KEYBOARD_STEP = 0.04;
 const DRAG_SPAN = 0.42;
 const CANVAS_SIZE = 2000;
-/** Záložní hit zóna oranžové hlavy pístu (když nejde spočítat z SVG) */
-const HIT_TOP_START = 0.145;
-const HIT_HEIGHT = 0.2;
-const HIT_LEFT = 0.28;
-const HIT_WIDTH = 0.44;
-const HIT_PAD = 10;
-
-const stageEl = document.getElementById("stage");
+/** Střed oranžové hlavy pístu v klidu — zlomek výšky scény */
+const HANDLE_Y0 = 0.22;
 
 let sceneId = "solid";
 let scene = SCENES.solid;
@@ -634,6 +628,11 @@ function applyGasCompression() {
   applyGasAppearance();
 }
 
+function updateHandlePosition() {
+  const travel = (scene.pumpYBottom - scene.pumpYTop) / CANVAS_SIZE;
+  pistonHit.style.top = `${(HANDLE_Y0 + progress * travel) * 100}%`;
+}
+
 function applyPistonPosition() {
   const wrapper = ensurePumpWrapper();
   if (wrapper) {
@@ -641,77 +640,11 @@ function applyPistonPosition() {
     wrapper.setAttribute("transform", `translate(0 ${dy})`);
   }
   applyGasCompression();
-}
-
-function isOrangeFill(el) {
-  const fill = (el.getAttribute("fill") || "").trim().toLowerCase();
-  if (!fill || fill === "none") return false;
-  const rgb = fill.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
-  if (rgb) {
-    const r = Number(rgb[1]);
-    const g = Number(rgb[2]);
-    const b = Number(rgb[3]);
-    return r > 180 && g > 50 && g < 200 && b < 140;
-  }
-  if (fill.startsWith("#") && fill.length >= 7) {
-    const r = parseInt(fill.slice(1, 3), 16);
-    const g = parseInt(fill.slice(3, 5), 16);
-    const b = parseInt(fill.slice(5, 7), 16);
-    return r > 180 && g > 50 && g < 200 && b < 140;
-  }
-  return false;
-}
-
-function applyHitFallback() {
-  const travel = (scene.pumpYBottom - scene.pumpYTop) / CANVAS_SIZE;
-  pistonHit.style.left = `${HIT_LEFT * 100}%`;
-  pistonHit.style.width = `${HIT_WIDTH * 100}%`;
-  pistonHit.style.top = `${(HIT_TOP_START + progress * travel) * 100}%`;
-  pistonHit.style.height = `${HIT_HEIGHT * 100}%`;
-}
-
-/** Hit zóna sleduje oranžovou hlavu pístu */
-function updateHitArea() {
-  if (!stageEl) return;
-
-  const layerEl = findPumpLayerElement();
-  const stageRect = stageEl.getBoundingClientRect();
-  if (!layerEl || stageRect.width < 2 || stageRect.height < 2) {
-    applyHitFallback();
-    return;
-  }
-
-  let minL = Infinity;
-  let minT = Infinity;
-  let maxR = -Infinity;
-  let maxB = -Infinity;
-  let found = false;
-
-  for (const el of layerEl.querySelectorAll("[fill]")) {
-    if (!isOrangeFill(el)) continue;
-    const rect = el.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) continue;
-    found = true;
-    minL = Math.min(minL, rect.left);
-    minT = Math.min(minT, rect.top);
-    maxR = Math.max(maxR, rect.right);
-    maxB = Math.max(maxB, rect.bottom);
-  }
-
-  if (!found) {
-    applyHitFallback();
-    return;
-  }
-
-  pistonHit.style.left = `${minL - stageRect.left - HIT_PAD}px`;
-  pistonHit.style.top = `${minT - stageRect.top - HIT_PAD}px`;
-  pistonHit.style.width = `${maxR - minL + HIT_PAD * 2}px`;
-  pistonHit.style.height = `${maxB - minT + HIT_PAD * 2}px`;
+  updateHandlePosition();
 }
 
 function syncUi() {
   applyPistonPosition();
-  updateHitArea();
   updateAria();
 }
 
@@ -736,13 +669,24 @@ function destroyAnimation() {
   lottieEl.innerHTML = "";
 }
 
+function showStartHint(text) {
+  if (!hintEl) return;
+  hintEl.textContent = text;
+  hintEl.hidden = false;
+  hintEl.classList.remove("is-hidden");
+}
+
+function hideStartHint() {
+  hintEl?.classList.add("is-hidden");
+}
+
 function updateSceneControls() {
   sceneButtons.forEach((button) => {
     const active = button.dataset.scene === sceneId;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
-  if (hintEl) hintEl.textContent = scene.hint;
+  showStartHint(scene.hint);
   lottieEl.setAttribute("aria-label", scene.ariaLabel);
 }
 
@@ -802,7 +746,7 @@ async function loadScene(nextId) {
   } catch (error) {
     console.error(error);
     destroyAnimation();
-    if (hintEl) hintEl.textContent = "Animaci se nepodařilo načíst.";
+    showStartHint("Animaci se nepodařilo načíst.");
   } finally {
     loading = false;
   }
@@ -816,6 +760,7 @@ function onPointerDown(event) {
   lastY = event.clientY;
   stageHeight = lottieEl.getBoundingClientRect().height || 1;
   pistonHit.classList.add("is-dragging");
+  hideStartHint();
   pistonHit.setPointerCapture?.(event.pointerId);
 }
 
@@ -867,16 +812,6 @@ window.addEventListener("pointermove", onPointerMove);
 window.addEventListener("pointerup", onPointerUp);
 window.addEventListener("pointercancel", onPointerUp);
 pistonHit.addEventListener("keydown", onKeyDown);
-window.addEventListener("resize", () => {
-  if (anim) updateHitArea();
-});
-
-if (stageEl && typeof ResizeObserver !== "undefined") {
-  const stageResizeObserver = new ResizeObserver(() => {
-    if (anim) updateHitArea();
-  });
-  stageResizeObserver.observe(stageEl);
-}
 
 sceneButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -889,5 +824,5 @@ sceneButtons.forEach((button) => {
 
 loadScene("solid").catch((error) => {
   console.error(error);
-  if (hintEl) hintEl.textContent = "Animaci se nepodařilo načíst.";
+  showStartHint("Animaci se nepodařilo načíst.");
 });

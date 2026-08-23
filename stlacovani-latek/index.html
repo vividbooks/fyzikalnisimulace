@@ -11,104 +11,115 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
 <body>
-  <main class="scene" aria-label="Simulace stlačování látek">
-    <aside class="setup-panel" aria-label="Nastavení simulace">
-      <a
-        href="../index.html"
-        class="hub-back-to-sims"
-      >
-        ← Přehled simulací
-      </a>
+  <main class="sim-page" aria-label="Simulace stlačování látek">
+    <div class="sim-shell">
+      <div class="sim-body">
+        <div class="sim-viz">
+          <div class="sim-canvas" aria-label="Vizualizace lisu">
+            <p class="sim-empty-hint" id="hintEl">
+              Chytni táhlo a táhni píst dolů.
+            </p>
+            <div class="sim-view" id="simView">
+              <div class="stage-slot">
+                <div class="stage" id="stage">
+                  <div id="lottie" class="lottie" aria-label="Lis s pevnou látkou"></div>
+                  <div
+                    class="piston-hit"
+                    id="pistonHit"
+                    role="slider"
+                    tabindex="0"
+                    aria-label="Táhlo pístu"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0"
+                    aria-valuetext="Píst nahoře"
+                  >
+                    <div class="press-handle" id="pressHandle" aria-hidden="true">
+                      <span class="press-handle__dots">
+                        <i></i><i></i><i></i><i></i><i></i><i></i>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <div class="panel-copy">
-        <h1 class="panel-title">Stlačování látek</h1>
-        <p class="panel-hint" id="hintEl">
-          Táhni píst dolů nebo nahoru a zkus stlačit pevnou látku.
-        </p>
-      </div>
+            <div class="quiz-view" id="quizView" hidden>
+              <div class="quiz-header">
+                <p class="quiz-intro">
+                  Ke každému skupenství tažením přiřaď, jaké vlastnosti má těleso, které se v
+                  tomto skupenství nachází (jednu vlastnost může mít i více skupenství).
+                </p>
+              </div>
 
-      <div
-        class="panel-section subject-control"
-        id="simControls"
-        role="group"
-        aria-label="Druh látky"
-      >
-        <span class="panel-label">Druh látky</span>
-        <div class="subject-control__buttons">
-          <button
-            type="button"
-            class="subject-btn is-active"
-            data-scene="solid"
-            aria-pressed="true"
-          >
-            pevná
-          </button>
-          <button
-            type="button"
-            class="subject-btn"
-            data-scene="liquid"
-            aria-pressed="false"
-          >
-            kapalná
-          </button>
-          <button
-            type="button"
-            class="subject-btn"
-            data-scene="gas"
-            aria-pressed="false"
-          >
-            plynná
-          </button>
-        </div>
-        <div class="actions-row">
-          <button
-            type="button"
-            id="btnQuiz"
-            class="panel-action-btn"
-            aria-pressed="false"
-          >
-            kvíz
-          </button>
-        </div>
-      </div>
-    </aside>
+              <div class="quiz-pool" id="quizPool" aria-label="Vlastnosti k přiřazení"></div>
+              <div class="quiz-board" id="quizBoard" aria-label="Skupenství"></div>
 
-    <div class="scene-workspace" aria-label="Vizualizace lisu">
-      <div class="sim-view" id="simView">
-        <div class="stage-slot">
-          <div class="stage" id="stage">
-            <div id="lottie" class="lottie" aria-label="Lis s pevnou látkou"></div>
-            <div
-              class="piston-hit"
-              id="pistonHit"
-              role="slider"
-              tabindex="0"
-              aria-label="Píst lisu"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow="0"
-              aria-valuetext="Píst nahoře"
-            ></div>
+              <div class="quiz-actions">
+                <button type="button" id="btnQuizCheck">Zkontrolovat</button>
+                <button type="button" id="btnQuizReset" class="secondary">Reset</button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="quiz-view" id="quizView" hidden>
-        <div class="quiz-header">
-          <p class="quiz-intro">
-            Ke každému skupenství tažením přiřaď, jaké vlastnosti má těleso, které se v
-            tomto skupenství nachází (jednu vlastnost může mít i více skupenství).
-          </p>
-        </div>
+        <aside class="sim-panel" aria-label="Nastavení simulace">
+          <div class="sim-panel-stack">
+            <div class="sim-panel-head">
+              <a href="../index.html" class="sim-back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Zpět
+              </a>
+              <h1 class="sim-panel-title">Stlačování látek</h1>
+            </div>
 
-        <div class="quiz-pool" id="quizPool" aria-label="Vlastnosti k přiřazení"></div>
+            <div
+              class="sim-card"
+              id="simControls"
+              role="group"
+              aria-label="Druh látky"
+            >
+              <p class="sim-section-label">Druh látky</p>
+              <div class="subject-control__buttons">
+                <button
+                  type="button"
+                  class="subject-btn is-active"
+                  data-scene="solid"
+                  aria-pressed="true"
+                >
+                  Pevná
+                </button>
+                <button
+                  type="button"
+                  class="subject-btn"
+                  data-scene="liquid"
+                  aria-pressed="false"
+                >
+                  Kapalná
+                </button>
+                <button
+                  type="button"
+                  class="subject-btn"
+                  data-scene="gas"
+                  aria-pressed="false"
+                >
+                  Plynná
+                </button>
+              </div>
+            </div>
 
-        <div class="quiz-board" id="quizBoard" aria-label="Skupenství"></div>
-
-        <div class="quiz-actions">
-          <button type="button" id="btnQuizCheck">Zkontrolovat</button>
-          <button type="button" id="btnQuizReset" class="secondary">Reset</button>
-        </div>
+            <button
+              type="button"
+              id="btnQuiz"
+              class="sim-quiz-btn"
+              aria-pressed="false"
+            >
+              Kvíz
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
   </main>
