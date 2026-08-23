@@ -348,10 +348,6 @@
       min-width: 0;
     }
 
-    .app.is-create-graph .row-pair,
-    .app.is-create-graph .motion-setup {
-      display: none;
-    }
 
     .mode-switch {
       display: grid;
@@ -2191,13 +2187,14 @@
     });
     document.getElementById('graph-tools-row').hidden = !active;
     chartEl.classList.toggle('is-create-graph', active);
-    if (active) {
-      document.getElementById('hintEl')?.classList.add('is-hidden');
-      showChartHint('Klikej do grafu.');
-    } else {
-      document.getElementById('hintEl')?.classList.remove('is-hidden');
-      hideChartHint();
+    const hintEl = document.getElementById('hintEl');
+    if (hintEl) {
+      hintEl.textContent = active
+        ? 'Stiskni Spustit a sleduj jízdu.'
+        : 'Nastav dráhu a čas a stiskni Spustit.';
+      hintEl.classList.remove('is-hidden');
     }
+    hideChartHint();
 
     userChartHold = null;
     userChartEndHoldListeners();
@@ -2206,11 +2203,6 @@
     if (!restore) {
       userChartPoints = [];
       userChartShowFit = false;
-      if (active) {
-        applyRandomTrackSettings();
-      } else {
-        applyDefaultTrackSettings();
-      }
     }
 
     updateFitCurveControls();
@@ -2611,15 +2603,20 @@
     resetDog();
     await runDog(timeInput);
     btn.disabled = false;
-    if (createGraphMode) showChartHint('Klikej do grafu.');
+    if (createGraphMode) showChartHint('Teď jízdu zanes do grafu.');
     else showChartHint('Nyní zanes jízdu do grafu.');
   });
 
   document.getElementById('reset-btn').addEventListener('click', () => {
     document.getElementById('start-btn').disabled = false;
-    document.getElementById('hintEl')?.classList.toggle('is-hidden', createGraphMode);
-    if (createGraphMode) showChartHint('Klikej do grafu.');
-    else hideChartHint();
+    const hintEl = document.getElementById('hintEl');
+    if (hintEl) {
+      hintEl.textContent = createGraphMode
+        ? 'Stiskni Spustit a sleduj jízdu.'
+        : 'Nastav dráhu a čas a stiskni Spustit.';
+      hintEl.classList.remove('is-hidden');
+    }
+    hideChartHint();
     resetDog();
   });
 

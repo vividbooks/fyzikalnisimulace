@@ -125,53 +125,68 @@
   <stop stop-color="#424242"/>
   <stop offset="1" stop-color="#282828"/>
 </linearGradient>
-<pattern id="texMetal" patternUnits="userSpaceOnUse" width="14" height="8" patternTransform="rotate(-8)">
-  <path d="M0 1.5H14M0 4.5H14M0 7.2H14" stroke="#1A1F24" stroke-width="0.55" opacity="0.28"/>
-  <path d="M0 2.8H14M0 5.9H14" stroke="#F4F7FA" stroke-width="0.4" opacity="0.18"/>
+<pattern id="texMetal" patternUnits="userSpaceOnUse" width="28" height="16" patternTransform="rotate(-9)">
+  <rect width="28" height="16" fill="#9AA3AD" opacity="0.08"/>
+  <path d="M0 2H28M0 5.2H28M0 8.4H28M0 11.6H28M0 14.8H28" stroke="#1A1F24" stroke-width="0.7" opacity="0.38"/>
+  <path d="M0 3.6H28M0 6.8H28M0 10H28M0 13.2H28" stroke="#F7FAFC" stroke-width="0.55" opacity="0.42"/>
+  <path d="M4 0V16M18 0V16" stroke="#FFFFFF" stroke-width="1.4" opacity="0.16"/>
+  <path d="M11 0V16" stroke="#2A3138" stroke-width="0.8" opacity="0.12"/>
 </pattern>
-<pattern id="texLeather" patternUnits="userSpaceOnUse" width="18" height="14">
-  <ellipse cx="4" cy="3.5" rx="1.1" ry="0.8" fill="#2A160C" opacity="0.22"/>
-  <ellipse cx="12" cy="2" rx="0.9" ry="0.7" fill="#2A160C" opacity="0.18"/>
-  <ellipse cx="9" cy="8" rx="1.3" ry="0.9" fill="#2A160C" opacity="0.2"/>
-  <ellipse cx="2.5" cy="10.5" rx="0.8" ry="0.6" fill="#2A160C" opacity="0.16"/>
-  <ellipse cx="15" cy="11" rx="1" ry="0.75" fill="#2A160C" opacity="0.2"/>
-  <path d="M1 6.5C4 5.2 7 7.5 10 6.2C13 5 16 7 17.5 6" stroke="#3A2214" stroke-width="0.55" fill="none" opacity="0.2"/>
+<pattern id="texLeather" patternUnits="userSpaceOnUse" width="22" height="18">
+  <ellipse cx="4" cy="3.2" rx="2.1" ry="1.55" fill="#2A160C" opacity="0.34"/>
+  <ellipse cx="12.5" cy="2.4" rx="1.7" ry="1.25" fill="#3A2012" opacity="0.3"/>
+  <ellipse cx="19" cy="4.2" rx="1.9" ry="1.4" fill="#2A160C" opacity="0.28"/>
+  <ellipse cx="8" cy="8.6" rx="2.3" ry="1.7" fill="#2A160C" opacity="0.32"/>
+  <ellipse cx="16.5" cy="9.2" rx="1.8" ry="1.35" fill="#4A2A18" opacity="0.26"/>
+  <ellipse cx="3.2" cy="13.4" rx="1.6" ry="1.2" fill="#2A160C" opacity="0.3"/>
+  <ellipse cx="11" cy="14.6" rx="2" ry="1.45" fill="#3A2012" opacity="0.28"/>
+  <ellipse cx="19.2" cy="13.8" rx="1.7" ry="1.2" fill="#2A160C" opacity="0.3"/>
+  <path d="M1 6.8C5 5.2 9 8.4 13 6.6C17 4.9 20 7.4 22 6.2" stroke="#5A3218" stroke-width="0.7" fill="none" opacity="0.35"/>
+  <path d="M0 11.6C4 10.2 8 13 12 11.4C16 9.8 19 12.2 22 11" stroke="#5A3218" stroke-width="0.55" fill="none" opacity="0.28"/>
 </pattern>
-<pattern id="texCarpet" patternUnits="userSpaceOnUse" width="10" height="10">
-  <path d="M1 2V5M3.5 1V4.5M6 2.5V6M8.5 1.5V5M2 6.5V9.5M4.5 7V10M7 6V9M9.2 7.5V10" stroke="#1E2A18" stroke-width="1.05" stroke-linecap="round" opacity="0.28"/>
-  <path d="M0.5 8H2.5M5 3H7M8 8.5H10" stroke="#D7E8C8" stroke-width="0.55" stroke-linecap="round" opacity="0.12"/>
+<pattern id="texCarpet" patternUnits="userSpaceOnUse" width="12" height="12">
+  <path d="M1.2 1.2V5.4M3.6 0.4V4.8M6 1.6V5.8M8.4 0.8V5.2M10.8 1.4V5.6" stroke="#1A2814" stroke-width="1.35" stroke-linecap="round" opacity="0.4"/>
+  <path d="M0.6 6.8V11M3 6.2V10.6M5.4 7.2V11.4M7.8 6.4V10.8M10.2 7V11.2" stroke="#24351C" stroke-width="1.35" stroke-linecap="round" opacity="0.36"/>
+  <path d="M2.4 2.2V4.4M7.2 2.6V5M4.2 8V10.2M9.6 7.6V9.8" stroke="#D8E8C4" stroke-width="0.7" stroke-linecap="round" opacity="0.22"/>
+  <circle cx="2" cy="9.4" r="0.7" fill="#8B3A2A" opacity="0.22"/>
+  <circle cx="9" cy="3.2" r="0.6" fill="#C4A24A" opacity="0.18"/>
 </pattern>
-<pattern id="texWood" patternUnits="userSpaceOnUse" width="42" height="18" patternTransform="rotate(-8.5)">
-  <path d="M0 3C8 1.5 14 4.5 21 3C28 1.5 35 4 42 2.5" stroke="#5C3A18" stroke-width="0.9" fill="none" opacity="0.28"/>
-  <path d="M0 8C7 6.5 15 9.5 22 8C30 6.2 36 9 42 7.5" stroke="#5C3A18" stroke-width="0.7" fill="none" opacity="0.22"/>
-  <path d="M0 13C9 11.5 16 14.5 24 13C32 11.5 37 14 42 12.5" stroke="#5C3A18" stroke-width="0.8" fill="none" opacity="0.25"/>
-  <path d="M0 16.5C10 15.5 18 17 27 16C34 15.2 39 16.8 42 16" stroke="#8B5A2B" stroke-width="0.55" fill="none" opacity="0.18"/>
-  <ellipse cx="12" cy="9" rx="2.2" ry="1.1" fill="#5C3A18" opacity="0.12"/>
+<pattern id="texWood" patternUnits="userSpaceOnUse" width="56" height="24" patternTransform="rotate(-8.5)">
+  <path d="M0 3.2C10 1.2 18 5.2 28 3.4C38 1.6 47 5 56 2.8" stroke="#5C3A18" stroke-width="1.35" fill="none" opacity="0.42"/>
+  <path d="M0 8.4C9 6.4 19 10.6 29 8.6C39 6.6 48 10 56 8" stroke="#6B421C" stroke-width="1.05" fill="none" opacity="0.36"/>
+  <path d="M0 13.6C11 11.6 20 15.8 31 13.8C41 11.8 49 15.2 56 13.2" stroke="#5C3A18" stroke-width="1.2" fill="none" opacity="0.4"/>
+  <path d="M0 18.6C12 16.8 22 20.4 34 18.6C44 17 50 20.2 56 18.2" stroke="#8B5A2B" stroke-width="0.85" fill="none" opacity="0.32"/>
+  <path d="M0 22.2C13 21 24 23.2 36 22C46 21 52 23 56 21.8" stroke="#5C3A18" stroke-width="0.7" fill="none" opacity="0.26"/>
+  <ellipse cx="16" cy="11" rx="4.2" ry="2.1" fill="#5C3A18" opacity="0.2"/>
+  <ellipse cx="16" cy="11" rx="2.1" ry="1" fill="#3A2410" opacity="0.22"/>
+  <ellipse cx="41" cy="16.5" rx="3.2" ry="1.5" fill="#5C3A18" opacity="0.16"/>
 </pattern>
-<pattern id="texIce" patternUnits="userSpaceOnUse" width="28" height="20">
-  <path d="M2 4L9 1M12 8L20 3M4 14L11 10M16 16L24 11M7 18L14 14" stroke="#4A6F88" stroke-width="0.55" opacity="0.22"/>
-  <path d="M18 2L22 7M3 9L8 13M21 14L26 18" stroke="#FFFFFF" stroke-width="0.45" opacity="0.28"/>
-  <circle cx="6" cy="6" r="0.7" fill="#FFFFFF" opacity="0.35"/>
-  <circle cx="19" cy="12" r="0.55" fill="#FFFFFF" opacity="0.3"/>
-  <circle cx="13" cy="17" r="0.45" fill="#FFFFFF" opacity="0.25"/>
+<pattern id="texIce" patternUnits="userSpaceOnUse" width="36" height="26">
+  <path d="M2 5L12 1.5M14 10L26 4M5 18L16 12.5M20 21L32 14M9 24L20 18" stroke="#3F6A86" stroke-width="0.85" opacity="0.38"/>
+  <path d="M22 2L28 8.5M4 12L11 17.5M26 17L34 23" stroke="#FFFFFF" stroke-width="0.75" opacity="0.5"/>
+  <path d="M8 8L13 6M18 16L24 12" stroke="#7FB0CC" stroke-width="0.6" opacity="0.4"/>
+  <circle cx="7" cy="7" r="1.1" fill="#FFFFFF" opacity="0.55"/>
+  <circle cx="24" cy="14" r="0.9" fill="#FFFFFF" opacity="0.48"/>
+  <circle cx="16" cy="21" r="0.7" fill="#FFFFFF" opacity="0.4"/>
+  <circle cx="31" cy="6" r="0.8" fill="#E8F6FF" opacity="0.45"/>
 </pattern>
-<pattern id="texRubber" patternUnits="userSpaceOnUse" width="12" height="12">
-  <circle cx="3" cy="3" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="9" cy="3" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="3" cy="9" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="9" cy="9" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="3" cy="3" r="0.55" fill="#6A6A6A" opacity="0.18"/>
-  <circle cx="9" cy="9" r="0.55" fill="#6A6A6A" opacity="0.18"/>
+<pattern id="texRubber" patternUnits="userSpaceOnUse" width="18" height="18">
+  <path d="M9 1.2L16.8 9L9 16.8L1.2 9Z" fill="#111111" opacity="0.34"/>
+  <path d="M9 3.4L14.6 9L9 14.6L3.4 9Z" fill="none" stroke="#6E6E6E" stroke-width="0.7" opacity="0.4"/>
+  <path d="M0 0L4.5 4.5M13.5 13.5L18 18M18 0L13.5 4.5M4.5 13.5L0 18" stroke="#0A0A0A" stroke-width="1.1" opacity="0.28"/>
+  <circle cx="9" cy="9" r="1.15" fill="#8A8A8A" opacity="0.22"/>
 </pattern>
-<pattern id="texBeamWood" patternUnits="userSpaceOnUse" width="36" height="16" patternTransform="rotate(-9)">
-  <path d="M0 2.5C7 1.2 13 3.8 18 2.5C24 1.2 30 3.5 36 2" stroke="#5C3A18" stroke-width="0.85" fill="none" opacity="0.32"/>
-  <path d="M0 7C8 5.5 14 8.5 20 7C27 5.5 32 8 36 6.5" stroke="#5C3A18" stroke-width="0.7" fill="none" opacity="0.26"/>
-  <path d="M0 11.5C9 10 15 13 22 11.5C29 10 33 12.5 36 11" stroke="#5C3A18" stroke-width="0.75" fill="none" opacity="0.28"/>
-  <path d="M0 14.5C10 13.5 18 15 26 14C31 13.4 34 14.8 36 14.2" stroke="#8B5A2B" stroke-width="0.5" fill="none" opacity="0.2"/>
+<pattern id="texBeamWood" patternUnits="userSpaceOnUse" width="40" height="18" patternTransform="rotate(-9)">
+  <path d="M0 2.6C8 1 15 4.2 20 2.6C27 1 33 3.8 40 2.2" stroke="#5C3A18" stroke-width="1.15" fill="none" opacity="0.44"/>
+  <path d="M0 7.2C9 5.4 16 9.2 22 7.4C30 5.6 35 8.8 40 7" stroke="#6B421C" stroke-width="0.95" fill="none" opacity="0.38"/>
+  <path d="M0 12C10 10.2 17 14 24 12.2C32 10.4 36 13.6 40 11.8" stroke="#5C3A18" stroke-width="1.05" fill="none" opacity="0.4"/>
+  <path d="M0 15.8C11 14.6 20 16.8 28 15.6C34 14.8 37 16.6 40 15.4" stroke="#8B5A2B" stroke-width="0.7" fill="none" opacity="0.3"/>
+  <ellipse cx="14" cy="9" rx="3.2" ry="1.4" fill="#5C3A18" opacity="0.18"/>
 </pattern>
-<pattern id="texBeamSteel" patternUnits="userSpaceOnUse" width="12" height="7" patternTransform="rotate(-9)">
-  <path d="M0 1.2H12M0 3.5H12M0 5.8H12" stroke="#1F2429" stroke-width="0.45" opacity="0.22"/>
-  <path d="M0 2.4H12M0 4.7H12" stroke="#FFFFFF" stroke-width="0.35" opacity="0.16"/>
+<pattern id="texBeamSteel" patternUnits="userSpaceOnUse" width="16" height="10" patternTransform="rotate(-9)">
+  <path d="M0 1.4H16M0 4H16M0 6.6H16M0 9.2H16" stroke="#1F2429" stroke-width="0.6" opacity="0.32"/>
+  <path d="M0 2.7H16M0 5.3H16M0 7.9H16" stroke="#FFFFFF" stroke-width="0.5" opacity="0.28"/>
+  <path d="M5 0V10" stroke="#FFFFFF" stroke-width="1.1" opacity="0.12"/>
 </pattern>
 </defs>
 <g id="pad" aria-label="Kovová podložka">

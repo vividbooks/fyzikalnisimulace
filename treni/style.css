@@ -493,7 +493,6 @@ input {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
   width: min(954px, 100%);
   max-height: 100%;
 }
@@ -501,7 +500,7 @@ input {
 .pad-wrap {
   position: relative;
   width: 100%;
-  max-height: calc(100% - 5.5rem);
+  max-height: 100%;
   aspect-ratio: 954 / 325;
   user-select: none;
 }
@@ -514,22 +513,37 @@ input {
 }
 
 .scene-meta {
+  position: absolute;
+  left: 20px;
+  bottom: 16px;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  width: 100%;
+  gap: 8px;
+  width: auto;
+  max-width: calc(100% - 40px);
   margin: 0;
+  pointer-events: none;
   text-align: left;
 }
 
 .scene-meta__line {
+  display: inline-flex;
+  align-items: center;
   margin: 0;
-  color: var(--canvas-text);
-  font-size: 16px;
+  padding: 8px 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  color: #334155;
+  font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 21px;
   font-weight: 400;
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .weight-display__arrow-shaft,
@@ -537,9 +551,15 @@ input {
   fill: #ff5f5f;
 }
 
+.weight-display__label-pill {
+  fill: #ffffff;
+  stroke: #e8eaef;
+  stroke-width: 1.5;
+}
+
 .weight-display__label-text {
-  fill: #ff5f5f;
-  font-size: 26px;
+  fill: #171923;
+  font-size: 34px;
   font-weight: 600;
   font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.02em;

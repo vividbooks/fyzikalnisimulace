@@ -143,7 +143,10 @@ const WEIGHT_ARROW_SHAFT_HALF_WIDTH = 1.5;
 const WEIGHT_ARROW_FIGMA_REF_LENGTH = WEIGHT_ARROW_SHAFT_BOTTOM;
 const BEAM_WEIGHT_ARROW_REF_N = 3;
 const WEIGHT_ARROW_BASE_LENGTH = WEIGHT_ARROW_FIGMA_REF_LENGTH;
-const WEIGHT_ARROW_LABEL_PX = 26;
+const WEIGHT_ARROW_LABEL_PX = 34;
+const WEIGHT_ARROW_HEAD_TIP_Y = 30.646;
+const PAD_FRONT_BOTTOM = { x1: 211.25, y1: 226.25, x2: 891.25, y2: 126.25 };
+const EDGE_SCENE_OFFSET_Y = -80.271;
 const WEIGHT_ARROW_LABEL_FONT =
   "Fenomen Sans, ui-sans-serif, system-ui, sans-serif";
 const WEIGHT_ARROW_COLOR = "#FF5F5F";
@@ -495,13 +498,15 @@ function getWeightArrowExtension(heightUnits) {
   return WEIGHT_ARROW_BASE_LENGTH * Math.max(0, heightUnits - 1);
 }
 
-/** Celková délka těla šipky — u 80 N zkrácena o 5 % */
-function resolveWeightArrowExtension(heightUnits, weightN) {
+/** Velká tíha končí na dolní hraně podložky, menší šipky zůstanou kratší */
+function resolveWeightArrowExtension(anchor, heightUnits, sceneOffsetY) {
   const extension = getWeightArrowExtension(heightUnits);
-  if (Math.abs(weightN - 80) >= 0.05) return extension;
-
-  const totalLength = WEIGHT_ARROW_SHAFT_BOTTOM + extension;
-  return totalLength * 0.95 - WEIGHT_ARROW_SHAFT_BOTTOM;
+  const tipAtZero =
+    WEIGHT_ARROW_HEAD_TIP_Y +
+    (WEIGHT_ARROW_SHAFT_BOTTOM - WEIGHT_ARROW_FIGMA_SHAFT_LENGTH);
+  const maxLocalTip = PAD_FRONT_BOTTOM.y1 - sceneOffsetY;
+  const maxExtension = maxLocalTip - (anchor.y + tipAtZero);
+  return Math.min(extension, Math.max(0, maxExtension));
 }
 
 function buildWeightArrowShaftPath(extension) {
@@ -562,10 +567,10 @@ function ensureBeamWeightArrow(root) {
   return group;
 }
 
-function renderBeamWeightArrow(group, anchor, weightN, heightUnits) {
+function renderBeamWeightArrow(group, anchor, weightN, heightUnits, sceneOffsetY) {
   if (!weightDisplayTemplate) return;
 
-  const extension = resolveWeightArrowExtension(heightUnits, weightN);
+  const extension = resolveWeightArrowExtension(anchor, heightUnits, sceneOffsetY);
   group.setAttribute(
     "transform",
     `translate(${anchor.x} ${anchor.y}) translate(${-WEIGHT_ARROW_SHAFT_X} ${-WEIGHT_ARROW_SHAFT_TOP})`
@@ -605,18 +610,34 @@ function renderBeamWeightArrow(group, anchor, weightN, heightUnits) {
 
   group.querySelector(".weight-display__label-text")?.remove();
   group.querySelector(".weight-display__label-path")?.remove();
+  group.querySelector(".weight-display__label-pill")?.remove();
+
+  const label = formatWeightLabel(weightN);
+  const x = WEIGHT_ARROW_LABEL_X + 8;
+  const y = WEIGHT_ARROW_LABEL_Y + extension;
+  const pillW = Math.max(72, label.length * WEIGHT_ARROW_LABEL_PX * 0.62);
+  const pillH = WEIGHT_ARROW_LABEL_PX * 1.45;
+  const pill = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  pill.setAttribute("class", "weight-display__label-pill");
+  pill.setAttribute("x", String(x - pillW / 2));
+  pill.setAttribute("y", String(y - pillH / 2));
+  pill.setAttribute("width", String(pillW));
+  pill.setAttribute("height", String(pillH));
+  pill.setAttribute("rx", String(pillH / 2));
+  pill.setAttribute("ry", String(pillH / 2));
+  group.appendChild(pill);
 
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("x", String(WEIGHT_ARROW_LABEL_X));
-  text.setAttribute("y", String(WEIGHT_ARROW_LABEL_Y + extension));
+  text.setAttribute("x", String(x));
+  text.setAttribute("y", String(y));
   text.setAttribute("text-anchor", "middle");
   text.setAttribute("dominant-baseline", "middle");
   text.setAttribute("class", "weight-display__label-text");
-  text.setAttribute("fill", WEIGHT_ARROW_COLOR);
+  text.setAttribute("fill", "#171923");
   text.setAttribute("font-family", WEIGHT_ARROW_LABEL_FONT);
   text.setAttribute("font-weight", "600");
   text.setAttribute("font-size", String(WEIGHT_ARROW_LABEL_PX));
-  text.textContent = formatWeightLabel(weightN);
+  text.textContent = label;
   group.appendChild(text);
 }
 
@@ -635,7 +656,8 @@ function updateBeamWeightArrows() {
       ensureBeamWeightArrow(flatSceneEl),
       flatBeamWeightAnchor(variant),
       weightN,
-      heightUnits
+      heightUnits,
+      0
     );
   }
 
@@ -644,7 +666,8 @@ function updateBeamWeightArrows() {
       ensureBeamWeightArrow(edgeSceneEl),
       edgeBeamWeightAnchor(variant),
       weightN,
-      heightUnits
+      heightUnits,
+      EDGE_SCENE_OFFSET_Y
     );
   }
 }
@@ -1772,7 +1795,7 @@ function refreshMuEditorIfOpen() {
 }
 
 async function init() {
-  const assetVersion = "20260721-material-textures";
+  const assetVersion = "20260823-materials-pills";
   const [sceneResponse, morphResponse, weightResponse] = await Promise.all([
     fetch(`assets/scene.svg?v=${assetVersion}`, { cache: "no-store" }),
     fetch(`assets/spring-morph.json?v=${assetVersion}`, { cache: "no-store" }),
