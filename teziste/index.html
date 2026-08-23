@@ -4,100 +4,335 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
     />
     <title>Těžiště</title>
-    <link rel="stylesheet" href="style.css?v=confetti-newton-1" />
+    <link rel="stylesheet" href="style.css?v=weight-place-1" />
   </head>
   <body>
-    <div class="app" id="app" data-tool="move" data-guide-on="false">
+    <div
+      class="app-root"
+      id="app"
+      data-tool="move"
+      data-guide-on="false"
+      data-app-mode="gallery"
+      data-shape-ready="true"
+    >
       <svg class="svg-sprite" aria-hidden="true">
         <defs>
           <g id="weight-art">
             <circle cx="18.25" cy="18.25" r="18.25" fill="#A3A2A2" />
-            <path d="M27.125 14H9.625V26.125H27.125V14Z" fill="black" stroke="black" stroke-width="0.25" />
+            <path
+              d="M27.125 14H9.625V26.125H27.125V14Z"
+              fill="black"
+              stroke="black"
+              stroke-width="0.25"
+            />
             <ellipse cx="18.375" cy="14" rx="8.875" ry="2.25" fill="#6F6F6F" />
-            <path d="M22.25 13.75C22.25 14.4404 20.5151 15 18.375 15C16.2349 15 14.5 14.4404 14.5 13.75C14.5 13.0596 16.2349 12.5 18.375 12.5C20.5151 12.5 22.25 13.0596 22.25 13.75Z" fill="black" />
+            <path
+              d="M22.25 13.75C22.25 14.4404 20.5151 15 18.375 15C16.2349 15 14.5 14.4404 14.5 13.75C14.5 13.0596 16.2349 12.5 18.375 12.5C20.5151 12.5 22.25 13.0596 22.25 13.75Z"
+              fill="black"
+            />
             <ellipse cx="18.375" cy="26.25" rx="8.875" ry="2.25" fill="black" />
-            <path d="M23.6743 7.74377H13.0757V10.4048H23.6743V7.74377Z" fill="black" stroke="black" stroke-width="0.25" />
+            <path
+              d="M23.6743 7.74377H13.0757V10.4048H23.6743V7.74377Z"
+              fill="black"
+              stroke="black"
+              stroke-width="0.25"
+            />
             <ellipse cx="18.375" cy="7.74381" rx="5.375" ry="0.493807" fill="#6F6F6F" />
             <ellipse cx="18.375" cy="10.4323" rx="5.375" ry="0.493807" fill="black" />
-            <path d="M16.875 11.875C17 11.625 16.875 10.875 16.875 10.875H19.875V11.875L21.625 13.375H15.125C15.125 13.375 16.75 12.125 16.875 11.875Z" fill="black" stroke="black" stroke-width="0.25" />
-            <path d="M19.9307 10.875C19.9307 10.875 19.8057 11.625 19.9307 11.875C20.0557 12.125 21.9307 13.375 21.9307 13.375" stroke="black" stroke-width="0.25" />
+            <path
+              d="M16.875 11.875C17 11.625 16.875 10.875 16.875 10.875H19.875V11.875L21.625 13.375H15.125C15.125 13.375 16.75 12.125 16.875 11.875Z"
+              fill="black"
+              stroke="black"
+              stroke-width="0.25"
+            />
+            <path
+              d="M19.9307 10.875C19.9307 10.875 19.8057 11.625 19.9307 11.875C20.0557 12.125 21.9307 13.375 21.9307 13.375"
+              stroke="black"
+              stroke-width="0.25"
+            />
           </g>
         </defs>
       </svg>
-      <header class="hud" aria-label="Ovládání">
-        <div class="hud-left">
-          <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-          <h1 class="hud-title">Těžiště</h1>
-          <div class="shape-picker" role="group" aria-label="Výběr objektu"></div>
-          <button type="button" id="weight-supply" class="weight-supply" aria-label="Závaží">
-            <svg class="weight-icon" viewBox="0 0 37 37" fill="none" aria-hidden="true">
-              <use href="#weight-art" />
-            </svg>
-          </button>
-        </div>
-        <div class="hud-actions">
-          <button type="button" id="tool-guess-cm" class="hud-btn" aria-pressed="false">
-            Označit těžiště
-          </button>
-          <button type="button" id="tool-reshape" class="hud-btn" aria-pressed="false">
-            Změnit tvar
-          </button>
-          <button type="button" id="toggle-guide" class="hud-btn" aria-pressed="false">
-            Svislá přímka
-          </button>
-          <button type="button" id="tool-pencil" class="hud-btn" aria-pressed="false">
-            Tužka
-          </button>
-          <button type="button" id="clear-drawings-btn" class="hud-btn" disabled>
-            Smazat
-          </button>
-        </div>
-      </header>
 
-      <p id="guess-feedback" class="guess-feedback" hidden></p>
-      <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+      <aside class="left-panel" aria-label="Ovládání simulace">
+        <div class="panel-copy">
+          <div class="panel-head">
+            <a href="../index.html" class="hub-back-to-sims">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M15 18l-6-6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Zpět
+            </a>
+            <h1 class="panel-title">Těžiště</h1>
+          </div>
+
+          <div class="mode-switch" id="builder-mode-switch" role="group" aria-label="Režim">
+            <button
+              type="button"
+              class="mode-switch__btn is-active"
+              data-builder-mode="gallery"
+              aria-pressed="true"
+            >
+              Útvary
+            </button>
+            <button
+              type="button"
+              class="mode-switch__btn"
+              data-builder-mode="lab"
+              aria-pressed="false"
+            >
+              Nakresli vlastní
+            </button>
+          </div>
+
+          <div class="gallery-presets" id="gallery-presets" aria-label="Výběr útvaru">
+            <div id="gallery-preset-list" class="shape-picker"></div>
+          </div>
+
+          <div class="panel-tools" data-lab-only>
+            <p class="panel-lead">
+              Nakresli na ploše uzavřený útvar. Pak ho pověs na hřebík a hledej těžiště.
+            </p>
+            <div class="panel-actions panel-actions--lab">
+              <button
+                type="button"
+                id="tool-draw-shape"
+                class="action-btn"
+                aria-pressed="false"
+              >
+                Tužka
+              </button>
+              <button type="button" id="tool-new-shape" class="action-btn">
+                Nový útvar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stock-section">
+          <div class="stock-tray" aria-label="Závaží">
+            <div class="stock-slot" id="weight-supply" role="button" aria-label="Závaží — položit na otvor">
+              <span class="stock-slot__label">Závaží</span>
+              <svg class="weight-icon" viewBox="0 0 37 37" fill="none" aria-hidden="true">
+                <use href="#weight-art" />
+              </svg>
+              <span class="stock-slot__hint">Polož na otvor</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="workspace" id="workspace">
+        <p class="sim-empty-hint" id="hintEl">Pověs útvar na hřebík.</p>
+        <div class="workspace-hud" aria-label="Nástroje na ploše">
+          <div class="workspace-hud__left">
+            <button
+              type="button"
+              id="tool-guess-cm"
+              class="workspace-guess-btn"
+              aria-pressed="false"
+            >
+              <span class="workspace-guess-btn__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="2" />
+                  <path
+                    d="M12 3v4M12 17v4M3 12h4M17 12h4"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+              Označit těžiště
+            </button>
+          </div>
+          <div class="workspace-hud__right">
+          <button
+            type="button"
+            id="tool-reshape"
+            class="action-btn action-btn--icon workspace-hud__btn"
+            aria-pressed="false"
+            aria-label="Změnit tvar"
+          >
+            <span class="action-btn__icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M7 7h10v10H7z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                />
+                <circle cx="7" cy="7" r="2" fill="currentColor" />
+                <circle cx="17" cy="7" r="2" fill="currentColor" />
+                <circle cx="17" cy="17" r="2" fill="currentColor" />
+                <circle cx="7" cy="17" r="2" fill="currentColor" />
+              </svg>
+            </span>
+            <span class="action-btn__label">Změnit tvar</span>
+          </button>
+          <button
+            type="button"
+            id="toggle-guide"
+            class="action-btn action-btn--icon workspace-hud__btn"
+            aria-pressed="false"
+            aria-label="Svislá přímka"
+          >
+            <span class="action-btn__icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 3v18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-dasharray="3 4"
+                />
+              </svg>
+            </span>
+            <span class="action-btn__label">Svislá přímka</span>
+          </button>
+          <button
+            type="button"
+            id="tool-pencil"
+            class="action-btn action-btn--icon workspace-hud__btn"
+            data-lab-only
+            aria-pressed="false"
+            aria-label="Tužka"
+          >
+            <span class="action-btn__icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 20h9"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="action-btn__label">Tužka</span>
+          </button>
+          <button
+            type="button"
+            id="clear-drawings-btn"
+            class="action-btn action-btn--icon workspace-hud__btn"
+            data-lab-only
+            aria-label="Smazat kresbu"
+            disabled
+          >
+            <span class="action-btn__icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path d="M22 21H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span class="action-btn__label">Smazat</span>
+          </button>
+          <button
+            type="button"
+            id="tool-reset"
+            class="action-btn action-btn--icon workspace-hud__btn workspace-hud__btn--reset"
+            aria-label="Reset"
+          >
+            <span class="action-btn__icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4.5 8A7.5 7.5 0 1 1 4 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M4.5 3.5V8h4.5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="action-btn__label">Reset</span>
+          </button>
+          </div>
+        </div>
+
+        <p id="guess-feedback" class="guess-feedback" hidden></p>
+        <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+
+        <svg
+          id="scene"
+          class="scene"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-label="Plocha s kolečkem a objektem"
+        >
+          <rect id="scene-hit" class="scene-hit" x="0" y="0" width="100%" height="100%" />
+          <g id="world">
+            <clipPath id="holes-clip" clipPathUnits="userSpaceOnUse"></clipPath>
+            <g id="hook" class="hook"></g>
+
+            <g id="shape-group">
+              <clipPath id="shape-clip" clipPathUnits="userSpaceOnUse">
+                <path id="shape-clip-path"></path>
+              </clipPath>
+              <path id="shape-body" class="shape-body" />
+              <path id="shape-stroke" class="shape-stroke" />
+              <g id="drawings" clip-path="url(#shape-clip)"></g>
+              <g id="drag-handle" class="drag-handle"></g>
+              <g id="holes"></g>
+              <g id="weights"></g>
+              <g id="corners"></g>
+            </g>
+
+            <g id="hook-over" class="hook" clip-path="url(#holes-clip)"></g>
+            <path id="draft-path" class="draft-path"></path>
+          </g>
+
+          <g id="guess-layer" class="guess-layer"></g>
+
+          <g id="guide-line" class="guide-line" aria-label="Svislá přímka">
+            <line id="guide-line-vis" class="guide-line-vis" />
+          </g>
+        </svg>
+
+        <div
+          id="draw-confirm"
+          class="freehand-confirm"
+          hidden
+          role="group"
+          aria-label="Potvrzení útvaru"
+        >
+          <button type="button" id="draw-confirm-ok" class="action-btn action-btn--ok">
+            Potvrdit
+          </button>
+          <button type="button" id="draw-confirm-cancel" class="action-btn">Zrušit</button>
+        </div>
+      </div>
       <div id="weight-ghost" class="weight-ghost" hidden>
         <svg class="weight-icon" viewBox="0 0 37 37" fill="none" aria-hidden="true">
           <use href="#weight-art" />
         </svg>
       </div>
-
-      <svg
-        id="scene"
-        class="scene"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-label="Plocha s kolečkem a objektem"
-      >
-        <g id="world">
-          <clipPath id="holes-clip" clipPathUnits="userSpaceOnUse"></clipPath>
-          <g id="hook" class="hook"></g>
-
-          <g id="shape-group">
-            <clipPath id="shape-clip" clipPathUnits="userSpaceOnUse">
-              <path id="shape-clip-path"></path>
-            </clipPath>
-            <path id="shape-body" class="shape-body" />
-            <path id="shape-stroke" class="shape-stroke" />
-            <g id="drawings" clip-path="url(#shape-clip)"></g>
-            <g id="holes"></g>
-            <g id="weights"></g>
-            <g id="corners"></g>
-          </g>
-
-          <g id="hook-over" class="hook" clip-path="url(#holes-clip)"></g>
-
-          <g id="guess-layer" hidden></g>
-        </g>
-
-        <g id="guide-line" class="guide-line" aria-label="Svislá přímka">
-          <line id="guide-line-vis" class="guide-line-vis" />
-        </g>
-      </svg>
     </div>
 
-    <script src="main.js?v=confetti-newton-1"></script>
+    <script src="main.js?v=weight-place-1"></script>
   </body>
 </html>

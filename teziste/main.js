@@ -8,13 +8,16 @@
 
   const HOLE_R = 8;
   const WEIGHT_SHARE = 0.22;
-  const WEIGHT_SNAP = HOLE_R * 2.8;
+  const WEIGHT_SNAP = HOLE_R * 4.4;
   const SNAP = 14 * SHAPE_SCALE;
   const G = 1800;
   const DAMPING = 2.4;
   const DRAW_MIN_DIST = 0.8;
   const CORNER_R = 6.4;
   const CORNER_HIT = 16;
+  const HANDLE_R = 34;
+  const HANDLE_DISK_R = 22;
+  const HOLE_CLICK_MOVE = 10;
   const MIN_SHAPE_AREA = 900;
   const VERTEX_LIMIT = { min: -60, max: 380 };
 
@@ -319,13 +322,40 @@
     },
   ];
 
+  const CUSTOM_ID = "vlastni";
+  const CUSTOM_FILL = "#38bdf8";
+  const CUSTOM_STROKE = "#0284c7";
+
+  function createEmptyCustomShape() {
+    return {
+      id: CUSTOM_ID,
+      label: "Vlastní",
+      kind: "polygon",
+      fill: CUSTOM_FILL,
+      stroke: CUSTOM_STROKE,
+      path: "",
+      vertices: [],
+      liveVertices: [],
+      holes: [],
+      liveHoles: [],
+      weights: [],
+      centroid: { x: 156, y: 168 },
+      bounds: { minX: 40, minY: 40, maxX: 270, maxY: 270 },
+      empty: true,
+    };
+  }
+
+  let customShape = createEmptyCustomShape();
+
   const scene = document.getElementById("scene");
+  const workspace = document.getElementById("workspace");
   const worldGroup = document.getElementById("world");
   const shapeGroup = document.getElementById("shape-group");
   const shapeBody = document.getElementById("shape-body");
   const shapeStroke = document.getElementById("shape-stroke");
   const shapeClipPath = document.getElementById("shape-clip-path");
   const drawingsGroup = document.getElementById("drawings");
+  const dragHandleGroup = document.getElementById("drag-handle");
   const holesGroup = document.getElementById("holes");
   const cornersGroup = document.getElementById("corners");
   const hookGroup = document.getElementById("hook");
@@ -339,6 +369,15 @@
   const guessCmBtn = document.getElementById("tool-guess-cm");
   const reshapeBtn = document.getElementById("tool-reshape");
   const pencilBtn = document.getElementById("tool-pencil");
+  const drawShapeBtn = document.getElementById("tool-draw-shape");
+  const newShapeBtn = document.getElementById("tool-new-shape");
+  const resetBtn = document.getElementById("tool-reset");
+  const draftPath = document.getElementById("draft-path");
+  const drawConfirm = document.getElementById("draw-confirm");
+  const drawConfirmOk = document.getElementById("draw-confirm-ok");
+  const drawConfirmCancel = document.getElementById("draw-confirm-cancel");
+  const hintEl = document.getElementById("hintEl");
+  const builderModeSwitch = document.getElementById("builder-mode-switch");
   const weightsGroup = document.getElementById("weights");
   const weightSupply = document.getElementById("weight-supply");
   const weightGhost = document.getElementById("weight-ghost");
@@ -365,6 +404,8 @@
     dragging: false,
     dragMode: null,
     grabLocal: null,
+    pointerStart: null,
+    holeClickIndex: -1,
     cornerIndex: -1,
     nearIndex: -1,
     lastT: 0,
@@ -377,6 +418,13 @@
     guideOn: false,
     weightFrom: null,
     weightSnap: -1,
+    weightCarry: false,
+    appMode: "gallery",
+    lastGalleryShapeId: "utvar",
+    hintDismissed: false,
+    drawingShape: false,
+    draftPoints: [],
+    pendingCustom: null,
   };
 
   function createPeg() {
@@ -391,6 +439,80 @@
 
   hookGroup.append(createPeg());
   hookOverGroup.append(createPeg());
+
+  function handleAnchor() {
+    if (!currentShape || currentShape.empty) return null;
+    if (currentShape.kind === "circle") {
+      return { x: currentShape.cx, y: currentShape.cy };
+    }
+    const candidates = [];
+    if (VERTICES.length) {
+      const c = polygonCentroid(VERTICES);
+      if (Number.isFinite(c.x) && Number.isFinite(c.y)) {
+        candidates.push(c);
+      }
+      let sx = 0;
+      let sy = 0;
+      VERTICES.forEach(([x, y]) => {
+        sx += x;
+        sy += y;
+      });
+      candidates.push({ x: sx / VERTICES.length, y: sy / VERTICES.length });
+    }
+    const bounds = currentShape.bounds;
+    if (bounds) {
+      candidates.push({
+        x: (bounds.minX + bounds.maxX) / 2,
+        y: (bounds.minY + bounds.maxY) / 2,
+      });
+    }
+    for (const point of candidates) {
+      if (pointOnShapeBody(point.x, point.y)) return point;
+    }
+    return candidates[0] || null;
+  }
+
+  function rebuildDragHandle() {
+    dragHandleGroup.replaceChildren();
+    const disk = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    disk.classList.add("drag-handle-disk");
+    disk.setAttribute("r", String(HANDLE_DISK_R));
+
+    const dots = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    dots.classList.add("drag-handle-dots");
+    const cols = [-5.2, 5.2];
+    const rows = [-8.2, 0, 8.2];
+    rows.forEach((y) => {
+      cols.forEach((x) => {
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.classList.add("drag-handle-dot");
+        dot.setAttribute("cx", String(x));
+        dot.setAttribute("cy", String(y));
+        dot.setAttribute("r", "2.6");
+        dots.append(dot);
+      });
+    });
+
+    dragHandleGroup.append(disk, dots);
+  }
+
+  function syncDragHandle() {
+    const hide =
+      !currentShape ||
+      currentShape.empty ||
+      state.tool === "pencil" ||
+      state.tool === "guess-cm" ||
+      state.tool === "draw-shape";
+    const point = hide ? null : handleAnchor();
+    if (!point) {
+      dragHandleGroup.classList.add("is-hidden");
+      return;
+    }
+    dragHandleGroup.classList.remove("is-hidden");
+    dragHandleGroup.setAttribute("transform", `translate(${point.x} ${point.y})`);
+    const fill = currentShape.fill || "#f06d6d";
+    dragHandleGroup.style.color = mixHex(fill, "#1d1d1b", 0.4);
+  }
 
   function rebuildHoles() {
     holesGroup.replaceChildren();
@@ -432,7 +554,7 @@
   }
 
   function weightTransform(x, y) {
-    const scale = (HOLE_R * 1.12) / 18.25;
+    const scale = (HOLE_R * 1.55) / 18.25;
     return `translate(${x} ${y}) scale(${scale}) translate(-18.25 -18.25)`;
   }
 
@@ -489,6 +611,28 @@
     return { index: best, dist: bestDist };
   }
 
+  function nearestFreeHole(local) {
+    let best = -1;
+    let bestDist = Infinity;
+    HOLES.forEach((hole, index) => {
+      if (holeHasWeight(index) && index !== state.weightFrom) return;
+      const dist = Math.hypot(local.x - hole[0], local.y - hole[1]);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = index;
+      }
+    });
+    return { index: best, dist: bestDist };
+  }
+
+  function resolveWeightSnap(local) {
+    const nearest = nearestFreeHole(local);
+    if (nearest.index < 0) return -1;
+    if (nearest.dist <= WEIGHT_SNAP) return nearest.index;
+    if (pointInShape(local.x, local.y)) return nearest.index;
+    return -1;
+  }
+
   function clearHoleSnaps() {
     holesGroup.querySelectorAll(".hole-disk").forEach((disk) => {
       disk.classList.remove("is-snap");
@@ -509,6 +653,40 @@
     app.classList.remove("is-dragging-weight");
   }
 
+  function cancelWeightCarry() {
+    state.weightCarry = false;
+    state.dragging = false;
+    state.dragMode = state.dragMode === "weight" ? null : state.dragMode;
+    state.weightFrom = null;
+    state.weightSnap = -1;
+    hideWeightGhost();
+    app.classList.remove("is-dragging", "is-carrying-weight");
+    weightSupply.classList.remove("is-armed");
+    if (state.hungIndex < 0 && !state.hintDismissed) {
+      syncSceneHint();
+    } else {
+      hintEl?.classList.add("is-hidden");
+    }
+  }
+
+  function showWeightHint() {
+    if (!hintEl || state.pendingCustom) return;
+    hintEl.textContent = "Polož závaží na otvor.";
+    hintEl.classList.remove("is-hidden");
+  }
+
+  function armWeightCarry(event) {
+    state.weightCarry = true;
+    state.dragging = false;
+    state.dragMode = "weight";
+    state.weightFrom = "supply";
+    app.classList.remove("is-dragging");
+    app.classList.add("is-carrying-weight", "is-dragging-weight");
+    weightSupply.classList.add("is-armed");
+    showWeightHint();
+    if (event) updateWeightGhost(event);
+  }
+
   function placeWeightGhost(x, y, snapped) {
     weightGhost.hidden = false;
     weightGhost.classList.toggle("is-snapped", snapped);
@@ -518,35 +696,35 @@
 
   function beginWeightDrag(event, from) {
     event.preventDefault();
+    const pointer = pointerFromEvent(event);
     state.dragging = true;
     state.dragMode = "weight";
     state.weightFrom = from;
     state.weightSnap = -1;
+    state.weightCarry = false;
+    state.pointerStart = pointer;
     if (typeof from === "number") {
       removeWeight(from);
     }
     app.classList.add("is-dragging");
     app.classList.add("is-dragging-weight");
+    weightSupply.classList.toggle("is-armed", from === "supply");
     updateWeightGhost(event);
   }
 
   function updateWeightGhost(event) {
     const pointer = pointerFromEvent(event);
     const local = worldToLocal(pointer.x, pointer.y);
-    const nearest = nearestHole(local);
-    const origin = state.weightFrom;
-    const allowed =
-      nearest.index >= 0 &&
-      nearest.dist <= WEIGHT_SNAP &&
-      (!holeHasWeight(nearest.index) || nearest.index === origin);
+    const snap = resolveWeightSnap(local);
 
-    if (allowed) {
-      state.weightSnap = nearest.index;
-      const hole = HOLES[nearest.index];
-      const screen = worldToScreen(localToWorld(hole[0], hole[1]).x, localToWorld(hole[0], hole[1]).y);
+    if (snap >= 0) {
+      state.weightSnap = snap;
+      const hole = HOLES[snap];
+      const world = localToWorld(hole[0], hole[1]);
+      const screen = worldToScreen(world.x, world.y);
       const rect = scene.getBoundingClientRect();
       placeWeightGhost(rect.left + screen.x, rect.top + screen.y, true);
-      setHoleSnap(nearest.index);
+      setHoleSnap(snap);
       return;
     }
 
@@ -555,15 +733,28 @@
     placeWeightGhost(event.clientX, event.clientY, false);
   }
 
-  function finishWeightDrag() {
+  function finishWeightDrag(event) {
     const snap = state.weightSnap;
-    state.dragMode = null;
-    state.weightFrom = null;
-    state.weightSnap = -1;
-    hideWeightGhost();
+    const from = state.weightFrom;
+    const start = state.pointerStart;
+    let moved = Infinity;
+    if (event && start) {
+      const pointer = pointerFromEvent(event);
+      moved = Math.hypot(pointer.x - start.x, pointer.y - start.y);
+    }
+
     if (snap >= 0) {
       addWeight(snap);
+      cancelWeightCarry();
+      return;
     }
+
+    if (from === "supply" && moved <= HOLE_CLICK_MOVE) {
+      armWeightCarry(event);
+      return;
+    }
+
+    cancelWeightCarry();
   }
 
   function syncHoleNodes() {
@@ -668,7 +859,13 @@
   }
 
   function shapeHasCorners(shape) {
-    return shape && shape.kind === "polygon" && shape.vertices.length <= 20;
+    return (
+      shape &&
+      !shape.empty &&
+      shape.kind === "polygon" &&
+      shape.vertices.length >= 3 &&
+      shape.vertices.length <= 20
+    );
   }
 
   function rebuildCorners() {
@@ -705,6 +902,11 @@
   }
 
   function refreshShapePath() {
+    if (!currentShape || currentShape.empty) {
+      syncDragHandle();
+      return;
+    }
+    if (currentShape.kind === "polygon" && VERTICES.length < 3) return;
     const path =
       currentShape.kind === "circle" ? currentShape.path : polygonPath(VERTICES);
     if (currentShape.kind === "polygon") {
@@ -719,13 +921,38 @@
     shapeClipPath.setAttribute("d", path + holeCuts);
     shapeClipPath.setAttribute("fill-rule", "evenodd");
     syncCornerHandles();
+    syncDragHandle();
   }
 
   function applyShape(id) {
-    const next = SHAPES.find((item) => item.id === id);
+    const next = id === CUSTOM_ID ? customShape : SHAPES.find((item) => item.id === id);
     if (!next) return;
 
     currentShape = next;
+    app.dataset.shapeReady = next.empty ? "false" : "true";
+    if (next.empty) {
+      VERTICES = [];
+      HOLES = [];
+      centroid = { x: 156, y: 168 };
+      shapeBody.setAttribute("d", "");
+      shapeStroke.setAttribute("d", "");
+      shapeClipPath.setAttribute("d", "");
+      holesGroup.replaceChildren();
+      cornersGroup.replaceChildren();
+      holesClip.replaceChildren();
+      weightsGroup.replaceChildren();
+      cancelWeightCarry();
+      syncDragHandle();
+      app.style.setProperty("--shape-fill", next.fill);
+      app.style.setProperty("--shape-stroke", next.stroke);
+      app.dataset.shape = next.id;
+      updateReshapeButton();
+      document.querySelectorAll("[data-shape]").forEach((btn) => {
+        btn.classList.remove("is-active");
+        btn.setAttribute("aria-pressed", "false");
+      });
+      return;
+    }
     if (next.kind === "polygon") {
       if (!next.liveVertices) {
         next.liveVertices = next.vertices.map((vertex) => [vertex[0], vertex[1]]);
@@ -766,10 +993,15 @@
   }
 
   function selectShape(id) {
-    if (currentShape && currentShape.id === id) return;
+    if (id !== CUSTOM_ID) state.lastGalleryShapeId = id;
+    if (currentShape && currentShape.id === id && !currentShape.empty) return;
     applyShape(id);
     clearDrawings();
     resetToDefault();
+    if (!currentShape?.empty) {
+      state.hintDismissed = false;
+      syncSceneHint();
+    }
   }
 
   function thumbnailViewBox(bounds) {
@@ -780,20 +1012,20 @@
   }
 
   function buildShapePicker() {
-    const picker = document.querySelector(".shape-picker");
+    const picker = document.getElementById("gallery-preset-list");
     picker.replaceChildren();
 
     SHAPES.forEach((shape) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "shape-btn";
+      button.className = "gallery-preset-btn";
       button.dataset.shape = shape.id;
       button.title = shape.label;
       button.setAttribute("aria-label", shape.label);
       button.setAttribute("aria-pressed", "false");
 
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.classList.add("shape-thumb");
+      svg.classList.add("shape-thumb", "gallery-preset-btn__schema");
       svg.setAttribute("viewBox", thumbnailViewBox(shape.bounds));
       svg.setAttribute("aria-hidden", "true");
 
@@ -806,7 +1038,11 @@
       body.setAttribute("stroke-width", "7");
       svg.append(body);
 
-      button.append(svg);
+      const title = document.createElement("span");
+      title.className = "gallery-preset-btn__title";
+      title.textContent = shape.label;
+
+      button.append(svg, title);
       button.addEventListener("click", () => selectShape(shape.id));
       picker.append(button);
     });
@@ -908,6 +1144,14 @@
     if (on) updateGuide();
   }
 
+  function capturePointer(target, event) {
+    try {
+      target.setPointerCapture(event.pointerId);
+    } catch (_) {
+      /* synthetic events cannot capture */
+    }
+  }
+
   function pointerFromEvent(event) {
     const rect = scene.getBoundingClientRect();
     const sx = ((event.clientX - rect.left) / rect.width) * state.width;
@@ -940,8 +1184,19 @@
     if (tool === "reshape" && !shapeHasCorners(currentShape)) {
       tool = "move";
     }
+    if (
+      (tool === "draw-shape" || tool === "pencil") &&
+      state.appMode !== "lab"
+    ) {
+      tool = "move";
+    }
     if (tool !== "guess-cm") {
       clearGuessResult();
+    } else {
+      dismissSceneHint();
+    }
+    if (tool !== "move" && (state.weightCarry || state.dragMode === "weight")) {
+      cancelWeightCarry();
     }
     state.tool = tool;
     app.dataset.tool = tool;
@@ -951,6 +1206,298 @@
     reshapeBtn.setAttribute("aria-pressed", String(tool === "reshape"));
     pencilBtn.classList.toggle("is-active", tool === "pencil");
     pencilBtn.setAttribute("aria-pressed", String(tool === "pencil"));
+    if (drawShapeBtn) {
+      drawShapeBtn.classList.toggle("is-active", tool === "draw-shape");
+      drawShapeBtn.setAttribute("aria-pressed", String(tool === "draw-shape"));
+    }
+    syncDragHandle();
+  }
+
+  function syncBuilderModeSwitch() {
+    if (!builderModeSwitch) return;
+    builderModeSwitch.querySelectorAll("[data-builder-mode]").forEach((btn) => {
+      const on = btn.dataset.builderMode === state.appMode;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function syncSceneHint() {
+    if (!hintEl) return;
+    if (state.hintDismissed) {
+      hintEl.classList.add("is-hidden");
+      return;
+    }
+    if (state.pendingCustom) {
+      hintEl.classList.add("is-hidden");
+      return;
+    } else if (state.appMode === "lab" && customShape.empty) {
+      hintEl.textContent = "Nakresli vlastní útvar.";
+    } else {
+      hintEl.textContent = "Pověs útvar na hřebík.";
+    }
+    hintEl.classList.remove("is-hidden");
+  }
+
+  function dismissSceneHint() {
+    state.hintDismissed = true;
+    hintEl?.classList.add("is-hidden");
+  }
+
+  function setAppMode(mode) {
+    if (state.appMode === mode) return;
+    state.appMode = mode;
+    app.dataset.appMode = mode;
+    syncBuilderModeSwitch();
+    clearDraft();
+    state.hintDismissed = false;
+    if (mode === "gallery") {
+      if (state.tool === "pencil" || state.tool === "draw-shape") {
+        setTool("move");
+      }
+      selectShape(state.lastGalleryShapeId);
+    } else if (customShape.empty) {
+      applyShape(CUSTOM_ID);
+      clearDrawings();
+      resetToDefault();
+      setTool("draw-shape");
+    } else {
+      applyShape(CUSTOM_ID);
+      clearDrawings();
+      resetToDefault();
+    }
+    syncSceneHint();
+  }
+
+  function pointLineDistance(point, start, end) {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy);
+    if (length < 1e-6) return Math.hypot(point.x - start.x, point.y - start.y);
+    return Math.abs(dy * point.x - dx * point.y + end.x * start.y - end.y * start.x) / length;
+  }
+
+  function simplifyPolyline(points, epsilon) {
+    if (points.length < 3) return points.slice();
+    let maxDist = 0;
+    let index = 0;
+    const start = points[0];
+    const end = points[points.length - 1];
+    for (let i = 1; i < points.length - 1; i += 1) {
+      const dist = pointLineDistance(points[i], start, end);
+      if (dist > maxDist) {
+        maxDist = dist;
+        index = i;
+      }
+    }
+    if (maxDist > epsilon) {
+      const left = simplifyPolyline(points.slice(0, index + 1), epsilon);
+      const right = simplifyPolyline(points.slice(index), epsilon);
+      return left.slice(0, -1).concat(right);
+    }
+    return [start, end];
+  }
+
+  function pathLength(points) {
+    let length = 0;
+    for (let i = 1; i < points.length; i += 1) {
+      length += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+    }
+    return length;
+  }
+
+  function resampleClosed(points, count) {
+    const closed = points.slice();
+    const first = closed[0];
+    const last = closed[closed.length - 1];
+    if (Math.hypot(first.x - last.x, first.y - last.y) > 1) {
+      closed.push({ x: first.x, y: first.y });
+    }
+    const total = pathLength(closed);
+    if (total < 1) return null;
+    const step = total / count;
+    const result = [];
+    let traveled = 0;
+    let index = 1;
+    let prev = closed[0];
+    result.push([prev.x, prev.y]);
+    while (result.length < count && index < closed.length) {
+      const next = closed[index];
+      const seg = Math.hypot(next.x - prev.x, next.y - prev.y);
+      if (traveled + seg >= step) {
+        const t = (step - traveled) / seg;
+        const x = prev.x + (next.x - prev.x) * t;
+        const y = prev.y + (next.y - prev.y) * t;
+        result.push([x, y]);
+        prev = { x, y };
+        traveled = 0;
+      } else {
+        traveled += seg;
+        prev = next;
+        index += 1;
+      }
+    }
+    return result.length >= 5 ? result : null;
+  }
+
+  function simplifyClosed(points) {
+    if (points.length < 4 || pathLength(points) < 36) return null;
+    const pts = points.map((point) => ({ x: point.x, y: point.y }));
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    if (Math.hypot(first.x - last.x, first.y - last.y) < 24) {
+      pts.pop();
+    }
+    let epsilon = 4;
+    let result = simplifyPolyline(pts, epsilon);
+    while (result.length > 14 && epsilon < 36) {
+      epsilon += 2;
+      result = simplifyPolyline(pts, epsilon);
+    }
+    while (result.length < 6 && epsilon > 1.2) {
+      epsilon *= 0.7;
+      result = simplifyPolyline(pts, epsilon);
+    }
+    if (result.length < 5) {
+      return resampleClosed(pts, 8);
+    }
+    return result.map((point) => [point.x, point.y]);
+  }
+
+  function fitVertices(verts) {
+    const bounds = boundsOf(verts);
+    const width = Math.max(1, bounds.maxX - bounds.minX);
+    const height = Math.max(1, bounds.maxY - bounds.minY);
+    const scale = Math.min(180 / width, 180 / height);
+    const cx = (bounds.minX + bounds.maxX) / 2;
+    const cy = (bounds.minY + bounds.maxY) / 2;
+    return verts.map(([x, y]) => [156 + (x - cx) * scale, 168 + (y - cy) * scale]);
+  }
+
+  function makeHolesForCustom(verts) {
+    const count = verts.length <= 8 ? verts.length : 6;
+    const step = verts.length / count;
+    const holes = [];
+    for (let i = 0; i < count; i += 1) {
+      const index = Math.round(i * step) % verts.length;
+      const inward = vertexInward(verts, index);
+      const origin = verts[index];
+      let x = origin[0] + inward.x * (HOLE_R + 12);
+      let y = origin[1] + inward.y * (HOLE_R + 12);
+      if (!pointInPolygon(x, y, verts)) {
+        x = origin[0] + inward.x * (HOLE_R + 8);
+        y = origin[1] + inward.y * (HOLE_R + 8);
+      }
+      holes.push([x, y]);
+    }
+    return holes;
+  }
+
+  function draftPathData(points) {
+    return points.map((point, index) => `${index ? "L" : "M"}${point.x} ${point.y}`).join(" ");
+  }
+
+  function updateDraftPath(pending = false) {
+    if (!draftPath) return;
+    if (!state.draftPoints.length) {
+      draftPath.setAttribute("d", "");
+      draftPath.removeAttribute("hidden");
+      draftPath.classList.remove("is-pending", "is-visible");
+      return;
+    }
+    draftPath.removeAttribute("hidden");
+    draftPath.classList.add("is-visible");
+    draftPath.classList.toggle("is-pending", pending);
+    draftPath.setAttribute("d", draftPathData(state.draftPoints));
+  }
+
+  function clearDraft() {
+    state.drawingShape = false;
+    state.draftPoints = [];
+    state.pendingCustom = null;
+    app.classList.remove("is-drawing");
+    updateDraftPath();
+    if (drawConfirm) drawConfirm.hidden = true;
+    if (shapeGroup) shapeGroup.removeAttribute("opacity");
+  }
+
+  function startShapeDraft(world) {
+    clearDraft();
+    state.drawingShape = true;
+    state.draftPoints = [{ x: world.x, y: world.y }];
+    updateDraftPath();
+    app.classList.add("is-drawing");
+    if (shapeGroup) shapeGroup.setAttribute("opacity", "0.22");
+    hintEl?.classList.add("is-hidden");
+  }
+
+  function continueShapeDraft(world) {
+    const last = state.draftPoints[state.draftPoints.length - 1];
+    if (!last || Math.hypot(world.x - last.x, world.y - last.y) < 1.2) return;
+    state.draftPoints.push({ x: world.x, y: world.y });
+    updateDraftPath();
+  }
+
+  function finishShapeDraft() {
+    state.drawingShape = false;
+    app.classList.remove("is-drawing");
+    const verts = simplifyClosed(state.draftPoints);
+    const area = verts ? Math.abs(polygonArea(verts)) : 0;
+    if (!verts || area < MIN_SHAPE_AREA * 0.12) {
+      clearDraft();
+      state.hintDismissed = false;
+      if (hintEl) {
+        hintEl.textContent = "Nakresli větší uzavřený útvar.";
+        hintEl.classList.remove("is-hidden");
+      }
+      return;
+    }
+    state.pendingCustom = verts;
+    updateDraftPath(true);
+    if (drawConfirm) drawConfirm.hidden = false;
+    state.hintDismissed = false;
+    syncSceneHint();
+  }
+
+  function commitPendingCustom() {
+    if (!state.pendingCustom) return;
+    const fitted = fitVertices(state.pendingCustom);
+    const holes = makeHolesForCustom(fitted);
+    customShape = {
+      id: CUSTOM_ID,
+      label: "Vlastní",
+      kind: "polygon",
+      fill: CUSTOM_FILL,
+      stroke: CUSTOM_STROKE,
+      path: polygonPath(fitted),
+      vertices: fitted.map((vertex) => [vertex[0], vertex[1]]),
+      liveVertices: fitted.map((vertex) => [vertex[0], vertex[1]]),
+      holes: holes.map((hole) => [hole[0], hole[1]]),
+      liveHoles: holes.map((hole) => [hole[0], hole[1]]),
+      holeBindings: null,
+      weights: [],
+      centroid: polygonCentroid(fitted),
+      bounds: boundsOf(fitted),
+      empty: false,
+      edited: true,
+    };
+    clearDraft();
+    applyShape(CUSTOM_ID);
+    clearDrawings();
+    resetToDefault();
+    state.hintDismissed = false;
+    syncSceneHint();
+  }
+
+  function startNewCustomShape() {
+    customShape = createEmptyCustomShape();
+    clearDraft();
+    applyShape(CUSTOM_ID);
+    clearDrawings();
+    resetToDefault();
+    setTool("draw-shape");
+    state.hintDismissed = false;
+    syncSceneHint();
   }
 
   function shapeBounds() {
@@ -1208,7 +1755,8 @@
   function clearGuessResult() {
     state.guessResult = null;
     guessLayer.replaceChildren();
-    guessLayer.hidden = true;
+    guessLayer.removeAttribute("hidden");
+    guessLayer.classList.remove("is-visible");
     guessFeedback.hidden = true;
     guessFeedback.classList.remove("is-hit");
     guessFeedback.textContent = "";
@@ -1254,14 +1802,20 @@
     return relativeLuminance(hex) > 0.42 ? "#1d1d1b" : "#ffffff";
   }
 
-  function createCross(x, y, className, color) {
+  function worldToView(wx, wy) {
+    return {
+      x: state.worldX + wx * state.worldScale,
+      y: state.worldY + wy * state.worldScale,
+    };
+  }
+
+  function createCross(x, y, className, color, size = 12) {
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.classList.add(className);
     group.setAttribute("transform", `translate(${x} ${y})`);
 
     const ink = color || "#1d1d1b";
     const halo = ink === "#ffffff" ? "#1d1d1b" : "#ffffff";
-    const size = 4.5;
     const arms = [
       [-size, 0, size, 0],
       [0, -size, 0, size],
@@ -1274,7 +1828,7 @@
       outline.setAttribute("x2", x2);
       outline.setAttribute("y2", y2);
       outline.setAttribute("stroke", halo);
-      outline.setAttribute("stroke-width", "3.2");
+      outline.setAttribute("stroke-width", "4.2");
       group.append(outline);
     });
 
@@ -1285,24 +1839,71 @@
       line.setAttribute("x2", x2);
       line.setAttribute("y2", y2);
       line.setAttribute("stroke", ink);
-      line.setAttribute("stroke-width", "1.6");
+      line.setAttribute("stroke-width", "2.1");
       group.append(line);
     });
 
     return group;
   }
 
+  function createGuessLabel(x, y, text, fill, stroke) {
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.classList.add("guess-label");
+    group.setAttribute("transform", `translate(${x + 14} ${y - 14})`);
+
+    const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    const width = Math.max(64, text.length * 8.4 + 16);
+    box.setAttribute("x", 0);
+    box.setAttribute("y", -14);
+    box.setAttribute("width", width);
+    box.setAttribute("height", 22);
+    box.setAttribute("rx", 11);
+    box.setAttribute("fill", fill);
+    box.setAttribute("stroke", stroke);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", 8);
+    label.setAttribute("y", 2);
+    label.setAttribute("fill", stroke);
+    label.textContent = text;
+
+    group.append(box, label);
+    return group;
+  }
+
   function updateGuessVisuals() {
     if (!state.guessResult || state.tool !== "guess-cm") {
-      guessLayer.hidden = true;
+      guessLayer.removeAttribute("hidden");
+      guessLayer.classList.remove("is-visible");
+      guessLayer.replaceChildren();
       return;
     }
 
     const guess = state.guessResult;
-    const ink = contrastInk(colorBehindWorld(guess.guessX, guess.guessY));
-    guessLayer.hidden = false;
+    const actual = localToWorld(centroid.x, centroid.y);
+    const guessView = worldToView(guess.guessX, guess.guessY);
+    const actualView = worldToView(actual.x, actual.y);
+    const guessInk = contrastInk(colorBehindWorld(guess.guessX, guess.guessY));
+    guessLayer.removeAttribute("hidden");
+    guessLayer.classList.add("is-visible");
     guessLayer.replaceChildren();
-    guessLayer.append(createCross(guess.guessX, guess.guessY, "guess-cross", ink));
+
+    const connector = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    connector.classList.add("guess-connector");
+    connector.setAttribute("x1", guessView.x);
+    connector.setAttribute("y1", guessView.y);
+    connector.setAttribute("x2", actualView.x);
+    connector.setAttribute("y2", actualView.y);
+    guessLayer.append(connector);
+
+    guessLayer.append(createCross(guessView.x, guessView.y, "guess-cross", guessInk));
+    guessLayer.append(
+      createGuessLabel(guessView.x, guessView.y, "odhad", "#ffffff", "#334155")
+    );
+    guessLayer.append(createCross(actualView.x, actualView.y, "cm-cross", "#16a34a", 14));
+    guessLayer.append(
+      createGuessLabel(actualView.x, actualView.y, "těžiště", "#dcfce7", "#166534")
+    );
   }
 
   function updateClearDrawingsButton() {
@@ -1407,6 +2008,13 @@
     if (holeIndex >= 0) {
       return { kind: "hole", index: holeIndex };
     }
+    const handle = handleAnchor();
+    if (
+      handle &&
+      Math.hypot(local.x - handle.x, local.y - handle.y) <= HANDLE_R
+    ) {
+      return { kind: "handle" };
+    }
     if (pointInShape(local.x, local.y)) {
       return { kind: "body" };
     }
@@ -1414,8 +2022,10 @@
   }
 
   function layout() {
-    state.width = window.innerWidth;
-    state.height = window.innerHeight;
+    const host = workspace || scene;
+    const rect = host.getBoundingClientRect();
+    state.width = Math.max(1, rect.width);
+    state.height = Math.max(1, rect.height);
     scene.setAttribute("viewBox", `0 0 ${state.width} ${state.height}`);
 
     state.worldScale =
@@ -1458,6 +2068,7 @@
       state.angle = hangAngleFor(index);
     }
     pinToHook(index);
+    dismissSceneHint();
   }
 
   function unhook() {
@@ -1472,11 +2083,15 @@
     state.dragging = false;
     state.dragMode = null;
     state.cornerIndex = -1;
+    cancelWeightCarry();
     app.classList.remove("is-dragging");
-    hideWeightGhost();
     clearGuessResult();
-    setTool("move");
+    setTool(state.appMode === "lab" && currentShape?.empty ? "draw-shape" : "move");
     placeFreeCenter();
+    if (!currentShape?.empty) {
+      state.hintDismissed = false;
+      syncSceneHint();
+    }
     render();
   }
 
@@ -1505,6 +2120,7 @@
 
     updateGuessVisuals();
     updateGuide();
+    syncDragHandle();
   }
 
   function step(t) {
@@ -1538,10 +2154,20 @@
     const pointer = pointerFromEvent(event);
     const local = worldToLocal(pointer.x, pointer.y);
 
+    if (state.tool === "draw-shape") {
+      if (state.pendingCustom) return;
+      event.preventDefault();
+      capturePointer(scene, event);
+      startShapeDraft(pointer);
+      return;
+    }
+
+    if (currentShape?.empty) return;
+
     if (state.tool === "pencil") {
       if (!pointOnShapeBody(local.x, local.y)) return;
       event.preventDefault();
-      scene.setPointerCapture(event.pointerId);
+      capturePointer(scene, event);
       startStroke(local);
       return;
     }
@@ -1552,9 +2178,27 @@
       return;
     }
 
+    if (state.weightCarry) {
+      event.preventDefault();
+      const carryHit = hitTest(local);
+      if (carryHit?.kind === "hole" && !holeHasWeight(carryHit.index)) {
+        addWeight(carryHit.index);
+        cancelWeightCarry();
+        return;
+      }
+      if (carryHit?.kind === "hole" && holeHasWeight(carryHit.index)) {
+        cancelWeightCarry();
+        capturePointer(scene, event);
+        beginWeightDrag(event, carryHit.index);
+        return;
+      }
+      cancelWeightCarry();
+      return;
+    }
+
     const hit = hitTest(local);
     if (hit?.kind === "hole" && holeHasWeight(hit.index)) {
-      scene.setPointerCapture(event.pointerId);
+      capturePointer(scene, event);
       beginWeightDrag(event, hit.index);
       return;
     }
@@ -1562,7 +2206,7 @@
     if (!hit) return;
 
     event.preventDefault();
-    scene.setPointerCapture(event.pointerId);
+    capturePointer(scene, event);
     state.dragging = true;
     state.grabLocal = local;
     state.omega = 0;
@@ -1574,6 +2218,13 @@
       return;
     }
 
+    if (hit.kind === "hole") {
+      state.dragMode = "hole-press";
+      state.holeClickIndex = hit.index;
+      state.pointerStart = pointer;
+      return;
+    }
+
     if (state.hungIndex >= 0) {
       unhook();
     }
@@ -1582,6 +2233,11 @@
 
   function onPointerMove(event) {
     const pointer = pointerFromEvent(event);
+
+    if (state.drawingShape) {
+      continueShapeDraft(pointer);
+      return;
+    }
 
     if (state.drawing) {
       const local = worldToLocal(pointer.x, pointer.y);
@@ -1596,6 +2252,15 @@
     if (state.dragMode === "weight") {
       updateWeightGhost(event);
       return;
+    }
+
+    if (state.dragMode === "hole-press") {
+      const dx = pointer.x - state.pointerStart.x;
+      const dy = pointer.y - state.pointerStart.y;
+      if (Math.hypot(dx, dy) <= HOLE_CLICK_MOVE) return;
+      if (state.hungIndex >= 0) unhook();
+      state.dragMode = "move";
+      state.holeClickIndex = -1;
     }
 
     if (state.dragMode === "reshape" && state.cornerIndex >= 0) {
@@ -1627,6 +2292,14 @@
   }
 
   function onPointerUp(event) {
+    if (state.drawingShape) {
+      if (scene.hasPointerCapture(event.pointerId)) {
+        scene.releasePointerCapture(event.pointerId);
+      }
+      finishShapeDraft();
+      return;
+    }
+
     if (state.drawing) {
       if (scene.hasPointerCapture(event.pointerId)) {
         scene.releasePointerCapture(event.pointerId);
@@ -1645,7 +2318,18 @@
       }
       state.dragging = false;
       app.classList.remove("is-dragging");
-      finishWeightDrag();
+      finishWeightDrag(event);
+      return;
+    }
+
+    if (state.dragMode === "hole-press") {
+      const index = state.holeClickIndex;
+      state.dragging = false;
+      state.dragMode = null;
+      state.holeClickIndex = -1;
+      state.pointerStart = null;
+      app.classList.remove("is-dragging");
+      if (index >= 0) hangFrom(index);
       return;
     }
 
@@ -1653,6 +2337,8 @@
     state.dragging = false;
     state.dragMode = null;
     state.cornerIndex = -1;
+    state.holeClickIndex = -1;
+    state.pointerStart = null;
     app.classList.remove("is-dragging");
 
     if (wasReshape || state.hungIndex >= 0) return;
@@ -1677,13 +2363,31 @@
   });
 
   weightSupply.addEventListener("pointerdown", (event) => {
-    if (state.tool === "pencil" || state.tool === "guess-cm") return;
-    weightSupply.setPointerCapture(event.pointerId);
+    if (state.tool === "pencil" || state.tool === "guess-cm" || state.tool === "draw-shape") return;
+    if (currentShape?.empty) return;
+    if (state.weightCarry) {
+      event.preventDefault();
+      cancelWeightCarry();
+      return;
+    }
+    capturePointer(weightSupply, event);
     beginWeightDrag(event, "supply");
   });
   weightSupply.addEventListener("pointermove", onPointerMove);
   weightSupply.addEventListener("pointerup", onPointerUp);
   weightSupply.addEventListener("pointercancel", onPointerUp);
+
+  window.addEventListener("pointermove", (event) => {
+    if (state.weightCarry || (state.dragging && state.dragMode === "weight")) {
+      updateWeightGhost(event);
+    }
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && (state.weightCarry || state.dragMode === "weight")) {
+      cancelWeightCarry();
+    }
+  });
 
   pencilBtn.addEventListener("click", () => {
     if (state.tool === "pencil") {
@@ -1699,10 +2403,43 @@
     setGuideOn(!state.guideOn);
   });
 
+  resetBtn?.addEventListener("click", () => {
+    resetToDefault();
+  });
+
+  drawShapeBtn?.addEventListener("click", () => {
+    if (state.appMode !== "lab") return;
+    setTool("draw-shape");
+  });
+
+  newShapeBtn?.addEventListener("click", () => {
+    if (state.appMode !== "lab") return;
+    startNewCustomShape();
+  });
+
+  drawConfirmOk?.addEventListener("click", commitPendingCustom);
+  drawConfirmCancel?.addEventListener("click", () => {
+    clearDraft();
+    state.hintDismissed = false;
+    syncSceneHint();
+  });
+
+  builderModeSwitch?.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-builder-mode]");
+    if (!btn) return;
+    setAppMode(btn.dataset.builderMode);
+  });
+
   window.addEventListener("resize", layout);
+  if (typeof ResizeObserver !== "undefined" && workspace) {
+    new ResizeObserver(() => layout()).observe(workspace);
+  }
 
   buildShapePicker();
+  rebuildDragHandle();
   applyShape("utvar");
+  syncBuilderModeSwitch();
+  syncSceneHint();
   layout();
   requestAnimationFrame(step);
 })();

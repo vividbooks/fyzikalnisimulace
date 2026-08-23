@@ -89,6 +89,8 @@ const SILOMER_COIL_PATH_INDICES = [
 ];
 const SILOMER_HANDLE_PATH_INDEX = 11;
 const SILOMER_ROD_PATH_INDEX = 3;
+/** Čísla stupnice 0–20 N — necháváme jen čárky */
+const SILOMER_SCALE_LABEL_PATH_START = 47;
 
 /** Hranol 20,3×5,2×9,4 cm = 1000 cm³; malá ocel = ¼ objemu, malé dřevo = ½ objemu */
 const BEAM_DIM_LONG_CM = 20.3;
@@ -144,12 +146,53 @@ const WEIGHT_ARROW_FIGMA_REF_LENGTH = WEIGHT_ARROW_SHAFT_BOTTOM;
 const BEAM_WEIGHT_ARROW_REF_N = 3;
 const WEIGHT_ARROW_BASE_LENGTH = WEIGHT_ARROW_FIGMA_REF_LENGTH;
 const WEIGHT_ARROW_LABEL_PX = 34;
+const FORCE_PILL_MIN_W = 72;
+const FORCE_PILL_CHAR_W = 0.62;
+const FORCE_PILL_HEIGHT = WEIGHT_ARROW_LABEL_PX * 1.45;
 const WEIGHT_ARROW_HEAD_TIP_Y = 30.646;
 const PAD_FRONT_BOTTOM = { x1: 211.25, y1: 226.25, x2: 891.25, y2: 126.25 };
 const EDGE_SCENE_OFFSET_Y = -80.271;
 const WEIGHT_ARROW_LABEL_FONT =
   "Fenomen Sans, ui-sans-serif, system-ui, sans-serif";
 const WEIGHT_ARROW_COLOR = "#FF5F5F";
+
+function forcePillSize(label) {
+  const width = Math.max(
+    FORCE_PILL_MIN_W,
+    String(label).length * WEIGHT_ARROW_LABEL_PX * FORCE_PILL_CHAR_W
+  );
+  return { width, height: FORCE_PILL_HEIGHT, rx: FORCE_PILL_HEIGHT / 2 };
+}
+
+function placeForcePillRect(pill, cx, cy, label) {
+  const { width, height, rx } = forcePillSize(label);
+  pill.setAttribute("x", String(cx - width / 2));
+  pill.setAttribute("y", String(cy - height / 2));
+  pill.setAttribute("width", String(width));
+  pill.setAttribute("height", String(height));
+  pill.setAttribute("rx", String(rx));
+  pill.setAttribute("ry", String(rx));
+}
+
+function ensureForceReadoutPill(readoutEl) {
+  const wrap = readoutEl?.parentElement;
+  if (!wrap) return null;
+  wrap.querySelector("path")?.remove();
+  let pill = wrap.querySelector(".weight-display__label-pill");
+  if (!pill) {
+    pill = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    pill.setAttribute("class", "weight-display__label-pill");
+    wrap.insertBefore(pill, readoutEl);
+  }
+  readoutEl.removeAttribute("transform");
+  readoutEl.setAttribute("font-family", WEIGHT_ARROW_LABEL_FONT);
+  readoutEl.setAttribute("font-weight", "600");
+  readoutEl.setAttribute("font-size", String(WEIGHT_ARROW_LABEL_PX));
+  readoutEl.setAttribute("fill", "#171923");
+  readoutEl.setAttribute("text-anchor", "middle");
+  readoutEl.setAttribute("dominant-baseline", "middle");
+  return pill;
+}
 /** Malý dřevěný hranol — pevná geometrie z Figmy (bez scale transform) */
 const WOOD_SMALL_FLAT_BEAM_WEIGHT_ANCHOR = { x: 534.5, y: 120.5 };
 const WOOD_SMALL_BEAM_FLAT_BODY =
@@ -175,7 +218,7 @@ const SURFACE_VARIANTS = {
       "url(#paint2_linear_2095_869)",
       "url(#paint3_linear_2095_869)",
     ],
-    padTexture: "url(#texMetal)",
+    padTexture: "none",
     padStroke: "#2F363E",
   },
   leather: {
@@ -615,16 +658,9 @@ function renderBeamWeightArrow(group, anchor, weightN, heightUnits, sceneOffsetY
   const label = formatWeightLabel(weightN);
   const x = WEIGHT_ARROW_LABEL_X + 8;
   const y = WEIGHT_ARROW_LABEL_Y + extension;
-  const pillW = Math.max(72, label.length * WEIGHT_ARROW_LABEL_PX * 0.62);
-  const pillH = WEIGHT_ARROW_LABEL_PX * 1.45;
   const pill = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   pill.setAttribute("class", "weight-display__label-pill");
-  pill.setAttribute("x", String(x - pillW / 2));
-  pill.setAttribute("y", String(y - pillH / 2));
-  pill.setAttribute("width", String(pillW));
-  pill.setAttribute("height", String(pillH));
-  pill.setAttribute("rx", String(pillH / 2));
-  pill.setAttribute("ry", String(pillH / 2));
+  placeForcePillRect(pill, x, y, label);
   group.appendChild(pill);
 
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -1119,10 +1155,18 @@ function applySilomerOffset(silomerEl, offset) {
 function applyForceReadout(forceLabel, brokenMessage) {
   for (const readoutEl of [forceReadoutEl, forceReadoutEdgeEl]) {
     if (!readoutEl) continue;
-    readoutEl.textContent = brokenMessage ? "" : forceLabel;
-    readoutEl.setAttribute("font-size", "14");
-    readoutEl.setAttribute("fill", "#171923");
+    const label = brokenMessage ? "" : forceLabel;
+    readoutEl.textContent = label;
     readoutEl.setAttribute("opacity", brokenMessage ? "0" : "1");
+    const pill = ensureForceReadoutPill(readoutEl);
+    if (pill) {
+      pill.setAttribute("opacity", brokenMessage ? "0" : "1");
+      const cx = Number(readoutEl.getAttribute("x"));
+      const cy = Number(readoutEl.getAttribute("y"));
+      if (Number.isFinite(cx) && Number.isFinite(cy)) {
+        placeForcePillRect(pill, cx, cy, label || "0 N");
+      }
+    }
   }
 
   if (silomerBrokenBannerEl) {
@@ -1179,7 +1223,10 @@ function applySurface() {
       path.setAttribute("stroke", surface.padStroke);
     });
     for (const path of padEl.querySelectorAll(".pad-texture")) {
-      path.setAttribute("fill", surface.padTexture);
+      const texture = surface.padTexture;
+      const showTexture = texture && texture !== "none";
+      path.setAttribute("fill", showTexture ? texture : "none");
+      path.setAttribute("visibility", showTexture ? "visible" : "hidden");
     }
   }
 
@@ -1795,7 +1842,7 @@ function refreshMuEditorIfOpen() {
 }
 
 async function init() {
-  const assetVersion = "20260823-materials-pills";
+  const assetVersion = "20260823-same-pills";
   const [sceneResponse, morphResponse, weightResponse] = await Promise.all([
     fetch(`assets/scene.svg?v=${assetVersion}`, { cache: "no-store" }),
     fetch(`assets/spring-morph.json?v=${assetVersion}`, { cache: "no-store" }),
@@ -1841,6 +1888,12 @@ async function init() {
   morphPathEdgeEls = morphData.paths.map((_, index) =>
     silomerEdgeEl.querySelector(`#springPathEdge${index}`)
   );
+  for (let index = SILOMER_SCALE_LABEL_PATH_START; index < morphPathEls.length; index++) {
+    morphPathEls[index]?.setAttribute("visibility", "hidden");
+    morphPathEdgeEls[index]?.setAttribute("visibility", "hidden");
+    silomerBrokenFlatEl?.querySelector(`#brokenPath${index}`)?.setAttribute("visibility", "hidden");
+    silomerBrokenEdgeEl?.querySelector(`#brokenPathEdge${index}`)?.setAttribute("visibility", "hidden");
+  }
   silomerHintFlatEl = createSilomerHandleHint(silomerFlatEl);
   silomerHintEdgeEl = createSilomerHandleHint(silomerEdgeEl);
 

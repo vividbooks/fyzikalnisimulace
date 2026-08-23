@@ -26,6 +26,7 @@
   const stockSlotWeights = document.getElementById("stock-slot-weights");
   const stockSlotWinch = document.getElementById("stock-slot-winch");
   const winchOverloadMsg = document.getElementById("winch-overload-msg");
+  const hintEl = document.getElementById("hintEl");
   const stockTemplateFixed = document.getElementById("stock-template-fixed");
   const stockTemplateFree = document.getElementById("stock-template-free");
   const modeMenu = document.getElementById("mode-menu");
@@ -39,7 +40,9 @@
   const presetCards = document.getElementById("preset-cards");
   const btnBackMenu = document.getElementById("btn-back-menu");
   const panelModeTitle = document.getElementById("panel-mode-title");
+  const builderModeSwitch = document.getElementById("builder-mode-switch");
   const galleryPresetList = document.getElementById("gallery-preset-list");
+  const btnEnterQuiz = document.getElementById("btn-enter-quiz");
   const btnExportScene = document.getElementById("tool-export-scene");
   const exportSceneRow = document.getElementById("export-scene-row");
   const quizStatus = document.getElementById("quiz-status");
@@ -148,7 +151,7 @@
     return `${WEIGHT_SVG}<span class="weight-label" aria-hidden="true">${WEIGHT_LABEL_TEXT}</span>`;
   }
 
-  const WINCH_SVG = `<svg width="134" height="132" viewBox="0 0 134 132" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="48.5" width="133" height="83" rx="12" ry="12" fill="#D9D9D9" stroke="black"/><circle cx="67" cy="50" r="50" fill="black"/><g transform="translate(66.7016 49.7016)"><g class="winch-drum"><g transform="translate(-66.7016 -49.7016)"><path d="M66.6989 80.4041C83.6555 80.4041 97.4015 66.6581 97.4015 49.7015C97.4015 32.745 83.6555 18.999 66.6989 18.999C49.7423 18.999 35.9963 32.745 35.9963 49.7015C35.9963 66.6581 49.7423 80.4041 66.6989 80.4041Z" fill="white" stroke="#B1B1B1" stroke-width="7.69075" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.7016 85.4031C86.419 85.4031 102.403 69.419 102.403 49.7016C102.403 29.9841 86.419 14 66.7016 14C46.9841 14 31 29.9841 31 49.7016C31 69.419 46.9841 85.4031 66.7016 85.4031Z" stroke="#1D1D1B" stroke-width="3.29604" stroke-miterlimit="10" stroke-linecap="round"/><path d="M99.2331 49.7016C99.2331 67.665 84.6701 82.2335 66.7012 82.2335C48.7323 82.2335 34.1693 67.6705 34.1693 49.7016C34.1693 31.7327 48.7323 17.1697 66.7012 17.1697" stroke="white" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M39.9513 49.7234H93.3746" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M66.6575 23.0091V76.4324" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M47.7767 30.8317L85.5548 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M85.5548 30.8317L47.7767 68.6098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M41.8699 39.7641L91.4423 59.6777" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M76.614 24.9374L56.7005 74.5098" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M56.1691 25.1571L77.1429 74.29" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/><path d="M91.2219 39.2367L42.089 60.2105" stroke="#1D1D1B" stroke-width="0.54934" stroke-miterlimit="10" stroke-linecap="round"/></g></g></g><circle class="winch-light" cx="67" cy="50" r="43" stroke="white" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 14" fill="none"/><circle class="winch-led" cx="16" cy="118" r="6.5" fill="#5a5a5a" stroke="#1d1d1b" stroke-width="1.4"/><text class="winch-force-text" x="118" y="119.5" text-anchor="end" dominant-baseline="central" fill="#4A43E8" font-size="15" font-weight="700" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"></text></svg>`;
+  const WINCH_SVG = `<svg width="134" height="132" viewBox="0 0 134 132" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="48.5" width="133" height="83" rx="12" ry="12" fill="#D9D9D9"/><circle class="winch-hub" cx="67" cy="50" r="41"/><circle cx="67" cy="50" r="46" fill="none" stroke="#1D1D1B" stroke-width="10"/><g transform="translate(67 50)"><g class="winch-drum"><circle class="winch-light" cx="0" cy="0" r="46" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 14"/></g></g><circle class="winch-led" cx="16" cy="118" r="6.5" fill="#5a5a5a" stroke="#1d1d1b" stroke-width="1.4"/></svg>`;
 
   const WINCH = {
     vbW: 134,
@@ -175,6 +178,12 @@
   const ROPE_PX_PER_CM = 10;
   /** Otáčení bubnu při navíjení (stupně / s). */
   const WINCH_SPIN_DEG_PER_S = 130;
+  /** Bobánky hodnot — o 30 % menší než u tření. */
+  const READOUT_PILL_FONT = 24;
+  const READOUT_PILL_MIN_W = 50;
+  const READOUT_PILL_CHAR_W = 0.62;
+  const READOUT_PILL_HEIGHT = READOUT_PILL_FONT * 1.45;
+  const READOUT_PILL_GAP = 10;
   /** Hmotnost modré kladky — zanedbatelná. */
   const PULLEY_MASS = 0;
   /**
@@ -223,7 +232,7 @@
   const QUIZ_TOLERANCE_N = 2;
   const QUIZ_MAX_WEIGHTS = 4;
   /** Nejdál od působiště, kam se políčko s otázkou posadí (px). */
-  const QUIZ_SLOT_ALONG_MAX = 58;
+  const QUIZ_SLOT_ALONG_MAX = 90;
   const QUIZ_CONFETTI_COLORS = [
     "#059669",
     "#10b981",
@@ -248,6 +257,9 @@
     /** Text v klávesnici (české desetinné). */
     draft: "",
   };
+  /** Už umístěná kvízová políčka — ať se při kreslení nepřekrývají. */
+  /** @type {{ x: number, y: number, w: number, h: number }[]} */
+  let quizSlotBoxes = [];
   /** @type {string | null} */
   let selectedPulleyId = null;
   const PULLEY_CLICK_MOVE_PX = 6;
@@ -1472,15 +1484,17 @@
       btnFreehand.setAttribute("aria-pressed", String(freehandOn));
     }
     if (btnRun) {
-      btnRun.textContent = runOn ? "Editor" : "Spustit";
+      const runLabel = btnRun.querySelector(".action-btn__label");
+      if (runLabel) runLabel.textContent = runOn ? "Zastavit" : "Spustit";
+      else btnRun.textContent = runOn ? "Zastavit" : "Spustit";
       btnRun.classList.toggle("is-active", runOn);
       btnRun.classList.toggle("is-run", runOn);
       btnRun.setAttribute("aria-pressed", String(runOn));
       btnRun.setAttribute(
         "aria-label",
-        runOn ? "Zpět do editoru" : "Spustit simulaci"
+        runOn ? "Zastavit simulaci" : "Spustit simulaci"
       );
-      btnRun.title = runOn ? "Editor" : "Spustit";
+      btnRun.removeAttribute("title");
     }
     if (btnErase) {
       btnErase.classList.toggle("is-active", next === "erase");
@@ -1720,7 +1734,15 @@
       "aria-label",
       kind === "fixed" ? "Pevná kladka" : "Volná kladka"
     );
-    const pulley = { el, kind, id, vel: { x: 0, y: 0 }, relativeScale: 1 };
+    const pulley = {
+      el,
+      kind,
+      id,
+      vel: { x: 0, y: 0 },
+      relativeScale: 1,
+      spinAngle: 0,
+      spinPrev: new Map(),
+    };
     pulleys.push(pulley);
     stage.appendChild(el);
     applyPulleyCssScale(pulley, { adjustPosition: false });
@@ -4306,6 +4328,7 @@
       });
     }
     updateForceArrows();
+    tickPulleySpin();
 
     if (t >= 1) {
       settling = false;
@@ -5076,28 +5099,25 @@
 
     const newtons = simForceToNewtons(scaled.mag);
     if (newtons >= 0.5) {
-      let along = scaled.len < 36 ? 1.08 : 0.62;
+      let along = scaled.len < 36 ? 1.08 : 0.55;
       // Dlouhá šipka může vyjít z plochy — políčko kvízu drž u působiště
       if (quiz.active) along = Math.min(along, QUIZ_SLOT_ALONG_MAX / scaled.len);
-      const px = origin.x + scaled.x * along;
-      const py = origin.y + scaled.y * along;
-      const side = scaled.len < 36 ? 0 : 13;
-      const lx = px - Math.sin(ang) * side;
-      const ly = py + Math.cos(ang) * side;
+      const text = `${Math.round(newtons)} N`;
       if (quiz.active) {
-        g.appendChild(buildQuizSlot(lx, ly, newtons));
+        const peekKey = `slot-${quiz.slotSeq}`;
+        const answer = quiz.answers.get(peekKey);
+        const shown = answer ? `${formatQuizNumber(answer.value)} N` : "?";
+        const t = Math.min(along, 0.82);
+        const anchor = {
+          x: origin.x + scaled.x * t,
+          y: origin.y + scaled.y * t,
+        };
+        const desired = placeForceReadout(origin, scaled, ang, along, shown, 18);
+        const at = resolveQuizSlotPoint(desired, shown, anchor, ang);
+        g.appendChild(buildQuizSlot(at.x, at.y, newtons, anchor));
       } else {
-        const label = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "text"
-        );
-        label.classList.add("force-arrow-label");
-        label.setAttribute("x", lx.toFixed(1));
-        label.setAttribute("y", ly.toFixed(1));
-        label.setAttribute("text-anchor", "middle");
-        label.setAttribute("dominant-baseline", "central");
-        label.textContent = `${Math.round(newtons)} N`;
-        g.appendChild(label);
+        const at = placeForceReadout(origin, scaled, ang, along, text);
+        appendSvgReadout(g, at.x, at.y, text);
       }
     }
 
@@ -5160,18 +5180,87 @@
     return Math.round(newtons);
   }
 
+  function rectEdgeToward(cx, cy, width, height, tx, ty) {
+    const dx = tx - cx;
+    const dy = ty - cy;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    const hw = Math.max(2, width / 2 - 2);
+    const hh = Math.max(2, height / 2 - 2);
+    const sx = dx === 0 ? Infinity : hw / Math.abs(dx);
+    const sy = dy === 0 ? Infinity : hh / Math.abs(dy);
+    const t = Math.min(sx, sy);
+    return { x: cx + dx * t, y: cy + dy * t };
+  }
+
+  function quizAvoidBoxes() {
+    const boxes = quizSlotBoxes.slice();
+    const stageRect = stage.getBoundingClientRect();
+    stage
+      .querySelectorAll(
+        ".weight:not(.is-stock-template):not(.is-docked) .weight-label"
+      )
+      .forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) return;
+        boxes.push({
+          x: r.left - stageRect.left + r.width / 2,
+          y: r.top - stageRect.top + r.height / 2,
+          w: r.width,
+          h: r.height,
+        });
+      });
+    return boxes;
+  }
+
+  function quizBoxOverlaps(point, width, height, pad = 12) {
+    return quizAvoidBoxes().some(
+      (box) =>
+        Math.abs(point.x - box.x) * 2 < width + box.w + pad &&
+        Math.abs(point.y - box.y) * 2 < height + box.h + pad
+    );
+  }
+
+  function resolveQuizSlotPoint(desired, label, anchor, ang) {
+    const { width, height } = readoutPillSize(label);
+    const mirrored = {
+      x: 2 * anchor.x - desired.x,
+      y: 2 * anchor.y - desired.y,
+    };
+    const outX = desired.x - anchor.x;
+    const outY = desired.y - anchor.y;
+    const alongX = Math.cos(ang);
+    const alongY = Math.sin(ang);
+    const attempts = [];
+    for (const base of [desired, mirrored]) {
+      const fromAnchorX = base.x - anchor.x;
+      const fromAnchorY = base.y - anchor.y;
+      for (const extra of [0, 0.4, 0.85, 1.3]) {
+        for (const shift of [0, 38, -38, 76, -76, 114, -114]) {
+          attempts.push({
+            x: base.x + fromAnchorX * extra + alongX * shift,
+            y: base.y + fromAnchorY * extra + alongY * shift,
+          });
+        }
+      }
+    }
+    for (const point of attempts) {
+      const at = clampReadoutPoint(point.x, point.y, width, height);
+      if (!quizBoxOverlaps(at, width, height)) return at;
+    }
+    return clampReadoutPoint(desired.x + outX, desired.y + outY, width, height);
+  }
+
   /** Políčko u šipky — klíč drží pořadí vykreslení, aby odpovědi přežily překreslení. */
-  function buildQuizSlot(rawX, rawY, newtons) {
+  function buildQuizSlot(rawX, rawY, newtons, anchor) {
     const key = `slot-${quiz.slotSeq}`;
     const expected = niceQuizValue(newtons);
     quiz.slotSeq += 1;
     const answer = quiz.answers.get(key) || null;
     const shown = answer ? `${formatQuizNumber(answer.value)} N` : "?";
-    const w = Math.max(26, 13 + shown.length * 7.4);
-    const h = 21;
-    const bounds = stageSize();
-    const x = clamp(rawX, w / 2 + 3, Math.max(w / 2 + 3, bounds.width - w / 2 - 3));
-    const y = clamp(rawY, h / 2 + 3, Math.max(h / 2 + 3, bounds.height - h / 2 - 3));
+    const { width: w, height: h, rx } = readoutPillSize(shown);
+    const at = clampReadoutPoint(rawX, rawY, w, h);
+    const x = at.x;
+    const y = at.y;
 
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.classList.add("force-quiz-slot");
@@ -5183,13 +5272,38 @@
     g.dataset.quizX = x.toFixed(1);
     g.dataset.quizY = y.toFixed(1);
 
+    if (anchor) {
+      const edge = rectEdgeToward(x, y, w, h, anchor.x, anchor.y);
+      const leader = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line"
+      );
+      leader.classList.add("force-quiz-slot__leader");
+      leader.setAttribute("x1", anchor.x.toFixed(1));
+      leader.setAttribute("y1", anchor.y.toFixed(1));
+      leader.setAttribute("x2", edge.x.toFixed(1));
+      leader.setAttribute("y2", edge.y.toFixed(1));
+      g.appendChild(leader);
+
+      const pin = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle"
+      );
+      pin.classList.add("force-quiz-slot__pin");
+      pin.setAttribute("cx", anchor.x.toFixed(1));
+      pin.setAttribute("cy", anchor.y.toFixed(1));
+      pin.setAttribute("r", "5.5");
+      g.appendChild(pin);
+    }
+
     const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     box.classList.add("force-quiz-slot__box");
     box.setAttribute("x", (x - w / 2).toFixed(1));
     box.setAttribute("y", (y - h / 2).toFixed(1));
     box.setAttribute("width", w.toFixed(1));
-    box.setAttribute("height", String(h));
-    box.setAttribute("rx", "7");
+    box.setAttribute("height", h.toFixed(1));
+    box.setAttribute("rx", rx.toFixed(1));
+    box.setAttribute("ry", rx.toFixed(1));
     g.appendChild(box);
 
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -5200,6 +5314,8 @@
     text.setAttribute("dominant-baseline", "central");
     text.textContent = shown;
     g.appendChild(text);
+
+    quizSlotBoxes.push({ x, y, w, h });
 
     g.addEventListener("pointerdown", (event) => {
       event.preventDefault();
@@ -5460,6 +5576,76 @@
     return (f / WEIGHT_FORCE) * WEIGHT_FORCE_N;
   }
 
+  function readoutPillSize(label) {
+    const width = Math.max(
+      READOUT_PILL_MIN_W,
+      String(label).length * READOUT_PILL_FONT * READOUT_PILL_CHAR_W
+    );
+    return {
+      width,
+      height: READOUT_PILL_HEIGHT,
+      rx: READOUT_PILL_HEIGHT / 2,
+    };
+  }
+
+  function placeForceReadout(origin, scaled, ang, along, label, extraGap = 0) {
+    const { width, height } = readoutPillSize(label);
+    const px = origin.x + scaled.x * along;
+    const py = origin.y + scaled.y * along;
+    const extent =
+      (Math.abs(Math.sin(ang)) * width + Math.abs(Math.cos(ang)) * height) / 2;
+    const side = extent + READOUT_PILL_GAP + extraGap;
+    const bounds = stageSize();
+    const candidates = [1, -1].map((sign) => ({
+      x: px - Math.sin(ang) * side * sign,
+      y: py + Math.cos(ang) * side * sign,
+    }));
+    const fits = (point) =>
+      point.x - width / 2 >= 4 &&
+      point.x + width / 2 <= bounds.width - 4 &&
+      point.y - height / 2 >= 4 &&
+      point.y + height / 2 <= bounds.height - 4;
+    return candidates.find(fits) || candidates[0];
+  }
+
+  function clampReadoutPoint(x, y, width, height) {
+    const bounds = stageSize();
+    const padX = width / 2 + 4;
+    const padY = height / 2 + 4;
+    return {
+      x: clamp(x, padX, Math.max(padX, bounds.width - padX)),
+      y: clamp(y, padY, Math.max(padY, bounds.height - padY)),
+    };
+  }
+
+  function appendSvgReadout(parent, x, y, text) {
+    const { width, height, rx } = readoutPillSize(text);
+    const at = clampReadoutPoint(x, y, width, height);
+    const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    wrap.classList.add("readout-pill");
+
+    const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    box.classList.add("readout-pill__box");
+    box.setAttribute("x", (at.x - width / 2).toFixed(1));
+    box.setAttribute("y", (at.y - height / 2).toFixed(1));
+    box.setAttribute("width", width.toFixed(1));
+    box.setAttribute("height", height.toFixed(1));
+    box.setAttribute("rx", rx.toFixed(1));
+    box.setAttribute("ry", rx.toFixed(1));
+    wrap.appendChild(box);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.classList.add("readout-pill__text", "force-arrow-label");
+    label.setAttribute("x", at.x.toFixed(1));
+    label.setAttribute("y", at.y.toFixed(1));
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("dominant-baseline", "central");
+    label.textContent = text;
+    wrap.appendChild(label);
+    parent.appendChild(wrap);
+    return wrap;
+  }
+
   function resetWinchWoundLength(winch) {
     if (winch) winch.woundLengthPx = 0;
   }
@@ -5632,7 +5818,7 @@
       });
     }
 
-    const label = appendMeasureBox(g, "weight-lift-dim-label", {
+    const label = appendMeasureBox(g, "weight-lift-dim-label readout-pill", {
       left: `${labelX}px`,
       top: `${labelY}px`,
     });
@@ -5642,25 +5828,14 @@
   }
 
   function ensureWinchForceLabel(winch) {
-    const svg = winch.el.querySelector("svg");
-    let label = winch.el.querySelector(".winch-force-text");
-    if (!label && svg) {
-      label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      label.classList.add("winch-force-text");
-      svg.appendChild(label);
+    winch.el.querySelector("svg .winch-force-text")?.remove();
+    let label = winch.el.querySelector(":scope > .winch-force-text");
+    if (!label) {
+      label = document.createElement("div");
+      label.className = "winch-force-text readout-pill";
+      label.setAttribute("aria-hidden", "true");
+      winch.el.appendChild(label);
     }
-    if (!label) return null;
-    label.setAttribute("x", "118");
-    label.setAttribute("y", "119.5");
-    label.setAttribute("text-anchor", "end");
-    label.setAttribute("dominant-baseline", "central");
-    label.setAttribute("fill", "#4A43E8");
-    label.setAttribute("font-size", "15");
-    label.setAttribute("font-weight", "700");
-    label.setAttribute(
-      "font-family",
-      "ui-sans-serif, system-ui, -apple-system, sans-serif"
-    );
     return label;
   }
 
@@ -5721,7 +5896,7 @@
       }
       if (!label) {
         label = document.createElement("div");
-        label.className = "winch-rope-length";
+        label.className = "winch-rope-length readout-pill";
         label.setAttribute("aria-hidden", "true");
         winch.el.appendChild(label);
       }
@@ -5732,6 +5907,7 @@
   function updateForceArrows() {
     syncForceOverlay();
     quiz.slotSeq = 0;
+    quizSlotBoxes = [];
     const system = buildRopeSystem();
     updateWinchForceLabels(system);
     updateLengthOverlays();
@@ -5768,19 +5944,32 @@
    * Součet sil na těleso pro šipku výslednice. Při prvním lanu se přidá tíha
    * a nakreslí její šipka, tahy dalších lan se přičtou.
    */
-  function bodyNetEntry(netByBody, obj, origin, gy) {
+  function weightGravityOrigin(weight) {
+    const left = parseFloat(weight.el.style.left) || 0;
+    const w = weight.el.offsetWidth || 70;
+    const hook = getWeightHookWorld(weight);
+    return { x: left + w + 22, y: hook.y };
+  }
+
+  function bodyNetEntry(netByBody, obj, origin, gy, gravityOrigin) {
     let entry = netByBody?.get(obj);
     if (!entry) {
       entry = { origin, fx: 0, fy: gy };
       netByBody?.set(obj, entry);
-      drawForceArrow(origin, 0, gy, "gravity");
+      drawForceArrow(gravityOrigin || origin, 0, gy, "gravity");
     }
     return entry;
   }
 
   function drawWeightForces(term, T, netByBody) {
     const origin = getWeightHookWorld(term.obj);
-    const net = bodyNetEntry(netByBody, term.obj, origin, term.mass * GRAVITY);
+    const net = bodyNetEntry(
+      netByBody,
+      term.obj,
+      origin,
+      term.mass * GRAVITY,
+      weightGravityOrigin(term.obj)
+    );
     if (T <= 1e-6) return;
     const tx = T * term.u.x;
     const ty = T * term.u.y;
@@ -6115,6 +6304,113 @@
           (winch.woundLengthPx || 0) + (prevLen - rope.sim.restLength);
       }
     }
+  }
+
+  function ropeWoundAt(rope, which) {
+    const winch = winchOnRopeEnd(rope, which);
+    return winch ? winch.woundLengthPx || 0 : 0;
+  }
+
+  function freeLengthFromStartToWrap(items, pts, wrapIndex) {
+    let len = 0;
+    let prevIdx = 0;
+    for (let i = 0; i <= wrapIndex; i += 1) {
+      const enterIdx = items[i].enterIdx;
+      if (enterIdx > prevIdx && enterIdx < pts.length) {
+        len += dist(pts[prevIdx], pts[enterIdx]);
+      }
+      prevIdx = enterIdx + 1;
+    }
+    return len;
+  }
+
+  function freeLengthFromWrapToEnd(items, pts, wrapIndex) {
+    let len = 0;
+    let prevIdx = items[wrapIndex].enterIdx + 1;
+    for (let i = wrapIndex + 1; i < items.length; i += 1) {
+      const enterIdx = items[i].enterIdx;
+      if (enterIdx > prevIdx && enterIdx < pts.length) {
+        len += dist(pts[prevIdx], pts[enterIdx]);
+      }
+      prevIdx = enterIdx + 1;
+    }
+    if (prevIdx < pts.length) {
+      len += dist(pts[prevIdx], pts[pts.length - 1]);
+    }
+    return len;
+  }
+
+  function applyPulleySpinVisual(pulley) {
+    const group = pulley.el.querySelector(".pulley-spin");
+    if (!group) return;
+    const meta = WHEEL[pulley.kind];
+    if (!meta) return;
+    const angle = ((pulley.spinAngle || 0) % 360).toFixed(2);
+    group.setAttribute("transform", `rotate(${angle} ${meta.cx} ${meta.cy})`);
+    group.dataset.spin = angle;
+  }
+
+  function resetPulleySpin() {
+    for (const pulley of pulleys) {
+      pulley.spinAngle = 0;
+      if (pulley.spinPrev) pulley.spinPrev.clear();
+      else pulley.spinPrev = new Map();
+      applyPulleySpinVisual(pulley);
+    }
+  }
+
+  /**
+   * Bílá značka na kole se točí podle toho, kolik lana přes kladku přejede.
+   * Bere volnou délku i navinutí z obou konců; když naviják táhne a tok
+   * lana vyjde nula, použije se rychlost navíjení.
+   */
+  function tickPulleySpin(dt = 0) {
+    for (const rope of ropes) {
+      const sim = rope.sim;
+      if (!sim?.model?.wraps?.length) continue;
+      const { items, pts } = modelChain(sim.model, sim.startPt, sim.endPt);
+      if (!items.length) continue;
+      const woundStart = ropeWoundAt(rope, "start");
+      const woundEnd = ropeWoundAt(rope, "end");
+      const startWinch = winchOnRopeEnd(rope, "start");
+      const endWinch = winchOnRopeEnd(rope, "end");
+      items.forEach((item, index) => {
+        const pulley =
+          findPulleyById(item.wrap.wheelId) || findPulleyById(item.wheel?.id);
+        if (!pulley || !item.wheel?.r) return;
+        if (!pulley.spinPrev) pulley.spinPrev = new Map();
+        const key = `${ropes.indexOf(rope)}:${index}`;
+        const fromStart =
+          freeLengthFromStartToWrap(items, pts, index) + woundStart;
+        const fromEnd = freeLengthFromWrapToEnd(items, pts, index) + woundEnd;
+        const prev = pulley.spinPrev.get(key);
+        pulley.spinPrev.set(key, { fromStart, fromEnd });
+        if (!prev) return;
+        const dStart = fromStart - prev.fromStart;
+        const dEnd = -(fromEnd - prev.fromEnd);
+        let ds = Math.abs(dStart) >= Math.abs(dEnd) ? dStart : dEnd;
+        if (Math.abs(ds) < 1e-3 && dt > 0) {
+          if (startWinch?.winding || endWinch?.winding) {
+            ds = WINCH_REEL_SPEED * dt;
+          } else {
+            const startW = weightOnRopeEnd(rope, "start");
+            const endW = weightOnRopeEnd(rope, "end");
+            const startSpeed = startW
+              ? Math.hypot(startW.vel.x, startW.vel.y)
+              : 0;
+            const endSpeed = endW ? Math.hypot(endW.vel.x, endW.vel.y) : 0;
+            const pulleySpeed = Math.hypot(pulley.vel.x, pulley.vel.y);
+            const slip = Math.max(startSpeed, endSpeed, pulleySpeed) * dt;
+            if (slip > 1e-3) ds = slip;
+          }
+        }
+        if (Math.abs(ds) < 1e-4) return;
+        const deg = (ds / item.wheel.r) * (180 / Math.PI);
+        const signed = item.clockwise ? -deg : deg;
+        pulley.spinAngle = (pulley.spinAngle || 0) + signed;
+      });
+    }
+    for (const pulley of pulleys) applyPulleySpinVisual(pulley);
   }
 
   /** Buben se točí přes SVG transform — CSS animace na <g> v Safari/iPadu neběží. */
@@ -7281,7 +7577,7 @@
 
   function syncRopeEndHandles() {
     clearEndHandles();
-    if (tool !== "move" && tool !== "pencil" && tool !== "freehand") return;
+    if (tool !== "move" && tool !== "freehand") return;
 
     for (const rope of ropes) {
       if (!rope.el.isConnected || rope.closed) continue;
@@ -9363,6 +9659,7 @@
     moveFreePulleyBodies(system, dt);
     simulateRopes(dt);
     simulateFreePulleys(dt);
+    tickPulleySpin(dt);
 
     for (const weight of weights) {
       if (isDocked(weight.el)) continue;
@@ -9417,6 +9714,7 @@
     for (const winch of winches) resetWinchWoundLength(winch);
     captureWeightSimStarts();
     initRopeSimulation();
+    resetPulleySpin();
     startSettling();
     clearEndHandles();
     hideSnapMarker();
@@ -9424,6 +9722,7 @@
     updateWinchOverloadMessage();
     lastPhysicsTime = performance.now();
     physicsFrame = requestAnimationFrame(physicsLoop);
+    dismissSceneHint();
   }
 
   function stopSimulation() {
@@ -9440,6 +9739,7 @@
     syncRopeEndHandles();
     updateForceArrows();
     updateWinchOverloadMessage();
+    resetPulleySpin();
     if (physicsFrame != null) {
       cancelAnimationFrame(physicsFrame);
       physicsFrame = null;
@@ -9621,6 +9921,36 @@
   let appMode = "menu";
   /** @type {string | null} */
   let activePresetId = null;
+  let lastGalleryPresetId = "kladkostroj2";
+  let hintDismissed = false;
+
+  function syncBuilderModeSwitch() {
+    if (!builderModeSwitch) return;
+    builderModeSwitch.querySelectorAll("[data-builder-mode]").forEach((btn) => {
+      const on = btn.dataset.builderMode === appMode;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function syncSceneHint() {
+    if (!hintEl) return;
+    if (appMode === "quiz") {
+      hintEl.classList.add("is-hidden");
+      return;
+    }
+    if (appMode === "lab") {
+      hintEl.textContent = "Přetáhni kladky a závaží na plochu.";
+    } else if (appMode === "gallery") {
+      hintEl.textContent = "Stiskni Spustit a sleduj pohyb.";
+    }
+    hintEl.classList.toggle("is-hidden", hintDismissed);
+  }
+
+  function dismissSceneHint() {
+    hintDismissed = true;
+    hintEl?.classList.add("is-hidden");
+  }
 
   const PRESETS = [
     { id: "pevna", title: "Pevná kladka" },
@@ -10705,7 +11035,9 @@
         btn.type = "button";
         btn.className = "gallery-preset-btn";
         btn.dataset.presetId = preset.id;
-        btn.textContent = preset.title;
+        btn.innerHTML =
+          presetSchemaSvg(preset.id) +
+          `<span class="gallery-preset-btn__title">${preset.title}</span>`;
         btn.addEventListener("click", () => {
           if (activePresetId === preset.id) return;
           loadPresetScene(preset.id);
@@ -10739,6 +11071,9 @@
     setMenuView("home");
     if (panelModeTitle) panelModeTitle.textContent = "Kladkostroj";
     syncGalleryPresetButtons();
+    syncBuilderModeSwitch();
+    hintDismissed = false;
+    syncSceneHint();
   }
 
   function hideModeMenu() {
@@ -10756,7 +11091,12 @@
     activePresetId = null;
     if (appRoot) appRoot.dataset.appMode = "lab";
     hideModeMenu();
-    if (panelModeTitle) panelModeTitle.textContent = "Laboratoř";
+    setShowForces(false);
+    setShowLengths(false);
+    if (panelModeTitle) panelModeTitle.textContent = "Vytvoř vlastní";
+    syncBuilderModeSwitch();
+    hintDismissed = false;
+    syncSceneHint();
     syncRopeViewBox();
     syncStockTrayScale();
     updateForceArrows();
@@ -10776,6 +11116,7 @@
     updateForceArrows();
     historySuspended = false;
     activePresetId = id;
+    lastGalleryPresetId = id;
     if (panelModeTitle) panelModeTitle.textContent = preset.title;
     syncGalleryPresetButtons();
     updateHistoryButtons();
@@ -10783,16 +11124,28 @@
 
   function enterGallery(id) {
     exitQuiz();
+    const presetId = id || lastGalleryPresetId || "kladkostroj2";
+    const needsLayout = Boolean(appRoot?.classList.contains("is-menu-hidden"));
     appMode = "gallery";
     if (appRoot) appRoot.dataset.appMode = "gallery";
     hideModeMenu();
-    // Dvě snímky: nejdřív layout po odkrytí plochy, pak sestavení scény.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        syncRopeViewBox();
-        loadPresetScene(id);
-      });
-    });
+    syncBuilderModeSwitch();
+    hintDismissed = false;
+    syncSceneHint();
+    const load = (tries = 0) => {
+      syncRopeViewBox();
+      const bounds = stageSize();
+      if ((bounds.width < 40 || bounds.height < 40) && tries < 16) {
+        requestAnimationFrame(() => load(tries + 1));
+        return;
+      }
+      loadPresetScene(presetId);
+    };
+    if (needsLayout) {
+      requestAnimationFrame(() => requestAnimationFrame(() => load()));
+    } else {
+      load();
+    }
   }
 
   /**
@@ -10810,6 +11163,9 @@
     if (appRoot) appRoot.dataset.appMode = "quiz";
     hideModeMenu();
     if (panelModeTitle) panelModeTitle.textContent = "Kvíz";
+    syncBuilderModeSwitch();
+    hintDismissed = true;
+    syncSceneHint();
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         syncRopeViewBox();
@@ -11066,16 +11422,39 @@
     modeChooseLab.addEventListener("click", () => enterLab());
   }
   if (modeChoosePresets) {
-    modeChoosePresets.addEventListener("click", () => setMenuView("presets"));
+    modeChoosePresets.addEventListener("click", () => enterGallery(lastGalleryPresetId));
+  }
+  if (builderModeSwitch) {
+    builderModeSwitch.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-builder-mode]");
+      if (!btn) return;
+      const mode = btn.dataset.builderMode;
+      if (mode === "lab") {
+        if (appMode !== "lab") enterLab();
+        return;
+      }
+      if (mode === "gallery" && appMode !== "gallery") {
+        enterGallery(lastGalleryPresetId);
+      }
+    });
   }
   if (modeChooseQuiz) {
     modeChooseQuiz.addEventListener("click", () => enterQuiz());
+  }
+  if (btnEnterQuiz) {
+    btnEnterQuiz.addEventListener("click", () => enterQuiz());
   }
   if (modeMenuBack) {
     modeMenuBack.addEventListener("click", () => setMenuView("home"));
   }
   if (btnBackMenu) {
-    btnBackMenu.addEventListener("click", () => showModeMenu());
+    btnBackMenu.addEventListener("click", () => {
+      if (appMode === "quiz") {
+        enterGallery(lastGalleryPresetId);
+        return;
+      }
+      window.location.href = "../index.html";
+    });
   }
   if (btnQuizNew) {
     btnQuizNew.addEventListener("click", () => startQuizTask());
@@ -11134,6 +11513,9 @@
   enableEraser();
   enablePulleySelection();
 
+  stage?.addEventListener("pointerdown", dismissSceneHint);
+  stockSection?.addEventListener("pointerdown", dismissSceneHint);
+
   syncRopeViewBox();
   updateClearEnabled();
   syncPulleySizeSliderState();
@@ -11141,7 +11523,25 @@
   syncForcesToggleUi();
   bindStockTrayScaleSync();
   renderPresetMenus();
-  showModeMenu();
+  hideModeMenu();
+  let galleryBooted = false;
+  const bootGallery = () => {
+    if (galleryBooted) return;
+    if (appMode === "lab" || appMode === "quiz") {
+      galleryBooted = true;
+      return;
+    }
+    const bounds = stageSize();
+    if (bounds.width < 40 || bounds.height < 40) {
+      requestAnimationFrame(bootGallery);
+      return;
+    }
+    galleryBooted = true;
+    enterGallery("kladkostroj2");
+  };
+  requestAnimationFrame(bootGallery);
+  setTimeout(bootGallery, 80);
+  setTimeout(bootGallery, 240);
 
   window.addEventListener("resize", () => {
     syncRopeViewBox();
