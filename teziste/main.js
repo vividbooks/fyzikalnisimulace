@@ -385,6 +385,7 @@
   const confettiLayer = document.getElementById("confetti");
   const app = document.getElementById("app");
   const guessCmBtn = document.getElementById("tool-guess-cm");
+  const showCmBtn = document.getElementById("tool-show-cm");
   const reshapeBtn = document.getElementById("tool-reshape");
   const pencilBtn = document.getElementById("tool-pencil");
   const drawShapeBtn = document.getElementById("tool-draw-shape");
@@ -433,6 +434,7 @@
     currentStroke: null,
     strokePoints: [],
     guessResult: null,
+    cmVisible: false,
     guideOn: false,
     weightFrom: null,
     weightSnap: -1,
@@ -1321,6 +1323,7 @@
       clearGuessResult();
     } else {
       dismissSceneHint();
+      setCmVisible(false);
     }
     if (tool !== "move" && (state.weightCarry || state.dragMode === "weight")) {
       cancelWeightCarry();
@@ -1337,6 +1340,7 @@
       drawShapeBtn.classList.toggle("is-active", tool === "draw-shape");
       drawShapeBtn.setAttribute("aria-pressed", String(tool === "draw-shape"));
     }
+    syncShowCmButton();
     syncDragHandle();
   }
 
@@ -1939,6 +1943,23 @@
     if (!confettiRaf) confettiRaf = requestAnimationFrame(tickConfetti);
   }
 
+  function setCmVisible(visible) {
+    if (visible && state.tool === "guess-cm") visible = false;
+    state.cmVisible = visible;
+    if (showCmBtn) {
+      showCmBtn.classList.toggle("is-active", visible);
+      showCmBtn.setAttribute("aria-pressed", String(visible));
+    }
+    updateGuessVisuals();
+  }
+
+  function syncShowCmButton() {
+    if (!showCmBtn) return;
+    const blocked = state.tool === "guess-cm";
+    showCmBtn.disabled = blocked;
+    showCmBtn.setAttribute("aria-disabled", String(blocked));
+  }
+
   function clearGuessResult() {
     state.guessResult = null;
     guessLayer.replaceChildren();
@@ -2059,21 +2080,31 @@
   }
 
   function updateGuessVisuals() {
-    if (!state.guessResult || state.tool !== "guess-cm") {
+    const showGuess =
+      state.guessResult && state.tool === "guess-cm";
+    if (!showGuess && !state.cmVisible) {
       guessLayer.removeAttribute("hidden");
       guessLayer.classList.remove("is-visible");
       guessLayer.replaceChildren();
       return;
     }
 
-    const guess = state.guessResult;
-    const guessView = worldToView(guess.guessX, guess.guessY);
-    const guessInk = contrastInk(colorBehindWorld(guess.guessX, guess.guessY));
     guessLayer.removeAttribute("hidden");
     guessLayer.classList.add("is-visible");
     guessLayer.replaceChildren();
 
-    guessLayer.append(createCross(guessView.x, guessView.y, "guess-cross", guessInk));
+    if (state.cmVisible) {
+      const actual = localToWorld(centroid.x, centroid.y);
+      const actualView = worldToView(actual.x, actual.y);
+      guessLayer.append(createCross(actualView.x, actualView.y, "cm-cross", "#22c55e"));
+    }
+
+    if (showGuess) {
+      const guess = state.guessResult;
+      const guessView = worldToView(guess.guessX, guess.guessY);
+      const guessInk = contrastInk(colorBehindWorld(guess.guessX, guess.guessY));
+      guessLayer.append(createCross(guessView.x, guessView.y, "guess-cross", guessInk));
+    }
   }
 
   function updateClearDrawingsButton() {
@@ -2264,6 +2295,7 @@
     clearAllWeights();
     app.classList.remove("is-dragging");
     clearGuessResult();
+    setCmVisible(false);
     setTool(state.appMode === "lab" && currentShape?.empty ? "draw-shape" : "move");
     placeFreeCenter();
     render();
@@ -2530,6 +2562,11 @@
 
   guessCmBtn.addEventListener("click", () => {
     setTool(state.tool === "guess-cm" ? "move" : "guess-cm");
+  });
+
+  showCmBtn?.addEventListener("click", () => {
+    if (state.tool === "guess-cm") return;
+    setCmVisible(!state.cmVisible);
   });
 
   reshapeBtn.addEventListener("click", () => {
