@@ -116,17 +116,8 @@ const GAS_PARTICLE_SIZE_FALLBACK = 11;
 const KEYBOARD_STEP = 0.04;
 const DRAG_SPAN = 0.42;
 const CANVAS_SIZE = 2000;
-/** Záložní hit zóna oranžové hlavy pístu (když nejde spočítat z SVG) */
-const HIT_TOP_START = 0.145;
-const HIT_HEIGHT = 0.2;
-const HIT_LEFT = 0.28;
-const HIT_WIDTH = 0.44;
-const HIT_PAD = 10;
-const STAGE_FIT_PAD = 24;
-const STAGE_MAX = 680;
-
-const stageEl = document.getElementById("stage");
-const stageSlotEl = document.querySelector(".stage-slot");
+/** Střed oranžové hlavy pístu v klidu — zlomek výšky scény */
+const HANDLE_Y0 = 0.22;
 
 let sceneId = "solid";
 let scene = SCENES.solid;
@@ -321,15 +312,14 @@ function ensureGasPathElement() {
   return gasPathEl;
 }
 
-/** Vlastní obal částice — nesmí přepsat transform celé vrstvy detailu. */
-function ensureParticleHost(path) {
-  if (path.parentNode?.dataset?.gasParticle === "1") return path.parentNode;
-  const ns = "http://www.w3.org/2000/svg";
-  const wrap = document.createElementNS(ns, "g");
-  wrap.dataset.gasParticle = "1";
-  path.parentNode.insertBefore(wrap, path);
-  wrap.appendChild(path);
-  return wrap;
+function findTransformHost(path) {
+  let el = path.parentElement;
+  while (el) {
+    if (el.getAttribute("transform")) return el;
+    if (el.dataset?.nm || el === lottieEl) break;
+    el = el.parentElement;
+  }
+  return path.parentElement;
 }
 
 function measureGasParticleRadius(path) {
@@ -405,23 +395,12 @@ function collectGasParticles() {
   gasParticleEls = [...detailEl.querySelectorAll("path")].filter(isGasGreenFill);
 
   gasParticleMotion = gasParticleEls.map((path, index) => {
-    const host = ensureParticleHost(path);
+    const host = findTransformHost(path);
     const radius = measureGasParticleRadius(path);
-    let originX = 0;
-    let originY = 0;
-    try {
-      const bbox = path.getBBox();
-      originX = bbox.x + bbox.width / 2;
-      originY = bbox.y + bbox.height / 2;
-    } catch {
-      /* Lottie path ještě bez geometrie */
-    }
     const p = {
       path,
       host,
       radius,
-      originX,
-      originY,
       x: 0,
       y: 0,
       vx: 0,
@@ -570,9 +549,7 @@ function tickGasParticleMotion() {
       setGasParticleOpacity(p, touchesCircle);
     }
 
-    const dx = p.x - (p.originX || 0);
-    const dy = p.y - (p.originY || 0);
-    p.host.setAttribute("transform", `translate(${dx}, ${dy})`);
+    p.host.setAttribute("transform", `translate(${p.x}, ${p.y})`);
   }
 }
 
@@ -650,89 +627,9 @@ function applyGasCompression() {
   applyGasAppearance();
 }
 
-function insetLottieView() {
-  const svg = lottieEl.querySelector("svg");
-  if (!svg) return;
-  const pad = 120;
-  svg.setAttribute(
-    "viewBox",
-    `${-pad} ${-pad} ${CANVAS_SIZE + pad * 2} ${CANVAS_SIZE + pad * 2}`
-  );
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-}
-
-function fitStage() {
-  if (!stageEl || !stageSlotEl) return;
-  const available = Math.min(stageSlotEl.clientWidth, stageSlotEl.clientHeight) - STAGE_FIT_PAD * 2;
-  const size = Math.max(0, Math.min(available, STAGE_MAX));
-  stageEl.style.width = `${size}px`;
-  stageEl.style.height = `${size}px`;
-}
-
-function isOrangeFill(el) {
-  const fill = (el.getAttribute("fill") || "").trim().toLowerCase();
-  if (!fill || fill === "none") return false;
-  const rgb = fill.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
-  if (rgb) {
-    const r = Number(rgb[1]);
-    const g = Number(rgb[2]);
-    const b = Number(rgb[3]);
-    return r > 180 && g > 50 && g < 200 && b < 140;
-  }
-  if (fill.startsWith("#") && fill.length >= 7) {
-    const r = parseInt(fill.slice(1, 3), 16);
-    const g = parseInt(fill.slice(3, 5), 16);
-    const b = parseInt(fill.slice(5, 7), 16);
-    return r > 180 && g > 50 && g < 200 && b < 140;
-  }
-  return false;
-}
-
-function applyHitFallback() {
+function updateHandlePosition() {
   const travel = (scene.pumpYBottom - scene.pumpYTop) / CANVAS_SIZE;
-  pistonHit.style.left = `${HIT_LEFT * 100}%`;
-  pistonHit.style.width = `${HIT_WIDTH * 100}%`;
-  pistonHit.style.top = `${(HIT_TOP_START + progress * travel) * 100}%`;
-  pistonHit.style.height = `${HIT_HEIGHT * 100}%`;
-}
-
-/** Hit zóna i táhlo sledují oranžovou hlavu pístu */
-function updateHitArea() {
-  if (!stageEl) return;
-
-  const layerEl = findPumpLayerElement();
-  const stageRect = stageEl.getBoundingClientRect();
-  if (!layerEl || stageRect.width < 2 || stageRect.height < 2) {
-    applyHitFallback();
-    return;
-  }
-
-  let minL = Infinity;
-  let minT = Infinity;
-  let maxR = -Infinity;
-  let maxB = -Infinity;
-  let found = false;
-
-  for (const el of layerEl.querySelectorAll("[fill]")) {
-    if (!isOrangeFill(el)) continue;
-    const rect = el.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) continue;
-    found = true;
-    minL = Math.min(minL, rect.left);
-    minT = Math.min(minT, rect.top);
-    maxR = Math.max(maxR, rect.right);
-    maxB = Math.max(maxB, rect.bottom);
-  }
-
-  if (!found) {
-    applyHitFallback();
-    return;
-  }
-
-  pistonHit.style.left = `${minL - stageRect.left - HIT_PAD}px`;
-  pistonHit.style.top = `${minT - stageRect.top - HIT_PAD}px`;
-  pistonHit.style.width = `${maxR - minL + HIT_PAD * 2}px`;
-  pistonHit.style.height = `${maxB - minT + HIT_PAD * 2}px`;
+  pistonHit.style.top = `${(HANDLE_Y0 + progress * travel) * 100}%`;
 }
 
 function applyPistonPosition() {
@@ -742,7 +639,7 @@ function applyPistonPosition() {
     wrapper.setAttribute("transform", `translate(0 ${dy})`);
   }
   applyGasCompression();
-  updateHitArea();
+  updateHandlePosition();
 }
 
 function syncUi() {
@@ -853,8 +750,6 @@ async function loadScene(nextId) {
       });
     });
 
-    fitStage();
-    insetLottieView();
     ensurePumpWrapper();
     ensureGasPathElement();
     collectGasParticles();
@@ -932,18 +827,6 @@ window.addEventListener("pointermove", onPointerMove);
 window.addEventListener("pointerup", onPointerUp);
 window.addEventListener("pointercancel", onPointerUp);
 pistonHit.addEventListener("keydown", onKeyDown);
-window.addEventListener("resize", () => {
-  fitStage();
-  if (anim) updateHitArea();
-});
-
-if (stageSlotEl && typeof ResizeObserver !== "undefined") {
-  const slotObserver = new ResizeObserver(() => {
-    fitStage();
-    if (anim) updateHitArea();
-  });
-  slotObserver.observe(stageSlotEl);
-}
 
 sceneButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -954,7 +837,6 @@ sceneButtons.forEach((button) => {
   });
 });
 
-fitStage();
 loadScene("solid").catch((error) => {
   console.error(error);
   showStartHint("Animaci se nepodařilo načíst.");
