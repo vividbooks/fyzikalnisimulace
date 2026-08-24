@@ -1099,6 +1099,12 @@
             previewColor: "#fff2cc",
           },
           {
+            id: "treni",
+            title: "Tření",
+            hash: "#/sim/treni",
+            previewColor: "#f5efe4",
+          },
+          {
             id: "hra_newton",
             title: "Newtonovy pohybové zákony",
             hash: "#/sim/hra_newton",
@@ -1200,6 +1206,7 @@
       skladani_sil: "sily",
       silomer_2: "sily",
       tlak: "sily",
+      treni: "sily",
       hra_newton: "sily",
       hydrostatika: "kapaliny",
       vztlakova: "kapaliny",
@@ -2113,6 +2120,25 @@
       </svg>`;
     }
 
+    function TreniCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="treni/card-treni.svg"
+          x="0"
+          y="0"
+          width="132"
+          height="88"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function TlakCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -2185,6 +2211,7 @@
       if (tileId === "skladani_sil") return html`<${SkladaniSilCardIllustration} />`;
       if (tileId === "silomer_2") return html`<${SilomerCardIllustration} />`;
       if (tileId === "tlak") return html`<${TlakCardIllustration} />`;
+      if (tileId === "treni") return html`<${TreniCardIllustration} />`;
       if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
       if (tileId === "hydrostatika") return html`<${HydrostatikaCardIllustration} />`;
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
@@ -2388,6 +2415,14 @@
             window.location.replace(new URL("tlak/", window.location.href).href);
           } catch (_) {
             window.location.replace("tlak/");
+          }
+          return;
+        }
+        if (simId === "treni") {
+          try {
+            window.location.replace(new URL("treni/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("treni/");
           }
           return;
         }
@@ -2626,6 +2661,13 @@
         `;
       }
       if (simId === "tlak") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "treni") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

@@ -7,29 +7,47 @@
   <style>
     @font-face {
       font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
 
+    @font-face {
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+
     :root {
-      --bg: #f4f7fb;
-      --panel: #fff;
-      --panel-bg: #ffffff;
-      --accent: #3d5a9a;
-      --accent-hover: #334b81;
-      --text: #171923;
-      --muted: #6b7280;
-      --border: #e8eaef;
-      --focus: #3d5a9a;
-      --area-muted: #eceff5;
-      --readout-bg: #f4f5f8;
+      --bg: #1e2533;
+      --page-bg: #1e2533;
+      --panel: #ffffe6;
+      --panel-bg: #2a3344;
+      --card-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #475569;
+      --border-strong: #475569;
+      --focus: #3b82f6;
+      --area-muted: #334155;
+      --readout-bg: #1e293b;
+      --canvas-bg: #ffffe6;
+      --canvas-text: #334155;
       --danger: #c0392b;
       --time: #d35400;
       --axis: #1e6bb8;
       --grid: rgba(30, 107, 184, 0.22);
       --track: #111;
+      --radius: 12px;
+      --radius-canvas: 24px;
     }
 
     * { box-sizing: border-box; }
@@ -54,13 +72,13 @@
 
     .app {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: row;
+      flex-wrap: nowrap;
       align-items: stretch;
-      align-content: stretch;
-      gap: clamp(10px, 1.8vw, 20px);
+      gap: 16px;
       width: 100%;
       margin: 0 auto;
-      padding: clamp(8px, 1.2vw, 14px);
+      padding: 16px;
       min-height: 100dvh;
       box-sizing: border-box;
     }
@@ -75,15 +93,51 @@
     }
 
     .track-section {
+      position: relative;
       flex: 1 1 0;
       min-height: 0;
-      background: var(--panel);
-      border-radius: 14px;
-      padding: 10px 14px 6px;
-      border: 1px solid var(--border);
+      background: var(--canvas-bg);
+      border-radius: var(--radius-canvas);
+      padding: 16px 16px 10px;
+      border: none;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+    }
+
+    .app.is-create-graph .track-section {
+      flex: 0.75 1 0;
+      padding: 8px 10px;
+    }
+
+    .sim-empty-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: max-content;
+      max-width: min(720px, calc(100% - 48px));
+      margin: 0;
+      padding: 12px 28px;
+      border: 2px solid #cbd5e1;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      pointer-events: none;
+      text-align: center;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.35;
+      color: #334155;
+      transform: translate(-50%, -50%);
+    }
+
+    .sim-empty-hint.is-hidden {
+      display: none;
     }
 
     .track-section > .track-svg {
@@ -102,14 +156,19 @@
     }
 
     .chart-wrap {
+      position: relative;
       flex: 1 1 0;
       min-height: 0;
       display: flex;
       flex-direction: column;
-      background: var(--panel);
-      border-radius: 14px;
-      padding: clamp(12px, 1.4vw, 18px) clamp(10px, 1.2vw, 14px) 8px;
-      border: 1px solid var(--border);
+      background: var(--canvas-bg);
+      border-radius: var(--radius-canvas);
+      padding: 16px 16px 10px;
+      border: none;
+    }
+
+    .app.is-create-graph .chart-wrap {
+      flex: 1.25 1 0;
     }
 
     .chart-stage {
@@ -153,10 +212,10 @@
     .chart-zoom-btn {
       width: 36px;
       height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--panel-bg);
-      color: var(--accent);
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: #334155;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -166,7 +225,8 @@
 
     .chart-zoom-btn:hover {
       border-color: var(--accent);
-      background: var(--readout-bg);
+      color: var(--accent);
+      background: #ffffff;
     }
 
     .chart-zoom-btn .chart-zoom-icon--out {
@@ -205,49 +265,72 @@
     }
 
     .setup-panel {
-      flex: 0 0 min(248px, 100%);
+      flex: 0 0 min(320px, 36vw);
       align-self: stretch;
       overflow: auto;
-      padding: 14px;
-      border-radius: 22px;
+      padding: 8px 8px 16px;
+      border-radius: 0;
       scrollbar-gutter: stable;
-      color-scheme: light;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
+      color-scheme: dark;
+      border: none;
+      background: transparent;
       color: var(--text);
       min-width: 0;
     }
 
     .panel-title {
-      margin: 0 0 6px;
-      font-size: 1.125rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--text);
+      font-family: "Cooper Light", serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
     }
 
     .hub-back-to-sims {
+      justify-self: start;
       display: inline-flex;
       align-items: center;
-      font-size: 0.88rem;
-      font-weight: 700;
-      text-decoration: none;
-      padding: 9px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--area-muted);
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #1e293b;
       color: var(--text);
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.2;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .hub-back-to-sims svg {
+      display: block;
+      flex: 0 0 auto;
     }
 
     .hub-back-to-sims:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--readout-bg);
+      color: #ffffff;
     }
 
     .controls {
       display: grid;
-      gap: 20px;
+      gap: 14px;
+    }
+
+    .panel-head {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sim-card {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--card-bg);
     }
 
     .row {
@@ -266,17 +349,71 @@
       min-width: 0;
     }
 
-    .app.is-create-graph .row-pair {
-      display: none;
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 28px;
+      padding: 4px;
+      border-radius: var(--radius);
+      background: var(--card-bg);
+    }
+
+    .mode-switch__btn {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      padding: 12px 8px;
+      border: 1px solid transparent;
+      border-radius: calc(var(--radius) - 2px);
+      background: transparent;
+      color: var(--idle-text);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.2;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .mode-switch__btn:hover:not(.is-active) {
+      color: var(--text);
+    }
+
+    .mode-switch__btn.is-active,
+    .mode-switch__btn.is-active:hover {
+      background: var(--accent);
+      color: var(--accent-on);
+      cursor: default;
+    }
+
+    .mode-switch__btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .motion-setup {
+      display: grid;
+      gap: 10px;
     }
 
     .row-label,
     label.row-label {
-      font-weight: 650;
-      font-size: 0.8125rem;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: none;
+      color: var(--text);
+    }
+
+    .row-label svg {
+      display: block;
+      flex: 0 0 auto;
     }
 
     .actions-row {
@@ -289,13 +426,22 @@
       width: 100%;
       min-width: 0;
       padding-inline: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
-    .create-graph-btn {
-      width: 100%;
+    .actions-row button svg {
+      display: block;
+      flex: 0 0 auto;
     }
 
     .graph-tools-row {
+      display: none;
+    }
+
+    .app.is-create-graph .row-pair {
       display: none;
     }
 
@@ -306,6 +452,35 @@
 
     .graph-tools-row button {
       width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .graph-tools-row button svg {
+      display: block;
+      flex: 0 0 auto;
+    }
+
+    .tool-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    #fit-curve-btn.is-active .tool-num {
+      background: #ffffff;
+      color: #1d4ed8;
     }
 
     .graph-verify-message {
@@ -348,15 +523,9 @@
     }
 
     #fit-curve-btn.is-active {
-      border-color: var(--accent);
-      background: var(--readout-bg);
-      color: var(--accent);
-    }
-
-    #create-graph-btn.is-active {
-      border-color: var(--accent);
-      background: var(--readout-bg);
-      color: var(--accent);
+      border-color: transparent;
+      background: #1d4ed8;
+      color: #ffffff;
     }
 
     .step-input {
@@ -364,9 +533,9 @@
       display: flex;
       align-items: stretch;
       min-width: 0;
-      border-radius: 10px;
+      border-radius: var(--radius);
       border: 1px solid var(--border);
-      background: var(--panel-bg);
+      background: var(--readout-bg);
       overflow: hidden;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
@@ -477,35 +646,64 @@
 
     button {
       font: inherit;
-      padding: 10px 16px;
-      border-radius: 10px;
-      border: 1px solid var(--accent);
-      background: var(--accent);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.9rem;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font-weight: 400;
+      font-size: 14px;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     button:hover:not(:disabled) {
-      background: var(--accent-hover);
-      border-color: var(--accent-hover);
+      color: var(--text);
     }
 
     button:active:not(:disabled) {
-      transform: translateY(1px);
+      transform: none;
+    }
+
+    #start-btn,
+    button.primary {
+      background: #4ade80;
+      color: #14532d;
+    }
+
+    #start-btn:hover:not(:disabled) {
+      color: #052e16;
+      background: #86efac;
+    }
+
+    #reset-btn {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    #reset-btn:hover:not(:disabled) {
+      color: #ffffff;
+      background: #dc2626;
     }
 
     button.secondary {
-      background: var(--panel-bg);
-      color: var(--accent);
-      border-color: var(--border);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      border-color: transparent;
     }
 
     button.secondary:hover:not(:disabled) {
-      border-color: var(--accent);
-      background: var(--readout-bg);
+      color: var(--text);
+    }
+
+    #start-btn.is-active {
+      background: #4ade80;
+      color: #14532d;
+    }
+
+    #fit-curve-btn.is-active {
+      background: #1d4ed8;
+      color: #ffffff;
     }
 
     button:disabled {
@@ -523,32 +721,30 @@
       display: block;
       width: 100%;
       min-width: 0;
-      padding: 9px 8px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
-      color: var(--text);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
       font: inherit;
-      font-size: 0.8125rem;
-      font-weight: 700;
+      font-size: 14px;
+      font-weight: 400;
       line-height: 1.25;
       text-align: center;
       text-decoration: none;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     .variant-btn:hover:not(.is-active) {
-      border-color: var(--accent);
-      background: var(--readout-bg);
-      color: var(--accent);
+      color: var(--text);
     }
 
     .variant-btn.is-active,
     .variant-btn.is-active:hover {
-      border-color: var(--accent);
+      border-color: transparent;
       background: var(--accent);
-      color: #fff;
+      color: var(--accent-on);
       cursor: default;
     }
 
@@ -568,7 +764,7 @@
     .axis-label {
       font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       font-size: 12px;
-      fill: var(--muted);
+      fill: #64748b;
     }
     .sec-mark {
       visibility: hidden;
@@ -587,6 +783,15 @@
       font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       font-size: 12px;
       fill: var(--muted);
+    }
+    .app.is-create-graph .axis-label {
+      font-size: 16px;
+    }
+    .app.is-create-graph .sec-mark-time {
+      font-size: 14px;
+    }
+    .app.is-create-graph .sec-mark-dist {
+      font-size: 16px;
     }
 
     .table-keypad-overlay {
@@ -762,11 +967,20 @@
       .app {
         flex-direction: column;
         flex-wrap: nowrap;
-        padding-left: max(8px, env(safe-area-inset-left, 0px));
-        padding-right: max(8px, env(safe-area-inset-right, 0px));
-        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        padding-left: max(10px, env(safe-area-inset-left, 0px));
+        padding-right: max(10px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
         padding-top: max(8px, env(safe-area-inset-top, 0px));
         gap: 12px;
+      }
+
+      .sim-empty-hint {
+        font-size: 20px;
+        padding: 10px 18px;
+      }
+
+      .panel-title {
+        font-size: 28px;
       }
 
       .viz-column {
@@ -790,8 +1004,8 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
-        border-radius: 18px;
-        padding: 14px 16px;
+        border-radius: 0;
+        padding: 8px 8px 16px;
       }
     }
   </style>
@@ -800,75 +1014,112 @@
   <div class="app">
     <aside class="setup-panel" aria-label="Nastavení">
       <div class="controls">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-        <h1 class="panel-title">Rychlost</h1>
+        <div class="panel-head">
+          <a href="../index.html" class="hub-back-to-sims">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Zpět
+          </a>
+          <h1 class="panel-title">Rychlost</h1>
+          <div class="mode-switch" role="group" aria-label="Režim">
+            <button type="button" class="mode-switch__btn is-active" data-sim-mode="observe" aria-pressed="true">Pozoruj</button>
+            <button type="button" class="mode-switch__btn" data-sim-mode="plot" aria-pressed="false">Zanes do grafu</button>
+          </div>
+        </div>
 
-        <div class="row">
-          <span class="row-label">Akce</span>
+        <div class="sim-card row">
           <div class="actions-row" aria-label="Akce simulace">
-            <button type="button" id="start-btn">Spustit</button>
-            <button type="button" id="reset-btn" class="secondary">Reset</button>
+            <button type="button" id="start-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+              </svg>
+              Spustit
+            </button>
+            <button type="button" id="reset-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Reset
+            </button>
           </div>
-          <button type="button" id="create-graph-btn" class="secondary create-graph-btn" aria-pressed="false">Vytvořit graf</button>
+          <div class="row-pair">
+            <div class="row">
+              <label class="row-label" for="axis-length">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 12h16M7 8l-3 4 3 4M17 8l3 4-3 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Dráha
+              </label>
+              <div class="step-input">
+                <div class="step-value">
+                  <input type="text" id="axis-length" inputmode="numeric" value="10">
+                  <span class="field-unit">m</span>
+                </div>
+                <span class="step-spin">
+                  <button type="button" class="step-btn step-up" aria-label="Zvětšit dráhu o 1 m">▲</button>
+                  <button type="button" class="step-btn step-down" aria-label="Zmenšit dráhu o 1 m">▼</button>
+                </span>
+              </div>
+            </div>
+            <div class="row">
+              <label class="row-label" for="time" id="time-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
+                  <path d="M12 8v4.2L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Čas
+              </label>
+              <div class="step-input">
+                <div class="step-value">
+                  <input type="text" id="time" inputmode="decimal" value="10">
+                  <span class="field-unit">s</span>
+                </div>
+                <span class="step-spin">
+                  <button type="button" class="step-btn step-up" aria-label="Zvětšit čas o 1 s">▲</button>
+                  <button type="button" class="step-btn step-down" aria-label="Zmenšit čas o 1 s">▼</button>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="motion-setup">
+            <span class="row-label">Nastavení pohybu</span>
+            <div class="variant-toggle" role="group" aria-label="Pohyb">
+              <button type="button" class="variant-btn is-active" data-motion="uniform" aria-pressed="true">rovnoměrný</button>
+              <button type="button" class="variant-btn" data-motion="decelerated" aria-pressed="false">zpomalený</button>
+            </div>
+            <span class="row-label">Měřit po</span>
+            <div class="variant-toggle" role="group" aria-label="Měřit po">
+              <span class="variant-btn is-active" aria-current="true">sekundách</span>
+              <a class="variant-btn" href="pes-jednoducha-osa.html" data-measure-link>metrech</a>
+            </div>
+          </div>
         </div>
 
-        <div class="row graph-tools-row" id="graph-tools-row" hidden>
-          <button type="button" id="fit-curve-btn" class="secondary" disabled aria-pressed="false">Proložit</button>
-          <button type="button" id="verify-graph-btn" class="secondary" disabled>Ověřit</button>
-          <button type="button" id="clear-chart-points-btn" class="secondary" disabled>Smazat body</button>
+        <div class="sim-card row graph-tools-row" id="graph-tools-row" hidden>
+          <button type="button" id="fit-curve-btn" class="secondary" disabled aria-pressed="false">
+            <span class="tool-num">1</span>
+            Proložit body
+          </button>
+          <button type="button" id="verify-graph-btn" class="secondary" disabled>
+            <span class="tool-num">2</span>
+            Ověřit správnost
+          </button>
+          <button type="button" id="clear-chart-points-btn" class="secondary" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Smazat body
+          </button>
           <p id="graph-verify-message" class="graph-verify-message" role="status" aria-live="polite" hidden></p>
-        </div>
-
-        <div class="row-pair">
-          <div class="row">
-            <label class="row-label" for="axis-length">Dráha</label>
-            <div class="step-input">
-              <div class="step-value">
-                <input type="text" id="axis-length" inputmode="numeric" value="10">
-                <span class="field-unit">m</span>
-              </div>
-              <span class="step-spin">
-                <button type="button" class="step-btn step-up" aria-label="Zvětšit dráhu o 1 m">▲</button>
-                <button type="button" class="step-btn step-down" aria-label="Zmenšit dráhu o 1 m">▼</button>
-              </span>
-            </div>
-          </div>
-
-          <div class="row">
-            <label class="row-label" for="time" id="time-label">Čas</label>
-            <div class="step-input">
-              <div class="step-value">
-                <input type="text" id="time" inputmode="decimal" value="10">
-                <span class="field-unit">s</span>
-              </div>
-              <span class="step-spin">
-                <button type="button" class="step-btn step-up" aria-label="Zvětšit čas o 1 s">▲</button>
-                <button type="button" class="step-btn step-down" aria-label="Zmenšit čas o 1 s">▼</button>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <span class="row-label">Pohyb</span>
-          <div class="variant-toggle" role="group" aria-label="Pohyb">
-            <button type="button" class="variant-btn is-active" data-motion="uniform" aria-pressed="true">rovnoměrný</button>
-            <button type="button" class="variant-btn" data-motion="decelerated" aria-pressed="false">zpomalený</button>
-          </div>
-        </div>
-
-        <div class="row">
-          <span class="row-label">Měřit po</span>
-          <div class="variant-toggle" role="group" aria-label="Měřit po">
-            <span class="variant-btn is-active" aria-current="true">sekundách</span>
-            <a class="variant-btn" href="pes-jednoducha-osa.html" data-measure-link>metrech</a>
-          </div>
         </div>
       </div>
     </aside>
 
     <div class="viz-column" aria-label="Simulace">
       <div class="track-section">
+        <p class="sim-empty-hint" id="hintEl">Nastav dráhu a čas a stiskni Spustit.</p>
 <svg id="track" class="track-svg" viewBox="0 0 648 220" preserveAspectRatio="xMidYMin meet" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Dráha psa">
 
 <g class="dog-mover" id="dog" transform="translate(-10.0539, 35)">
@@ -944,6 +1195,7 @@
       <div class="chart-wrap" id="chart-wrap">
         <div class="chart-stage" id="chart-stage">
           <div class="chart-plot" id="chart-plot">
+            <p class="sim-empty-hint is-hidden" id="chartHintEl">Klikej do grafu.</p>
             <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
             <canvas id="chart-confetti" class="chart-confetti-canvas" aria-hidden="true"></canvas>
           </div>
@@ -1017,6 +1269,9 @@
   const WHEEL_RADIUS = 35.7;
   const DOG_Y = 35;
   const START_X = TRACK_X - WHEEL_CX;
+  const AXIS_Y = 158;
+  const TRACK_VIEW_DEFAULT = '0 0 648 220';
+  const DOG_ART = { left: -6, right: 92, top: -2 };
 
   const CHART_W = 648;
   const CHART_H = 340;
@@ -1097,6 +1352,7 @@
           .filter((p) => p && Number.isFinite(p.t) && Number.isFinite(p.s))
           .map((p) => userChartClampPoint(p.t, p.s))
       : [];
+    if (userChartPoints.length === 1) userChartPoints = [];
     userChartShowFit = !!restored.userChartShowFit && userChartPoints.length >= 2;
 
     setCreateGraphMode(true, { restore: true });
@@ -1130,6 +1386,8 @@
   let motionMode = 'uniform';
   let runId = 0;
   let createGraphMode = false;
+  let observeHintDismissed = false;
+  let plotHintDismissed = false;
   let userChartPoints = [];
   let userChartShowFit = false;
   let userChartHold = null;
@@ -1336,7 +1594,7 @@
     xl.setAttribute('y', CHART_H - 6);
     xl.setAttribute('text-anchor', 'middle');
     xl.setAttribute('fill', AXIS_COLOR);
-    xl.setAttribute('font-size', '14');
+    xl.setAttribute('font-size', createGraphMode ? '18' : '14');
     xl.textContent = 'Čas';
     ax.appendChild(xl);
 
@@ -1347,7 +1605,7 @@
     yl.setAttribute('text-anchor', 'middle');
     yl.setAttribute('dominant-baseline', 'middle');
     yl.setAttribute('fill', AXIS_COLOR);
-    yl.setAttribute('font-size', '14');
+    yl.setAttribute('font-size', createGraphMode ? '18' : '14');
     yl.setAttribute('transform', `rotate(-90 16 ${yAxisLabelCy})`);
     yl.textContent = 'Vzdálenost od startu';
     ax.appendChild(yl);
@@ -1366,7 +1624,7 @@
       lab.setAttribute('x', x);
       lab.setAttribute('y', mt + ph + 22);
       lab.setAttribute('text-anchor', 'middle');
-      lab.setAttribute('font-size', '11');
+      lab.setAttribute('font-size', createGraphMode ? '14' : '11');
       lab.setAttribute('fill', '#444');
       lab.textContent = formatTick(t, 's');
       ax.appendChild(lab);
@@ -1387,7 +1645,7 @@
       lab.setAttribute('x', ml - 10);
       lab.setAttribute('y', y + 4);
       lab.setAttribute('text-anchor', 'end');
-      lab.setAttribute('font-size', '11');
+      lab.setAttribute('font-size', createGraphMode ? '14' : '11');
       lab.setAttribute('fill', '#444');
       lab.textContent = formatTick(dist, 'm');
       ax.appendChild(lab);
@@ -1848,6 +2106,7 @@
     updateFitCurveControls();
     clearGraphVerifyMessage();
     redrawChart();
+    persistPanelSettings();
   }
 
   function onUserChartHoldMove(ev) {
@@ -1899,6 +2158,7 @@
       hold = { mode: 'new', index: null, t: coords.t, s: coords.s };
     }
     userChartHold = hold;
+    hideChartHint();
     chartEl.classList.add('is-holding-point');
     if (typeof ev.pointerId === 'number' && chartEl.setPointerCapture) {
       try {
@@ -1920,10 +2180,12 @@
     const idx = parseInt(marker.getAttribute('data-index'), 10);
     if (!Number.isFinite(idx) || idx < 0 || idx >= userChartPoints.length) return;
     userChartPoints.splice(idx, 1);
+    if (userChartPoints.length === 1) userChartPoints = [];
     if (userChartPoints.length < 2) userChartShowFit = false;
     clearGraphVerifyMessage();
     updateFitCurveControls();
     redrawChart();
+    persistPanelSettings();
   }
 
   function createGraphUniformMeasurePairs() {
@@ -1947,16 +2209,58 @@
     updateAxisStepButtons();
   }
 
+  function dismissSceneHint() {
+    if (createGraphMode) plotHintDismissed = true;
+    else observeHintDismissed = true;
+    document.getElementById('hintEl')?.classList.add('is-hidden');
+  }
+
+  function syncSceneHint() {
+    const hintEl = document.getElementById('hintEl');
+    if (!hintEl) return;
+    const dismissed = createGraphMode ? plotHintDismissed : observeHintDismissed;
+    if (dismissed) {
+      hintEl.classList.add('is-hidden');
+      return;
+    }
+    hintEl.textContent = createGraphMode
+      ? 'Pozoruj pohyb pejska a zanes ho do grafu.'
+      : 'Nastav dráhu a čas a stiskni Spustit.';
+    hintEl.classList.remove('is-hidden');
+  }
+
+  function syncTrackFit() {
+    const track = document.getElementById('track');
+    if (!track) return;
+    if (!createGraphMode) {
+      track.setAttribute('viewBox', TRACK_VIEW_DEFAULT);
+      track.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+      return;
+    }
+    const padX = 10;
+    const padY = 8;
+    const minX = START_X + DOG_ART.left - padX;
+    const maxX = START_X + TRACK_LEN + DOG_ART.right + padX;
+    const minY = DOG_Y + DOG_ART.top - padY;
+    const maxY = AXIS_Y + 48 + padY;
+    track.setAttribute('viewBox', `${minX} ${minY} ${maxX - minX} ${maxY - minY}`);
+    track.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  }
+
   function setCreateGraphMode(active, options = {}) {
     const { restore = false } = options;
     createGraphMode = active;
     document.querySelector('.app').classList.toggle('is-create-graph', active);
-    const createBtn = document.getElementById('create-graph-btn');
-    createBtn.classList.toggle('is-active', active);
-    createBtn.setAttribute('aria-pressed', String(active));
-    createBtn.textContent = active ? 'Ukončit graf' : 'Vytvořit graf';
+    document.querySelectorAll('[data-sim-mode]').forEach((btn) => {
+      const isActive = (btn.dataset.simMode === 'plot') === active;
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
     document.getElementById('graph-tools-row').hidden = !active;
     chartEl.classList.toggle('is-create-graph', active);
+    syncTrackFit();
+    syncSceneHint();
+    hideChartHint();
 
     userChartHold = null;
     userChartEndHoldListeners();
@@ -1965,11 +2269,6 @@
     if (!restore) {
       userChartPoints = [];
       userChartShowFit = false;
-      if (active) {
-        applyRandomTrackSettings();
-      } else {
-        applyDefaultTrackSettings();
-      }
     }
 
     updateFitCurveControls();
@@ -2120,18 +2419,15 @@
 
     [0, axisLengthM].forEach((m) => {
       const x = (m / axisLengthM) * TRACK_LEN;
-
-      if (!createGraphMode) {
-        const label = document.createElementNS(NS, 'text');
-        label.setAttribute('class', 'axis-label');
-        label.setAttribute('x', x);
-        label.setAttribute('y', '20');
-        if (m === 0) label.setAttribute('text-anchor', 'start');
-        else if (m === axisLengthM) label.setAttribute('text-anchor', 'end');
-        else label.setAttribute('text-anchor', 'middle');
-        label.textContent = m + ' m';
-        container.appendChild(label);
-      }
+      const label = document.createElementNS(NS, 'text');
+      label.setAttribute('class', 'axis-label');
+      label.setAttribute('x', x);
+      label.setAttribute('y', '20');
+      if (m === 0) label.setAttribute('text-anchor', 'start');
+      else if (m === axisLengthM) label.setAttribute('text-anchor', 'end');
+      else label.setAttribute('text-anchor', 'middle');
+      label.textContent = m + ' m';
+      container.appendChild(label);
     });
   }
 
@@ -2143,7 +2439,8 @@
 
   function setDogProgress(f) {
     const mover = document.getElementById('dog');
-    mover.setAttribute('transform', `translate(${START_X + f * TRACK_LEN}, ${DOG_Y})`);
+    const x = START_X + f * TRACK_LEN;
+    mover.setAttribute('transform', `translate(${x}, ${DOG_Y})`);
     mover.querySelector('.wheel-spinner').setAttribute(
       'transform',
       `rotate(${f * getWheelDeg()} ${WHEEL_CX} ${WHEEL_CY})`
@@ -2379,16 +2676,32 @@
     }
   });
 
+  function showChartHint(text) {
+    const el = document.getElementById('chartHintEl');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('is-hidden');
+  }
+
+  function hideChartHint() {
+    document.getElementById('chartHintEl')?.classList.add('is-hidden');
+  }
+
   document.getElementById('start-btn').addEventListener('click', async () => {
     const btn = document.getElementById('start-btn');
+    dismissSceneHint();
+    hideChartHint();
     btn.disabled = true;
     resetDog();
     await runDog(timeInput);
     btn.disabled = false;
+    if (createGraphMode) showChartHint('Teď jízdu zanes do grafu.');
   });
 
   document.getElementById('reset-btn').addEventListener('click', () => {
     document.getElementById('start-btn').disabled = false;
+    syncSceneHint();
+    hideChartHint();
     resetDog();
   });
 
@@ -2422,8 +2735,12 @@
     link.addEventListener('click', persistPanelSettings);
   });
 
-  document.getElementById('create-graph-btn').addEventListener('click', () => {
-    setCreateGraphMode(!createGraphMode);
+  document.querySelectorAll('[data-sim-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const wantPlot = btn.dataset.simMode === 'plot';
+      if (wantPlot === createGraphMode) return;
+      setCreateGraphMode(wantPlot);
+    });
   });
 
   document.getElementById('fit-curve-btn').addEventListener('click', () => {
@@ -2445,6 +2762,13 @@
   document.addEventListener('keydown', (ev) => {
     if (ev.key === 'Escape' && chartFullscreenOpen) setChartFullscreen(false);
   });
+
+  const dismissHintOnInteract = (event) => {
+    if (event.target.closest?.('.hub-back-to-sims')) return;
+    dismissSceneHint();
+  };
+  document.querySelector('.viz-column')?.addEventListener('pointerdown', dismissHintOnInteract);
+  document.querySelector('.setup-panel')?.addEventListener('pointerdown', dismissHintOnInteract);
 
   if (isPageReload()) {
     sessionStorage.removeItem(SETTINGS_STORAGE_KEY);

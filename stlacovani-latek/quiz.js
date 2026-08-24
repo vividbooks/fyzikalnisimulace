@@ -22,7 +22,7 @@ const btnQuiz = document.getElementById("btnQuiz");
 const btnQuizCheck = document.getElementById("btnQuizCheck");
 const btnQuizReset = document.getElementById("btnQuizReset");
 const simControls = document.getElementById("simControls");
-const sceneWorkspace = document.querySelector(".scene-workspace");
+const sceneWorkspace = document.querySelector(".sim-canvas");
 
 let quizActive = false;
 /** @type {Map<string, Set<string>>} */
@@ -527,7 +527,7 @@ function setQuizMode(active) {
   }
   if (simControls) simControls.hidden = false;
   if (sceneWorkspace) {
-    sceneWorkspace.classList.toggle("scene-workspace--quiz", active);
+    sceneWorkspace.classList.toggle("sim-canvas--quiz", active);
     sceneWorkspace.setAttribute(
       "aria-label",
       active ? "Kvíz — přiřazování vlastností skupenstvím" : "Vizualizace lisu"
