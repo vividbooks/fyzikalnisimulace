@@ -24,7 +24,6 @@ const SCENES = {
     pumpYBottom: 1483.514,
     contactStart: 0.88,
     resistance: 0.35,
-    hint: "Chytni táhlo a zkus stlačit kapalinu.",
     ariaLabel: "Lis s kapalinou",
   },
   gas: {
@@ -33,7 +32,6 @@ const SCENES = {
     pumpYBottom: 1492,
     contactStart: 0.15,
     resistance: 0.22,
-    hint: "Chytni táhlo a zkus stlačit plyn.",
     ariaLabel: "Lis s plynnou látkou",
   },
 };
@@ -141,6 +139,7 @@ let dragPointerId = null;
 let lastY = 0;
 let stageHeight = 1;
 let loading = false;
+let hintDismissed = false;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -680,13 +679,26 @@ function hideStartHint() {
   hintEl?.classList.add("is-hidden");
 }
 
+function dismissStartHint() {
+  hintDismissed = true;
+  hideStartHint();
+}
+
+function syncStartHint() {
+  if (!hintDismissed) {
+    showStartHint(SCENES.solid.hint);
+    return;
+  }
+  hideStartHint();
+}
+
 function updateSceneControls() {
   sceneButtons.forEach((button) => {
     const active = button.dataset.scene === sceneId;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
-  showStartHint(scene.hint);
+  syncStartHint();
   lottieEl.setAttribute("aria-label", scene.ariaLabel);
 }
 
@@ -760,7 +772,7 @@ function onPointerDown(event) {
   lastY = event.clientY;
   stageHeight = lottieEl.getBoundingClientRect().height || 1;
   pistonHit.classList.add("is-dragging");
-  hideStartHint();
+  dismissStartHint();
   pistonHit.setPointerCapture?.(event.pointerId);
 }
 
@@ -794,15 +806,18 @@ function onKeyDown(event) {
   if (!anim || loading) return;
   if (event.key === "ArrowDown" || event.key === "ArrowUp") {
     event.preventDefault();
+    dismissStartHint();
     const movingDown = event.key === "ArrowDown";
     const dir = movingDown ? 1 : -1;
     const step = KEYBOARD_STEP * dragSensitivity(progress, movingDown);
     setProgress(progress + dir * step);
   } else if (event.key === "Home") {
     event.preventDefault();
+    dismissStartHint();
     setProgress(0);
   } else if (event.key === "End") {
     event.preventDefault();
+    dismissStartHint();
     setProgress(1);
   }
 }
