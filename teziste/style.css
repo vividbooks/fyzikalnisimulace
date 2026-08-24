@@ -663,6 +663,14 @@ input {
   transform: translate(-50%, -50%);
 }
 
+.sim-empty-hint--top {
+  top: 16px;
+  z-index: 100;
+  isolation: isolate;
+  max-width: min(720px, calc(100% - 160px));
+  transform: translateX(-50%);
+}
+
 .sim-empty-hint.is-hidden {
   display: none;
 }
