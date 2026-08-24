@@ -105,9 +105,9 @@ button {
   flex: 1 1 auto;
   width: 100%;
   min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   padding: 16px 16px 10px;
   overflow: hidden;
   border: none;
@@ -281,7 +281,6 @@ button {
   min-width: 0;
   width: 100%;
   height: 100%;
-  container-type: size;
   display: grid;
   place-items: center;
 }
@@ -292,14 +291,9 @@ button {
   aspect-ratio: 1;
   max-width: 100%;
   max-height: 100%;
+  overflow: visible;
   user-select: none;
   -webkit-user-select: none;
-}
-
-@supports (width: 1cqh) {
-  .stage {
-    width: min(100cqw, 100cqh);
-  }
 }
 
 .lottie {
@@ -316,16 +310,15 @@ button {
 
 .piston-hit {
   position: absolute;
-  left: 50%;
-  top: 22%;
-  width: clamp(56px, 8vmin, 72px);
-  height: clamp(56px, 8vmin, 72px);
+  left: 28%;
+  top: 14.5%;
+  width: 44%;
+  height: 20%;
   cursor: grab;
   touch-action: none;
   z-index: 5;
   outline: none;
   overflow: visible;
-  transform: translate(-50%, -50%);
 }
 
 .piston-hit.is-dragging {
@@ -337,11 +330,19 @@ button {
   border-radius: 50%;
 }
 
+.press-handle-anchor {
+  position: absolute;
+  left: 50%;
+  top: 32%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
 .press-handle {
   display: grid;
   place-items: center;
-  width: 100%;
-  height: 100%;
+  width: clamp(56px, 8vmin, 72px);
+  height: clamp(56px, 8vmin, 72px);
   border: none;
   border-radius: 50%;
   background: #ffffff;
@@ -384,6 +385,7 @@ button {
 .quiz-view {
   width: 100%;
   height: 100%;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -395,16 +397,14 @@ button {
 .sim-view {
   position: relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
 }
 
 .sim-canvas--quiz {
   touch-action: auto;
   overflow: hidden;
-  align-items: stretch;
-  justify-content: flex-start;
   -webkit-user-select: auto;
   user-select: auto;
 }
