@@ -107,6 +107,7 @@
 
     .app.is-create-graph .track-section {
       flex: 0.75 1 0;
+      padding: 8px 10px;
     }
 
     .sim-empty-hint {
@@ -1268,6 +1269,9 @@
   const WHEEL_RADIUS = 35.7;
   const DOG_Y = 35;
   const START_X = TRACK_X - WHEEL_CX;
+  const AXIS_Y = 158;
+  const TRACK_VIEW_DEFAULT = '0 0 648 220';
+  const DOG_ART = { left: -6, right: 92, top: -2 };
 
   const CHART_W = 648;
   const CHART_H = 340;
@@ -2225,6 +2229,24 @@
     hintEl.classList.remove('is-hidden');
   }
 
+  function syncTrackFit() {
+    const track = document.getElementById('track');
+    if (!track) return;
+    if (!createGraphMode) {
+      track.setAttribute('viewBox', TRACK_VIEW_DEFAULT);
+      track.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+      return;
+    }
+    const padX = 10;
+    const padY = 8;
+    const minX = START_X + DOG_ART.left - padX;
+    const maxX = START_X + TRACK_LEN + DOG_ART.right + padX;
+    const minY = DOG_Y + DOG_ART.top - padY;
+    const maxY = AXIS_Y + 48 + padY;
+    track.setAttribute('viewBox', `${minX} ${minY} ${maxX - minX} ${maxY - minY}`);
+    track.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  }
+
   function setCreateGraphMode(active, options = {}) {
     const { restore = false } = options;
     createGraphMode = active;
@@ -2236,6 +2258,7 @@
     });
     document.getElementById('graph-tools-row').hidden = !active;
     chartEl.classList.toggle('is-create-graph', active);
+    syncTrackFit();
     syncSceneHint();
     hideChartHint();
 
@@ -2416,16 +2439,8 @@
 
   function setDogProgress(f) {
     const mover = document.getElementById('dog');
-    const scale = createGraphMode ? 0.7 : 1;
-    const ox = WHEEL_CX;
-    const oy = WHEEL_CY + WHEEL_RADIUS;
     const x = START_X + f * TRACK_LEN;
-    mover.setAttribute(
-      'transform',
-      scale === 1
-        ? `translate(${x}, ${DOG_Y})`
-        : `translate(${x}, ${DOG_Y}) translate(${ox}, ${oy}) scale(${scale}) translate(${-ox}, ${-oy})`
-    );
+    mover.setAttribute('transform', `translate(${x}, ${DOG_Y})`);
     mover.querySelector('.wheel-spinner').setAttribute(
       'transform',
       `rotate(${f * getWheelDeg()} ${WHEEL_CX} ${WHEEL_CY})`
