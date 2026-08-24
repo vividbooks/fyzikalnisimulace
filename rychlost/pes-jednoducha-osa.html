@@ -440,6 +440,10 @@
       display: none;
     }
 
+    .app.is-create-graph .row-pair {
+      display: none;
+    }
+
     .app.is-create-graph .graph-tools-row {
       display: grid;
       gap: 8px;
@@ -1078,6 +1082,7 @@
               <button type="button" class="variant-btn is-active" data-motion="uniform" aria-pressed="true">rovnoměrný</button>
               <button type="button" class="variant-btn" data-motion="decelerated" aria-pressed="false">zpomalený</button>
             </div>
+            <span class="row-label">Měřit po</span>
             <div class="variant-toggle" role="group" aria-label="Měřit po">
               <a class="variant-btn" href="./" data-measure-link>sekundách</a>
               <span class="variant-btn is-active" aria-current="true">metrech</span>
@@ -1371,6 +1376,8 @@
   let motionMode = 'uniform';
   let runId = 0;
   let createGraphMode = false;
+  let observeHintDismissed = false;
+  let plotHintDismissed = false;
   let userChartPoints = [];
   let userChartShowFit = false;
   let userChartHold = null;
@@ -2176,6 +2183,26 @@
     updateAxisStepButtons();
   }
 
+  function dismissSceneHint() {
+    if (createGraphMode) plotHintDismissed = true;
+    else observeHintDismissed = true;
+    document.getElementById('hintEl')?.classList.add('is-hidden');
+  }
+
+  function syncSceneHint() {
+    const hintEl = document.getElementById('hintEl');
+    if (!hintEl) return;
+    const dismissed = createGraphMode ? plotHintDismissed : observeHintDismissed;
+    if (dismissed) {
+      hintEl.classList.add('is-hidden');
+      return;
+    }
+    hintEl.textContent = createGraphMode
+      ? 'Pozoruj pohyb pejska a zanes ho do grafu.'
+      : 'Nastav dráhu a čas a stiskni Spustit.';
+    hintEl.classList.remove('is-hidden');
+  }
+
   function setCreateGraphMode(active, options = {}) {
     const { restore = false } = options;
     createGraphMode = active;
@@ -2187,13 +2214,7 @@
     });
     document.getElementById('graph-tools-row').hidden = !active;
     chartEl.classList.toggle('is-create-graph', active);
-    const hintEl = document.getElementById('hintEl');
-    if (hintEl) {
-      hintEl.textContent = active
-        ? 'Stiskni Spustit a sleduj jízdu.'
-        : 'Nastav dráhu a čas a stiskni Spustit.';
-      hintEl.classList.remove('is-hidden');
-    }
+    syncSceneHint();
     hideChartHint();
 
     userChartHold = null;
@@ -2597,25 +2618,18 @@
 
   document.getElementById('start-btn').addEventListener('click', async () => {
     const btn = document.getElementById('start-btn');
-    document.getElementById('hintEl')?.classList.add('is-hidden');
+    dismissSceneHint();
     hideChartHint();
     btn.disabled = true;
     resetDog();
     await runDog(timeInput);
     btn.disabled = false;
     if (createGraphMode) showChartHint('Teď jízdu zanes do grafu.');
-    else showChartHint('Nyní zanes jízdu do grafu.');
   });
 
   document.getElementById('reset-btn').addEventListener('click', () => {
     document.getElementById('start-btn').disabled = false;
-    const hintEl = document.getElementById('hintEl');
-    if (hintEl) {
-      hintEl.textContent = createGraphMode
-        ? 'Stiskni Spustit a sleduj jízdu.'
-        : 'Nastav dráhu a čas a stiskni Spustit.';
-      hintEl.classList.remove('is-hidden');
-    }
+    syncSceneHint();
     hideChartHint();
     resetDog();
   });
@@ -2677,6 +2691,13 @@
   document.addEventListener('keydown', (ev) => {
     if (ev.key === 'Escape' && chartFullscreenOpen) setChartFullscreen(false);
   });
+
+  const dismissHintOnInteract = (event) => {
+    if (event.target.closest?.('.hub-back-to-sims')) return;
+    dismissSceneHint();
+  };
+  document.querySelector('.viz-column')?.addEventListener('pointerdown', dismissHintOnInteract);
+  document.querySelector('.setup-panel')?.addEventListener('pointerdown', dismissHintOnInteract);
 
   if (isPageReload()) {
     sessionStorage.removeItem(SETTINGS_STORAGE_KEY);
