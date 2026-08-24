@@ -113,12 +113,14 @@
             </button>
           </div>
           <div class="panel-tools" aria-label="Nástroje">
-            <div class="panel-actions panel-actions--tools-meta">
+            <div
+              class="panel-actions panel-actions--tools-primary"
+              data-lab-only
+            >
               <button
                 type="button"
                 id="tool-erase"
                 class="action-btn action-btn--icon"
-                data-lab-only
                 aria-pressed="false"
                 aria-label="Guma"
                 title="Guma"
@@ -141,11 +143,6 @@
                   </svg>
                 </span>
               </button>
-            </div>
-            <div
-              class="panel-actions panel-actions--tools-primary"
-              data-lab-only
-            >
               <button
                 type="button"
                 id="tool-move"
@@ -422,9 +419,10 @@
             >
               <span class="action-btn__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 4v13" />
-                  <path d="m8 13 4 4 4-4" />
-                  <path d="M6 20h12" />
+                  <path d="M6 18V5" />
+                  <path d="m3 8 3-3 3 3" />
+                  <path d="M6 18h13" />
+                  <path d="m16 15 3 3-3 3" />
                 </svg>
               </span>
               <span class="action-btn__label">Síly</span>

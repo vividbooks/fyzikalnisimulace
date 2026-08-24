@@ -146,9 +146,65 @@
 
   const WEIGHT_SVG = `<svg width="280" height="269" viewBox="0 0 280 269" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="138" cy="50" r="45" stroke="#858585" stroke-width="10"/><path d="M267.34 269H12.3699C6.00343 269 1.2579 263.13 2.59185 256.905L43.3061 66.9047C44.2941 62.294 48.3688 59 53.0842 59H222.101C226.732 59 230.757 62.1791 231.829 66.6838L277.068 256.684C278.564 262.968 273.799 269 267.34 269Z" fill="#858585"/></svg>`;
   const WEIGHT_LABEL_TEXT = "10 kg";
+  const WEIGHT_DISPLAY_KG = 10;
 
   function weightInnerHtml() {
     return `${WEIGHT_SVG}<span class="weight-label" aria-hidden="true">${WEIGHT_LABEL_TEXT}</span>`;
+  }
+
+  function formatWeightMassLabel(count) {
+    return `${count * WEIGHT_DISPLAY_KG} kg`;
+  }
+
+  function weightStackRoot(weight) {
+    let current = weight;
+    while (current?.snap?.type === "weight") {
+      current = current.snap.weight;
+    }
+    return current;
+  }
+
+  /** Spodní závaží ve sloupci zavěšených kusů (jen placement hang). */
+  function weightStackBottom(root) {
+    let bottom = root;
+    for (;;) {
+      const child = weights.find(
+        (w) =>
+          w.snap.type === "weight" &&
+          w.snap.weight === bottom &&
+          w.snap.placement === "hang"
+      );
+      if (!child) break;
+      bottom = child;
+    }
+    return bottom;
+  }
+
+  function updateWeightLabels() {
+    for (const weight of weights) {
+      if (!isStageWeight(weight)) continue;
+      const label = weight.el.querySelector(".weight-label");
+      if (!label) continue;
+
+      const root = weightStackRoot(weight);
+      const stackCount = countAttachedWeights(root);
+      const bottom = weightStackBottom(root);
+      const showTotal = stackCount > 1;
+      const displayCount = showTotal ? stackCount : 1;
+
+      if (showTotal && weight !== bottom) {
+        label.hidden = true;
+        label.setAttribute("aria-hidden", "true");
+      } else {
+        label.hidden = false;
+        label.setAttribute("aria-hidden", "false");
+        label.textContent = formatWeightMassLabel(displayCount);
+        weight.el.setAttribute(
+          "aria-label",
+          `Závaží ${displayCount * WEIGHT_DISPLAY_KG} kg`
+        );
+      }
+    }
   }
 
   const WINCH_SVG = `<svg width="134" height="132" viewBox="0 0 134 132" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="48.5" width="133" height="83" rx="12" ry="12" fill="#D9D9D9"/><circle class="winch-hub" cx="67" cy="50" r="41"/><circle cx="67" cy="50" r="46" fill="none" stroke="#1D1D1B" stroke-width="10"/><g transform="translate(67 50)"><g class="winch-drum"><circle class="winch-light" cx="0" cy="0" r="46" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 14"/></g></g><circle class="winch-led" cx="16" cy="118" r="6.5" fill="#5a5a5a" stroke="#1d1d1b" stroke-width="1.4"/></svg>`;
@@ -5100,9 +5156,13 @@
     const newtons = simForceToNewtons(scaled.mag);
     if (newtons >= 0.5) {
       let along = scaled.len < 36 ? 1.08 : 0.55;
+      if (kind === "gravity" && !quiz.active) {
+        along = scaled.len < 80 ? 1.12 : 0.92;
+      }
       // Dlouhá šipka může vyjít z plochy — políčko kvízu drž u působiště
       if (quiz.active) along = Math.min(along, QUIZ_SLOT_ALONG_MAX / scaled.len);
       const text = `${Math.round(newtons)} N`;
+      const preferRight = kind === "gravity" ? -1 : 1;
       if (quiz.active) {
         const peekKey = `slot-${quiz.slotSeq}`;
         const answer = quiz.answers.get(peekKey);
@@ -5112,11 +5172,27 @@
           x: origin.x + scaled.x * t,
           y: origin.y + scaled.y * t,
         };
-        const desired = placeForceReadout(origin, scaled, ang, along, shown, 18);
+        const desired = placeForceReadout(
+          origin,
+          scaled,
+          ang,
+          along,
+          shown,
+          18,
+          preferRight
+        );
         const at = resolveQuizSlotPoint(desired, shown, anchor, ang);
         g.appendChild(buildQuizSlot(at.x, at.y, newtons, anchor));
       } else {
-        const at = placeForceReadout(origin, scaled, ang, along, text);
+        const at = placeForceReadout(
+          origin,
+          scaled,
+          ang,
+          along,
+          text,
+          0,
+          preferRight
+        );
         appendSvgReadout(g, at.x, at.y, text);
       }
     }
@@ -5588,7 +5664,15 @@
     };
   }
 
-  function placeForceReadout(origin, scaled, ang, along, label, extraGap = 0) {
+  function placeForceReadout(
+    origin,
+    scaled,
+    ang,
+    along,
+    label,
+    extraGap = 0,
+    preferSign = 1
+  ) {
     const { width, height } = readoutPillSize(label);
     const px = origin.x + scaled.x * along;
     const py = origin.y + scaled.y * along;
@@ -5596,7 +5680,7 @@
       (Math.abs(Math.sin(ang)) * width + Math.abs(Math.cos(ang)) * height) / 2;
     const side = extent + READOUT_PILL_GAP + extraGap;
     const bounds = stageSize();
-    const candidates = [1, -1].map((sign) => ({
+    const candidates = [preferSign, -preferSign].map((sign) => ({
       x: px - Math.sin(ang) * side * sign,
       y: py + Math.cos(ang) * side * sign,
     }));
@@ -5911,6 +5995,7 @@
     const system = buildRopeSystem();
     updateWinchForceLabels(system);
     updateLengthOverlays();
+    updateWeightLabels();
     clearForceArrows();
     if (!showForces) {
       if (quiz.active) {
@@ -5945,10 +6030,11 @@
    * a nakreslí její šipka, tahy dalších lan se přičtou.
    */
   function weightGravityOrigin(weight) {
-    const left = parseFloat(weight.el.style.left) || 0;
-    const w = weight.el.offsetWidth || 70;
-    const hook = getWeightHookWorld(weight);
-    return { x: left + w + 22, y: hook.y };
+    const root = weightStackRoot(weight) || weight;
+    const left = parseFloat(root.el.style.left) || 0;
+    const w = root.el.offsetWidth || 70;
+    const hook = getWeightHookWorld(root);
+    return { x: left + w / 2, y: hook.y };
   }
 
   function bodyNetEntry(netByBody, obj, origin, gy, gravityOrigin) {
@@ -9942,7 +10028,7 @@
     if (appMode === "lab") {
       hintEl.textContent = "Přetáhni kladky a závaží na plochu.";
     } else if (appMode === "gallery") {
-      hintEl.textContent = "Stiskni Spustit a sleduj pohyb.";
+      hintEl.textContent = "Vyber si kladkostroj.";
     }
     hintEl.classList.toggle("is-hidden", hintDismissed);
   }
@@ -11041,6 +11127,7 @@
         btn.addEventListener("click", () => {
           if (activePresetId === preset.id) return;
           loadPresetScene(preset.id);
+          dismissSceneHint();
         });
         galleryPresetList.appendChild(btn);
       }
@@ -11513,7 +11600,10 @@
   enableEraser();
   enablePulleySelection();
 
-  stage?.addEventListener("pointerdown", dismissSceneHint);
+  stage?.addEventListener("pointerdown", () => {
+    if (appMode === "gallery") return;
+    dismissSceneHint();
+  });
   stockSection?.addEventListener("pointerdown", dismissSceneHint);
 
   syncRopeViewBox();

@@ -250,7 +250,7 @@ input {
 }
 
 .panel-actions--tools-primary {
-  grid-template-columns: auto 1fr 1fr;
+  grid-template-columns: auto auto 1fr 1fr;
 }
 
 .panel-actions--tools-meta {
@@ -903,8 +903,13 @@ input {
       }
 
       .weight:not(.is-docked):not(.is-stock-template) .weight-label {
-        top: calc(100% + 6px);
-        transform: translateX(-50%);
+        left: calc(100% + 10px);
+        top: 68%;
+        transform: translateY(-50%);
+      }
+
+      .weight-label[hidden] {
+        display: none !important;
       }
 
       .weight.is-docked .weight-label,
