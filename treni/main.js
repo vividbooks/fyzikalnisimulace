@@ -54,10 +54,10 @@ const MAX_STRETCH_PX = 120;
 const VIEWBOX_WIDTH = 954;
 /** Posun po podložce: směr dlouhé osy horní stěny (Δy/|Δx| = 80/550). */
 const SLIDE_Y_PER_X = 80 / 550;
-/** Max posun hranolu v SVG jednotkách (viewBox šířka 954) */
-const FLAT_MAX_BEAM_SLIDE_SVG = 220;
-/** Edge konec: beam 450.701 → 286.451 (scene-edge-end-user) */
-const EDGE_MAX_BEAM_SLIDE_SVG = 164.25;
+/** Max posun hranolu v SVG jednotkách (viewBox šířka 954), včetně úvodního posunu doprava */
+const FLAT_MAX_BEAM_SLIDE_SVG = 340;
+/** Edge konec: původní 164.25 + úvodní posun 120 */
+const EDGE_MAX_BEAM_SLIDE_SVG = 284.25;
 /** Úvodní posun kvádru po podložce směrem k pravému okraji */
 const BEAM_REST_SHIFT_SVG = 120;
 
