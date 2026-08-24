@@ -1,8 +1,10 @@
 const padWrap = document.getElementById("padWrap");
 const stageEl = document.getElementById("stage");
+const hintEl = document.getElementById("hintEl");
 const resetBtn = document.getElementById("resetBtn");
 const flipBeamBtn = document.getElementById("flipBeamBtn");
-const beamSizeBtnEls = [...document.querySelectorAll(".scene-btn--size[data-beam-type]")];
+const beamMaterialBtnEls = [...document.querySelectorAll("[data-beam-material]")];
+const beamSizeBtnEls = [...document.querySelectorAll("[data-beam-size]")];
 const surfaceBtnEls = [...document.querySelectorAll("[data-surface-type]")];
 const beamMassEl = document.getElementById("beamMassEl");
 const muEditorToggleBtn = document.getElementById("muEditorToggleBtn");
@@ -56,6 +58,8 @@ const SLIDE_Y_PER_X = 80 / 550;
 const FLAT_MAX_BEAM_SLIDE_SVG = 220;
 /** Edge konec: beam 450.701 → 286.451 (scene-edge-end-user) */
 const EDGE_MAX_BEAM_SLIDE_SVG = 164.25;
+/** Úvodní posun kvádru po podložce směrem k pravému okraji */
+const BEAM_REST_SHIFT_SVG = 120;
 
 function frictionFromMu(massG, muKinetic) {
   const normalN = (massG / 1000) * GRAVITY;
@@ -87,6 +91,8 @@ const SILOMER_COIL_PATH_INDICES = [
 ];
 const SILOMER_HANDLE_PATH_INDEX = 11;
 const SILOMER_ROD_PATH_INDEX = 3;
+/** Čísla stupnice 0–20 N — necháváme jen čárky */
+const SILOMER_SCALE_LABEL_PATH_START = 47;
 
 /** Hranol 20,3×5,2×9,4 cm = 1000 cm³; malá ocel = ¼ objemu, malé dřevo = ½ objemu */
 const BEAM_DIM_LONG_CM = 20.3;
@@ -141,10 +147,66 @@ const WEIGHT_ARROW_SHAFT_HALF_WIDTH = 1.5;
 const WEIGHT_ARROW_FIGMA_REF_LENGTH = WEIGHT_ARROW_SHAFT_BOTTOM;
 const BEAM_WEIGHT_ARROW_REF_N = 3;
 const WEIGHT_ARROW_BASE_LENGTH = WEIGHT_ARROW_FIGMA_REF_LENGTH;
-const WEIGHT_ARROW_LABEL_PX = 26;
+const WEIGHT_ARROW_LABEL_PX = 34;
+const FORCE_PILL_MIN_W = 72;
+const FORCE_PILL_CHAR_W = 0.62;
+const FORCE_PILL_HEIGHT = WEIGHT_ARROW_LABEL_PX * 1.45;
+const WEIGHT_ARROW_HEAD_TIP_Y = 30.646;
+const PAD_FRONT_BOTTOM = { x1: 211.25, y1: 226.25, x2: 891.25, y2: 126.25 };
+const EDGE_SCENE_OFFSET_Y = -80.271;
 const WEIGHT_ARROW_LABEL_FONT =
   "Fenomen Sans, ui-sans-serif, system-ui, sans-serif";
 const WEIGHT_ARROW_COLOR = "#FF5F5F";
+
+function forcePillSize(label) {
+  const width = Math.max(
+    FORCE_PILL_MIN_W,
+    String(label).length * WEIGHT_ARROW_LABEL_PX * FORCE_PILL_CHAR_W
+  );
+  return { width, height: FORCE_PILL_HEIGHT, rx: FORCE_PILL_HEIGHT / 2 };
+}
+
+function placeForcePillRect(pill, cx, cy, label) {
+  const { width, height, rx } = forcePillSize(label);
+  pill.setAttribute("x", String(cx - width / 2));
+  pill.setAttribute("y", String(cy - height / 2));
+  pill.setAttribute("width", String(width));
+  pill.setAttribute("height", String(height));
+  pill.setAttribute("rx", String(rx));
+  pill.setAttribute("ry", String(rx));
+}
+
+/** Sklon horní hrany pouzdra siloměru — panel síly kopíruje tuto hranu. */
+const FORCE_READOUT_ANGLE_DEG =
+  (Math.atan2(76.713 - 104.3145, 348.387 - 185.528) * 180) / Math.PI;
+
+function applyForceReadoutTilt(wrap, cx, cy) {
+  if (!wrap || !Number.isFinite(cx) || !Number.isFinite(cy)) return;
+  wrap.setAttribute(
+    "transform",
+    `rotate(${FORCE_READOUT_ANGLE_DEG} ${cx} ${cy})`
+  );
+}
+
+function ensureForceReadoutPill(readoutEl) {
+  const wrap = readoutEl?.parentElement;
+  if (!wrap) return null;
+  wrap.querySelector("path")?.remove();
+  let pill = wrap.querySelector(".weight-display__label-pill");
+  if (!pill) {
+    pill = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    pill.setAttribute("class", "weight-display__label-pill");
+    wrap.insertBefore(pill, readoutEl);
+  }
+  readoutEl.removeAttribute("transform");
+  readoutEl.setAttribute("font-family", WEIGHT_ARROW_LABEL_FONT);
+  readoutEl.setAttribute("font-weight", "600");
+  readoutEl.setAttribute("font-size", String(WEIGHT_ARROW_LABEL_PX));
+  readoutEl.setAttribute("fill", "#171923");
+  readoutEl.setAttribute("text-anchor", "middle");
+  readoutEl.setAttribute("dominant-baseline", "middle");
+  return pill;
+}
 /** Malý dřevěný hranol — pevná geometrie z Figmy (bez scale transform) */
 const WOOD_SMALL_FLAT_BEAM_WEIGHT_ANCHOR = { x: 534.5, y: 120.5 };
 const WOOD_SMALL_BEAM_FLAT_BODY =
@@ -170,7 +232,7 @@ const SURFACE_VARIANTS = {
       "url(#paint2_linear_2095_869)",
       "url(#paint3_linear_2095_869)",
     ],
-    padTexture: "url(#texMetal)",
+    padTexture: "none",
     padStroke: "#2F363E",
   },
   leather: {
@@ -301,6 +363,10 @@ const BEAM_VARIANTS = {
 };
 
 const BEAM_TYPES = ["wood", "wood2kg", "woodSmall", "steel", "steelSmall"];
+const BEAM_TYPE_BY_MATERIAL_SIZE = {
+  wood: { small: "woodSmall", large: "wood", xlarge: "wood2kg" },
+  steel: { small: "steelSmall", large: "steel" },
+};
 
 let beamEl = null;
 let beamFlatEl = null;
@@ -346,6 +412,7 @@ let muEditorOpen = false;
 let silomerHintFlatEl = null;
 let silomerHintEdgeEl = null;
 let silomerBrokenBannerEl = null;
+let pressHandleEl = null;
 let silomerHintDismissed = false;
 let weightDisplayTemplate = "";
 
@@ -371,6 +438,17 @@ function activeSurfaceVariant() {
 
 function beamMaterialKey() {
   return beamType.startsWith("wood") ? "wood" : "steel";
+}
+
+function beamSizeKey() {
+  if (beamType === "woodSmall" || beamType === "steelSmall") return "small";
+  if (beamType === "wood2kg") return "xlarge";
+  return "large";
+}
+
+function resolveBeamPickerSize(material, size) {
+  if (material === "steel" && size === "xlarge") return "large";
+  return size;
 }
 
 function beamMaterialLabel() {
@@ -484,13 +562,19 @@ function getWeightArrowExtension(heightUnits) {
   return WEIGHT_ARROW_BASE_LENGTH * Math.max(0, heightUnits - 1);
 }
 
-/** Celková délka těla šipky — u 80 N zkrácena o 5 % */
-function resolveWeightArrowExtension(heightUnits, weightN) {
-  const extension = getWeightArrowExtension(heightUnits);
-  if (Math.abs(weightN - 80) >= 0.05) return extension;
+/** Velká tíha (80 N) smí být 2,5× delší, než kam sahá dolní hrana podložky */
+const WEIGHT_ARROW_MAX_LENGTH_SCALE = 2.5;
 
-  const totalLength = WEIGHT_ARROW_SHAFT_BOTTOM + extension;
-  return totalLength * 0.95 - WEIGHT_ARROW_SHAFT_BOTTOM;
+/** Velká tíha smí přesáhnout podložku, menší šipky zůstanou kratší */
+function resolveWeightArrowExtension(anchor, heightUnits, sceneOffsetY) {
+  const extension = getWeightArrowExtension(heightUnits);
+  const tipAtZero =
+    WEIGHT_ARROW_HEAD_TIP_Y +
+    (WEIGHT_ARROW_SHAFT_BOTTOM - WEIGHT_ARROW_FIGMA_SHAFT_LENGTH);
+  const maxLocalTip = PAD_FRONT_BOTTOM.y1 - sceneOffsetY;
+  const maxExtension =
+    (maxLocalTip - (anchor.y + tipAtZero)) * WEIGHT_ARROW_MAX_LENGTH_SCALE;
+  return Math.min(extension, Math.max(0, maxExtension));
 }
 
 function buildWeightArrowShaftPath(extension) {
@@ -551,10 +635,10 @@ function ensureBeamWeightArrow(root) {
   return group;
 }
 
-function renderBeamWeightArrow(group, anchor, weightN, heightUnits) {
+function renderBeamWeightArrow(group, anchor, weightN, heightUnits, sceneOffsetY) {
   if (!weightDisplayTemplate) return;
 
-  const extension = resolveWeightArrowExtension(heightUnits, weightN);
+  const extension = resolveWeightArrowExtension(anchor, heightUnits, sceneOffsetY);
   group.setAttribute(
     "transform",
     `translate(${anchor.x} ${anchor.y}) translate(${-WEIGHT_ARROW_SHAFT_X} ${-WEIGHT_ARROW_SHAFT_TOP})`
@@ -594,18 +678,27 @@ function renderBeamWeightArrow(group, anchor, weightN, heightUnits) {
 
   group.querySelector(".weight-display__label-text")?.remove();
   group.querySelector(".weight-display__label-path")?.remove();
+  group.querySelector(".weight-display__label-pill")?.remove();
+
+  const label = formatWeightLabel(weightN);
+  const x = WEIGHT_ARROW_LABEL_X + 8;
+  const y = WEIGHT_ARROW_LABEL_Y + extension;
+  const pill = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  pill.setAttribute("class", "weight-display__label-pill");
+  placeForcePillRect(pill, x, y, label);
+  group.appendChild(pill);
 
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("x", String(WEIGHT_ARROW_LABEL_X));
-  text.setAttribute("y", String(WEIGHT_ARROW_LABEL_Y + extension));
+  text.setAttribute("x", String(x));
+  text.setAttribute("y", String(y));
   text.setAttribute("text-anchor", "middle");
   text.setAttribute("dominant-baseline", "middle");
   text.setAttribute("class", "weight-display__label-text");
-  text.setAttribute("fill", WEIGHT_ARROW_COLOR);
+  text.setAttribute("fill", "#171923");
   text.setAttribute("font-family", WEIGHT_ARROW_LABEL_FONT);
   text.setAttribute("font-weight", "600");
   text.setAttribute("font-size", String(WEIGHT_ARROW_LABEL_PX));
-  text.textContent = formatWeightLabel(weightN);
+  text.textContent = label;
   group.appendChild(text);
 }
 
@@ -624,7 +717,8 @@ function updateBeamWeightArrows() {
       ensureBeamWeightArrow(flatSceneEl),
       flatBeamWeightAnchor(variant),
       weightN,
-      heightUnits
+      heightUnits,
+      0
     );
   }
 
@@ -633,7 +727,8 @@ function updateBeamWeightArrows() {
       ensureBeamWeightArrow(edgeSceneEl),
       edgeBeamWeightAnchor(variant),
       weightN,
-      heightUnits
+      heightUnits,
+      EDGE_SCENE_OFFSET_Y
     );
   }
 }
@@ -722,22 +817,33 @@ function applySpringMorphToSet(pathEls, frameKey, force) {
   }
 }
 
-/** Vizuální zvětšení žlutého kolečka siloměru (path 11). */
-const SILOMER_HANDLE_VISUAL_SCALE = 1.55;
+/** Celý siloměr je chytací plocha — kruh pokryje bounding box pružiny. */
+const SILOMER_HIT_PAD = 10;
 
-function syncSilomerHandleHit(handlePathEl, hitEl) {
-  if (!handlePathEl || !hitEl) return;
+function syncSilomerHandleVisual(handlePathEl) {
+  if (!handlePathEl) return;
   handlePathEl.removeAttribute("transform");
-  const box = handlePathEl.getBBox();
+  handlePathEl.removeAttribute("opacity");
+}
+
+function unionBBox(a, b) {
+  if (!a || (a.width === 0 && a.height === 0)) return b;
+  if (!b || (b.width === 0 && b.height === 0)) return a;
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  const x2 = Math.max(a.x + a.width, b.x + b.width);
+  const y2 = Math.max(a.y + a.height, b.y + b.height);
+  return { x, y, width: x2 - x, height: y2 - y };
+}
+
+function syncSilomerHitArea(morphGroupEl, readoutWrapEl, hitEl) {
+  if (!morphGroupEl || !hitEl) return;
+  let box = morphGroupEl.getBBox();
+  if (readoutWrapEl) box = unionBBox(box, readoutWrapEl.getBBox());
   if (box.width === 0 && box.height === 0) return;
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
-  handlePathEl.setAttribute(
-    "transform",
-    `translate(${cx} ${cy}) scale(${SILOMER_HANDLE_VISUAL_SCALE}) translate(${-cx} ${-cy})`
-  );
-  const r =
-    (Math.max(box.width, box.height) / 2) * SILOMER_HANDLE_VISUAL_SCALE + 10;
+  const r = Math.hypot(box.width, box.height) / 2 + SILOMER_HIT_PAD;
   hitEl.setAttribute("cx", String(cx));
   hitEl.setAttribute("cy", String(cy));
   hitEl.setAttribute("r", String(r));
@@ -774,6 +880,45 @@ function createSilomerHandleHint(parent) {
   return g;
 }
 
+function createPressHandle() {
+  const hit = document.createElement("div");
+  hit.id = "pressHandleHit";
+  hit.className = "press-handle-hit";
+  hit.setAttribute("role", "slider");
+  hit.setAttribute("tabindex", "0");
+  hit.setAttribute("aria-label", "Táhlo siloměru");
+  hit.setAttribute("aria-valuemin", "0");
+  hit.innerHTML =
+    '<div class="press-handle" aria-hidden="true"><span class="press-handle__dots"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>';
+  padWrap.appendChild(hit);
+  return hit;
+}
+
+function syncPressHandle() {
+  if (!pressHandleEl || !padWrap) return;
+  const handlePathEl = beamOnEdge
+    ? morphPathEdgeEls[SILOMER_HANDLE_PATH_INDEX]
+    : morphPathEls[SILOMER_HANDLE_PATH_INDEX];
+  if (!handlePathEl || springBroken) {
+    pressHandleEl.hidden = true;
+    return;
+  }
+
+  const circleBox = handlePathEl.getBoundingClientRect();
+  const wrapBox = padWrap.getBoundingClientRect();
+  if (circleBox.width === 0 || wrapBox.width === 0) {
+    pressHandleEl.hidden = true;
+    return;
+  }
+
+  pressHandleEl.hidden = false;
+  const gap = 6;
+  const x = circleBox.left - wrapBox.left - gap;
+  const y = circleBox.top + circleBox.height / 2 - wrapBox.top;
+  pressHandleEl.style.left = `${x}px`;
+  pressHandleEl.style.top = `${y}px`;
+}
+
 function createSilomerBrokenBanner() {
   const banner = document.createElement("div");
   banner.id = "silomerBrokenBanner";
@@ -786,7 +931,13 @@ function createSilomerBrokenBanner() {
   return banner;
 }
 
+function hideStartHint() {
+  hintEl?.classList.add("is-hidden");
+  pressHandleEl?.classList.add("is-settled");
+}
+
 function dismissSilomerHandleHint() {
+  hideStartHint();
   if (silomerHintDismissed) return;
   silomerHintDismissed = true;
   silomerHintFlatEl?.setAttribute("display", "none");
@@ -1041,10 +1192,19 @@ function applySilomerOffset(silomerEl, offset) {
 function applyForceReadout(forceLabel, brokenMessage) {
   for (const readoutEl of [forceReadoutEl, forceReadoutEdgeEl]) {
     if (!readoutEl) continue;
-    readoutEl.textContent = brokenMessage ? "" : forceLabel;
-    readoutEl.setAttribute("font-size", "14");
-    readoutEl.setAttribute("fill", "#171923");
+    const label = brokenMessage ? "" : forceLabel;
+    readoutEl.textContent = label;
     readoutEl.setAttribute("opacity", brokenMessage ? "0" : "1");
+    const pill = ensureForceReadoutPill(readoutEl);
+    if (pill) {
+      pill.setAttribute("opacity", brokenMessage ? "0" : "1");
+      const cx = Number(readoutEl.getAttribute("x"));
+      const cy = Number(readoutEl.getAttribute("y"));
+      if (Number.isFinite(cx) && Number.isFinite(cy)) {
+        placeForcePillRect(pill, cx, cy, label || "0 N");
+        applyForceReadoutTilt(readoutEl.parentElement, cx, cy);
+      }
+    }
   }
 
   if (silomerBrokenBannerEl) {
@@ -1072,8 +1232,20 @@ function applyBeamHook(root, scale, origin, silomerEnd, beamEnd, silomerOffset) 
 }
 
 function updateBeamButtons() {
+  const material = beamMaterialKey();
+  const size = beamSizeKey();
+  for (const btn of beamMaterialBtnEls) {
+    btn.setAttribute("aria-pressed", String(btn.dataset.beamMaterial === material));
+  }
+  const sizeGrid = document.querySelector('[aria-label="Velikost hranolu"]');
+  sizeGrid?.classList.toggle("panel-btn-grid--sizes-3", material === "wood");
+  sizeGrid?.classList.toggle("panel-btn-grid--sizes-2", material !== "wood");
   for (const btn of beamSizeBtnEls) {
-    btn.setAttribute("aria-pressed", String(btn.dataset.beamType === beamType));
+    const woodOnly = btn.dataset.beamSize === "xlarge";
+    const hidden = woodOnly && material !== "wood";
+    btn.hidden = hidden;
+    btn.disabled = hidden;
+    btn.setAttribute("aria-pressed", String(!hidden && btn.dataset.beamSize === size));
   }
 }
 
@@ -1096,7 +1268,10 @@ function applySurface() {
       path.setAttribute("stroke", surface.padStroke);
     });
     for (const path of padEl.querySelectorAll(".pad-texture")) {
-      path.setAttribute("fill", surface.padTexture);
+      const texture = surface.padTexture;
+      const showTexture = texture && texture !== "none";
+      path.setAttribute("fill", showTexture ? texture : "none");
+      path.setAttribute("visibility", showTexture ? "visible" : "hidden");
     }
   }
 
@@ -1242,17 +1417,22 @@ function renderScene() {
     hitEl.style.cursor = springBroken ? "not-allowed" : "grab";
   }
 
-  syncSilomerHandleHit(
-    morphPathEls[SILOMER_HANDLE_PATH_INDEX],
+  syncSilomerHandleVisual(morphPathEls[SILOMER_HANDLE_PATH_INDEX]);
+  syncSilomerHandleVisual(morphPathEdgeEls[SILOMER_HANDLE_PATH_INDEX]);
+  syncSilomerHitArea(
+    silomerMorphFlatEl,
+    forceReadoutEl?.parentElement,
     silomerHitEl
   );
-  syncSilomerHandleHit(
-    morphPathEdgeEls[SILOMER_HANDLE_PATH_INDEX],
+  syncSilomerHitArea(
+    silomerMorphEdgeEl,
+    forceReadoutEdgeEl?.parentElement,
     silomerEdgeHitEl
   );
   syncSilomerHandleHint(silomerHitEl, silomerHintFlatEl);
   syncSilomerHandleHint(silomerEdgeHitEl, silomerHintEdgeEl);
   updateSilomerHandleHints();
+  syncPressHandle();
 }
 
 function animationLoop() {
@@ -1280,10 +1460,12 @@ function maxBeamSlidePx() {
 
 function slideOffset(px) {
   const svgPx = pxToSvg(px);
+  const restX = BEAM_REST_SHIFT_SVG;
+  const restY = -BEAM_REST_SHIFT_SVG * SLIDE_Y_PER_X;
   // Po hraně/ploše podložky: doleva a dolů (isometrie), ať kvádr i siloměr zůstávají na podložce.
   return {
-    x: -svgPx,
-    y: svgPx * SLIDE_Y_PER_X,
+    x: restX - svgPx,
+    y: restY + svgPx * SLIDE_Y_PER_X,
   };
 }
 
@@ -1366,6 +1548,7 @@ function endDrag() {
   maxTravelPx = 0;
   silomerHitEl?.classList.remove("is-dragging");
   silomerEdgeHitEl?.classList.remove("is-dragging");
+  pressHandleEl?.classList.remove("is-dragging");
   applyVisuals();
 }
 
@@ -1374,7 +1557,7 @@ function activeSilomerHit() {
 }
 
 function ensurePointerCapture() {
-  const hitEl = activeSilomerHit();
+  const hitEl = pressHandleEl || activeSilomerHit();
   if (!dragging || !hitEl || pointerId == null) return;
   if (hitEl.hasPointerCapture(pointerId)) return;
 
@@ -1401,7 +1584,7 @@ function beginDrag(event) {
   grabBeam = beamSlidePx;
   maxTravelPx = 0;
   sliding = false;
-  for (const hitEl of [silomerHitEl, silomerEdgeHitEl]) {
+  for (const hitEl of [silomerHitEl, silomerEdgeHitEl, pressHandleEl]) {
     hitEl?.classList.add("is-dragging");
   }
   ensurePointerCapture();
@@ -1465,6 +1648,7 @@ function bindSilomerEvents() {
 
   bindSilomerHit(silomerHitEl);
   bindSilomerHit(silomerEdgeHitEl);
+  bindSilomerHit(pressHandleEl);
 }
 
 function selectBeamType(type) {
@@ -1496,10 +1680,21 @@ function bindSurfaceButtons() {
   }
 }
 
+function selectBeamFromPicker(material, size) {
+  const resolved = resolveBeamPickerSize(material, size);
+  const type = BEAM_TYPE_BY_MATERIAL_SIZE[material]?.[resolved];
+  if (type) selectBeamType(type);
+}
+
 function bindBeamButtons() {
+  for (const btn of beamMaterialBtnEls) {
+    btn.addEventListener("click", () => {
+      selectBeamFromPicker(btn.dataset.beamMaterial, beamSizeKey());
+    });
+  }
   for (const btn of beamSizeBtnEls) {
     btn.addEventListener("click", () => {
-      selectBeamType(btn.dataset.beamType);
+      selectBeamFromPicker(beamMaterialKey(), btn.dataset.beamSize);
     });
   }
 }
@@ -1511,7 +1706,10 @@ function bindFlipButton() {
 
 function bindResetButton() {
   if (!resetBtn) return;
-  resetBtn.addEventListener("click", resetScene);
+  resetBtn.addEventListener("click", () => {
+    hideStartHint();
+    resetScene();
+  });
 }
 
 function isBrokenSilomerMessageVisible() {
@@ -1522,6 +1720,7 @@ function bindWorkspaceBrokenDismiss() {
   if (!stageEl) return;
 
   stageEl.addEventListener("pointerdown", (event) => {
+    hideStartHint();
     if (!isBrokenSilomerMessageVisible()) return;
     if (event.button !== undefined && event.button !== 0) return;
 
@@ -1696,7 +1895,7 @@ function refreshMuEditorIfOpen() {
 }
 
 async function init() {
-  const assetVersion = "20260721-material-textures";
+  const assetVersion = "20260823-same-pills";
   const [sceneResponse, morphResponse, weightResponse] = await Promise.all([
     fetch(`assets/scene.svg?v=${assetVersion}`, { cache: "no-store" }),
     fetch(`assets/spring-morph.json?v=${assetVersion}`, { cache: "no-store" }),
@@ -1712,6 +1911,7 @@ async function init() {
   padWrap.innerHTML = await sceneResponse.text();
   morphData = await morphResponse.json();
   silomerBrokenBannerEl = createSilomerBrokenBanner();
+  pressHandleEl = createPressHandle();
   flatHookSilomerPoint = hookSilomerPointFromMorph("frames");
   edgeHookSilomerPoint = hookSilomerPointFromMorph("edgeFrames");
 
@@ -1741,6 +1941,12 @@ async function init() {
   morphPathEdgeEls = morphData.paths.map((_, index) =>
     silomerEdgeEl.querySelector(`#springPathEdge${index}`)
   );
+  for (let index = SILOMER_SCALE_LABEL_PATH_START; index < morphPathEls.length; index++) {
+    morphPathEls[index]?.setAttribute("visibility", "hidden");
+    morphPathEdgeEls[index]?.setAttribute("visibility", "hidden");
+    silomerBrokenFlatEl?.querySelector(`#brokenPath${index}`)?.setAttribute("visibility", "hidden");
+    silomerBrokenEdgeEl?.querySelector(`#brokenPathEdge${index}`)?.setAttribute("visibility", "hidden");
+  }
   silomerHintFlatEl = createSilomerHandleHint(silomerFlatEl);
   silomerHintEdgeEl = createSilomerHandleHint(silomerEdgeEl);
 

@@ -125,53 +125,68 @@
   <stop stop-color="#424242"/>
   <stop offset="1" stop-color="#282828"/>
 </linearGradient>
-<pattern id="texMetal" patternUnits="userSpaceOnUse" width="14" height="8" patternTransform="rotate(-8)">
-  <path d="M0 1.5H14M0 4.5H14M0 7.2H14" stroke="#1A1F24" stroke-width="0.55" opacity="0.28"/>
-  <path d="M0 2.8H14M0 5.9H14" stroke="#F4F7FA" stroke-width="0.4" opacity="0.18"/>
+<pattern id="texMetal" patternUnits="userSpaceOnUse" width="28" height="16" patternTransform="rotate(-9)">
+  <rect width="28" height="16" fill="#9AA3AD" opacity="0.08"/>
+  <path d="M0 2H28M0 5.2H28M0 8.4H28M0 11.6H28M0 14.8H28" stroke="#1A1F24" stroke-width="0.7" opacity="0.38"/>
+  <path d="M0 3.6H28M0 6.8H28M0 10H28M0 13.2H28" stroke="#F7FAFC" stroke-width="0.55" opacity="0.42"/>
+  <path d="M4 0V16M18 0V16" stroke="#FFFFFF" stroke-width="1.4" opacity="0.16"/>
+  <path d="M11 0V16" stroke="#2A3138" stroke-width="0.8" opacity="0.12"/>
 </pattern>
-<pattern id="texLeather" patternUnits="userSpaceOnUse" width="18" height="14">
-  <ellipse cx="4" cy="3.5" rx="1.1" ry="0.8" fill="#2A160C" opacity="0.22"/>
-  <ellipse cx="12" cy="2" rx="0.9" ry="0.7" fill="#2A160C" opacity="0.18"/>
-  <ellipse cx="9" cy="8" rx="1.3" ry="0.9" fill="#2A160C" opacity="0.2"/>
-  <ellipse cx="2.5" cy="10.5" rx="0.8" ry="0.6" fill="#2A160C" opacity="0.16"/>
-  <ellipse cx="15" cy="11" rx="1" ry="0.75" fill="#2A160C" opacity="0.2"/>
-  <path d="M1 6.5C4 5.2 7 7.5 10 6.2C13 5 16 7 17.5 6" stroke="#3A2214" stroke-width="0.55" fill="none" opacity="0.2"/>
+<pattern id="texLeather" patternUnits="userSpaceOnUse" width="22" height="18">
+  <ellipse cx="4" cy="3.2" rx="2.1" ry="1.55" fill="#2A160C" opacity="0.34"/>
+  <ellipse cx="12.5" cy="2.4" rx="1.7" ry="1.25" fill="#3A2012" opacity="0.3"/>
+  <ellipse cx="19" cy="4.2" rx="1.9" ry="1.4" fill="#2A160C" opacity="0.28"/>
+  <ellipse cx="8" cy="8.6" rx="2.3" ry="1.7" fill="#2A160C" opacity="0.32"/>
+  <ellipse cx="16.5" cy="9.2" rx="1.8" ry="1.35" fill="#4A2A18" opacity="0.26"/>
+  <ellipse cx="3.2" cy="13.4" rx="1.6" ry="1.2" fill="#2A160C" opacity="0.3"/>
+  <ellipse cx="11" cy="14.6" rx="2" ry="1.45" fill="#3A2012" opacity="0.28"/>
+  <ellipse cx="19.2" cy="13.8" rx="1.7" ry="1.2" fill="#2A160C" opacity="0.3"/>
+  <path d="M1 6.8C5 5.2 9 8.4 13 6.6C17 4.9 20 7.4 22 6.2" stroke="#5A3218" stroke-width="0.7" fill="none" opacity="0.35"/>
+  <path d="M0 11.6C4 10.2 8 13 12 11.4C16 9.8 19 12.2 22 11" stroke="#5A3218" stroke-width="0.55" fill="none" opacity="0.28"/>
 </pattern>
-<pattern id="texCarpet" patternUnits="userSpaceOnUse" width="10" height="10">
-  <path d="M1 2V5M3.5 1V4.5M6 2.5V6M8.5 1.5V5M2 6.5V9.5M4.5 7V10M7 6V9M9.2 7.5V10" stroke="#1E2A18" stroke-width="1.05" stroke-linecap="round" opacity="0.28"/>
-  <path d="M0.5 8H2.5M5 3H7M8 8.5H10" stroke="#D7E8C8" stroke-width="0.55" stroke-linecap="round" opacity="0.12"/>
+<pattern id="texCarpet" patternUnits="userSpaceOnUse" width="12" height="12">
+  <path d="M1.2 1.2V5.4M3.6 0.4V4.8M6 1.6V5.8M8.4 0.8V5.2M10.8 1.4V5.6" stroke="#1A2814" stroke-width="1.35" stroke-linecap="round" opacity="0.4"/>
+  <path d="M0.6 6.8V11M3 6.2V10.6M5.4 7.2V11.4M7.8 6.4V10.8M10.2 7V11.2" stroke="#24351C" stroke-width="1.35" stroke-linecap="round" opacity="0.36"/>
+  <path d="M2.4 2.2V4.4M7.2 2.6V5M4.2 8V10.2M9.6 7.6V9.8" stroke="#D8E8C4" stroke-width="0.7" stroke-linecap="round" opacity="0.22"/>
+  <circle cx="2" cy="9.4" r="0.7" fill="#8B3A2A" opacity="0.22"/>
+  <circle cx="9" cy="3.2" r="0.6" fill="#C4A24A" opacity="0.18"/>
 </pattern>
-<pattern id="texWood" patternUnits="userSpaceOnUse" width="42" height="18" patternTransform="rotate(-8.5)">
-  <path d="M0 3C8 1.5 14 4.5 21 3C28 1.5 35 4 42 2.5" stroke="#5C3A18" stroke-width="0.9" fill="none" opacity="0.28"/>
-  <path d="M0 8C7 6.5 15 9.5 22 8C30 6.2 36 9 42 7.5" stroke="#5C3A18" stroke-width="0.7" fill="none" opacity="0.22"/>
-  <path d="M0 13C9 11.5 16 14.5 24 13C32 11.5 37 14 42 12.5" stroke="#5C3A18" stroke-width="0.8" fill="none" opacity="0.25"/>
-  <path d="M0 16.5C10 15.5 18 17 27 16C34 15.2 39 16.8 42 16" stroke="#8B5A2B" stroke-width="0.55" fill="none" opacity="0.18"/>
-  <ellipse cx="12" cy="9" rx="2.2" ry="1.1" fill="#5C3A18" opacity="0.12"/>
+<pattern id="texWood" patternUnits="userSpaceOnUse" width="56" height="24" patternTransform="rotate(-8.5)">
+  <path d="M0 3.2C10 1.2 18 5.2 28 3.4C38 1.6 47 5 56 2.8" stroke="#5C3A18" stroke-width="1.35" fill="none" opacity="0.42"/>
+  <path d="M0 8.4C9 6.4 19 10.6 29 8.6C39 6.6 48 10 56 8" stroke="#6B421C" stroke-width="1.05" fill="none" opacity="0.36"/>
+  <path d="M0 13.6C11 11.6 20 15.8 31 13.8C41 11.8 49 15.2 56 13.2" stroke="#5C3A18" stroke-width="1.2" fill="none" opacity="0.4"/>
+  <path d="M0 18.6C12 16.8 22 20.4 34 18.6C44 17 50 20.2 56 18.2" stroke="#8B5A2B" stroke-width="0.85" fill="none" opacity="0.32"/>
+  <path d="M0 22.2C13 21 24 23.2 36 22C46 21 52 23 56 21.8" stroke="#5C3A18" stroke-width="0.7" fill="none" opacity="0.26"/>
+  <ellipse cx="16" cy="11" rx="4.2" ry="2.1" fill="#5C3A18" opacity="0.2"/>
+  <ellipse cx="16" cy="11" rx="2.1" ry="1" fill="#3A2410" opacity="0.22"/>
+  <ellipse cx="41" cy="16.5" rx="3.2" ry="1.5" fill="#5C3A18" opacity="0.16"/>
 </pattern>
-<pattern id="texIce" patternUnits="userSpaceOnUse" width="28" height="20">
-  <path d="M2 4L9 1M12 8L20 3M4 14L11 10M16 16L24 11M7 18L14 14" stroke="#4A6F88" stroke-width="0.55" opacity="0.22"/>
-  <path d="M18 2L22 7M3 9L8 13M21 14L26 18" stroke="#FFFFFF" stroke-width="0.45" opacity="0.28"/>
-  <circle cx="6" cy="6" r="0.7" fill="#FFFFFF" opacity="0.35"/>
-  <circle cx="19" cy="12" r="0.55" fill="#FFFFFF" opacity="0.3"/>
-  <circle cx="13" cy="17" r="0.45" fill="#FFFFFF" opacity="0.25"/>
+<pattern id="texIce" patternUnits="userSpaceOnUse" width="36" height="26">
+  <path d="M2 5L12 1.5M14 10L26 4M5 18L16 12.5M20 21L32 14M9 24L20 18" stroke="#3F6A86" stroke-width="0.85" opacity="0.38"/>
+  <path d="M22 2L28 8.5M4 12L11 17.5M26 17L34 23" stroke="#FFFFFF" stroke-width="0.75" opacity="0.5"/>
+  <path d="M8 8L13 6M18 16L24 12" stroke="#7FB0CC" stroke-width="0.6" opacity="0.4"/>
+  <circle cx="7" cy="7" r="1.1" fill="#FFFFFF" opacity="0.55"/>
+  <circle cx="24" cy="14" r="0.9" fill="#FFFFFF" opacity="0.48"/>
+  <circle cx="16" cy="21" r="0.7" fill="#FFFFFF" opacity="0.4"/>
+  <circle cx="31" cy="6" r="0.8" fill="#E8F6FF" opacity="0.45"/>
 </pattern>
-<pattern id="texRubber" patternUnits="userSpaceOnUse" width="12" height="12">
-  <circle cx="3" cy="3" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="9" cy="3" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="3" cy="9" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="9" cy="9" r="1.55" fill="#0A0A0A" opacity="0.28"/>
-  <circle cx="3" cy="3" r="0.55" fill="#6A6A6A" opacity="0.18"/>
-  <circle cx="9" cy="9" r="0.55" fill="#6A6A6A" opacity="0.18"/>
+<pattern id="texRubber" patternUnits="userSpaceOnUse" width="18" height="18">
+  <path d="M9 1.2L16.8 9L9 16.8L1.2 9Z" fill="#111111" opacity="0.34"/>
+  <path d="M9 3.4L14.6 9L9 14.6L3.4 9Z" fill="none" stroke="#6E6E6E" stroke-width="0.7" opacity="0.4"/>
+  <path d="M0 0L4.5 4.5M13.5 13.5L18 18M18 0L13.5 4.5M4.5 13.5L0 18" stroke="#0A0A0A" stroke-width="1.1" opacity="0.28"/>
+  <circle cx="9" cy="9" r="1.15" fill="#8A8A8A" opacity="0.22"/>
 </pattern>
-<pattern id="texBeamWood" patternUnits="userSpaceOnUse" width="36" height="16" patternTransform="rotate(-9)">
-  <path d="M0 2.5C7 1.2 13 3.8 18 2.5C24 1.2 30 3.5 36 2" stroke="#5C3A18" stroke-width="0.85" fill="none" opacity="0.32"/>
-  <path d="M0 7C8 5.5 14 8.5 20 7C27 5.5 32 8 36 6.5" stroke="#5C3A18" stroke-width="0.7" fill="none" opacity="0.26"/>
-  <path d="M0 11.5C9 10 15 13 22 11.5C29 10 33 12.5 36 11" stroke="#5C3A18" stroke-width="0.75" fill="none" opacity="0.28"/>
-  <path d="M0 14.5C10 13.5 18 15 26 14C31 13.4 34 14.8 36 14.2" stroke="#8B5A2B" stroke-width="0.5" fill="none" opacity="0.2"/>
+<pattern id="texBeamWood" patternUnits="userSpaceOnUse" width="40" height="18" patternTransform="rotate(-9)">
+  <path d="M0 2.6C8 1 15 4.2 20 2.6C27 1 33 3.8 40 2.2" stroke="#5C3A18" stroke-width="1.15" fill="none" opacity="0.44"/>
+  <path d="M0 7.2C9 5.4 16 9.2 22 7.4C30 5.6 35 8.8 40 7" stroke="#6B421C" stroke-width="0.95" fill="none" opacity="0.38"/>
+  <path d="M0 12C10 10.2 17 14 24 12.2C32 10.4 36 13.6 40 11.8" stroke="#5C3A18" stroke-width="1.05" fill="none" opacity="0.4"/>
+  <path d="M0 15.8C11 14.6 20 16.8 28 15.6C34 14.8 37 16.6 40 15.4" stroke="#8B5A2B" stroke-width="0.7" fill="none" opacity="0.3"/>
+  <ellipse cx="14" cy="9" rx="3.2" ry="1.4" fill="#5C3A18" opacity="0.18"/>
 </pattern>
-<pattern id="texBeamSteel" patternUnits="userSpaceOnUse" width="12" height="7" patternTransform="rotate(-9)">
-  <path d="M0 1.2H12M0 3.5H12M0 5.8H12" stroke="#1F2429" stroke-width="0.45" opacity="0.22"/>
-  <path d="M0 2.4H12M0 4.7H12" stroke="#FFFFFF" stroke-width="0.35" opacity="0.16"/>
+<pattern id="texBeamSteel" patternUnits="userSpaceOnUse" width="16" height="10" patternTransform="rotate(-9)">
+  <path d="M0 1.4H16M0 4H16M0 6.6H16M0 9.2H16" stroke="#1F2429" stroke-width="0.6" opacity="0.32"/>
+  <path d="M0 2.7H16M0 5.3H16M0 7.9H16" stroke="#FFFFFF" stroke-width="0.5" opacity="0.28"/>
+  <path d="M5 0V10" stroke="#FFFFFF" stroke-width="1.1" opacity="0.12"/>
 </pattern>
 </defs>
 <g id="pad" aria-label="Kovová podložka">
@@ -179,10 +194,7 @@
 <path class="pad-face" d="M1.25 101.25L681.25 1.25L891.25 81.25L211.25 181.25L1.25 101.25Z" fill="url(#paint1_linear_2095_869)" stroke="#3E4650" stroke-width="2.5" stroke-linejoin="round"/>
 <path class="pad-face" d="M1.25 101.25L211.25 181.25V226.25L1.25 146.25V101.25Z" fill="url(#paint2_linear_2095_869)" stroke="#3E4650" stroke-width="2.5" stroke-linejoin="round"/>
 <path class="pad-face" d="M211.25 181.25L891.25 81.25V126.25L211.25 226.25V181.25Z" fill="url(#paint3_linear_2095_869)" stroke="#3E4650" stroke-width="2.5" stroke-linejoin="round"/>
-<path class="pad-texture" d="M551.25 21.25L761.25 101.25V146.25L551.25 66.25V21.25Z" fill="url(#texMetal)" pointer-events="none"/>
-<path class="pad-texture" d="M1.25 101.25L681.25 1.25L891.25 81.25L211.25 181.25L1.25 101.25Z" fill="url(#texMetal)" pointer-events="none"/>
-<path class="pad-texture" d="M1.25 101.25L211.25 181.25V226.25L1.25 146.25V101.25Z" fill="url(#texMetal)" pointer-events="none"/>
-<path class="pad-texture" d="M211.25 181.25L891.25 81.25V126.25L211.25 226.25V181.25Z" fill="url(#texMetal)" pointer-events="none"/>
+<path class="pad-texture pad-texture--top" d="M1.25 101.25L681.25 1.25L891.25 81.25L211.25 181.25L1.25 101.25Z" fill="none" pointer-events="none"/>
 </g>
 <g id="rig">
 <g id="beam">
@@ -334,8 +346,8 @@
 <path id="brokenPath67" d="M217.59366666666668 112.6396C217.55066666666667 112.3866 217.58666666666667 112.16159999999999 217.70666666666668 111.9666C217.82566666666668 111.7726 217.99666666666667 111.6566 218.21766666666667 111.6186C218.43066666666667 111.5816 218.64566666666667 111.6276 218.85466666666667 111.7576C218.99266666666668 111.8416 219.11866666666668 111.92259999999999 219.22866666666667 112.0076L219.8766666666667 112.5046L219.68366666666668 111.37859999999999L220.08566666666667 111.30959999999999L220.37866666666667 113.0146L219.98666666666668 113.0946C219.5606666666667 112.7616 219.26066666666668 112.5356 219.09166666666667 112.41659999999999C218.9356666666667 112.30659999999999 218.79166666666669 112.21459999999999 218.6556666666667 112.14359999999999C218.5316666666667 112.0736 218.40466666666669 112.05359999999999 218.27666666666667 112.0796C218.07966666666667 112.1176 217.95166666666668 112.3136 217.99866666666668 112.5826C218.04066666666668 112.8286 218.2266666666667 112.9956 218.46666666666667 113.0206L218.34766666666667 113.4136C217.97366666666667 113.35759999999999 217.66566666666668 113.0586 217.59366666666668 112.6396ZM218.3826666666667 109.18159999999999C218.78966666666668 109.1116 219.13066666666668 109.1486 219.4066666666667 109.28659999999999C219.6796666666667 109.4266 219.8406666666667 109.6426 219.89166666666668 109.94059999999999C219.94266666666667 110.2346 219.86266666666668 110.4966 219.65266666666668 110.7186C219.43866666666668 110.9416 219.12766666666667 111.0856 218.7216666666667 111.15559999999999C218.3156666666667 111.2256 217.97466666666668 111.1926 217.7026666666667 111.05359999999999C217.43066666666667 110.9136 217.2686666666667 110.6976 217.21766666666667 110.39959999999999C217.16666666666669 110.10159999999999 217.24666666666667 109.8446 217.46066666666667 109.6206C217.67066666666668 109.3986 217.9766666666667 109.25059999999999 218.3826666666667 109.18159999999999ZM217.6196666666667 110.33059999999999C217.67566666666667 110.6566 218.0546666666667 110.8146 218.64566666666667 110.7136C219.23766666666668 110.6116 219.54566666666668 110.3356 219.4896666666667 110.00959999999999C219.43266666666668 109.67559999999999 219.0536666666667 109.52159999999999 218.4586666666667 109.6236C217.86766666666668 109.7246 217.56266666666667 109.9966 217.6196666666667 110.33059999999999ZM216.44866666666667 105.6066L219.0426666666667 105.16159999999999L219.14066666666668 105.73259999999999L217.22966666666667 107.2616L217.23466666666667 107.2646C217.36266666666668 107.2136 217.5006666666667 107.1736 217.6566666666667 107.14659999999999L219.3216666666667 106.86059999999999L219.39666666666668 107.2956L216.80266666666668 107.7406L216.70066666666668 107.1456L218.59966666666668 105.64359999999999L218.59466666666668 105.64059999999999C218.46666666666667 105.6916 218.3286666666667 105.7316 218.1726666666667 105.7586L216.52366666666668 106.04159999999999L216.44866666666667 105.6066Z" fill="#FF8158"/>
 </g>
 <g id="forceReadoutWrap">
-<path d="M 233.661 91.9623 L 280.991 83.9724 C 285.348 83.2369 288.284 79.109 287.548 74.7523 L 285.551 62.9198 C 284.815 58.5627 280.687 55.6277 276.331 56.3627 L 229 64.353 C 224.644 65.0884 221.708 69.2164 222.444 73.573 L 224.441 85.4056 C 225.176 89.7623 229.304 92.6978 233.661 91.9623 Z" fill="white" stroke="#E8EAEF"/>
-<text id="forceReadout" x="257.3" y="75.8" transform="rotate(-9.582 257.3 75.8)" text-anchor="middle" dominant-baseline="middle" font-family="Fenomen Sans, system-ui, sans-serif" font-size="14" font-weight="600" fill="#171923">0 N</text>
+<rect class="weight-display__label-pill" x="221.3" y="37.15" width="72" height="49.3" rx="24.65" ry="24.65" fill="#ffffff" stroke="#E8EAEF"/>
+<text id="forceReadout" x="257.3" y="61.8" text-anchor="middle" dominant-baseline="middle" font-family="Fenomen Sans, system-ui, sans-serif" font-size="34" font-weight="600" fill="#171923">0 N</text>
 </g>
 <circle id="silomer" cx="161.5" cy="125.5" r="14" fill="transparent" cursor="grab" aria-label="Siloměr"/>
 </g>
@@ -492,8 +504,8 @@
 <path id="brokenPathEdge67" d="M243.59366666666668 153.1557C243.55066666666667 152.9031 243.58666666666667 152.6776 243.70666666666668 152.483C243.82566666666668 152.2885 243.99666666666667 152.1726 244.21766666666667 152.1346C244.43066666666667 152.0972 244.64566666666667 152.14319999999998 244.85466666666667 152.27339999999998C244.99266666666668 152.3576 245.11866666666668 152.43869999999998 245.22866666666667 152.524L245.8766666666667 153.0208L245.68366666666668 151.8947L246.08566666666667 151.82569999999998L246.37866666666667 153.5307L245.98666666666668 153.611C245.5606666666667 153.2777 245.26066666666668 153.0516 245.09166666666667 152.93259999999998C244.9356666666667 152.8225 244.79166666666669 152.73069999999996 244.6556666666667 152.6595C244.5316666666667 152.58929999999998 244.40466666666669 152.5698 244.27666666666667 152.5957C244.07966666666667 152.63389999999998 243.95166666666668 152.83010000000002 243.99866666666668 153.0987C244.04066666666668 153.34439999999998 244.2266666666667 153.5116 244.46666666666667 153.5366L244.34766666666667 153.9296C243.97366666666667 153.8735 243.66566666666668 153.5745 243.59366666666668 153.1557ZM244.3826666666667 149.6975C244.78966666666668 149.62720000000002 245.13066666666668 149.6646 245.4066666666667 149.80270000000002C245.6796666666667 149.9422 245.8406666666667 150.1586 245.89166666666668 150.457C245.94266666666667 150.7505 245.86266666666668 151.0125 245.65266666666668 151.2351C245.43866666666668 151.4581 245.12766666666667 151.6017 244.7216666666667 151.67199999999997C244.3156666666667 151.7414 243.97466666666668 151.7089 243.7026666666667 151.5695C243.43066666666667 151.43 243.2686666666667 151.21359999999999 243.21766666666667 150.9152C243.16666666666669 150.61769999999996 243.24666666666667 150.3607 243.46066666666667 150.13670000000002C243.67066666666668 149.9151 243.9766666666667 149.7668 244.3826666666667 149.6975ZM243.6196666666667 150.84619999999998C243.67566666666667 151.17239999999998 244.0546666666667 151.3309 244.64566666666667 151.2294C245.23766666666668 151.1278 245.54566666666668 150.85129999999998 245.4896666666667 150.526C245.43266666666668 150.1918 245.0536666666667 150.0373 244.4586666666667 150.14010000000002C243.86766666666668 150.2407 243.56266666666667 150.5129 243.6196666666667 150.84619999999998ZM242.44866666666667 146.12279999999998L245.0426666666667 145.6779L245.14066666666668 146.2489L243.22966666666667 147.7774L243.23466666666667 147.78109999999998C243.36266666666668 147.73 243.5006666666667 147.6893 243.6566666666667 147.66219999999998L245.3216666666667 147.37689999999998L245.39666666666668 147.8116L242.80266666666668 148.25650000000002L242.70066666666668 147.6616L244.59966666666668 146.1592L244.59466666666668 146.1565C244.46666666666667 146.2076 244.3286666666667 146.2473 244.1726666666667 146.2744L242.52366666666668 146.55749999999998L242.44866666666667 146.12279999999998Z" fill="#FF8158"/>
 </g>
 <g id="forceReadoutWrapEdge">
-<path d="M244.58 131.484L291.91 123.494C296.267 122.758 299.203 118.63 298.467 114.274L296.47 102.441C295.734 98.0842 291.606 95.1492 287.25 95.8842L239.919 103.874C235.563 104.61 232.627 108.738 233.363 113.094L235.36 124.927C236.095 129.284 240.223 132.219 244.58 131.484Z" fill="white" stroke="#E8EAEF"/>
-<text id="forceReadoutEdge" x="268.2" y="115.3" transform="rotate(-9.582 268.2 115.3)" text-anchor="middle" dominant-baseline="middle" font-family="Fenomen Sans, system-ui, sans-serif" font-size="14" font-weight="600" fill="#171923">0 N</text>
+<rect class="weight-display__label-pill" x="232.2" y="76.65" width="72" height="49.3" rx="24.65" ry="24.65" fill="#ffffff" stroke="#E8EAEF"/>
+<text id="forceReadoutEdge" x="268.2" y="101.3" text-anchor="middle" dominant-baseline="middle" font-family="Fenomen Sans, system-ui, sans-serif" font-size="34" font-weight="600" fill="#171923">0 N</text>
 </g>
 <circle id="silomerEdgeHit" cx="187.5" cy="166" r="14" fill="transparent" cursor="grab" aria-label="Siloměr"/>
 </g>

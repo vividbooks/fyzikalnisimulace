@@ -7,95 +7,145 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
   />
   <title>Tření</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=scene-actions-corner" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace tření">
     <aside class="setup-panel" aria-label="Nastavení simulace">
-      <div class="setup-panel__home" id="setupPanelHome">
-      <div class="panel-copy">
-        <a href="../index.html" class="hub-back-to-sims">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Zpět
-        </a>
-        <h1 class="panel-title">Tření</h1>
-      </div>
-
-      <div class="panel-section">
-        <span class="panel-label">Povrch podložky</span>
-        <div class="panel-btn-grid" role="group" aria-label="Povrch podložky">
-          <button type="button" class="scene-btn" data-surface-type="metal" aria-pressed="true">
-            kov
-          </button>
-          <button type="button" class="scene-btn" data-surface-type="leather" aria-pressed="false">
-            kůže
-          </button>
-          <button type="button" class="scene-btn" data-surface-type="carpet" aria-pressed="false">
-            koberec
-          </button>
-          <button type="button" class="scene-btn" data-surface-type="wood" aria-pressed="false">
-            dřevo
-          </button>
-          <button type="button" class="scene-btn" data-surface-type="ice" aria-pressed="false">
-            led
-          </button>
-          <button type="button" class="scene-btn" data-surface-type="rubber" aria-pressed="false">
-            guma
-          </button>
+      <div class="controls">
+        <div class="panel-head">
+          <a href="../index.html" class="hub-back-to-sims">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Zpět
+          </a>
+          <h1 class="panel-title">Tření</h1>
         </div>
-      </div>
 
-      <div class="panel-section">
-        <span class="panel-label">Hranol</span>
-
-        <div class="beam-picker">
-          <div class="beam-picker__block">
-            <p class="beam-picker__title">dřevěný hranol</p>
-            <div class="panel-btn-grid panel-btn-grid--sizes-3" role="group" aria-label="Velikost dřevěného hranolu">
-              <button type="button" class="scene-btn scene-btn--size" data-beam-type="woodSmall" aria-pressed="false">
-                malý
+        <div class="setup-panel__home" id="setupPanelHome">
+          <div class="sim-card panel-section">
+            <span class="panel-label">Povrch podložky</span>
+            <div class="panel-btn-grid" role="group" aria-label="Povrch podložky">
+              <button type="button" class="scene-btn scene-btn--material" data-surface-type="metal" aria-pressed="true">
+                <span class="material-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3.5" y="7" width="17" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M6.5 11h11M6.5 14h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                kov
               </button>
-              <button type="button" class="scene-btn scene-btn--size" data-beam-type="wood" aria-pressed="true">
-                střední
+              <button type="button" class="scene-btn scene-btn--material" data-surface-type="leather" aria-pressed="false">
+                <span class="material-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M6.5 8.5c1.2-2.4 9.8-2.4 11 0 1.4 2.8.4 7.2-2.2 9.2-1.6 1.2-5 1.2-6.6 0-2.6-2-3.6-6.4-2.2-9.2z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M9 10.5c.6 2.4.8 4.2 0 6.2M15 10.5c-.6 2.4-.8 4.2 0 6.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                kůže
               </button>
-              <button type="button" class="scene-btn scene-btn--size" data-beam-type="wood2kg" aria-pressed="false">
-                velký
+              <button type="button" class="scene-btn scene-btn--material" data-surface-type="carpet" aria-pressed="false">
+                <span class="material-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/>
+                  </svg>
+                </span>
+                koberec
+              </button>
+              <button type="button" class="scene-btn scene-btn--material" data-surface-type="wood" aria-pressed="false">
+                <span class="material-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M7 10c2.2-1.2 3.6 1.2 5.8 0s3.4-1.4 4.6 0M7 14c2.2-1.2 3.6 1.2 5.8 0s3.4-1.4 4.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                dřevo
+              </button>
+              <button type="button" class="scene-btn scene-btn--material" data-surface-type="ice" aria-pressed="false">
+                <span class="material-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 4v16M5.2 8l13.6 8M5.2 16l13.6-8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                    <path d="M12 7.2l1.6-1.6M12 7.2l-1.6-1.6M12 16.8l1.6 1.6M12 16.8l-1.6 1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                led
+              </button>
+              <button type="button" class="scene-btn scene-btn--material" data-surface-type="rubber" aria-pressed="false">
+                <span class="material-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="7.2" stroke="currentColor" stroke-width="1.8"/>
+                    <circle cx="9.2" cy="11.2" r="1.3" fill="currentColor"/>
+                    <circle cx="14.6" cy="10.6" r="1.3" fill="currentColor"/>
+                    <circle cx="12.2" cy="15" r="1.3" fill="currentColor"/>
+                  </svg>
+                </span>
+                guma
               </button>
             </div>
           </div>
 
-          <div class="beam-picker__block">
-            <p class="beam-picker__title">ocelový hranol</p>
-            <div class="panel-btn-grid panel-btn-grid--sizes-2" role="group" aria-label="Velikost ocelového hranolu">
-              <button type="button" class="scene-btn scene-btn--size" data-beam-type="steelSmall" aria-pressed="false">
-                malý
-              </button>
-              <button type="button" class="scene-btn scene-btn--size" data-beam-type="steel" aria-pressed="false">
-                velký
-              </button>
+          <div class="sim-card panel-section">
+            <span class="panel-label">Povrch hranolu</span>
+            <div class="beam-picker">
+              <div class="beam-picker__block">
+                <div class="panel-btn-grid panel-btn-grid--sizes-2" role="group" aria-label="Materiál hranolu">
+                  <button type="button" class="scene-btn scene-btn--material" data-beam-material="wood" aria-pressed="true">
+                    <span class="material-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M7 10c2.2-1.2 3.6 1.2 5.8 0s3.4-1.4 4.6 0M7 14c2.2-1.2 3.6 1.2 5.8 0s3.4-1.4 4.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                    </span>
+                    dřevo
+                  </button>
+                  <button type="button" class="scene-btn scene-btn--material" data-beam-material="steel" aria-pressed="false">
+                    <span class="material-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="3.5" y="7" width="17" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M6.5 11h11M6.5 14h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                      </svg>
+                    </span>
+                    ocel
+                  </button>
+                </div>
+              </div>
+              <div class="beam-picker__block">
+                <p class="beam-picker__title">Velikost</p>
+                <div class="panel-btn-grid panel-btn-grid--sizes-3" role="group" aria-label="Velikost hranolu">
+                  <button type="button" class="scene-btn scene-btn--size" data-beam-size="small" aria-pressed="false">
+                    malý
+                  </button>
+                  <button type="button" class="scene-btn scene-btn--size" data-beam-size="large" aria-pressed="true">
+                    střední
+                  </button>
+                  <button type="button" class="scene-btn scene-btn--size" data-beam-size="xlarge" aria-pressed="false">
+                    velký
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
+
+          <div class="sim-card panel-section">
+            <span class="panel-label">Výpočet</span>
+            <button
+              type="button"
+              class="scene-btn scene-btn--block"
+              id="muEditorToggleBtn"
+              aria-pressed="false"
+              aria-expanded="false"
+              aria-controls="muEditor"
+            >
+              koeficient smykového tření
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div class="panel-section">
-        <span class="panel-label">výpočet</span>
-        <button
-          type="button"
-          class="scene-btn scene-btn--block"
-          id="muEditorToggleBtn"
-          aria-pressed="false"
-          aria-expanded="false"
-          aria-controls="muEditor"
-        >
-          koeficient smykového tření
-        </button>
-      </div>
-      </div>
-
-      <div class="mu-editor" id="muEditor" hidden>
+        <div class="sim-card mu-editor" id="muEditor" hidden>
           <p class="mu-editor__pair" id="muPairLabel">dřevo – kov</p>
           <div class="mu-editor__row">
             <span class="mu-editor__label"><em>μ</em> =</span>
@@ -143,26 +193,34 @@
             </button>
           </div>
         </div>
+      </div>
     </aside>
 
     <div class="scene-workspace" id="stage" aria-label="Kovová podložka s dřevěným hranolem">
+      <div class="scene-actions">
+        <button type="button" class="scene-btn scene-btn--reset" id="resetBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Reset
+        </button>
+        <button type="button" class="scene-btn scene-btn--flip" id="flipBeamBtn" aria-pressed="false">
+          otočit hranol
+        </button>
+      </div>
+      <p class="sim-empty-hint" id="hintEl">Nastav vlastnosti, chytni siloměr a táhni.</p>
       <div class="scene-stage">
         <div class="pad-wrap" id="padWrap"></div>
-        <div class="scene-meta" id="beamMassEl">
-          <p class="scene-meta__line">tíha = 6 N</p>
-          <p class="scene-meta__line">objem = 1&nbsp;000 cm³</p>
-          <p class="scene-meta__line">velikost třecí plochy = 191&nbsp;cm²</p>
-        </div>
-        <div class="scene-actions">
-          <button type="button" class="scene-btn scene-btn--reset" id="resetBtn">vrátit na původní pozici</button>
-          <button type="button" class="scene-btn scene-btn--flip" id="flipBeamBtn" aria-pressed="false">
-            otočit hranol
-          </button>
-        </div>
+      </div>
+      <div class="scene-meta" id="beamMassEl">
+        <p class="scene-meta__line">tíha = 6 N</p>
+        <p class="scene-meta__line">objem = 1&nbsp;000 cm³</p>
+        <p class="scene-meta__line">velikost třecí plochy = 191&nbsp;cm²</p>
       </div>
     </div>
   </main>
 
-  <script src="main.js"></script>
+  <script src="main.js?v=readout-tilt"></script>
 </body>
 </html>
