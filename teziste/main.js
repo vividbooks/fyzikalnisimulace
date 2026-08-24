@@ -95,6 +95,24 @@
     return { x: cx / area, y: cy / area };
   }
 
+  /** Střed útvaru bez závaží — úchyt teček se po přidání závaží nehýbe. */
+  function shapeGeometryOrigin() {
+    if (!currentShape || currentShape.empty) return null;
+    if (currentShape.kind === "circle") {
+      return { x: currentShape.cx, y: currentShape.cy };
+    }
+    if (VERTICES.length >= 3) {
+      const poly = polygonCentroid(VERTICES);
+      if (Number.isFinite(poly.x) && Number.isFinite(poly.y)) return poly;
+    }
+    const bounds = currentShape.bounds;
+    if (!bounds) return null;
+    return {
+      x: (bounds.minX + bounds.maxX) / 2,
+      y: (bounds.minY + bounds.maxY) / 2,
+    };
+  }
+
   function updateCentroid() {
     centroid = shapeCentroid();
     currentShape.centroid = centroid;
@@ -440,36 +458,145 @@
   hookGroup.append(createPeg());
   hookOverGroup.append(createPeg());
 
-  function handleAnchor() {
+  function raySegmentHit(origin, dir, x1, y1, x2, y2) {
+    const sx = x2 - x1;
+    const sy = y2 - y1;
+    const denom = dir.x * sy - dir.y * sx;
+    if (Math.abs(denom) < 1e-9) return null;
+    const ox = x1 - origin.x;
+    const oy = y1 - origin.y;
+    const t = (ox * sy - oy * sx) / denom;
+    const u = (ox * dir.y - oy * dir.x) / denom;
+    if (t >= 1e-4 && u >= 0 && u <= 1) {
+      return {
+        t,
+        point: { x: origin.x + dir.x * t, y: origin.y + dir.y * t },
+      };
+    }
+    return null;
+  }
+
+  function normalizeDir(dx, dy, fallback = { x: 0, y: 1 }) {
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return fallback;
+    return { x: dx / len, y: dy / len };
+  }
+
+  /** Vizuál teček: ~8 px do stran, ~11 px nahoru/dolů. */
+  const HANDLE_INSET = 28;
+
+  function insetFromBoundary(point, origin) {
+    const inward = normalizeDir(origin.x - point.x, origin.y - point.y);
+    const reach = Math.hypot(origin.x - point.x, origin.y - point.y);
+    const pad = Math.min(HANDLE_INSET, Math.max(0, reach * 0.62));
+    let x = point.x + inward.x * pad;
+    let y = point.y + inward.y * pad;
+    for (let i = 0; i < 12 && !pointOnShapeBody(x, y); i += 1) {
+      x += inward.x * 2;
+      y += inward.y * 2;
+      if (Math.hypot(origin.x - x, origin.y - y) < 4) break;
+    }
+    return pointOnShapeBody(x, y) ? { x, y } : null;
+  }
+
+  function rayPolygonBoundary(origin, dir, verts) {
+    let bestT = Infinity;
+    let best = null;
+    for (let i = 0; i < verts.length; i += 1) {
+      const [x1, y1] = verts[i];
+      const [x2, y2] = verts[(i + 1) % verts.length];
+      const hit = raySegmentHit(origin, dir, x1, y1, x2, y2);
+      if (hit && hit.t < bestT) {
+        bestT = hit.t;
+        best = hit.point;
+      }
+    }
+    return best ? insetFromBoundary(best, origin) : null;
+  }
+
+  function rayCircleBoundary(origin, dir, cx, cy, r) {
+    const ox = origin.x - cx;
+    const oy = origin.y - cy;
+    const b = 2 * (ox * dir.x + oy * dir.y);
+    const c = ox * ox + oy * oy - r * r;
+    const disc = b * b - 4 * c;
+    if (disc < 0) return null;
+    const sqrt = Math.sqrt(disc);
+    let t = (-b + sqrt) / 2;
+    if (t <= 1e-4) t = (-b - sqrt) / 2;
+    if (t <= 1e-4) return null;
+    return insetFromBoundary(
+      { x: origin.x + dir.x * t, y: origin.y + dir.y * t },
+      origin
+    );
+  }
+
+  function boundaryPointAlongRay(origin, dir) {
     if (!currentShape || currentShape.empty) return null;
     if (currentShape.kind === "circle") {
-      return { x: currentShape.cx, y: currentShape.cy };
+      return rayCircleBoundary(
+        origin,
+        dir,
+        currentShape.cx,
+        currentShape.cy,
+        currentShape.r
+      );
     }
-    const candidates = [];
-    if (VERTICES.length) {
-      const c = polygonCentroid(VERTICES);
-      if (Number.isFinite(c.x) && Number.isFinite(c.y)) {
-        candidates.push(c);
+    if (VERTICES.length >= 3) {
+      return rayPolygonBoundary(origin, dir, VERTICES);
+    }
+    return null;
+  }
+
+  function handleEdgeDirections(origin) {
+    const bounds = currentShape.bounds || shapeBounds();
+    const targets = [
+      { x: (bounds.minX + bounds.maxX) / 2, y: bounds.maxY },
+      { x: bounds.maxX, y: bounds.maxY },
+      { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 },
+      { x: bounds.minX, y: bounds.maxY },
+      { x: (bounds.minX + bounds.maxX) / 2, y: bounds.minY },
+    ];
+    const dirs = targets.map((target) =>
+      normalizeDir(target.x - origin.x, target.y - origin.y)
+    );
+    dirs.push({ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 1, y: 0 });
+    return dirs;
+  }
+
+  function circleHandleAnchor() {
+    const cx = currentShape.cx;
+    const cy = currentShape.cy;
+    const innerR = CIRCLE_RING - HOLE_R - 14;
+    const radius = Math.max(18, innerR * 0.62);
+    const dir = normalizeDir(1, 0.35);
+    return { x: cx + dir.x * radius, y: cy + dir.y * radius };
+  }
+
+  function handleAnchor() {
+    if (!currentShape || currentShape.empty) return null;
+    if (currentShape.kind === "circle") return circleHandleAnchor();
+    let origin = shapeGeometryOrigin();
+    if (!origin || !Number.isFinite(origin.x) || !Number.isFinite(origin.y)) return null;
+    if (!pointInShape(origin.x, origin.y) && currentShape.bounds) {
+      origin = {
+        x: (currentShape.bounds.minX + currentShape.bounds.maxX) / 2,
+        y: (currentShape.bounds.minY + currentShape.bounds.maxY) / 2,
+      };
+    }
+
+    let best = null;
+    let bestDist = -1;
+    for (const dir of handleEdgeDirections(origin)) {
+      const edge = boundaryPointAlongRay(origin, dir);
+      if (!edge) continue;
+      const dist = Math.hypot(edge.x - origin.x, edge.y - origin.y);
+      if (dist > bestDist) {
+        bestDist = dist;
+        best = edge;
       }
-      let sx = 0;
-      let sy = 0;
-      VERTICES.forEach(([x, y]) => {
-        sx += x;
-        sy += y;
-      });
-      candidates.push({ x: sx / VERTICES.length, y: sy / VERTICES.length });
     }
-    const bounds = currentShape.bounds;
-    if (bounds) {
-      candidates.push({
-        x: (bounds.minX + bounds.maxX) / 2,
-        y: (bounds.minY + bounds.maxY) / 2,
-      });
-    }
-    for (const point of candidates) {
-      if (pointOnShapeBody(point.x, point.y)) return point;
-    }
-    return candidates[0] || null;
+    return best;
   }
 
   function rebuildDragHandle() {
@@ -998,10 +1125,6 @@
     applyShape(id);
     clearDrawings();
     resetToDefault();
-    if (!currentShape?.empty) {
-      state.hintDismissed = false;
-      syncSceneHint();
-    }
   }
 
   function thumbnailViewBox(bounds) {
@@ -1038,11 +1161,7 @@
       body.setAttribute("stroke-width", "7");
       svg.append(body);
 
-      const title = document.createElement("span");
-      title.className = "gallery-preset-btn__title";
-      title.textContent = shape.label;
-
-      button.append(svg, title);
+      button.append(svg);
       button.addEventListener("click", () => selectShape(shape.id));
       picker.append(button);
     });
@@ -1184,10 +1303,7 @@
     if (tool === "reshape" && !shapeHasCorners(currentShape)) {
       tool = "move";
     }
-    if (
-      (tool === "draw-shape" || tool === "pencil") &&
-      state.appMode !== "lab"
-    ) {
+    if (tool === "draw-shape" && state.appMode !== "lab") {
       tool = "move";
     }
     if (tool !== "guess-cm") {
@@ -1252,7 +1368,7 @@
     clearDraft();
     state.hintDismissed = false;
     if (mode === "gallery") {
-      if (state.tool === "pencil" || state.tool === "draw-shape") {
+      if (state.tool === "draw-shape") {
         setTool("move");
       }
       selectShape(state.lastGalleryShapeId);
@@ -1880,30 +1996,13 @@
     }
 
     const guess = state.guessResult;
-    const actual = localToWorld(centroid.x, centroid.y);
     const guessView = worldToView(guess.guessX, guess.guessY);
-    const actualView = worldToView(actual.x, actual.y);
     const guessInk = contrastInk(colorBehindWorld(guess.guessX, guess.guessY));
     guessLayer.removeAttribute("hidden");
     guessLayer.classList.add("is-visible");
     guessLayer.replaceChildren();
 
-    const connector = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    connector.classList.add("guess-connector");
-    connector.setAttribute("x1", guessView.x);
-    connector.setAttribute("y1", guessView.y);
-    connector.setAttribute("x2", actualView.x);
-    connector.setAttribute("y2", actualView.y);
-    guessLayer.append(connector);
-
     guessLayer.append(createCross(guessView.x, guessView.y, "guess-cross", guessInk));
-    guessLayer.append(
-      createGuessLabel(guessView.x, guessView.y, "odhad", "#ffffff", "#334155")
-    );
-    guessLayer.append(createCross(actualView.x, actualView.y, "cm-cross", "#16a34a", 14));
-    guessLayer.append(
-      createGuessLabel(actualView.x, actualView.y, "těžiště", "#dcfce7", "#166534")
-    );
   }
 
   function updateClearDrawingsButton() {
@@ -2077,6 +2176,13 @@
     state.omega = 0;
   }
 
+  function clearAllWeights() {
+    if (!currentShape) return;
+    currentShape.weights = [];
+    rebuildWeights();
+    updateCentroid();
+  }
+
   function resetToDefault() {
     state.hungIndex = -1;
     state.omega = 0;
@@ -2084,14 +2190,11 @@
     state.dragMode = null;
     state.cornerIndex = -1;
     cancelWeightCarry();
+    clearAllWeights();
     app.classList.remove("is-dragging");
     clearGuessResult();
     setTool(state.appMode === "lab" && currentShape?.empty ? "draw-shape" : "move");
     placeFreeCenter();
-    if (!currentShape?.empty) {
-      state.hintDismissed = false;
-      syncSceneHint();
-    }
     render();
   }
 
@@ -2406,6 +2509,15 @@
   resetBtn?.addEventListener("click", () => {
     resetToDefault();
   });
+
+  const dismissHintOnInteract = (event) => {
+    if (event.target.closest?.(".mode-switch, .hub-back-to-sims")) return;
+    dismissSceneHint();
+  };
+  workspace?.addEventListener("pointerdown", dismissHintOnInteract);
+  document
+    .querySelector(".left-panel")
+    ?.addEventListener("pointerdown", dismissHintOnInteract);
 
   drawShapeBtn?.addEventListener("click", () => {
     if (state.appMode !== "lab") return;

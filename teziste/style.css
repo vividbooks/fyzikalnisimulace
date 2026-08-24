@@ -125,9 +125,12 @@ input {
 }
 
 .panel-copy {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .panel-head {
@@ -313,21 +316,33 @@ input {
 
 .gallery-presets {
   margin-top: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .shape-picker,
 #gallery-preset-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-auto-rows: minmax(0, 1fr);
   gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  align-content: stretch;
 }
 
 .gallery-preset-btn {
   appearance: none;
   display: grid;
   justify-items: stretch;
-  gap: 6px;
   width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
   padding: 8px;
   border: 1px solid transparent;
   border-radius: var(--radius);
@@ -352,15 +367,17 @@ input {
 .gallery-preset-btn__schema {
   display: block;
   width: 100%;
-  height: 68px;
-  overflow: visible;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   background: var(--canvas-bg);
   border-radius: 8px;
 }
 
 .gallery-preset-btn .shape-thumb {
   width: 100%;
-  height: 68px;
+  height: 100%;
+  min-height: 0;
   display: block;
   pointer-events: none;
 }
@@ -368,37 +385,38 @@ input {
 .stock-section {
   display: flex;
   flex-direction: column;
-  margin-top: 0;
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
-  align-content: start;
+  margin-top: auto;
+  flex: 1 0 auto;
+  min-height: min-content;
+  overflow: visible;
 }
 
 .stock-tray {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
   gap: 10px;
   padding: 10px;
   border: 1px dashed var(--border);
   border-radius: var(--radius);
   background: var(--idle-bg);
-  min-height: 120px;
-  align-content: start;
   width: 100%;
 }
 
 .stock-slot {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 96px;
+  flex: 0 0 auto;
+  min-height: 0;
   padding: 8px 8px 10px;
   border-radius: var(--radius);
   background: var(--card-bg);
   border: 1px solid transparent;
-  overflow: hidden;
+  overflow: visible;
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -409,21 +427,28 @@ input {
   cursor: grabbing;
 }
 
-.stock-slot__label {
-  flex: 0 0 100%;
+.stock-slot__label,
+.stock-slot__hint {
+  flex: 0 0 auto;
   text-align: center;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted);
   pointer-events: none;
 }
 
+.stock-slot__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 .stock-slot__hint {
-  flex: 0 0 100%;
-  text-align: center;
   font-size: 11px;
   color: var(--muted);
-  pointer-events: none;
+}
+
+.stock-slot .weight-icon {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
 }
 
 .stock-slot.is-armed {
@@ -670,7 +695,7 @@ input {
 }
 
 .hole-disk {
-  fill: #ffffff;
+  fill: var(--canvas-bg);
   cursor: pointer;
 }
 
@@ -937,6 +962,10 @@ input {
 }
 
 .app-root[data-app-mode="gallery"] [data-lab-only] {
+  display: none !important;
+}
+
+.app-root[data-app-mode="lab"] [data-gallery-only] {
   display: none !important;
 }
 
