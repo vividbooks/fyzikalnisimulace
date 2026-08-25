@@ -7,80 +7,113 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
     />
     <title>Skládání sil</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=force-pills" />
   </head>
   <body>
     <main class="scene" aria-label="Skládání sil">
       <aside class="setup-panel" aria-label="Ovládání simulace">
-        <a href="../index.html" class="hub-back-to-sims">
-          ← Přehled simulací
-        </a>
+        <div class="controls">
+          <div class="panel-head">
+            <a href="../index.html" class="hub-back-to-sims">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M15 18l-6-6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Zpět
+            </a>
+            <h1 class="panel-title">Skládání sil</h1>
+          </div>
 
-        <div class="panel-copy">
-          <h1 class="panel-title">Skládání sil</h1>
-          <p class="panel-hint">
-            TIP: kliknutím na údaj o velikosti síly můžeš nastavit její velikost.
+          <div class="sim-card panel-section" role="group" aria-label="Počet objektů">
+            <span class="panel-label">Počet objektů</span>
+            <div class="panel-btn-grid" role="group" aria-label="Počet kruhů">
+              <button
+                id="one-circle-btn"
+                class="scene-btn"
+                type="button"
+                aria-pressed="true"
+              >
+                1 kruh
+              </button>
+              <button
+                id="two-circles-btn"
+                class="scene-btn"
+                type="button"
+                aria-pressed="false"
+              >
+                2 kruhy
+              </button>
+            </div>
+          </div>
+
+          <div class="sim-card panel-section" role="group" aria-label="Nastavení">
+            <span class="panel-label">Nastavení</span>
+            <div class="panel-btn-grid" role="group">
+              <button
+                id="snap90-btn"
+                class="scene-btn"
+                type="button"
+                aria-pressed="false"
+              >
+                90°
+              </button>
+              <button
+                id="resultant-btn"
+                class="scene-btn"
+                type="button"
+                aria-pressed="false"
+              >
+                Výsledná síla
+              </button>
+            </div>
+          </div>
+
+          <p class="panel-lead">
+            Tažením za hrot šipky můžeš měnit velikost a&nbsp;směr síly.
           </p>
-        </div>
-
-        <div class="panel-section" role="group" aria-label="Počet objektů">
-          <span class="panel-label">Počet objektů</span>
-          <div class="circle-mode-toggle" role="group" aria-label="Počet kruhů">
-            <button
-              id="one-circle-btn"
-              class="circle-mode-btn"
-              type="button"
-              aria-pressed="true"
-            >
-              1 kruh
-            </button>
-            <button
-              id="two-circles-btn"
-              class="circle-mode-btn"
-              type="button"
-              aria-pressed="false"
-            >
-              2 kruhy
-            </button>
-          </div>
-        </div>
-
-        <div class="panel-section" role="group" aria-label="Nastavení">
-          <span class="panel-label">Nastavení</span>
-          <div class="actions-row">
-            <button
-              id="snap90-btn"
-              class="panel-action-btn"
-              type="button"
-              aria-pressed="false"
-            >
-              90°
-            </button>
-            <button
-              id="resultant-btn"
-              class="panel-action-btn"
-              type="button"
-              aria-pressed="false"
-            >
-              Výsledná síla
-            </button>
-          </div>
-        </div>
-
-        <div class="panel-section" role="group" aria-label="Simulace">
-          <span class="panel-label">Simulace</span>
-          <div class="actions-row actions-row--stack">
-            <button id="start-btn" class="panel-action-btn panel-action-btn--primary" type="button">
-              Spustit
-            </button>
-            <button id="reset-btn" class="panel-action-btn panel-action-btn--secondary" type="button">
-              Reset
-            </button>
-          </div>
         </div>
       </aside>
 
       <div class="scene-workspace" aria-label="Pracovní plocha">
+        <div class="scene-actions scene-actions--left">
+          <button
+            id="start-btn"
+            class="scene-btn scene-btn--run"
+            type="button"
+            aria-label="Spustit simulaci"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12 8 5.14z" />
+            </svg>
+            Spustit
+          </button>
+        </div>
+        <div class="scene-actions">
+          <button type="button" class="scene-btn scene-btn--reset" id="reset-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4.5 8A7.5 7.5 0 1 1 4 12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M4.5 3.5V8h4.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Reset
+          </button>
+        </div>
+        <p class="sim-empty-hint" id="hintEl">Klikni na objekt a táhnutím nastav působící síly.</p>
         <div class="stage">
           <div class="simulation">
             <div id="objects-stage" class="objects-stage">
@@ -96,7 +129,7 @@
                   role="img"
                 >
                   <g class="object-hit">
-                    <circle cx="37.0547" cy="25.4297" r="25.4297" fill="#3d5a9a" />
+                    <circle cx="37.0547" cy="25.4297" r="25.4297" fill="#3b82f6" />
                     <g class="plus" fill="#ffffff" aria-hidden="true">
                       <rect x="24.5" y="23.5" width="26" height="4" rx="2" />
                       <rect x="35.5" y="12.5" width="4" height="26" rx="2" />
@@ -158,7 +191,7 @@
           </div>
           <button
             id="force-keypad-confirm"
-            class="panel-action-btn panel-action-btn--primary force-keypad-panel__confirm"
+            class="scene-btn scene-btn--confirm"
             type="button"
           >
             Potvrdit
@@ -166,6 +199,6 @@
         </div>
       </div>
     </main>
-    <script src="main.js"></script>
+    <script src="main.js?v=force-pills"></script>
   </body>
 </html>
