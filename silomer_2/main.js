@@ -1457,10 +1457,12 @@ function fitStage() {
 }
 
 function layoutSceneHint() {
-  if (!hintEl || !workspaceEl) return;
-  const rect = workspaceEl.getBoundingClientRect();
-  hintEl.style.left = `${rect.left + rect.width / 2}px`;
-  hintEl.style.top = `${rect.top + rect.height * 0.8}px`;
+  if (!hintEl || !stageAnchorEl) return;
+
+  const stageRect = stageAnchorEl.getBoundingClientRect();
+  const hook = getHookScreenPoint();
+  hintEl.style.left = `${stageRect.left + stageRect.width / 2}px`;
+  hintEl.style.top = `${hook.y + 56}px`;
 }
 
 function layoutGroundSurfaces() {
