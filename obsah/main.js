@@ -79,6 +79,7 @@ const areaMathKeypad = document.getElementById("area-math-keypad");
 const content = document.getElementById("content");
 const placedTilesLayer = document.getElementById("placed-tiles");
 const tileStack = document.getElementById("tile-stack");
+const hintEl = document.getElementById("hintEl");
 const canvasElement = document.getElementById("canvas");
 const canvasGroup = document.getElementById("canvas-group");
 const canvasTicks = document.getElementById("canvas-ticks");
@@ -97,6 +98,7 @@ let celebrationTimer = null;
 let areaKeypadDraft = "";
 let areaKeypadUnit = "";
 let isAreaKeypadOpen = false;
+let hintDismissed = false;
 const AREA_UNIT_LABELS = {
   dm2: "dm²",
   cm2: "cm²",
@@ -115,6 +117,14 @@ function getCanvasBounds() {
 
 function applyCanvasPosition() {
   canvasGroup.setAttribute("transform", `translate(${canvasPosition.x}, ${canvasPosition.y})`);
+}
+
+function dismissIntroHint() {
+  if (hintDismissed) {
+    return;
+  }
+  hintDismissed = true;
+  hintEl?.classList.add("is-hidden");
 }
 
 function getLocalPoint(clientX, clientY) {
@@ -325,6 +335,7 @@ function startDragFromStack(type, clientX, clientY, targetElement) {
 }
 
 function startDragPlacedTile(element, localX, localY) {
+  dismissIntroHint();
   const position = parseTranslate(element);
   bringToFront(element);
   element.classList.add("is-dragging");
@@ -434,6 +445,7 @@ tileStack.addEventListener("pointerdown", (event) => {
   }
 
   event.preventDefault();
+  dismissIntroHint();
   startDragFromStack(stackTile.dataset.type, event.clientX, event.clientY, stackTile);
   beginDragTracking(event.pointerId);
 });
@@ -948,6 +960,7 @@ function updateAreaKeypadDisplay() {
 }
 
 function showAreaKeypad() {
+  dismissIntroHint();
   const parsed = parseAreaAnswer(areaValueInput.value);
   areaKeypadDraft = parsed.numericText;
   areaKeypadUnit = parsed.unit;
