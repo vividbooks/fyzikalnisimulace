@@ -398,6 +398,10 @@
       background: #c3dffd;
     }
 
+    #vectorsControls .html-btn {
+      width: 100%;
+    }
+
     .friction-segmented button[aria-pressed="true"] {
       border-color: transparent;
       background: var(--accent);
@@ -1373,9 +1377,10 @@
               <span>Podlaha</span>
             </button>
           </div>
-          <div class="button-row">
-            <button type="button" class="html-btn" id="vectorsBtn">Vektory vypnuté</button>
-          </div>
+        </div>
+        <div class="control-row" id="vectorsControls">
+          <span class="control-label">Zobrazení</span>
+          <button type="button" class="html-btn" id="vectorsBtn">Vektory vypnuté</button>
         </div>
         <div class="control-row" id="massControls">
           <div class="mass-head">
@@ -1482,7 +1487,11 @@
     accentSoft: '#1e3a5f',
     accentSoftBorder: '#3b82f6',
     success: '#16a34a',
-    shadow: 'rgba(2, 6, 23, 0.35)'
+    shadow: 'rgba(2, 6, 23, 0.35)',
+    velX: '#60a5fa',
+    velY: '#4ade80',
+    velR: '#f87171',
+    velLaunch: '#fbbf24'
   };
   const CONTROL_PANEL = { x: 2, y: 2, w: 188, h: 842, radius: 22 };
   const EDITOR_PANEL_CX = CONTROL_PANEL.x + CONTROL_PANEL.w / 2;
@@ -2085,6 +2094,7 @@
     bojMassValue: document.getElementById('bojMassValue'),
     raceControls: document.getElementById('raceControls'),
     physicsControls: document.getElementById('physicsControls'),
+    vectorsControls: document.getElementById('vectorsControls'),
     massControls: document.getElementById('massControls'),
     raceObstacles: document.getElementById('raceObstacles'),
     frictionOff: document.getElementById('frictionOff'),
@@ -2781,6 +2791,7 @@
     }
     uiEls.raceControls.hidden = true;
     uiEls.physicsControls.hidden = isZavod() || isBoj();
+    if (uiEls.vectorsControls) uiEls.vectorsControls.hidden = isBoj();
     uiEls.massControls.hidden = isZavod() || isBoj();
     if (uiEls.motorControlLabel) {
       uiEls.motorControlLabel.textContent = isBattleRocketStyle() ? 'Pohon a otáčení' : 'Motory';
@@ -6135,7 +6146,7 @@
   }
 
   function drawVelocityArrowHead(tipX, tipY, angle, color) {
-    const size = 10;
+    const size = 11;
     const drawHead = (fill, stroke, lineW) => {
       ctx.fillStyle = fill;
       ctx.strokeStyle = stroke;
@@ -6154,46 +6165,43 @@
       ctx.fill();
       ctx.stroke();
     };
-    drawHead('rgba(7, 11, 28, 0.95)', 'rgba(7, 11, 28, 0.95)', 4);
-    drawHead(color, 'rgba(255, 255, 255, 0.9)', 1.5);
+    drawHead('#1e2533', '#1e2533', 4);
+    drawHead(color, color, 1.2);
   }
 
-  function drawVelocityArrowLabel(tipX, tipY, angle, magnitude, color) {
-    const offset = 22;
+  function drawVelocityArrowLabel(tipX, tipY, angle, magnitude) {
+    const offset = 24;
     const lx = tipX + Math.cos(angle) * offset;
     const ly = tipY + Math.sin(angle) * offset;
     const text = String(Math.round(magnitude));
-    ctx.font = '600 20px system-ui, sans-serif';
+    ctx.save();
+    setUiFont(600, 16);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = 'rgba(7, 11, 28, 0.96)';
-    ctx.fillStyle = 'rgba(7, 11, 28, 0.96)';
-    ctx.strokeText(text, lx, ly);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.86)';
-    ctx.lineWidth = 2.5;
-    ctx.strokeText(text, lx, ly);
-    ctx.fillStyle = color;
+    const w = Math.max(28, ctx.measureText(text).width + 16);
+    const h = 24;
+    fillRoundedRect(lx - w / 2, ly - h / 2, w, h, 999, '#ffffff');
+    strokeRoundedRect(lx - w / 2, ly - h / 2, w, h, 999, '#e2e8f0', 1);
+    ctx.fillStyle = '#334155';
     ctx.fillText(text, lx, ly);
+    ctx.restore();
   }
 
   function drawVelocityArrowLine(originX, originY, tipX, tipY, color, magnitude) {
     const angle = Math.atan2(tipY - originY, tipX - originX);
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(originX, originY);
     ctx.lineTo(tipX, tipY);
-    ctx.strokeStyle = 'rgba(7, 11, 28, 0.92)';
+    ctx.strokeStyle = '#1e2533';
     ctx.lineWidth = 7;
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
-    ctx.lineWidth = 5;
-    ctx.stroke();
     ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3.5;
     ctx.stroke();
     drawVelocityArrowHead(tipX, tipY, angle, color);
-    drawVelocityArrowLabel(tipX, tipY, angle, magnitude, color);
+    drawVelocityArrowLabel(tipX, tipY, angle, magnitude);
   }
 
   function drawVelocityComponentArrow(originX, originY, value, horizontal, color) {
@@ -6218,9 +6226,9 @@
     if (b.vLaunchX == null || b.vShipX == null) return;
     const originX = worldToScreenX(b.x);
     const originY = b.y;
-    drawVelocityVector2D(originX, originY, b.vShipX, b.vShipY, '#2563eb');
-    drawVelocityVector2D(originX, originY, b.vLaunchX, b.vLaunchY, '#d97706');
-    drawVelocityVector2D(originX, originY, b.vx, b.vy, '#d62828');
+    drawVelocityVector2D(originX, originY, b.vShipX, b.vShipY, UI.velX);
+    drawVelocityVector2D(originX, originY, b.vLaunchX, b.vLaunchY, UI.velLaunch);
+    drawVelocityVector2D(originX, originY, b.vx, b.vy, UI.velR);
   }
 
   function drawResultantVelocityArrow(originX, originY) {
@@ -6230,7 +6238,7 @@
 
     const tipX = originX + (player.vx === 0 ? 0 : Math.sign(player.vx) * lenX);
     const tipY = originY + (player.vy === 0 ? 0 : Math.sign(player.vy) * lenY);
-    drawVelocityArrowLine(originX, originY, tipX, tipY, '#d62828', playerSpeed());
+    drawVelocityArrowLine(originX, originY, tipX, tipY, UI.velR, playerSpeed());
   }
 
   function playerScreenX() {
@@ -6253,8 +6261,8 @@
     const originX = playerScreenX();
     const originY = player.y;
 
-    drawVelocityComponentArrow(originX, originY, player.vx, true, '#1d4ed8');
-    drawVelocityComponentArrow(originX, originY, player.vy, false, '#15803d');
+    drawVelocityComponentArrow(originX, originY, player.vx, true, UI.velX);
+    drawVelocityComponentArrow(originX, originY, player.vy, false, UI.velY);
     drawResultantVelocityArrow(originX, originY);
 
     ctx.restore();
@@ -6291,7 +6299,6 @@
     const metricsY = hudRowY + 10;
 
     const backBox = { x: actionsX, y: actionsY, w: colW, h: actionH };
-    const vectorsBox = { x: actionsX + colW + gap, y: actionsY, w: colW, h: actionH };
 
     const metricsBox = { x: metricsX, y: metricsY, w: totalW, h: metricsH };
     const speedBox = { x: metricsX, y: metricsY, w: colW, h: statH };
@@ -6309,7 +6316,7 @@
       w: totalW + 16,
       h: metricsH + 16
     };
-    return { speedBox, timerBox, metricsBox, recordBox, backBox, vectorsBox, panel };
+    return { speedBox, timerBox, metricsBox, recordBox, backBox, panel };
   }
 
   function drawRaceHudStat(box, label, value, valueColor, opts) {
@@ -6389,14 +6396,6 @@
       fill: '#334155',
       stroke: 'transparent'
     });
-    drawUiButton(
-      L.vectorsBox.x,
-      L.vectorsBox.y,
-      L.vectorsBox.w,
-      L.vectorsBox.h,
-      velocityVectorsVisible ? 'Vektory zapnuté' : 'Vektory vypnuté',
-      { active: velocityVectorsVisible, fontSize: 14, radius: 10 }
-    );
   }
 
   function drawRaceTimer() {
@@ -7330,19 +7329,9 @@
     }
 
     if (isZavod()) {
-      const { backBox, vectorsBox } = raceHudLayout();
+      const { backBox } = raceHudLayout();
       if (p.x >= backBox.x && p.x <= backBox.x + backBox.w && p.y >= backBox.y && p.y <= backBox.y + backBox.h) {
         returnToMenu();
-        return;
-      }
-      if (
-        p.x >= vectorsBox.x &&
-        p.x <= vectorsBox.x + vectorsBox.w &&
-        p.y >= vectorsBox.y &&
-        p.y <= vectorsBox.y + vectorsBox.h
-      ) {
-        velocityVectorsVisible = !velocityVectorsVisible;
-        syncHtmlControls();
         return;
       }
     }
