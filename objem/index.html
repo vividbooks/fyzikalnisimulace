@@ -7,7 +7,7 @@
   <style>
     @font-face {
       font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
@@ -15,48 +15,60 @@
 
     @font-face {
       font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
       font-weight: 600;
       font-style: normal;
       font-display: swap;
     }
 
     @font-face {
-      font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
-      font-weight: 700;
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
       font-style: normal;
-      font-display: swap;
+      font-display: block;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --panel-w: min(300px, max(260px, 26vw), calc(100vw - 16px));
+      --panel-w: min(300px, 34vw);
       --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
-      --bg: #f4f5f8;
-      --panel-bg: #ffffff;
-      --text: #171923;
-      --muted: #6b7280;
-      --accent: #3d5a9a;
-      --accent-hover: #334b81;
-      --accent-soft: #eef2f8;
-      --border: #e8eaef;
-      --area-muted: #eceff5;
-      --readout-bg: #f4f5f8;
-      --success: #059669;
-      --danger: #dc2626;
-      --success-bg: rgb(236 253 245 / 0.92);
-      --danger-bg: rgb(254 242 242 / 0.92);
+      --page-bg: #1e2533;
+      --bg: #1e2533;
+      --card-bg: #2a3344;
+      --panel-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --accent-soft: #1e3a5f;
+      --border: #475569;
+      --border-strong: #475569;
+      --focus: #3b82f6;
+      --area-muted: #334155;
+      --readout-bg: #1e293b;
+      --canvas-bg: #ffffe6;
+      --canvas-text: #334155;
+      --success: #4ade80;
+      --danger: #ef4444;
+      --success-bg: rgba(22, 163, 74, 0.22);
+      --danger-bg: rgba(239, 68, 68, 0.2);
+      --radius: 12px;
+      --radius-canvas: 24px;
     }
 
     html, body {
       height: 100%;
       width: 100%;
-      background: var(--bg);
+      background: var(--page-bg);
       color: var(--text);
       font-family: var(--font-app);
-      color-scheme: light;
+      font-weight: 400;
+      color-scheme: dark;
       overflow: hidden;
     }
 
@@ -66,28 +78,36 @@
 
     .app-root {
       position: relative;
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
       width: 100%;
       height: 100vh;
       height: 100dvh;
-      padding: 8px;
-      background: var(--bg);
+      padding: 16px;
+      background: var(--page-bg);
       overflow: hidden;
     }
 
     .left-panel {
-      position: fixed;
-      inset: 8px auto 8px 8px;
-      z-index: 100;
+      position: relative;
+      z-index: 2;
+      flex: 0 0 var(--panel-w);
       width: var(--panel-w);
+      align-self: stretch;
       display: flex;
       flex-direction: column;
       min-height: 0;
       min-width: 0;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      background: var(--panel-bg);
-      box-shadow: 0 12px 32px rgba(23, 25, 35, 0.06);
+      overflow: auto;
+      padding: 8px 8px 16px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      color: var(--text);
+      color-scheme: dark;
+      scrollbar-gutter: stable;
     }
 
     .left-panel > * {
@@ -125,42 +145,43 @@
       justify-content: center;
       gap: 6px;
       min-height: 44px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--idle-bg);
       cursor: pointer;
       font: inherit;
-      font-weight: 600;
-      font-size: 0.8rem;
+      font-weight: 400;
+      font-size: 14px;
       line-height: 1.15;
-      color: var(--text);
+      color: var(--idle-text);
       -webkit-tap-highlight-color: transparent;
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     .canvas-pan-toggle:hover {
-      border-color: var(--accent);
+      color: var(--text);
     }
 
     .canvas-pan-toggle:active {
-      transform: translateY(1px);
+      transform: none;
     }
 
     .canvas-pan-toggle:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
 
     .canvas-pan-toggle.is-pressed {
-      border-color: var(--accent);
+      border-color: transparent;
       background: var(--accent);
-      color: #ffffff;
+      color: var(--accent-on);
     }
 
     .canvas-pan-toggle.is-pressed:hover {
-      border-color: var(--accent-hover);
+      border-color: transparent;
       background: var(--accent-hover);
+      color: var(--accent-on);
     }
 
     .canvas-pan-toggle__icon {
@@ -197,29 +218,29 @@
       min-height: 44px;
       min-width: 44px;
       padding: 0;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--idle-bg);
       cursor: pointer;
       font: inherit;
-      font-weight: 600;
+      font-weight: 400;
       font-size: 1.1rem;
       line-height: 1;
-      color: var(--text);
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      color: var(--idle-text);
+      transition: background 0.12s ease, color 0.12s ease;
       -webkit-tap-highlight-color: transparent;
     }
 
     .zoom-controls button:hover {
-      border-color: var(--accent);
+      color: var(--text);
     }
 
     .zoom-controls button:active {
-      transform: translateY(1px);
+      transform: none;
     }
 
     .zoom-controls button:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
 
@@ -246,8 +267,8 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: #ffffff;
-      border: 2px solid var(--accent);
+      background: var(--accent);
+      border: 2px solid var(--accent-on);
       cursor: pointer;
     }
 
@@ -260,9 +281,9 @@
     #zoom-slider::-moz-range-thumb {
       width: 18px;
       height: 18px;
-      border: 2px solid var(--accent);
+      border: 2px solid var(--accent-on);
       border-radius: 50%;
-      background: #ffffff;
+      background: var(--accent);
       cursor: pointer;
     }
 
@@ -280,37 +301,54 @@
 
     .panel-copy {
       display: grid;
-      gap: 12px;
-      padding: 18px 18px 0;
+      gap: 14px;
+      padding: 0;
+    }
+
+    .panel-head {
+      display: grid;
+      gap: 10px;
     }
 
     .hub-back-to-sims {
       display: inline-flex;
       align-items: center;
       align-self: flex-start;
-      padding: 9px 14px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--area-muted);
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #1e293b;
       color: var(--text);
-      font-size: 0.88rem;
-      font-weight: 600;
-      line-height: 1;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.2;
       text-decoration: none;
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .hub-back-to-sims svg {
+      display: block;
+      flex: 0 0 auto;
     }
 
     .hub-back-to-sims:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--readout-bg);
+      color: #ffffff;
+    }
+
+    .hub-back-to-sims:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
 
     .panel-title {
       margin: 0;
-      font-size: 1.125rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-family: "Cooper Light", serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+      color: var(--text);
     }
 
     .mode-switch {
@@ -318,64 +356,69 @@
       grid-template-columns: 1fr 1fr;
       gap: 4px;
       padding: 4px;
-      border-radius: 12px;
-      background: var(--area-muted);
+      border-radius: var(--radius);
+      background: var(--card-bg);
     }
 
     .mode-switch__btn {
       appearance: none;
       min-height: 40px;
-      padding: 8px 10px;
-      border: none;
-      border-radius: 9px;
+      padding: 10px 8px;
+      border: 1px solid transparent;
+      border-radius: calc(var(--radius) - 2px);
       background: transparent;
-      color: var(--muted);
+      color: var(--idle-text);
       font: inherit;
-      font-weight: 600;
-      font-size: 0.88rem;
+      font-weight: 500;
+      font-size: 14px;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
+      transition: background 0.12s ease, color 0.12s ease;
       -webkit-tap-highlight-color: transparent;
     }
 
     .mode-switch__btn:hover { color: var(--text); }
-    .mode-switch__btn:active { transform: translateY(1px); }
+    .mode-switch__btn:active { transform: none; }
     .mode-switch__btn:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
 
     .mode-switch__btn.is-active {
-      background: var(--panel-bg);
-      color: var(--text);
-      box-shadow: 0 1px 3px rgb(23 25 35 / 0.1);
+      background: var(--accent);
+      color: var(--accent-on);
+      box-shadow: none;
     }
 
     .control-panel {
       display: grid;
       gap: 14px;
-      padding: 14px 18px 18px;
+      padding: 14px 0 0;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       width: 100%;
       min-width: 0;
       flex: 0 1 auto;
     }
 
-    .panel-section {
+    .panel-section,
+    .zoom-bar {
       display: grid;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
       min-width: 0;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--card-bg);
     }
 
     .panel-label {
-      color: var(--muted);
-      font-size: 0.76rem;
-      font-weight: 650;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: none;
     }
 
     .panel-text {
@@ -389,36 +432,37 @@
       appearance: none;
       min-height: 44px;
       padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
-      color: var(--text);
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
       font: inherit;
-      font-weight: 600;
-      font-size: 0.95rem;
+      font-weight: 400;
+      font-size: 14px;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      transition: background 0.12s ease, color 0.12s ease;
       -webkit-tap-highlight-color: transparent;
       width: 100%;
       max-width: 100%;
     }
 
-    .action-btn:hover:not(:disabled) { border-color: var(--accent); }
-    .action-btn:active:not(:disabled) { transform: translateY(1px); }
+    .action-btn:hover:not(:disabled) { color: var(--text); }
+    .action-btn:active:not(:disabled) { transform: none; }
     .action-btn:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
 
     .action-btn--primary {
-      border-color: var(--accent);
-      background: var(--accent);
-      color: #ffffff;
+      border-color: transparent;
+      background: #4ade80;
+      color: #14532d;
     }
 
     .action-btn--primary:hover:not(:disabled) {
-      border-color: var(--accent-hover);
-      background: var(--accent-hover);
+      border-color: transparent;
+      background: #22c55e;
+      color: #14532d;
     }
 
     .dim-input-stack {
@@ -448,16 +492,16 @@
       align-items: stretch;
       min-width: 0;
       min-height: 44px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
       background: var(--readout-bg);
       overflow: hidden;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: border-color 0.12s, box-shadow 0.12s;
     }
 
     .step-input:focus-within {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(61, 90, 154, 0.12);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.28);
     }
 
     .step-value {
@@ -507,8 +551,8 @@
       align-items: center;
       justify-content: center;
       border: none;
-      background: var(--panel-bg);
-      color: var(--muted);
+      background: var(--idle-bg);
+      color: var(--idle-text);
       padding: 0;
       font-size: 0.62rem;
       line-height: 1;
@@ -524,7 +568,8 @@
     }
 
     .step-btn:active:not(:disabled) {
-      background: var(--border);
+      background: var(--accent);
+      color: var(--accent-on);
     }
 
     .step-btn + .step-btn {
@@ -537,7 +582,7 @@
     }
 
     .step-btn:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus);
       outline-offset: -2px;
     }
 
@@ -555,24 +600,9 @@
     }
 
     .indicator-answer-row {
-      display: flex;
-      align-items: stretch;
-      gap: 8px;
+      display: block;
       width: 100%;
       min-width: 0;
-    }
-
-    .indicator-answer-row .indicator-answer-field {
-      flex: 1 1 auto;
-    }
-
-    .indicator-answer-row #verify-btn {
-      width: auto;
-      flex: 0 0 auto;
-      align-self: stretch;
-      padding-left: 16px;
-      padding-right: 16px;
-      white-space: nowrap;
     }
 
     .indicator-answer-field {
@@ -583,11 +613,11 @@
       min-width: 0;
       max-width: 100%;
       min-height: 46px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: #ffffff;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: var(--readout-bg);
       padding: 8px 10px;
-      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
     }
 
     .indicator-answer-field input,
@@ -604,7 +634,7 @@
     .indicator-answer-field input {
       flex: 1;
       min-width: 0;
-      text-align: right;
+      text-align: left;
     }
 
     .indicator-answer-field select {
@@ -649,7 +679,9 @@
       display: grid;
       place-items: center;
       padding: 16px;
-      background: rgba(15, 23, 42, 0.42);
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
     .table-keypad-overlay[hidden] {
@@ -659,18 +691,19 @@
     .table-keypad-panel {
       width: min(100%, 300px);
       padding: 16px;
-      border-radius: 16px;
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      box-shadow: 0 14px 42px rgba(15, 23, 42, 0.22);
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      border: none;
+      color: var(--text);
+      box-shadow: 0 20px 40px rgba(2, 6, 23, 0.35);
       display: grid;
       gap: 12px;
     }
 
     .table-keypad-panel__title {
       margin: 0;
-      font-size: 0.9rem;
-      font-weight: 650;
+      font-size: 16px;
+      font-weight: 500;
       color: var(--muted);
       text-align: center;
     }
@@ -680,11 +713,11 @@
       height: 64px;
       min-height: 64px;
       padding: 10px 14px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      background: var(--readout-bg);
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: #1e293b;
       font-size: 1.5rem;
-      font-weight: 650;
+      font-weight: 600;
       line-height: 1.2;
       text-align: center;
       color: var(--text);
@@ -697,14 +730,14 @@
 
     .table-keypad-panel__display.is-invalid {
       border-color: var(--danger);
-      color: var(--danger);
+      color: #fca5a5;
     }
 
     .table-keypad-panel__error {
       margin: 0;
       font-size: 0.85rem;
-      font-weight: 650;
-      color: var(--danger);
+      font-weight: 500;
+      color: #fca5a5;
       text-align: center;
     }
 
@@ -743,23 +776,23 @@
     .table-keypad-panel__confirm {
       background: var(--accent);
       color: #fff;
-      box-shadow: 0 4px 14px rgba(61, 90, 154, 0.35);
+      box-shadow: none;
     }
 
     .table-keypad-panel__cancel {
-      background: var(--readout-bg);
-      color: var(--muted);
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      border: none;
+      box-shadow: none;
     }
 
     .table-keypad-panel__action:hover {
-      filter: brightness(1.05);
+      filter: brightness(1.08);
     }
 
     .table-keypad-panel__cancel:hover {
       color: var(--text);
-      border-color: var(--accent);
+      border-color: transparent;
     }
 
     .table-keypad-panel__action:active {
@@ -768,6 +801,8 @@
 
     .table-math-keypad {
       width: 100%;
+      display: grid;
+      gap: 12px;
     }
 
     .table-math-keypad__grid {
@@ -778,17 +813,18 @@
 
     .table-math-keypad__key {
       min-height: 44px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--readout-bg);
-      color: var(--text);
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: var(--idle-bg);
+      color: var(--idle-text);
       font: inherit;
-      font-size: 1.125rem;
-      font-weight: 650;
+      font-size: 16px;
+      font-weight: 400;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     .table-math-keypad__key svg {
@@ -797,17 +833,69 @@
     }
 
     .table-math-keypad__key:hover:not(:disabled) {
-      border-color: var(--accent);
-      background: var(--area-muted);
+      color: var(--text);
     }
 
     .table-math-keypad__key:active:not(:disabled) {
-      background: rgba(61, 90, 154, 0.12);
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    .table-math-keypad__key:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .table-keypad-units {
+      display: grid;
+      gap: 8px;
+    }
+
+    .table-keypad-units__label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-keypad-units__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .table-keypad-units__key {
+      min-height: 44px;
+      padding: 8px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .table-keypad-units__key:hover:not(:disabled) {
+      color: var(--text);
+    }
+
+    .table-keypad-units__key[aria-pressed="true"] {
+      background: var(--accent);
+      color: var(--accent-on);
     }
 
     .table-keypad-panel__action:focus-visible,
-    .table-math-keypad__key:focus-visible {
-      outline: 2px solid var(--accent);
+    .table-math-keypad__key:focus-visible,
+    .table-keypad-units__key:focus-visible {
+      outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
 
@@ -815,14 +903,15 @@
       box-sizing: border-box;
       position: relative;
       z-index: 1;
-      margin-left: calc(var(--panel-w) + 24px);
-      width: calc(100% - var(--panel-w) - 24px);
-      height: calc(100dvh - 16px);
+      flex: 1 1 0;
+      margin-left: 0;
+      width: 100%;
+      height: auto;
       display: flex;
       flex-direction: column;
       min-width: 0;
       min-height: 0;
-      padding: 0 0 0 8px;
+      padding: 0;
     }
 
     .board-stage {
@@ -830,23 +919,60 @@
       position: relative;
       min-height: 0;
       overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      background: #ffffff;
+      border: none;
+      border-radius: var(--radius-canvas);
+      background: var(--canvas-bg);
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: flex-start;
     }
 
     .stage {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      width: 100%;
-      height: 100%;
+      flex: 1 1 0;
+      width: auto;
+      height: auto;
+      min-width: 0;
       min-height: 0;
       padding: 16px;
+    }
+
+    .sim-empty-hint {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: max-content;
+      max-width: min(720px, calc(100% - 48px));
+      margin: 0;
+      padding: 12px 28px;
+      border: 2px solid #cbd5e1;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      pointer-events: none;
+      text-align: center;
+      font-family: var(--font-app);
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.35;
+      color: #334155;
+      transform: translateX(-50%);
+    }
+
+    .sim-empty-hint.is-hidden {
+      display: none;
+    }
+
+    .app-root[data-app-mode="free"] .sim-empty-hint {
+      display: none;
     }
 
     #diagram-wrap {
@@ -889,17 +1015,21 @@
     }
 
     #cube-stack {
-      flex: 1 1 auto;
+      position: relative;
+      z-index: 70;
+      flex: 0 0 auto;
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 20px;
-      padding: 12px 18px 20px;
+      gap: 36px;
+      margin: 0;
+      padding: 28px 20px 16px;
+      min-width: 108px;
       min-height: 0;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
-      border-top: 1px solid var(--border);
+      background: transparent;
     }
 
     #cube-stack .stack-small-group {
@@ -1065,14 +1195,16 @@
         height: auto;
         min-height: 100dvh;
         overflow: auto;
+        padding: 8px 10px 12px;
       }
 
       .left-panel {
         position: relative;
         inset: auto;
         width: 100%;
+        flex: 0 0 auto;
         max-height: none;
-        margin-bottom: 8px;
+        margin-bottom: 0;
       }
 
       .workspace {
@@ -1086,13 +1218,32 @@
 
       .board-stage {
         flex: 1;
+        flex-direction: column;
         min-height: min(52vh, 420px);
       }
 
       .stage {
-        flex-direction: column;
-        justify-content: center;
+        flex: 1 1 auto;
         padding: 12px;
+      }
+
+      .sim-empty-hint {
+        font-size: 20px;
+        padding: 10px 18px;
+      }
+
+      #cube-stack {
+        flex-direction: row;
+        justify-content: center;
+        gap: 28px;
+        width: 100%;
+        min-width: 0;
+        min-height: 96px;
+        padding: 28px 12px 12px;
+      }
+
+      .panel-title {
+        font-size: 28px;
       }
     }
   </style>
@@ -1101,8 +1252,21 @@
   <div class="app-root" id="app-root" data-app-mode="cuboid">
     <aside class="left-panel" aria-label="Ovládání">
       <div class="panel-copy">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-        <h1 class="panel-title">Objem</h1>
+        <div class="panel-head">
+          <a href="../index.html" class="hub-back-to-sims">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M15 18l-6-6 6-6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Zpět
+          </a>
+          <h1 class="panel-title">Objem</h1>
+        </div>
         <div class="mode-switch" role="tablist" aria-label="Režim simulace">
           <button
             type="button"
@@ -1185,15 +1349,11 @@
                   type="text"
                   inputmode="none"
                   readonly
-                  aria-label="Hodnota objemu"
+                  aria-label="Hodnota objemu s jednotkou"
                 />
-                <select id="volume-unit" aria-label="Jednotka objemu">
-                  <option value="cm3">cm³</option>
-                  <option value="mm3">mm³</option>
-                </select>
               </div>
-              <button id="verify-btn" class="action-btn action-btn--primary" type="button">Ověřit</button>
             </div>
+            <button id="verify-btn" class="action-btn action-btn--primary" type="button">Ověřit</button>
             <p class="indicator-answer-feedback" id="volume-feedback" aria-live="polite"></p>
           </div>
         </div>
@@ -1244,29 +1404,11 @@
           </button>
         </div>
       </div>
-
-      <div id="cube-stack" aria-label="Zásobník krychlí">
-        <div class="stack-cube" data-type="cm3" role="button" tabindex="0" aria-label="1 cm³">
-          <svg class="stack-visual stack-visual-cm3" viewBox="20.5 21 40.3 40" aria-hidden="true">
-            <path d="M50.3127 61H20.5L20.6498 31.1873L30.8371 21H60.7996V50.6629L50.3127 61Z" fill="#d7e0f4"/>
-            <path d="M20.6498 31.1873L30.8371 21H60.7996V50.6629L50.3127 61H20.5L20.6498 31.1873ZM50.3127 61V31.1873M60.7996 21L50.3127 31.1873M20.6498 31.1873H50.3127" stroke="#3d5a9a" fill="none"/>
-          </svg>
-          <span class="stack-label stack-label-cm3">1 cm³</span>
-        </div>
-        <div class="stack-small-group">
-          <div class="stack-cube" data-type="mm3" role="button" tabindex="0" aria-label="1 mm³">
-            <svg class="stack-visual stack-visual-mm3" viewBox="123.5 46 4.03 4" aria-hidden="true">
-              <path d="M126.481 50H123.5L123.515 47.0187L124.534 46H127.53V48.9663L126.481 50Z" fill="#fecaca"/>
-              <path d="M123.515 47.0187L124.534 46H127.53V48.9663L126.481 50H123.5L123.515 47.0187ZM126.481 50V47.0187M127.53 46L126.481 47.0187M123.515 47.0187H126.481" stroke="#dc2626" stroke-width="0.1" fill="none"/>
-            </svg>
-            <span class="stack-label stack-label-mm3">1 mm³</span>
-          </div>
-        </div>
-      </div>
     </aside>
 
     <div class="workspace">
       <div class="board-stage" aria-label="Pracovní plocha">
+        <p class="sim-empty-hint" id="hintEl">Poskládej z krychlí daný kvádr a urči jeho objem.</p>
         <div
           id="board-pan-catch"
           class="board-pan-catch"
@@ -1277,7 +1419,7 @@
         <div class="stage" id="stage">
           <div id="diagram-wrap">
                 <svg id="diagram" width="178" height="242" viewBox="0 0 178 242" fill="none" xmlns="http://www.w3.org/2000/svg" overflow="visible" aria-label="Objem">
-                  <rect id="diagram-bg" width="178" height="242" fill="#ffffff"/>
+                  <rect id="diagram-bg" width="178" height="242" fill="#ffffe6"/>
                   <g id="content">
                     <defs>
                       <g id="cm-cube-shape">
@@ -1302,15 +1444,33 @@
                     <g id="label-layer">
                       <g id="cuboid-front-overlay"></g>
                       <g id="cuboid-exact-labels">
-                        <path d="M53.6486 230.52V234.53H54.5786V235.33H53.6486V237H52.7686V235.33H49.9486L49.8886 234.5L52.3986 230.52H53.6486ZM52.7686 231.25L50.7386 234.53H52.7686V231.25ZM61.1343 232.02C61.8443 232.02 62.4243 232.28 62.8743 232.79L62.3443 233.37C62.0643 232.99 61.6643 232.8 61.1343 232.8C60.6443 232.8 60.2443 232.97 59.9343 233.3C59.6243 233.63 59.4643 234.04 59.4643 234.55C59.4643 235.06 59.6243 235.49 59.9343 235.83C60.2543 236.16 60.6543 236.33 61.1443 236.33C61.6343 236.33 62.0343 236.15 62.3343 235.79L62.8943 236.33C62.4343 236.86 61.8543 237.12 61.1443 237.12C60.3843 237.12 59.7643 236.87 59.2843 236.38C58.8143 235.89 58.5743 235.28 58.5743 234.56C58.5743 233.84 58.8043 233.24 59.2743 232.75C59.7443 232.26 60.3643 232.02 61.1343 232.02ZM69.675 232.02C70.865 232.02 71.615 232.63 71.615 233.74V237H70.735V233.98C70.735 233.19 70.205 232.8 69.515 232.8C69.165 232.8 68.865 232.91 68.615 233.13C68.365 233.35 68.235 233.63 68.235 233.96V237H67.355V233.98C67.355 233.19 66.825 232.8 66.135 232.8C65.785 232.8 65.485 232.91 65.225 233.13C64.975 233.35 64.845 233.63 64.845 233.96V237H63.965V232.12H64.805V232.21V232.69C65.175 232.24 65.695 232.02 66.355 232.02C67.135 232.02 67.685 232.31 67.995 232.88C68.265 232.43 68.885 232.02 69.675 232.02Z" fill="black"/>
-                        <path d="M141.23 205.43C141.8 205.43 142.28 205.6 142.67 205.94C143.06 206.28 143.25 206.68 143.25 207.14C143.25 207.79 142.97 208.26 142.41 208.54C143.02 208.78 143.44 209.42 143.44 210.18C143.44 210.73 143.23 211.19 142.81 211.56C142.4 211.93 141.87 212.12 141.24 212.12C140.12 212.12 139.37 211.46 139.05 210.63L139.78 210.24C140.05 210.96 140.52 211.32 141.2 211.32C142 211.32 142.53 210.86 142.53 210.11C142.53 209.43 142.01 208.98 141.26 208.95H140.77V208.21C140.96 208.22 141.13 208.22 141.28 208.2C141.96 208.15 142.36 207.8 142.36 207.2C142.36 206.64 141.88 206.23 141.21 206.23C140.57 206.23 140.07 206.64 139.88 207.23L139.17 206.87C139.3 206.46 139.55 206.11 139.92 205.84C140.29 205.57 140.73 205.43 141.23 205.43ZM150.036 207.02C150.746 207.02 151.326 207.28 151.776 207.79L151.246 208.37C150.966 207.99 150.566 207.8 150.036 207.8C149.546 207.8 149.146 207.97 148.836 208.3C148.526 208.63 148.366 209.04 148.366 209.55C148.366 210.06 148.526 210.49 148.836 210.83C149.156 211.16 149.556 211.33 150.046 211.33C150.536 211.33 150.936 211.15 151.236 210.79L151.796 211.33C151.336 211.86 150.756 212.12 150.046 212.12C149.286 212.12 148.666 211.87 148.186 211.38C147.716 210.89 147.476 210.28 147.476 209.56C147.476 208.84 147.706 208.24 148.176 207.75C148.646 207.26 149.266 207.02 150.036 207.02ZM158.576 207.02C159.766 207.02 160.516 207.63 160.516 208.74V212H159.636V208.98C159.636 208.19 159.106 207.8 158.416 207.8C158.066 207.8 157.766 207.91 157.516 208.13C157.266 208.35 157.136 208.63 157.136 208.96V212H156.256V208.98C156.256 208.19 155.726 207.8 155.036 207.8C154.686 207.8 154.386 207.91 154.126 208.13C153.876 208.35 153.746 208.63 153.746 208.96V212H152.866V207.12H153.706V207.21V207.69C154.076 207.24 154.596 207.02 155.256 207.02C156.036 207.02 156.586 207.31 156.896 207.88C157.166 207.43 157.786 207.02 158.576 207.02Z" fill="black"/>
-                        <path d="M157.23 147.43C157.8 147.43 158.28 147.6 158.67 147.94C159.06 148.28 159.25 148.68 159.25 149.14C159.25 149.79 158.97 150.26 158.41 150.54C159.02 150.78 159.44 151.42 159.44 152.18C159.44 152.73 159.23 153.19 158.81 153.56C158.4 153.93 157.87 154.12 157.24 154.12C156.12 154.12 155.37 153.46 155.05 152.63L155.78 152.24C156.05 152.96 156.52 153.32 157.2 153.32C158 153.32 158.53 152.86 158.53 152.11C158.53 151.43 158.01 150.98 157.26 150.95H156.77V150.21C156.96 150.22 157.13 150.22 157.28 150.2C157.96 150.15 158.36 149.8 158.36 149.2C158.36 148.64 157.88 148.23 157.21 148.23C156.57 148.23 156.07 148.64 155.88 149.23L155.17 148.87C155.3 148.46 155.55 148.11 155.92 147.84C156.29 147.57 156.73 147.43 157.23 147.43ZM166.036 149.02C166.746 149.02 167.326 149.28 167.776 149.79L167.246 150.37C166.966 149.99 166.566 149.8 166.036 149.8C165.546 149.8 165.146 149.97 164.836 150.3C164.526 150.63 164.366 151.04 164.366 151.55C164.366 152.06 164.526 152.49 164.836 152.83C165.156 153.16 165.556 153.33 166.046 153.33C166.536 153.33 166.936 153.15 167.236 152.79L167.796 153.33C167.336 153.86 166.756 154.12 166.046 154.12C165.286 154.12 164.666 153.87 164.186 153.38C163.716 152.89 163.476 152.28 163.476 151.56C163.476 150.84 163.706 150.24 164.176 149.75C164.646 149.26 165.266 149.02 166.036 149.02ZM174.576 149.02C175.766 149.02 176.516 149.63 176.516 150.74V154H175.636V150.98C175.636 150.19 175.106 149.8 174.416 149.8C174.066 149.8 173.766 149.91 173.516 150.13C173.266 150.35 173.136 150.63 173.136 150.96V154H172.256V150.98C172.256 150.19 171.726 149.8 171.036 149.8C170.686 149.8 170.386 149.91 170.126 150.13C169.876 150.35 169.746 150.63 169.746 150.96V154H168.866V149.12H169.706V149.21V149.69C170.076 149.24 170.596 149.02 171.256 149.02C172.036 149.02 172.586 149.31 172.896 149.88C173.166 149.43 173.786 149.02 174.576 149.02Z" fill="black"/>
+                        <path d="M53.6486 230.52V234.53H54.5786V235.33H53.6486V237H52.7686V235.33H49.9486L49.8886 234.5L52.3986 230.52H53.6486ZM52.7686 231.25L50.7386 234.53H52.7686V231.25ZM61.1343 232.02C61.8443 232.02 62.4243 232.28 62.8743 232.79L62.3443 233.37C62.0643 232.99 61.6643 232.8 61.1343 232.8C60.6443 232.8 60.2443 232.97 59.9343 233.3C59.6243 233.63 59.4643 234.04 59.4643 234.55C59.4643 235.06 59.6243 235.49 59.9343 235.83C60.2543 236.16 60.6543 236.33 61.1443 236.33C61.6343 236.33 62.0343 236.15 62.3343 235.79L62.8943 236.33C62.4343 236.86 61.8543 237.12 61.1443 237.12C60.3843 237.12 59.7643 236.87 59.2843 236.38C58.8143 235.89 58.5743 235.28 58.5743 234.56C58.5743 233.84 58.8043 233.24 59.2743 232.75C59.7443 232.26 60.3643 232.02 61.1343 232.02ZM69.675 232.02C70.865 232.02 71.615 232.63 71.615 233.74V237H70.735V233.98C70.735 233.19 70.205 232.8 69.515 232.8C69.165 232.8 68.865 232.91 68.615 233.13C68.365 233.35 68.235 233.63 68.235 233.96V237H67.355V233.98C67.355 233.19 66.825 232.8 66.135 232.8C65.785 232.8 65.485 232.91 65.225 233.13C64.975 233.35 64.845 233.63 64.845 233.96V237H63.965V232.12H64.805V232.21V232.69C65.175 232.24 65.695 232.02 66.355 232.02C67.135 232.02 67.685 232.31 67.995 232.88C68.265 232.43 68.885 232.02 69.675 232.02Z" fill="#334155"/>
+                        <path d="M141.23 205.43C141.8 205.43 142.28 205.6 142.67 205.94C143.06 206.28 143.25 206.68 143.25 207.14C143.25 207.79 142.97 208.26 142.41 208.54C143.02 208.78 143.44 209.42 143.44 210.18C143.44 210.73 143.23 211.19 142.81 211.56C142.4 211.93 141.87 212.12 141.24 212.12C140.12 212.12 139.37 211.46 139.05 210.63L139.78 210.24C140.05 210.96 140.52 211.32 141.2 211.32C142 211.32 142.53 210.86 142.53 210.11C142.53 209.43 142.01 208.98 141.26 208.95H140.77V208.21C140.96 208.22 141.13 208.22 141.28 208.2C141.96 208.15 142.36 207.8 142.36 207.2C142.36 206.64 141.88 206.23 141.21 206.23C140.57 206.23 140.07 206.64 139.88 207.23L139.17 206.87C139.3 206.46 139.55 206.11 139.92 205.84C140.29 205.57 140.73 205.43 141.23 205.43ZM150.036 207.02C150.746 207.02 151.326 207.28 151.776 207.79L151.246 208.37C150.966 207.99 150.566 207.8 150.036 207.8C149.546 207.8 149.146 207.97 148.836 208.3C148.526 208.63 148.366 209.04 148.366 209.55C148.366 210.06 148.526 210.49 148.836 210.83C149.156 211.16 149.556 211.33 150.046 211.33C150.536 211.33 150.936 211.15 151.236 210.79L151.796 211.33C151.336 211.86 150.756 212.12 150.046 212.12C149.286 212.12 148.666 211.87 148.186 211.38C147.716 210.89 147.476 210.28 147.476 209.56C147.476 208.84 147.706 208.24 148.176 207.75C148.646 207.26 149.266 207.02 150.036 207.02ZM158.576 207.02C159.766 207.02 160.516 207.63 160.516 208.74V212H159.636V208.98C159.636 208.19 159.106 207.8 158.416 207.8C158.066 207.8 157.766 207.91 157.516 208.13C157.266 208.35 157.136 208.63 157.136 208.96V212H156.256V208.98C156.256 208.19 155.726 207.8 155.036 207.8C154.686 207.8 154.386 207.91 154.126 208.13C153.876 208.35 153.746 208.63 153.746 208.96V212H152.866V207.12H153.706V207.21V207.69C154.076 207.24 154.596 207.02 155.256 207.02C156.036 207.02 156.586 207.31 156.896 207.88C157.166 207.43 157.786 207.02 158.576 207.02Z" fill="#334155"/>
+                        <path d="M157.23 147.43C157.8 147.43 158.28 147.6 158.67 147.94C159.06 148.28 159.25 148.68 159.25 149.14C159.25 149.79 158.97 150.26 158.41 150.54C159.02 150.78 159.44 151.42 159.44 152.18C159.44 152.73 159.23 153.19 158.81 153.56C158.4 153.93 157.87 154.12 157.24 154.12C156.12 154.12 155.37 153.46 155.05 152.63L155.78 152.24C156.05 152.96 156.52 153.32 157.2 153.32C158 153.32 158.53 152.86 158.53 152.11C158.53 151.43 158.01 150.98 157.26 150.95H156.77V150.21C156.96 150.22 157.13 150.22 157.28 150.2C157.96 150.15 158.36 149.8 158.36 149.2C158.36 148.64 157.88 148.23 157.21 148.23C156.57 148.23 156.07 148.64 155.88 149.23L155.17 148.87C155.3 148.46 155.55 148.11 155.92 147.84C156.29 147.57 156.73 147.43 157.23 147.43ZM166.036 149.02C166.746 149.02 167.326 149.28 167.776 149.79L167.246 150.37C166.966 149.99 166.566 149.8 166.036 149.8C165.546 149.8 165.146 149.97 164.836 150.3C164.526 150.63 164.366 151.04 164.366 151.55C164.366 152.06 164.526 152.49 164.836 152.83C165.156 153.16 165.556 153.33 166.046 153.33C166.536 153.33 166.936 153.15 167.236 152.79L167.796 153.33C167.336 153.86 166.756 154.12 166.046 154.12C165.286 154.12 164.666 153.87 164.186 153.38C163.716 152.89 163.476 152.28 163.476 151.56C163.476 150.84 163.706 150.24 164.176 149.75C164.646 149.26 165.266 149.02 166.036 149.02ZM174.576 149.02C175.766 149.02 176.516 149.63 176.516 150.74V154H175.636V150.98C175.636 150.19 175.106 149.8 174.416 149.8C174.066 149.8 173.766 149.91 173.516 150.13C173.266 150.35 173.136 150.63 173.136 150.96V154H172.256V150.98C172.256 150.19 171.726 149.8 171.036 149.8C170.686 149.8 170.386 149.91 170.126 150.13C169.876 150.35 169.746 150.63 169.746 150.96V154H168.866V149.12H169.706V149.21V149.69C170.076 149.24 170.596 149.02 171.256 149.02C172.036 149.02 172.586 149.31 172.896 149.88C173.166 149.43 173.786 149.02 174.576 149.02Z" fill="#334155"/>
                       </g>
                       <g id="cuboid-dynamic-labels"></g>
                     </g>
                   </g>
                 </svg>
               </div>
+        </div>
+        <div id="cube-stack" aria-label="Zásobník krychlí">
+          <div class="stack-cube" data-type="cm3" role="button" tabindex="0" aria-label="1 cm³">
+            <svg class="stack-visual stack-visual-cm3" viewBox="20.5 21 40.3 40" aria-hidden="true">
+              <path d="M50.3127 61H20.5L20.6498 31.1873L30.8371 21H60.7996V50.6629L50.3127 61Z" fill="#d7e0f4"/>
+              <path d="M20.6498 31.1873L30.8371 21H60.7996V50.6629L50.3127 61H20.5L20.6498 31.1873ZM50.3127 61V31.1873M60.7996 21L50.3127 31.1873M20.6498 31.1873H50.3127" stroke="#3d5a9a" fill="none"/>
+            </svg>
+            <span class="stack-label stack-label-cm3">1 cm³</span>
+          </div>
+          <div class="stack-small-group">
+            <div class="stack-cube" data-type="mm3" role="button" tabindex="0" aria-label="1 mm³">
+              <svg class="stack-visual stack-visual-mm3" viewBox="123.5 46 4.03 4" aria-hidden="true">
+                <path d="M126.481 50H123.5L123.515 47.0187L124.534 46H127.53V48.9663L126.481 50Z" fill="#fecaca"/>
+                <path d="M123.515 47.0187L124.534 46H127.53V48.9663L126.481 50H123.5L123.515 47.0187ZM126.481 50V47.0187M127.53 46L126.481 47.0187M123.515 47.0187H126.481" stroke="#dc2626" stroke-width="0.1" fill="none"/>
+              </svg>
+              <span class="stack-label stack-label-mm3">1 mm³</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1347,6 +1507,13 @@
             </svg>
           </button>
         </div>
+        <div class="table-keypad-units" role="group" aria-labelledby="volume-keypad-unit-label">
+          <p id="volume-keypad-unit-label" class="table-keypad-units__label">Vyber jednotku</p>
+          <div class="table-keypad-units__grid">
+            <button type="button" class="table-keypad-units__key" data-unit="cm3" aria-pressed="false">cm³</button>
+            <button type="button" class="table-keypad-units__key" data-unit="mm3" aria-pressed="false">mm³</button>
+          </div>
+        </div>
       </div>
       <div class="table-keypad-panel__actions">
         <button type="button" id="volume-keypad-cancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">
@@ -1363,6 +1530,6 @@
     </div>
   </div>
 
-  <script src="main.js?v=26"></script>
+  <script src="main.js?v=29"></script>
 </body>
 </html>
