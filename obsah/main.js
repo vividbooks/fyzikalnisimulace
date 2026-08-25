@@ -69,7 +69,6 @@ const canvasHeightInput = document.getElementById("canvas-height");
 const areaAnswerRow = document.getElementById("area-answer-row");
 const areaFeedback = document.getElementById("area-feedback");
 const areaValueInput = document.getElementById("area-value");
-const areaUnitSelect = document.getElementById("area-unit");
 const verifyBtn = document.getElementById("verify-btn");
 const areaKeypadOverlay = document.getElementById("area-keypad-overlay");
 const areaKeypadDisplay = document.getElementById("area-keypad-display");
@@ -96,7 +95,14 @@ let panDrag = null;
 let canvasPosition = { x: 0, y: 0 };
 let celebrationTimer = null;
 let areaKeypadDraft = "";
+let areaKeypadUnit = "";
 let isAreaKeypadOpen = false;
+const AREA_UNIT_LABELS = {
+  dm2: "dm²",
+  cm2: "cm²",
+  mm2: "mm²",
+};
+const areaKeypadUnitKeys = areaMathKeypad.querySelectorAll(".table-keypad-units__key");
 
 function getCanvasBounds() {
   return {
@@ -451,7 +457,7 @@ function createLine(x1, y1, x2, y2) {
   line.setAttribute("y1", String(y1));
   line.setAttribute("x2", String(x2));
   line.setAttribute("y2", String(y2));
-  line.setAttribute("stroke", "black");
+  line.setAttribute("stroke", "#334155");
   return line;
 }
 
@@ -461,7 +467,7 @@ function createLabel(text, x, y, anchor = "middle") {
   label.setAttribute("x", String(x));
   label.setAttribute("y", String(y));
   label.setAttribute("text-anchor", anchor);
-  label.setAttribute("fill", "black");
+  label.setAttribute("fill", "#334155");
   label.setAttribute("font-size", "10");
   label.setAttribute("font-family", "Fenomen Sans, ui-sans-serif, system-ui, sans-serif");
   return label;
@@ -836,6 +842,41 @@ function parseAreaInput(raw) {
   return Number(normalized);
 }
 
+function normalizeAreaUnit(unit) {
+  if (!unit) {
+    return "";
+  }
+  const normalized = String(unit)
+    .trim()
+    .toLowerCase()
+    .replace("²", "2")
+    .replace(/\s+/g, "");
+  if (normalized === "dm2" || normalized === "cm2" || normalized === "mm2") {
+    return normalized;
+  }
+  return "";
+}
+
+function parseAreaAnswer(text) {
+  const trimmed = String(text ?? "").trim();
+  if (!trimmed) {
+    return { numericText: "", value: null, unit: "" };
+  }
+
+  const match = trimmed.match(/^([+-]?\d+(?:[.,]\d+)?)\s*(dm²|cm²|mm²|dm2|cm2|mm2)?$/i);
+  if (!match) {
+    return { numericText: trimmed, value: null, unit: "" };
+  }
+
+  const numericText = match[1].replace(".", ",");
+  const value = Number.parseFloat(match[1].replace(",", "."));
+  return {
+    numericText,
+    value: Number.isFinite(value) ? value : null,
+    unit: normalizeAreaUnit(match[2]),
+  };
+}
+
 function formatAreaDraft(raw) {
   const trimmed = String(raw || "").trim();
   if (!trimmed) {
@@ -846,6 +887,15 @@ function formatAreaDraft(raw) {
     return trimmed;
   }
   return String(value).replace(".", ",");
+}
+
+function formatAreaAnswerWithUnit(numericText, unit) {
+  const draft = formatAreaDraft(numericText);
+  const label = AREA_UNIT_LABELS[normalizeAreaUnit(unit)];
+  if (!draft) {
+    return "";
+  }
+  return label ? `${draft} ${label}` : draft;
 }
 
 function clearAreaKeypadError() {
@@ -862,8 +912,8 @@ function showAreaKeypadError(message) {
 
 function validateAreaKeypadDraft() {
   const raw = areaKeypadDraft.trim();
-  if (!raw) {
-    return { ok: true };
+  if (!raw || raw === "," || raw === ".") {
+    return { ok: false, message: "Zadej platné číslo." };
   }
   const value = parseAreaInput(raw);
   if (!Number.isFinite(value)) {
@@ -872,21 +922,35 @@ function validateAreaKeypadDraft() {
   if (value < 0) {
     return { ok: false, message: "Hodnota nemůže být záporná." };
   }
+  if (!areaKeypadUnit) {
+    return { ok: false, message: "Vyber jednotku." };
+  }
   return { ok: true };
 }
 
+function updateAreaKeypadUnitButtons() {
+  areaKeypadUnitKeys.forEach((button) => {
+    const isActive = button.dataset.unit === areaKeypadUnit;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function setAreaKeypadUnit(unit) {
+  areaKeypadUnit = normalizeAreaUnit(unit);
+  updateAreaKeypadDisplay();
+}
+
 function updateAreaKeypadDisplay() {
-  areaKeypadDisplay.textContent = areaKeypadDraft;
-  const result = validateAreaKeypadDraft();
-  if (!result.ok) {
-    showAreaKeypadError(result.message);
-    return;
-  }
+  areaKeypadDisplay.textContent = formatAreaAnswerWithUnit(areaKeypadDraft, areaKeypadUnit);
+  updateAreaKeypadUnitButtons();
   clearAreaKeypadError();
 }
 
 function showAreaKeypad() {
-  areaKeypadDraft = areaValueInput.value;
+  const parsed = parseAreaAnswer(areaValueInput.value);
+  areaKeypadDraft = parsed.numericText;
+  areaKeypadUnit = parsed.unit;
   clearAreaKeypadError();
   updateAreaKeypadDisplay();
   areaKeypadOverlay.hidden = false;
@@ -896,10 +960,12 @@ function showAreaKeypad() {
 
 function hideAreaKeypad() {
   areaKeypadDraft = "";
+  areaKeypadUnit = "";
   clearAreaKeypadError();
   areaKeypadOverlay.hidden = true;
   areaKeypadDisplay.textContent = "";
   isAreaKeypadOpen = false;
+  updateAreaKeypadUnitButtons();
 }
 
 function insertIntoAreaKeypadDraft(value) {
@@ -927,7 +993,7 @@ function confirmAreaKeypad() {
     return;
   }
 
-  areaValueInput.value = formatAreaDraft(areaKeypadDraft);
+  areaValueInput.value = formatAreaAnswerWithUnit(areaKeypadDraft, areaKeypadUnit);
   hideAreaKeypad();
   resetAreaQuizFeedback();
 }
@@ -947,6 +1013,14 @@ function handleAreaKeypadClick(event) {
   }
 }
 
+function handleAreaUnitClick(event) {
+  const button = event.currentTarget;
+  if (!(button instanceof HTMLButtonElement) || button.disabled) {
+    return;
+  }
+  setAreaKeypadUnit(button.dataset.unit);
+}
+
 function resetAreaQuizFeedback() {
   areaAnswerRow.classList.remove("is-correct", "is-wrong");
   areaFeedback.textContent = "";
@@ -959,20 +1033,26 @@ function resetAreaQuiz() {
 }
 
 function verifyAreaAnswer() {
-  const value = parseAreaInput(areaValueInput.value);
-  const unit = areaUnitSelect.value;
+  const parsed = parseAreaAnswer(areaValueInput.value);
 
   resetAreaQuizFeedback();
 
-  if (!Number.isFinite(value)) {
+  if (parsed.value === null) {
     areaAnswerRow.classList.add("is-wrong");
     areaFeedback.classList.add("is-wrong");
     areaFeedback.textContent = "Zadej číslo.";
     return;
   }
 
-  const expected = convertAreaFromDm2(getCanvasAreaDm2(), unit);
-  const isCorrect = Math.abs(value - expected) < 0.001;
+  if (!parsed.unit) {
+    areaAnswerRow.classList.add("is-wrong");
+    areaFeedback.classList.add("is-wrong");
+    areaFeedback.textContent = "Vyber jednotku.";
+    return;
+  }
+
+  const expected = convertAreaFromDm2(getCanvasAreaDm2(), parsed.unit);
+  const isCorrect = Math.abs(parsed.value - expected) < 0.001;
 
   if (isCorrect) {
     areaAnswerRow.classList.add("is-correct");
@@ -1134,7 +1214,9 @@ areaKeypadOverlay.addEventListener("click", (event) => {
   }
 });
 verifyBtn.addEventListener("click", verifyAreaAnswer);
-areaUnitSelect.addEventListener("change", resetAreaQuizFeedback);
+areaKeypadUnitKeys.forEach((button) => {
+  button.addEventListener("click", handleAreaUnitClick);
+});
 areaMathKeypad.querySelectorAll(".table-math-keypad__key").forEach((keyBtn) => {
   keyBtn.addEventListener("mousedown", (event) => {
     event.preventDefault();
