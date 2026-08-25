@@ -11,6 +11,7 @@ const forceKeypadDisplay = document.getElementById("force-keypad-display");
 const forceKeypadClose = document.getElementById("force-keypad-close");
 const forceKeypadConfirm = document.getElementById("force-keypad-confirm");
 const forceKeypadKeys = document.querySelectorAll("#force-math-keypad .math-keypad__key");
+const hintEl = document.getElementById("hintEl");
 
 if (
   !objectsStage ||
@@ -39,10 +40,17 @@ const TIP_HANDLE_RADIUS = 20;
 const TIP_DRAG_THRESHOLD = 2;
 const RESULTANT_ZERO_THRESHOLD = 0.5;
 const CONSTRUCTION_STEP_MS = 750;
-const OBJECT_COLOR = "#3d5a9a";
+const OBJECT_COLOR = "#3b82f6";
 const FORCE_COLOR = "#0f766e";
 const RESULTANT_COLOR = "#dc2626";
 const CIRCLE_R = 25.4297;
+const FORCE_LABEL_FONT =
+  "Fenomen Sans, ui-sans-serif, system-ui, sans-serif";
+const FORCE_LABEL_PX = 26;
+const FORCE_PILL_MIN_W = 72;
+const FORCE_PILL_CHAR_W = 0.62;
+const FORCE_PILL_HEIGHT = FORCE_LABEL_PX * 1.45;
+const FORCE_PILL_GAP = 8;
 const JET_NOZZLE_RIGHT = 156;
 const JET_HEIGHT = 72;
 const JET_WIDTH = 160;
@@ -73,6 +81,7 @@ let forceHintActive = false;
 let forceHintFrameId = null;
 let forceHintStartTime = null;
 let forceHintElements = null;
+let hintDismissed = false;
 
 function clientToSvgPoint(svg, clientX, clientY) {
   const rect = svg.getBoundingClientRect();
@@ -505,56 +514,98 @@ function snapTipToAxis(fromX, fromY, toX, toY) {
   return { toX: fromX, toY };
 }
 
-function getForceLabelLayout(tipX, tipY, angle) {
-  const headLen = 8;
-  const labelGap = 10;
-  const labelOffset = headLen + labelGap;
-  let labelX = tipX + Math.cos(angle) * labelOffset;
-  let labelY = tipY + Math.sin(angle) * labelOffset;
-  let labelAngle = (angle * 180) / Math.PI;
-  let textAnchor = "start";
-
-  if (labelAngle > 90 || labelAngle < -90) {
-    labelAngle += 180;
-    textAnchor = "end";
-  }
-
-  const absDeg = Math.abs((angle * 180) / Math.PI);
-  const perpOffset = 8;
-  const nearHorizontal = absDeg < 20 || absDeg > 160;
-  const nearVertical = absDeg > 70 && absDeg < 110;
-
-  if (nearHorizontal) {
-    labelY -= perpOffset;
-  } else if (nearVertical) {
-    labelX += perpOffset;
-  }
-
-  return { labelX, labelY, labelAngle, textAnchor };
+function forcePillSize(label) {
+  const width = Math.max(
+    FORCE_PILL_MIN_W,
+    String(label).length * FORCE_LABEL_PX * FORCE_PILL_CHAR_W
+  );
+  return { width, height: FORCE_PILL_HEIGHT, rx: FORCE_PILL_HEIGHT / 2 };
 }
 
-function applyForceLabel(label, labelHit, tipX, tipY, angle, magnitude) {
-  const { labelX, labelY, labelAngle, textAnchor } = getForceLabelLayout(
+function getForceLabelLayout(tipX, tipY, angle, labelText) {
+  const { width, height, rx } = forcePillSize(labelText);
+  let rot = (angle * 180) / Math.PI;
+  if (rot > 90 || rot < -90) rot += 180;
+
+  const ux = Math.cos(angle);
+  const uy = Math.sin(angle);
+  let nx = -uy;
+  let ny = ux;
+  if (ny > 0) {
+    nx = -nx;
+    ny = -ny;
+  }
+
+  const along = width * 0.38 + 12;
+  const cx = tipX - ux * along + nx * (height / 2 + FORCE_PILL_GAP);
+  const cy = tipY - uy * along + ny * (height / 2 + FORCE_PILL_GAP);
+
+  return { cx, cy, rot, width, height, rx };
+}
+
+function applyForceLabel(group, pill, label, labelHit, tipX, tipY, angle, magnitude) {
+  const text = formatForce(magnitude);
+  const { cx, cy, rot, width, height, rx } = getForceLabelLayout(
     tipX,
     tipY,
-    angle
+    angle,
+    text
   );
 
-  label.setAttribute("x", String(labelX));
-  label.setAttribute("y", String(labelY));
-  label.setAttribute("text-anchor", textAnchor);
+  group.setAttribute("transform", `translate(${cx} ${cy}) rotate(${rot})`);
+
+  pill.setAttribute("x", String(-width / 2));
+  pill.setAttribute("y", String(-height / 2));
+  pill.setAttribute("width", String(width));
+  pill.setAttribute("height", String(height));
+  pill.setAttribute("rx", String(rx));
+  pill.setAttribute("ry", String(rx));
+
+  label.setAttribute("x", "0");
+  label.setAttribute("y", "0");
+  label.setAttribute("text-anchor", "middle");
   label.setAttribute("dominant-baseline", "middle");
-  label.setAttribute("transform", `rotate(${labelAngle} ${labelX} ${labelY})`);
-  label.textContent = formatForce(magnitude);
+  label.removeAttribute("transform");
+  label.textContent = text;
 
   if (!labelHit) return;
 
-  const padding = 6;
-  const bounds = label.getBBox();
-  labelHit.setAttribute("x", String(bounds.x - padding));
-  labelHit.setAttribute("y", String(bounds.y - padding));
-  labelHit.setAttribute("width", String(bounds.width + padding * 2));
-  labelHit.setAttribute("height", String(bounds.height + padding * 2));
+  labelHit.setAttribute("x", String(-width / 2));
+  labelHit.setAttribute("y", String(-height / 2));
+  labelHit.setAttribute("width", String(width));
+  labelHit.setAttribute("height", String(height));
+}
+
+function createForceLabelParts(withHit) {
+  const pill = document.createElementNS(SVG_NS, "rect");
+  pill.setAttribute("class", "force-label-pill");
+
+  const label = document.createElementNS(SVG_NS, "text");
+  label.setAttribute("class", "force-label");
+  label.setAttribute("stroke", "none");
+  label.setAttribute("fill", "#171923");
+  label.setAttribute("font-family", FORCE_LABEL_FONT);
+  label.setAttribute("font-weight", "600");
+  label.setAttribute("font-size", String(FORCE_LABEL_PX));
+
+  const labelHit = withHit ? document.createElementNS(SVG_NS, "rect") : null;
+  if (labelHit) {
+    labelHit.setAttribute("class", "force-label-hit");
+    labelHit.setAttribute("fill", "transparent");
+    labelHit.setAttribute("stroke", "none");
+  }
+
+  return { pill, label, labelHit };
+}
+
+function appendResultantLabel(parent, tipX, tipY, angle, magnitude) {
+  const group = document.createElementNS(SVG_NS, "g");
+  group.setAttribute("class", "force-label-group resultant-label-group");
+  const { pill, label } = createForceLabelParts(false);
+  label.setAttribute("class", "force-label resultant-label");
+  group.append(pill, label);
+  applyForceLabel(group, pill, label, null, tipX, tipY, angle, magnitude);
+  parent.appendChild(group);
 }
 
 function updateArrow(obj, arrow, fromX, fromY, toX, toY) {
@@ -615,7 +666,16 @@ function updateArrow(obj, arrow, fromX, fromY, toX, toY) {
 
   arrow.labelGroup.removeAttribute("display");
   obj.svg.appendChild(arrow.labelGroup);
-  applyForceLabel(arrow.label, arrow.labelHit, tipX, tipY, angle, snappedLen);
+  applyForceLabel(
+    arrow.labelGroup,
+    arrow.labelPill,
+    arrow.label,
+    arrow.labelHit,
+    tipX,
+    tipY,
+    angle,
+    snappedLen
+  );
 
   arrow.force = { dx: forceDx, dy: forceDy, magnitude: snappedLen };
   updateJetMotor(obj, arrow);
@@ -645,17 +705,8 @@ function createArrow(obj) {
   labelGroup.setAttribute("class", "force-label-group");
   labelGroup.setAttribute("display", "none");
 
-  const labelHit = document.createElementNS(SVG_NS, "rect");
-  labelHit.setAttribute("class", "force-label-hit");
-  labelHit.setAttribute("fill", "transparent");
-  labelHit.setAttribute("stroke", "none");
-
-  const label = document.createElementNS(SVG_NS, "text");
-  label.setAttribute("class", "force-label");
-  label.setAttribute("stroke", "none");
-
-  labelGroup.appendChild(labelHit);
-  labelGroup.appendChild(label);
+  const { pill, label, labelHit } = createForceLabelParts(true);
+  labelGroup.append(pill, label, labelHit);
 
   g.appendChild(line);
   g.appendChild(headA);
@@ -671,6 +722,7 @@ function createArrow(obj) {
     headB,
     tipHandle,
     labelGroup,
+    labelPill: pill,
     label,
     labelHit,
     jetMotor: null,
@@ -821,10 +873,6 @@ function addOpenArrowHead(group, tipX, tipY, angle, color, strokeWidth = 2.5) {
   return [headA, headB];
 }
 
-function positionResultantLabel(label, tipX, tipY, angle, magnitude) {
-  applyForceLabel(label, null, tipX, tipY, angle, magnitude);
-}
-
 function renderResultantArrow(obj, origin, partialX, partialY) {
   const { fx, fy, magnitude } = applyResultantThreshold(partialX, partialY);
   const resultantEnd = {
@@ -854,17 +902,7 @@ function renderResultantArrow(obj, origin, partialX, partialY) {
     3
   );
 
-  const resultantLabel = document.createElementNS(SVG_NS, "text");
-  resultantLabel.setAttribute("class", "resultant-label");
-  resultantLabel.setAttribute("stroke", "none");
-  positionResultantLabel(
-    resultantLabel,
-    resultantEnd.x,
-    resultantEnd.y,
-    angle,
-    magnitude
-  );
-  group.appendChild(resultantLabel);
+  appendResultantLabel(group, resultantEnd.x, resultantEnd.y, angle, magnitude);
 }
 
 function renderParallelogramLines(obj, origin, forces) {
@@ -978,17 +1016,7 @@ async function drawResultantArrow(obj, origin, partialX, partialY, animate = tru
     3
   );
 
-  const resultantLabel = document.createElementNS(SVG_NS, "text");
-  resultantLabel.setAttribute("class", "resultant-label");
-  resultantLabel.setAttribute("stroke", "none");
-  positionResultantLabel(
-    resultantLabel,
-    resultantEnd.x,
-    resultantEnd.y,
-    angle,
-    magnitude
-  );
-  group.appendChild(resultantLabel);
+  appendResultantLabel(group, resultantEnd.x, resultantEnd.y, angle, magnitude);
 }
 
 async function animateObjectResultantConstruction(obj) {
@@ -1118,7 +1146,19 @@ function updateButtons() {
   forceKeypadKeys.forEach((key) => {
     key.disabled = forceEdit === null;
   });
+  syncSceneHint();
   syncForceHint();
+}
+
+function syncSceneHint() {
+  if (!hintEl) return;
+  hintEl.classList.toggle("is-hidden", hintDismissed);
+}
+
+function dismissSceneHint() {
+  if (hintDismissed) return;
+  hintDismissed = true;
+  syncSceneHint();
 }
 
 function hintEaseOut(t) {
@@ -1573,6 +1613,8 @@ loadJetMotorTemplate().then(() => {
 });
 
 const stage = document.querySelector(".stage");
+const workspace = document.querySelector(".scene-workspace");
+workspace?.addEventListener("pointerdown", dismissSceneHint);
 if (stage) {
   stage.addEventListener(
     "touchmove",
