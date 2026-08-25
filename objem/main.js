@@ -90,7 +90,6 @@ const cuboidHeightInput = document.getElementById("cuboid-height");
 const volumeAnswerRow = document.getElementById("volume-answer-row");
 const volumeFeedback = document.getElementById("volume-feedback");
 const volumeValueInput = document.getElementById("volume-value");
-const volumeUnitSelect = document.getElementById("volume-unit");
 const verifyBtn = document.getElementById("verify-btn");
 const volumeKeypadOverlay = document.getElementById("volume-keypad-overlay");
 const volumeKeypadDisplay = document.getElementById("volume-keypad-display");
@@ -101,6 +100,7 @@ const volumeMathKeypad = document.getElementById("volume-math-keypad");
 const content = document.getElementById("content");
 const placedCubesLayer = document.getElementById("placed-cubes");
 const cubeStack = document.getElementById("cube-stack");
+const hintEl = document.getElementById("hintEl");
 const cuboidExact = document.getElementById("cuboid-exact");
 const cuboidExactLabels = document.getElementById("cuboid-exact-labels");
 const cuboidDynamic = document.getElementById("cuboid-dynamic");
@@ -119,11 +119,26 @@ let isPanMode = false;
 let panDrag = null;
 let celebrationTimer = null;
 let volumeKeypadDraft = "";
+let volumeKeypadUnit = "";
 let isVolumeKeypadOpen = false;
+let hintDismissed = false;
+const VOLUME_UNIT_LABELS = {
+  cm3: "cm³",
+  mm3: "mm³",
+};
+const volumeKeypadUnitKeys = volumeMathKeypad.querySelectorAll(".table-keypad-units__key");
 const occupancy = new Map();
 
 function occupancyKey(sx, sy, sz) {
   return `${sx},${sy},${sz}`;
+}
+
+function dismissIntroHint() {
+  if (hintDismissed) {
+    return;
+  }
+  hintDismissed = true;
+  hintEl?.classList.add("is-hidden");
 }
 
 function getLocalPoint(clientX, clientY) {
@@ -666,7 +681,7 @@ function isPointerInStack(clientX, clientY) {
 }
 
 function isPointerInBoard(clientX, clientY) {
-  const board = document.querySelector(".board-stage") || diagram;
+  const board = stage || diagram;
   const rect = board.getBoundingClientRect();
   return (
     clientX >= rect.left &&
@@ -713,6 +728,7 @@ function startDragFromStack(type, clientX, clientY, targetElement) {
 }
 
 function startDragPlacedCube(element, localX, localY) {
+  dismissIntroHint();
   clearOccupied(element.dataset.id);
   const anchor = getCubeScreenAnchor(element);
   bringToFront(element);
@@ -868,6 +884,7 @@ cubeStack.addEventListener("pointerdown", (event) => {
   }
 
   event.preventDefault();
+  dismissIntroHint();
   startDragFromStack(stackCube.dataset.type, event.clientX, event.clientY, stackCube);
   beginDragTracking(event.pointerId);
 });
@@ -904,7 +921,7 @@ function createLabel(text, x, y, anchor = "middle") {
   label.setAttribute("x", String(x));
   label.setAttribute("y", String(y));
   label.setAttribute("text-anchor", anchor);
-  label.setAttribute("fill", "black");
+  label.setAttribute("fill", "#334155");
   label.setAttribute("font-size", "10");
   label.setAttribute("font-family", "Fenomen Sans, ui-sans-serif, system-ui, sans-serif");
   label.setAttribute("font-weight", "500");
@@ -1132,8 +1149,8 @@ function updateViewBox() {
     return;
   }
 
-  // Zásobník je v levém panelu – viewBox ořízneme na kvádr, ať pravý box není
-  // z poloviny prázdný (dřívější místo pro SVG zásobník) a šlo do něj pohodlně pokládat.
+  // Zásobník je HTML pruh v pravém boxu – viewBox ořízneme na kvádr, ať SVG
+  // nezahrnuje prázdné místo po starém SVG zásobníku.
   const bounds = getContentBounds();
   const contentW = bounds.maxX - bounds.minX;
   const contentH = bounds.maxY - bounds.minY;
@@ -1464,6 +1481,41 @@ function parseVolumeInput(raw) {
   return Number(normalized);
 }
 
+function normalizeVolumeUnit(unit) {
+  if (!unit) {
+    return "";
+  }
+  const normalized = String(unit)
+    .trim()
+    .toLowerCase()
+    .replace("³", "3")
+    .replace(/\s+/g, "");
+  if (normalized === "cm3" || normalized === "mm3") {
+    return normalized;
+  }
+  return "";
+}
+
+function parseVolumeAnswer(text) {
+  const trimmed = String(text ?? "").trim();
+  if (!trimmed) {
+    return { numericText: "", value: null, unit: "" };
+  }
+
+  const match = trimmed.match(/^([+-]?\d+(?:[.,]\d+)?)\s*(cm³|mm³|cm3|mm3)?$/i);
+  if (!match) {
+    return { numericText: trimmed, value: null, unit: "" };
+  }
+
+  const numericText = match[1].replace(".", ",");
+  const value = Number.parseFloat(match[1].replace(",", "."));
+  return {
+    numericText,
+    value: Number.isFinite(value) ? value : null,
+    unit: normalizeVolumeUnit(match[2]),
+  };
+}
+
 function formatVolumeDraft(raw) {
   const trimmed = String(raw || "").trim();
   if (!trimmed) {
@@ -1474,6 +1526,15 @@ function formatVolumeDraft(raw) {
     return trimmed;
   }
   return String(value).replace(".", ",");
+}
+
+function formatVolumeAnswerWithUnit(numericText, unit) {
+  const draft = formatVolumeDraft(numericText);
+  const label = VOLUME_UNIT_LABELS[normalizeVolumeUnit(unit)];
+  if (!draft) {
+    return "";
+  }
+  return label ? `${draft} ${label}` : draft;
 }
 
 function clearVolumeKeypadError() {
@@ -1490,8 +1551,8 @@ function showVolumeKeypadError(message) {
 
 function validateVolumeKeypadDraft() {
   const raw = volumeKeypadDraft.trim();
-  if (!raw) {
-    return { ok: true };
+  if (!raw || raw === "," || raw === ".") {
+    return { ok: false, message: "Zadej platné číslo." };
   }
   const value = parseVolumeInput(raw);
   if (!Number.isFinite(value)) {
@@ -1500,21 +1561,36 @@ function validateVolumeKeypadDraft() {
   if (value < 0) {
     return { ok: false, message: "Hodnota nemůže být záporná." };
   }
+  if (!volumeKeypadUnit) {
+    return { ok: false, message: "Vyber jednotku." };
+  }
   return { ok: true };
 }
 
+function updateVolumeKeypadUnitButtons() {
+  volumeKeypadUnitKeys.forEach((button) => {
+    const isActive = button.dataset.unit === volumeKeypadUnit;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function setVolumeKeypadUnit(unit) {
+  volumeKeypadUnit = normalizeVolumeUnit(unit);
+  updateVolumeKeypadDisplay();
+}
+
 function updateVolumeKeypadDisplay() {
-  volumeKeypadDisplay.textContent = volumeKeypadDraft;
-  const result = validateVolumeKeypadDraft();
-  if (!result.ok) {
-    showVolumeKeypadError(result.message);
-    return;
-  }
+  volumeKeypadDisplay.textContent = formatVolumeAnswerWithUnit(volumeKeypadDraft, volumeKeypadUnit);
+  updateVolumeKeypadUnitButtons();
   clearVolumeKeypadError();
 }
 
 function showVolumeKeypad() {
-  volumeKeypadDraft = volumeValueInput.value;
+  dismissIntroHint();
+  const parsed = parseVolumeAnswer(volumeValueInput.value);
+  volumeKeypadDraft = parsed.numericText;
+  volumeKeypadUnit = parsed.unit;
   clearVolumeKeypadError();
   updateVolumeKeypadDisplay();
   volumeKeypadOverlay.hidden = false;
@@ -1524,10 +1600,12 @@ function showVolumeKeypad() {
 
 function hideVolumeKeypad() {
   volumeKeypadDraft = "";
+  volumeKeypadUnit = "";
   clearVolumeKeypadError();
   volumeKeypadOverlay.hidden = true;
   volumeKeypadDisplay.textContent = "";
   isVolumeKeypadOpen = false;
+  updateVolumeKeypadUnitButtons();
 }
 
 function insertIntoVolumeKeypadDraft(value) {
@@ -1555,7 +1633,7 @@ function confirmVolumeKeypad() {
     return;
   }
 
-  volumeValueInput.value = formatVolumeDraft(volumeKeypadDraft);
+  volumeValueInput.value = formatVolumeAnswerWithUnit(volumeKeypadDraft, volumeKeypadUnit);
   hideVolumeKeypad();
   resetVolumeQuizFeedback();
 }
@@ -1575,6 +1653,14 @@ function handleVolumeKeypadClick(event) {
   }
 }
 
+function handleVolumeUnitClick(event) {
+  const button = event.currentTarget;
+  if (!(button instanceof HTMLButtonElement) || button.disabled) {
+    return;
+  }
+  setVolumeKeypadUnit(button.dataset.unit);
+}
+
 function resetVolumeQuizFeedback() {
   volumeAnswerRow.classList.remove("is-correct", "is-wrong");
   volumeFeedback.textContent = "";
@@ -1587,20 +1673,26 @@ function resetVolumeQuiz() {
 }
 
 function verifyVolumeAnswer() {
-  const value = parseVolumeInput(volumeValueInput.value);
-  const unit = volumeUnitSelect.value;
+  const parsed = parseVolumeAnswer(volumeValueInput.value);
 
   resetVolumeQuizFeedback();
 
-  if (!Number.isFinite(value)) {
+  if (parsed.value === null) {
     volumeAnswerRow.classList.add("is-wrong");
     volumeFeedback.classList.add("is-wrong");
     volumeFeedback.textContent = "Zadej číslo.";
     return;
   }
 
-  const expected = convertVolumeFromCm3(getCuboidVolumeCm3(), unit);
-  const isCorrect = Math.abs(value - expected) < 0.001;
+  if (!parsed.unit) {
+    volumeAnswerRow.classList.add("is-wrong");
+    volumeFeedback.classList.add("is-wrong");
+    volumeFeedback.textContent = "Vyber jednotku.";
+    return;
+  }
+
+  const expected = convertVolumeFromCm3(getCuboidVolumeCm3(), parsed.unit);
+  const isCorrect = Math.abs(parsed.value - expected) < 0.001;
 
   if (isCorrect) {
     volumeAnswerRow.classList.add("is-correct");
@@ -1763,7 +1855,9 @@ volumeKeypadOverlay.addEventListener("click", (event) => {
   }
 });
 verifyBtn.addEventListener("click", verifyVolumeAnswer);
-volumeUnitSelect.addEventListener("change", resetVolumeQuizFeedback);
+volumeKeypadUnitKeys.forEach((button) => {
+  button.addEventListener("click", handleVolumeUnitClick);
+});
 volumeMathKeypad.querySelectorAll(".table-math-keypad__key").forEach((keyBtn) => {
   keyBtn.addEventListener("mousedown", (event) => {
     event.preventDefault();
