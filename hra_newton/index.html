@@ -3379,6 +3379,7 @@
     if (!bojEnemy || !bojEnemy.alive) return;
     bojEnemy.alive = false;
     bojEnemy.motors = { thrust: false, left: false, right: false };
+    clearBojProjectiles();
     bojEnemyFx = makeBojExplosionFx(bojEnemy.x, bojEnemy.y, [
       BOJ_ENEMY_COLOR,
       '#ff6f60',
@@ -3607,17 +3608,25 @@
 
   function checkBojCombatCollisions() {
     if (gameState !== 'playing') return;
+    if (isBoj1v1() && (!bojEnemy || !bojEnemy.alive)) return;
+
     const playerHitR = PLAYER_R + BOJ_BULLET_R;
     for (let i = bojProjectiles.length - 1; i >= 0; i--) {
       const b = bojProjectiles[i];
-      if (b.owner === 'player') {
-        if (bojEnemy && bojEnemy.alive) {
-          if (Math.hypot(b.x - bojEnemy.x, b.y - bojEnemy.y) < BOJ_ENEMY_HIT_R + BOJ_BULLET_R) {
-            bojProjectiles.splice(i, 1);
-            damageBojEnemy();
-            continue;
-          }
+      if (b.owner !== 'player') continue;
+      if (bojEnemy && bojEnemy.alive) {
+        if (Math.hypot(b.x - bojEnemy.x, b.y - bojEnemy.y) < BOJ_ENEMY_HIT_R + BOJ_BULLET_R) {
+          bojProjectiles.splice(i, 1);
+          damageBojEnemy();
         }
+      }
+    }
+
+    if (isBoj1v1() && (!bojEnemy || !bojEnemy.alive)) return;
+
+    for (let i = bojProjectiles.length - 1; i >= 0; i--) {
+      const b = bojProjectiles[i];
+      if (b.owner === 'player') {
         if (Math.hypot(b.x - player.x, b.y - player.y) < playerHitR) {
           bojProjectiles.splice(i, 1);
           triggerExplosion(player.x, player.y);
@@ -4900,6 +4909,10 @@
       }
       if (isBoj1v1()) {
         explosion = null;
+        if (!bojEnemy || !bojEnemy.alive) {
+          recordBoj1v1PlayerRoundWin();
+          return;
+        }
         recordBoj1v1EnemyRoundWin();
         return;
       }
