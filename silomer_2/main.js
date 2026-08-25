@@ -25,7 +25,20 @@ const tableMathKeypadEl = document.getElementById('tableMathKeypad');
 const tableMathKeypadKeys = tableMathKeypadEl
   ? tableMathKeypadEl.querySelectorAll('.table-math-keypad__key')
   : [];
+const tableKeypadUnitKeys = tableMathKeypadEl
+  ? tableMathKeypadEl.querySelectorAll('.table-keypad-units__key')
+  : [];
 const quizConfettiCanvasEl = document.getElementById('quiz-confetti');
+const hintEl = document.getElementById('hintEl');
+const workspaceEl = document.getElementById('scene-workspace');
+
+let hintDismissed = false;
+
+function dismissSceneHint() {
+  if (hintDismissed) return;
+  hintDismissed = true;
+  hintEl?.classList.add('is-hidden');
+}
 
 const REFERENCE_MASS_KG = 2;
 const EARTH_N_PER_KG = 10;
@@ -38,14 +51,27 @@ const VIEW_BOX_WIDTH = 149;
 const VIEW_BOX_HEIGHT = 1175;
 const MAX_STAGE_WIDTH = 168;
 const VIEWPORT_PADDING = 28;
-const WORKSPACE_GAP = 14;
-const CONTENT_OFFSET_X = 80;
-const DOCK_COL_GAP = 12;
-const DOCK_ROW_GAP = 16;
+const WORKSPACE_GAP = 20;
+const LEFT_DOCK_GAP = 120;
+const DOCK_COL_GAP = 16;
+const DOCK_ROW_GAP = 20;
 const DOCK_TOP_NEWTONS = 3.5;
 const DOCK_OFFSET_Y = -40;
+const DISK_SIZE_MULTIPLIER = 1.4;
+const OBJECT_SIZE_MULTIPLIER = 1.85;
 
-const DOCK_LAYOUT = [
+const DOCK_LAYOUT_LEFT = [
+  [
+    { id: 'bottle-1', column: 0 },
+    { id: 'car-0.8', column: 1 },
+  ],
+  [
+    { id: 'dog-1.5', column: 0 },
+    { id: 'handbag-1.25', column: 1 },
+  ],
+];
+
+const DOCK_LAYOUT_RIGHT = [
   [
     { id: 'disk-0.1', column: 0 },
     { id: 'disk-0.5', column: 1 },
@@ -55,14 +81,6 @@ const DOCK_LAYOUT = [
     { id: 'disk-1.6', column: 1 },
   ],
   [{ id: 'disk-2', column: 'center' }],
-  [
-    { id: 'car-0.8', column: 0 },
-    { id: 'bottle-1', column: 1 },
-  ],
-  [
-    { id: 'handbag-1.25', column: 0 },
-    { id: 'dog-1.5', column: 1 },
-  ],
 ];
 
 const SPRING_ORIGIN_Y = 81.6455;
@@ -275,11 +293,7 @@ function isStageAnchorPortaled() {
 function getStageAnchorScreenPosition(stageHeight) {
   const surfaceRect = playSurfaceEl.getBoundingClientRect();
   const surfaceWidth = playSurfaceEl.clientWidth;
-  const dockAreaWidth = getDockAreaWidth();
-  const stageLeft = Math.max(
-    0,
-    (surfaceWidth - stageWidthPx - dockAreaWidth - WORKSPACE_GAP) / 2 + CONTENT_OFFSET_X,
-  );
+  const stageLeft = getStageLeft(surfaceWidth);
 
   return {
     left: surfaceRect.left + stageLeft,
@@ -666,6 +680,10 @@ function massToScale(massKg) {
   return Math.pow(massKg / REFERENCE_MASS_KG, 1 / 3);
 }
 
+function getVariantSizeBoost(variant) {
+  return variant && variant !== 'disk' ? OBJECT_SIZE_MULTIPLIER : DISK_SIZE_MULTIPLIER;
+}
+
 function getGravityNPerKg() {
   return GRAVITY_ENVIRONMENTS[gravityEnvironment].nPerKg;
 }
@@ -738,40 +756,55 @@ function layoutDogPanels() {
       : 'translateY(-50%)';
 }
 
-function parseNumericInput(text, unitPattern) {
-  const cleaned = text.trim().replace(unitPattern, '').replace(',', '.');
-  if (!cleaned) return null;
-  const value = Number.parseFloat(cleaned);
-  return Number.isFinite(value) ? value : null;
+function normalizeQuizUnit(unit) {
+  if (!unit) return '';
+  const normalized = String(unit).trim();
+  if (normalized === 'N' || normalized === 'n') return 'N';
+  if (normalized.toLowerCase() === 'kg') return 'kg';
+  if (normalized.toLowerCase() === 'g') return 'g';
+  return '';
 }
 
-function parseMassInput(text) {
-  return parseNumericInput(text, /\s*kg\s*/gi);
+function parseQuizAnswer(text) {
+  const trimmed = String(text ?? '').trim();
+  if (!trimmed) return { numericText: '', value: null, unit: '' };
+
+  const match = trimmed.match(/^([+-]?\d+(?:[.,]\d+)?)\s*(N|kg|g)?$/i);
+  if (!match) return { numericText: trimmed, value: null, unit: '' };
+
+  const numericText = match[1].replace('.', ',');
+  const value = Number.parseFloat(match[1].replace(',', '.'));
+  return {
+    numericText,
+    value: Number.isFinite(value) ? value : null,
+    unit: normalizeQuizUnit(match[2]),
+  };
 }
 
-function parseForceInput(text) {
-  return parseNumericInput(text, /\s*N\s*/gi);
-}
-
-function getQuizFieldUnit(field) {
+function getExpectedQuizUnit(field) {
   return field === 'mass' ? 'kg' : 'N';
 }
 
-function stripQuizNumericDraft(text, field) {
-  const unitPattern = field === 'mass' ? /\s*kg\s*/gi : /\s*N\s*/gi;
-  return text.trim().replace(unitPattern, '').trim();
+function convertQuizMassToKg(value, unit) {
+  if (!Number.isFinite(value)) return null;
+  if (unit === 'kg') return value;
+  if (unit === 'g') return value / 1000;
+  return null;
 }
 
-function formatQuizAnswerWithUnit(field, numericText) {
-  const draft = stripQuizNumericDraft(numericText, field);
-  if (!draft) return '';
-  return `${draft} ${getQuizFieldUnit(field)}`;
+function stripQuizNumericDraft(text) {
+  return parseQuizAnswer(text).numericText;
 }
 
-function formatQuizKeypadDisplay(field, numericText) {
-  const draft = numericText.trim();
+function formatQuizAnswerWithUnit(numericText, unit) {
+  const draft = stripQuizNumericDraft(numericText);
+  const selectedUnit = normalizeQuizUnit(unit);
   if (!draft) return '';
-  return `${draft} ${getQuizFieldUnit(field)}`;
+  return selectedUnit ? `${draft} ${selectedUnit}` : draft;
+}
+
+function formatQuizKeypadDisplay(numericText, unit) {
+  return formatQuizAnswerWithUnit(numericText, unit);
 }
 
 const QUIZ_KEYPAD_MAX_LENGTH = 12;
@@ -925,48 +958,56 @@ function validateQuizKeypadValue() {
   if (!quizKeypadEdit) return { ok: false, message: '' };
 
   const raw = quizKeypadEdit.value.trim();
-  if (!raw) {
+  if (!raw || raw === ',' || raw === '.') {
     return { ok: false, message: 'Zadej platné číslo.' };
   }
 
-  const parsed =
-    quizKeypadEdit.field === 'mass'
-      ? parseMassInput(raw)
-      : parseForceInput(raw);
-
-  if (parsed === null) {
+  const parsed = parseQuizAnswer(raw);
+  if (parsed.value === null) {
     return { ok: false, message: 'Zadej platné číslo.' };
+  }
+
+  if (!quizKeypadEdit.unit) {
+    return { ok: false, message: 'Vyber jednotku.' };
   }
 
   return { ok: true };
 }
 
-function updateQuizKeypadValidation() {
-  const result = validateQuizKeypadValue();
-  if (!result.ok && quizKeypadEdit?.value.trim()) {
-    showQuizKeypadError(result.message);
-    return;
-  }
-  clearQuizKeypadError();
+function updateQuizKeypadUnitButtons() {
+  tableKeypadUnitKeys.forEach((button) => {
+    const isActive = button.dataset.unit === quizKeypadEdit?.unit;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+}
+
+function setQuizKeypadUnit(unit) {
+  if (!quizKeypadEdit) return;
+  quizKeypadEdit.unit = normalizeQuizUnit(unit);
+  updateQuizKeypadDisplay();
 }
 
 function updateQuizKeypadDisplay() {
   if (!quizKeypadEdit || !tableKeypadDisplayEl) return;
 
   tableKeypadDisplayEl.textContent = formatQuizKeypadDisplay(
-    quizKeypadEdit.field,
     quizKeypadEdit.value,
+    quizKeypadEdit.unit,
   );
-  updateQuizKeypadValidation();
+  updateQuizKeypadUnitButtons();
+  clearQuizKeypadError();
 }
 
 function openQuizKeypad(field, input) {
   if (!tableKeypadOverlayEl || !input) return;
 
+  const parsed = parseQuizAnswer(input.value);
   quizKeypadEdit = {
     field,
     input,
-    value: stripQuizNumericDraft(input.value, field),
+    value: parsed.numericText,
+    unit: parsed.unit,
   };
 
   if (tableKeypadTitleEl) {
@@ -989,6 +1030,7 @@ function closeQuizKeypad() {
   clearQuizKeypadError();
   if (tableKeypadOverlayEl) tableKeypadOverlayEl.hidden = true;
   if (tableKeypadDisplayEl) tableKeypadDisplayEl.textContent = '';
+  updateQuizKeypadUnitButtons();
 }
 
 function insertIntoQuizKeypadValue(nextChar) {
@@ -1015,14 +1057,14 @@ function clearQuizKeypadValue() {
 function confirmQuizKeypad() {
   if (!quizKeypadEdit) return;
 
-  const { field, input, value } = quizKeypadEdit;
+  const { field, input, value, unit } = quizKeypadEdit;
   const result = validateQuizKeypadValue();
   if (!result.ok) {
     showQuizKeypadError(result.message);
     return;
   }
 
-  input.value = formatQuizAnswerWithUnit(field, value.trim());
+  input.value = formatQuizAnswerWithUnit(value.trim(), unit);
   closeQuizKeypad();
 
   if (field === 'mass') {
@@ -1047,6 +1089,12 @@ function handleQuizKeypadClick(event) {
   if (value) {
     insertIntoQuizKeypadValue(value);
   }
+}
+
+function handleQuizUnitClick(event) {
+  const button = event.currentTarget;
+  if (!(button instanceof HTMLButtonElement) || button.disabled) return;
+  setQuizKeypadUnit(button.dataset.unit);
 }
 
 function wireQuizKeypadInput(input, field) {
@@ -1113,16 +1161,17 @@ function verifyDogWeightInput() {
   const quizWeight = getMountedQuizWeight();
   if (!quizWeight) return;
 
-  const value = parseForceInput(dogWeightInputEl?.value ?? '');
-  if (value === null) {
+  const parsed = parseQuizAnswer(dogWeightInputEl?.value ?? '');
+  if (parsed.value === null) {
     showDogWeightFeedback('Zadej číslo v newtonech.', 'error');
     return;
   }
 
   const targetWeightN = quizWeight.massKg * getGravityNPerKg();
-  if (Math.abs(value - targetWeightN) < 0.1) {
+  const unitOk = parsed.unit === getExpectedQuizUnit('weight');
+  if (unitOk && Math.abs(parsed.value - targetWeightN) < 0.1) {
     if (dogWeightInputEl) {
-      dogWeightInputEl.value = formatQuizAnswerWithUnit('weight', dogWeightInputEl.value);
+      dogWeightInputEl.value = formatQuizAnswerWithUnit(parsed.numericText, parsed.unit);
     }
     showDogWeightFeedback('Správně!', 'success');
     launchGreenConfetti(dogWeightInputEl);
@@ -1136,15 +1185,16 @@ function verifyDogMassInput() {
   const quizWeight = getMountedQuizWeight();
   if (!quizWeight) return;
 
-  const value = parseMassInput(dogMassInputEl?.value ?? '');
-  if (value === null) {
+  const parsed = parseQuizAnswer(dogMassInputEl?.value ?? '');
+  if (parsed.value === null) {
     showDogMassFeedback('Zadej číslo v kilogramech.', 'error');
     return;
   }
 
-  if (Math.abs(value - quizWeight.massKg) < 0.05) {
+  const massKg = convertQuizMassToKg(parsed.value, parsed.unit);
+  if (massKg !== null && Math.abs(massKg - quizWeight.massKg) < 0.05) {
     if (dogMassInputEl) {
-      dogMassInputEl.value = formatQuizAnswerWithUnit('mass', dogMassInputEl.value);
+      dogMassInputEl.value = formatQuizAnswerWithUnit(parsed.numericText, parsed.unit);
     }
     showDogMassFeedback('Správně!', 'success');
     launchGreenConfetti(dogMassInputEl);
@@ -1270,15 +1320,19 @@ function getWeightAriaLabel(spec) {
   return `Závaží ${massLabel}, přetáhni na háček siloměru nebo sundej tažením pryč`;
 }
 
-function getDockColumnIds(column) {
-  return DOCK_LAYOUT.flatMap((row) =>
+function getDockColumnIds(layout, column) {
+  return layout.flatMap((row) =>
     row.filter((slot) => slot.column === column).map((slot) => slot.id),
   );
 }
 
+function getWeightScale(massKg, variant) {
+  return massToScale(massKg) * getVariantSizeBoost(variant);
+}
+
 function estimateWeightWidth(spec, stageWidth) {
   const graphic = getWeightGraphicForSpec(spec);
-  const scale = massToScale(spec.massKg);
+  const scale = getWeightScale(spec.massKg, spec.variant);
   return stageWidth * scale * (graphic.width / WEIGHT_VIEW_BOX_WIDTH);
 }
 
@@ -1292,10 +1346,11 @@ function getWeightDimensions(massKgOrWeightOrSpec) {
       ? massKgOrWeightOrSpec
       : null;
   const massKg = weight?.massKg ?? spec?.massKg ?? massKgOrWeightOrSpec;
-  const graphic =
-    weight?.graphic ??
-    getWeightGraphicForSpec(spec ?? getWeightSpec(typeof massKg === 'number' ? massKg : spec?.massKg));
-  const scale = massToScale(massKg);
+  const resolvedSpec =
+    spec ?? getWeightSpec(typeof massKg === 'number' ? massKg : spec?.massKg);
+  const graphic = weight?.graphic ?? getWeightGraphicForSpec(resolvedSpec);
+  const variant = weight?.variant ?? resolvedSpec?.variant;
+  const scale = getWeightScale(massKg, variant);
   const widthPx = stageWidthPx * scale * (graphic.width / WEIGHT_VIEW_BOX_WIDTH);
   const heightPx = widthPx * (graphic.height / graphic.width);
   return { widthPx, heightPx, scale, graphic };
@@ -1375,9 +1430,9 @@ function fitStage() {
 
   const widthFromHeight = availableHeight / LOADED_ASPECT;
   const stageWidthCandidate = Math.min(MAX_STAGE_WIDTH, availableWidth, widthFromHeight);
-  const dockAreaWidth = getDockAreaWidth(stageWidthCandidate);
-  const maxStageFromWidth = (availableWidth - dockAreaWidth - WORKSPACE_GAP) / 2;
-  stageWidthPx = Math.min(stageWidthCandidate, maxStageFromWidth);
+  const docks = getContentGroupMetrics(stageWidthCandidate);
+  const maxStageFromWidth = availableWidth - docks.left - docks.right - LEFT_DOCK_GAP - WORKSPACE_GAP;
+  stageWidthPx = Math.min(stageWidthCandidate, Math.max(48, maxStageFromWidth));
   const stageHeight = stageWidthPx * LOADED_ASPECT;
 
   stageEl.style.width = `${stageWidthPx}px`;
@@ -1401,19 +1456,25 @@ function fitStage() {
   syncFallStacking();
 }
 
+function layoutSceneHint() {
+  if (!hintEl || !workspaceEl) return;
+  const rect = workspaceEl.getBoundingClientRect();
+  hintEl.style.left = `${rect.left + rect.width / 2}px`;
+  hintEl.style.top = `${rect.top + rect.height * 0.8}px`;
+}
+
 function layoutGroundSurfaces() {
   if (!stageAnchorEl || !playSurfaceEl) return;
 
+  const workspace = playSurfaceEl.parentElement;
+  if (!workspace) return;
+
   const stageRect = stageAnchorEl.getBoundingClientRect();
-  const centerX = stageRect.left + stageRect.width / 2;
+  const workspaceRect = workspace.getBoundingClientRect();
+  const centerX = stageRect.left + stageRect.width / 2 - workspaceRect.left;
   document.documentElement.style.setProperty('--ground-surface-center-x', `${centerX}px`);
-
-  const workspaceEl = playSurfaceEl.parentElement;
-  if (!workspaceEl) return;
-
-  const workspaceRect = workspaceEl.getBoundingClientRect();
-  const bottomInset = Math.max(0, window.innerHeight - workspaceRect.bottom);
-  document.documentElement.style.setProperty('--ground-surface-bottom', `${bottomInset}px`);
+  document.documentElement.style.setProperty('--ground-surface-bottom', '0px');
+  layoutSceneHint();
 }
 
 function scaleNewtonsToScreenY(newtons) {
@@ -1437,14 +1498,50 @@ function getDockSlotX(slot, weight, metrics) {
   return dockX;
 }
 
-function layoutAllDockedWeights() {
-  const metrics = getDockGridMetrics();
-  const firstRowHeight = Math.max(
-    ...DOCK_LAYOUT[0].map((slot) => getWeightDimensions(getWeightSpecById(slot.id)).heightPx),
-  );
-  let rowTop = scaleNewtonsToScreenY(DOCK_TOP_NEWTONS) - firstRowHeight / 2 + DOCK_OFFSET_Y;
+function getLiveWeightWidth(id) {
+  return getWeightDimensions(getWeightSpecById(id)).widthPx;
+}
 
-  DOCK_LAYOUT.forEach((row) => {
+function getEstimatedWeightWidth(stageWidth) {
+  return (id) => estimateWeightWidth(getWeightSpecById(id), stageWidth);
+}
+
+function getDockSideMetrics(layout, getWidth) {
+  const leftIds = getDockColumnIds(layout, 0);
+  const rightIds = getDockColumnIds(layout, 1);
+  const widthOf = (ids) => (ids.length ? Math.max(...ids.map(getWidth)) : 0);
+  const leftColWidth = widthOf(leftIds);
+  const rightColWidth = widthOf(rightIds);
+  const gridWidth =
+    leftIds.length && rightIds.length
+      ? leftColWidth + DOCK_COL_GAP + rightColWidth
+      : Math.max(leftColWidth, rightColWidth);
+
+  return { leftColWidth, rightColWidth, gridWidth };
+}
+
+function getContentGroupMetrics(stageWidth = stageWidthPx) {
+  const getWidth = getEstimatedWeightWidth(stageWidth);
+  const left = getDockSideMetrics(DOCK_LAYOUT_LEFT, getWidth).gridWidth;
+  const right = getDockSideMetrics(DOCK_LAYOUT_RIGHT, getWidth).gridWidth;
+  const groupWidth = left + LEFT_DOCK_GAP + stageWidth + WORKSPACE_GAP + right;
+  return { left, right, groupWidth };
+}
+
+function getStageLeft(surfaceWidth, stageWidth = stageWidthPx) {
+  const { left, groupWidth } = getContentGroupMetrics(stageWidth);
+  const groupLeft = Math.max(0, (surfaceWidth - groupWidth) / 2);
+  return groupLeft + left + LEFT_DOCK_GAP;
+}
+
+function layoutDockedSide(layout, dockX, startRowTop) {
+  const metrics = {
+    dockX,
+    ...getDockSideMetrics(layout, getLiveWeightWidth),
+  };
+  let rowTop = startRowTop;
+
+  layout.forEach((row) => {
     const rowHeight = Math.max(
       ...row.map((slot) => getWeightDimensions(getWeightSpecById(slot.id)).heightPx),
     );
@@ -1464,37 +1561,22 @@ function layoutAllDockedWeights() {
   });
 }
 
-function getDockGridMetrics() {
+function layoutAllDockedWeights() {
   const anchorRect = stageAnchorEl.getBoundingClientRect();
-  const dockX = anchorRect.left + stageWidthPx + WORKSPACE_GAP;
-  const leftColWidth = Math.max(
-    ...getDockColumnIds(0).map((id) => getWeightDimensions(getWeightSpecById(id)).widthPx),
+  const firstRowHeight = Math.max(
+    ...DOCK_LAYOUT_LEFT[0].map((slot) => getWeightDimensions(getWeightSpecById(slot.id)).heightPx),
+    ...DOCK_LAYOUT_RIGHT[0].map((slot) => getWeightDimensions(getWeightSpecById(slot.id)).heightPx),
   );
-  const rightColWidth = Math.max(
-    ...getDockColumnIds(1).map((id) => getWeightDimensions(getWeightSpecById(id)).widthPx),
-  );
-  const gridWidth = leftColWidth + DOCK_COL_GAP + rightColWidth;
+  const rowTop = scaleNewtonsToScreenY(DOCK_TOP_NEWTONS) - firstRowHeight / 2 + DOCK_OFFSET_Y;
+  const leftMetrics = getDockSideMetrics(DOCK_LAYOUT_LEFT, getLiveWeightWidth);
 
-  return { dockX, leftColWidth, rightColWidth, gridWidth };
-}
-
-function getDockAreaWidth(stageWidth = stageWidthPx) {
-  const leftColWidth = Math.max(
-    ...getDockColumnIds(0).map((id) => estimateWeightWidth(getWeightSpecById(id), stageWidth)),
-  );
-  const rightColWidth = Math.max(
-    ...getDockColumnIds(1).map((id) => estimateWeightWidth(getWeightSpecById(id), stageWidth)),
-  );
-  return leftColWidth + DOCK_COL_GAP + rightColWidth;
+  layoutDockedSide(DOCK_LAYOUT_LEFT, anchorRect.left - LEFT_DOCK_GAP - leftMetrics.gridWidth, rowTop);
+  layoutDockedSide(DOCK_LAYOUT_RIGHT, anchorRect.left + stageWidthPx + WORKSPACE_GAP, rowTop);
 }
 
 function layoutStageAnchor(stageHeight) {
   const surfaceWidth = playSurfaceEl.clientWidth;
-  const dockAreaWidth = getDockAreaWidth();
-  const stageLeft = Math.max(
-    0,
-    (surfaceWidth - stageWidthPx - dockAreaWidth - WORKSPACE_GAP) / 2 + CONTENT_OFFSET_X,
-  );
+  const stageLeft = getStageLeft(surfaceWidth);
 
   if (!isStageAnchorPortaled()) {
     stageAnchorEl.style.width = `${stageWidthPx}px`;
@@ -1801,6 +1883,7 @@ function onPointerDown(event, weight) {
   if (!canStartDrag(weight)) return;
   if (event.button !== undefined && event.button !== 0) return;
 
+  dismissSceneHint();
   event.preventDefault();
   const rect = weight.el.getBoundingClientRect();
   weight.dragOffsetX = event.clientX - rect.left;
@@ -2022,17 +2105,27 @@ if (gravitySwitchEl) {
   gravitySwitchEl.addEventListener('click', (event) => {
     const button = event.target.closest('[data-env]');
     if (!button || button.disabled) return;
+    dismissSceneHint();
     setGravityEnvironment(button.dataset.env);
   });
 }
 
 if (cutBtnEl) {
-  cutBtnEl.addEventListener('click', cutCord);
+  cutBtnEl.addEventListener('click', () => {
+    dismissSceneHint();
+    cutCord();
+  });
 }
 
 if (resetBtnEl) {
-  resetBtnEl.addEventListener('click', resetSilomer);
+  resetBtnEl.addEventListener('click', () => {
+    dismissSceneHint();
+    resetSilomer();
+  });
 }
+
+workspaceEl?.addEventListener('pointerdown', dismissSceneHint);
+weightsLayerEl?.addEventListener('pointerdown', dismissSceneHint);
 
 if (dogWeightInputEl) {
   wireQuizKeypadInput(dogWeightInputEl, 'weight');
@@ -2040,9 +2133,9 @@ if (dogWeightInputEl) {
   dogWeightInputEl.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      const draft = stripQuizNumericDraft(dogWeightInputEl.value, 'weight');
-      if (draft) {
-        dogWeightInputEl.value = formatQuizAnswerWithUnit('weight', draft);
+      const parsed = parseQuizAnswer(dogWeightInputEl.value);
+      if (parsed.numericText) {
+        dogWeightInputEl.value = formatQuizAnswerWithUnit(parsed.numericText, parsed.unit);
       }
       verifyDogWeightInput();
     }
@@ -2055,9 +2148,9 @@ if (dogMassInputEl) {
   dogMassInputEl.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      const draft = stripQuizNumericDraft(dogMassInputEl.value, 'mass');
-      if (draft) {
-        dogMassInputEl.value = formatQuizAnswerWithUnit('mass', draft);
+      const parsed = parseQuizAnswer(dogMassInputEl.value);
+      if (parsed.numericText) {
+        dogMassInputEl.value = formatQuizAnswerWithUnit(parsed.numericText, parsed.unit);
       }
       verifyDogMassInput();
     }
@@ -2080,6 +2173,10 @@ if (tableKeypadOverlayEl) {
 
 tableMathKeypadKeys.forEach((key) => {
   key.addEventListener('click', handleQuizKeypadClick);
+});
+
+tableKeypadUnitKeys.forEach((button) => {
+  button.addEventListener('click', handleQuizUnitClick);
 });
 
 document.addEventListener('keydown', (event) => {

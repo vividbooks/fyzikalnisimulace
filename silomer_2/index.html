@@ -7,56 +7,80 @@
     content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
   />
   <title>Siloměr</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=fedits-ux13" />
 </head>
 <body>
-  <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
-  <div id="earth-grass" class="earth-grass" aria-hidden="true">
-    <img src="assets/travnik.svg" alt="" width="990" height="415" decoding="async" />
-  </div>
-  <div id="moon-surface" class="moon-surface" aria-hidden="true">
-    <img src="assets/mesic-povrch.svg" alt="" width="535" height="533" decoding="async" />
-  </div>
-
   <main class="scene" aria-label="Simulace siloměru se závažími">
     <aside class="setup-panel" aria-label="Ovládání simulace">
-      <a href="../index.html" class="hub-back-to-sims">
-        ← Přehled simulací
-      </a>
-
-      <div class="panel-copy">
-        <h1 class="panel-title">Siloměr</h1>
-      </div>
-
-      <div class="panel-section" role="group" aria-label="Gravitační prostředí">
-        <span class="panel-label">Prostředí</span>
-        <div id="gravity-switch" class="env-toggle" role="group" aria-label="Gravitační prostředí">
-          <button type="button" class="env-toggle-btn is-active" data-env="earth" aria-pressed="true">
-            Země
-          </button>
-          <button type="button" class="env-toggle-btn" data-env="moon" aria-pressed="false">
-            Měsíc
-          </button>
-          <button type="button" class="env-toggle-btn" data-env="space" aria-pressed="false">
-            Kosmický prostor
-          </button>
+      <div class="controls">
+        <div class="panel-head">
+          <a href="../index.html" class="hub-back-to-sims">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M15 18l-6-6 6-6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Zpět
+          </a>
+          <h1 class="panel-title">Siloměr</h1>
         </div>
-      </div>
 
-      <div class="panel-section" role="group" aria-label="Simulace">
-        <span class="panel-label">Simulace</span>
-        <div class="actions-row actions-row--stack">
-          <button type="button" id="silomer-cut" class="panel-action-btn panel-action-btn--primary">
-            Přestříhnout
-          </button>
-          <button type="button" id="silomer-reset" class="panel-action-btn panel-action-btn--secondary">
-            Reset
-          </button>
+        <div class="sim-card panel-section" role="group" aria-label="Gravitační prostředí">
+          <span class="panel-label">Prostředí</span>
+          <div id="gravity-switch" class="panel-btn-grid" role="group" aria-label="Gravitační prostředí">
+            <button type="button" class="scene-btn is-active" data-env="earth" aria-pressed="true">
+              Země
+            </button>
+            <button type="button" class="scene-btn" data-env="moon" aria-pressed="false">
+              Měsíc
+            </button>
+            <button type="button" class="scene-btn" data-env="space" aria-pressed="false">
+              Kosmický prostor
+            </button>
+          </div>
         </div>
       </div>
     </aside>
 
-    <div class="scene-workspace" aria-label="Pracovní plocha">
+    <div class="scene-workspace" id="scene-workspace" aria-label="Pracovní plocha">
+      <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
+      <div id="earth-grass" class="earth-grass" aria-hidden="true">
+        <img src="assets/travnik.svg?v=fedits-ux13" alt="" width="990" height="415" decoding="async" />
+      </div>
+      <div id="moon-surface" class="moon-surface" aria-hidden="true">
+        <img src="assets/mesic-povrch.svg" alt="" width="535" height="533" decoding="async" />
+      </div>
+
+      <div class="scene-actions scene-actions--left">
+        <button type="button" id="silomer-cut" class="scene-btn scene-btn--cut">
+          Odstřihnout siloměr
+        </button>
+      </div>
+      <div class="scene-actions">
+        <button type="button" class="scene-btn scene-btn--reset" id="silomer-reset">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M4.5 8A7.5 7.5 0 1 1 4 12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M4.5 3.5V8h4.5"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Reset
+        </button>
+      </div>
+
       <div class="play-surface" id="play-surface">
         <div class="stage-anchor" id="stage-anchor">
           <div class="stage">
@@ -105,6 +129,7 @@
   </main>
 
   <div id="weights-layer" class="weights-layer" aria-label="Závaží siloměru"></div>
+  <p class="sim-empty-hint" id="hintEl">Zavěs závaží na háček.</p>
 
   <canvas id="quiz-confetti" class="quiz-confetti-canvas" aria-hidden="true"></canvas>
 
@@ -138,6 +163,14 @@
               />
             </svg>
           </button>
+        </div>
+        <div class="table-keypad-units" role="group" aria-labelledby="tableKeypadUnitLabel">
+          <p id="tableKeypadUnitLabel" class="table-keypad-units__label">Vyber jednotku</p>
+          <div class="table-keypad-units__grid">
+            <button type="button" class="table-keypad-units__key" data-unit="N" aria-pressed="false">N</button>
+            <button type="button" class="table-keypad-units__key" data-unit="g" aria-pressed="false">g</button>
+            <button type="button" class="table-keypad-units__key" data-unit="kg" aria-pressed="false">kg</button>
+          </div>
         </div>
       </div>
       <div class="table-keypad-panel__actions">
@@ -178,6 +211,6 @@
     </div>
   </div>
 
-  <script src="main.js"></script>
+  <script src="main.js?v=fedits-ux10"></script>
 </body>
 </html>
