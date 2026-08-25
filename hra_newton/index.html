@@ -7,32 +7,60 @@
   <style>
     @font-face {
       font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
 
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+
     * { box-sizing: border-box; }
 
     :root {
-      color-scheme: light;
-      --bg: #f4f5f8;
-      --panel-bg: #ffffff;
-      --text: #171923;
-      --muted: #6b7280;
-      --accent: #3d5a9a;
-      --accent-hover: #334b81;
-      --border: #e8eaef;
-      --area-muted: #eceff5;
-      --readout-bg: #f4f5f8;
-      --canvas-bg: #0b1020;
+      color-scheme: dark;
+      --page-bg: #1e2533;
+      --bg: #1e2533;
+      --card-bg: #2a3344;
+      --panel-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --border: #475569;
+      --border-strong: #475569;
+      --focus: #3b82f6;
+      --area-muted: #334155;
+      --readout-bg: #1e293b;
+      --canvas-bg: #070b1c;
       --canvas-border: #1f2a44;
+      --danger: #ef4444;
+      --success: #16a34a;
+      --radius: 12px;
+      --radius-canvas: 24px;
     }
 
     html, body {
       width: 100%;
       min-height: 100%;
+      height: 100%;
       margin: 0;
     }
 
@@ -40,9 +68,10 @@
       min-height: 100vh;
       min-height: 100dvh;
       overflow: hidden;
-      background: var(--bg);
+      background: var(--page-bg);
       color: var(--text);
       font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      font-weight: 400;
     }
 
     button,
@@ -58,16 +87,18 @@
 
     .app {
       position: relative;
-      display: grid;
-      place-items: center;
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
       width: 100%;
       height: 100vh;
       height: 100dvh;
       min-height: 100vh;
       min-height: 100dvh;
-      padding: 0;
+      padding: 16px;
       box-sizing: border-box;
-      background: var(--bg);
+      background: var(--page-bg);
+      overflow: hidden;
     }
 
     .viz-column {
@@ -81,25 +112,28 @@
     }
 
     .sim-topbar {
-      position: fixed;
-      inset: max(14px, env(safe-area-inset-top, 0px) + 14px) auto max(14px, env(safe-area-inset-bottom, 0px) + 14px);
-      left: 50%;
+      position: relative;
+      inset: auto;
+      left: auto;
       z-index: 8;
-      width: min(620px, calc(100vw - 28px));
+      flex: 0 0 min(300px, 34vw);
+      width: min(300px, 34vw);
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 16px;
-      transform: translateX(-50%);
+      gap: 14px;
+      transform: none;
       min-height: 0;
       overflow: auto;
-      padding: 18px;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      background: var(--panel-bg);
+      padding: 8px 8px 16px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
       box-shadow: none;
       color: var(--text);
       pointer-events: auto;
+      color-scheme: dark;
+      scrollbar-gutter: stable;
     }
 
     .sim-topbar * {
@@ -112,11 +146,15 @@
 
     body.mobile-playing,
     body.mobile-playing .app {
-      background: #070b1c;
+      background: var(--page-bg);
     }
 
-    body.mobile-setup .viz-column {
-      display: none;
+    body.mobile-playing .app {
+      padding: 16px;
+    }
+
+    body.mobile-playing .viz-column {
+      display: flex;
     }
 
     body.mobile-playing .viz-column {
@@ -136,36 +174,48 @@
       display: inline-flex;
       align-items: center;
       align-self: flex-start;
-      font-size: 0.88rem;
-      font-weight: 700;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.2;
       text-decoration: none;
-      padding: 9px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--area-muted);
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: #1e293b;
       color: var(--text);
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .hub-back-to-sims svg {
+      display: block;
+      flex: 0 0 auto;
     }
 
     .hub-back-to-sims:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--readout-bg);
+      color: #ffffff;
+    }
+
+    .hub-back-to-sims:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
 
     .panel-title {
       margin: 0;
-      font-size: 1.125rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-family: "Cooper Light", serif;
+      font-size: 28px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
       color: var(--text);
     }
 
     .hint {
       margin: 0;
       color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.45;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     .scene-card {
@@ -175,10 +225,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: visible;
+      overflow: hidden;
       border: none;
-      border-radius: 0;
-      background: transparent;
+      border-radius: var(--radius-canvas);
+      background: var(--canvas-bg);
     }
 
     .sceneWrap {
@@ -197,9 +247,9 @@
       width: 100%;
       height: 100%;
       min-height: 0;
-      overflow: visible;
-      border-radius: 0;
-      background: #070b1c;
+      overflow: hidden;
+      border-radius: var(--radius-canvas);
+      background: var(--canvas-bg);
       box-shadow: none;
     }
 
@@ -211,9 +261,9 @@
       height: 100%;
       cursor: default;
       touch-action: none;
-      border-radius: 0;
+      border-radius: inherit;
       box-shadow: none;
-      background: #070b1c;
+      background: var(--canvas-bg);
     }
 
     .html-controls {
@@ -228,6 +278,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 999px;
     }
 
     .html-controls .control-row.is-dpad,
@@ -242,16 +293,20 @@
 
     .control-row {
       display: grid;
-      gap: 8px;
+      gap: 10px;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--card-bg);
     }
 
     .control-row label,
     .control-label {
-      font-size: 0.76rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: none;
+      color: var(--text);
     }
 
     .segmented,
@@ -265,33 +320,28 @@
     .html-btn,
     .dpad button {
       appearance: none;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--panel-bg);
-      color: var(--text);
-      font-weight: 700;
-      font-size: 0.9rem;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font-weight: 400;
+      font-size: 14px;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     .segmented button,
     .html-btn {
       flex: 1 1 auto;
-      min-width: 5.4rem;
-      padding: 10px 12px;
+      min-width: 0;
+      padding: 12px 14px;
     }
 
-    .segmented.mode-cards {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-    }
-
+    .segmented.mode-cards,
     .segmented.scenario-cards {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: 1fr;
+      gap: 8px;
     }
 
     .segmented.mode-cards button,
@@ -349,10 +399,10 @@
     }
 
     .friction-segmented button[aria-pressed="true"] {
-      border-color: var(--accent);
-      background: var(--panel-bg);
-      color: var(--text);
-      box-shadow: inset 0 0 0 2px var(--accent);
+      border-color: transparent;
+      background: var(--accent);
+      color: var(--accent-on);
+      box-shadow: none;
     }
 
     .friction-segmented button[aria-pressed="true"] .friction-swatch {
@@ -376,15 +426,15 @@
     }
 
     .option-title {
-      font-size: 0.96rem;
-      font-weight: 800;
-      line-height: 1.1;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.15;
     }
 
     .option-desc {
-      font-size: 0.76rem;
-      font-weight: 600;
-      line-height: 1.2;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.3;
       color: var(--muted);
     }
 
@@ -565,11 +615,23 @@
     }
 
     .segmented button[aria-pressed="true"],
-    .html-btn.is-active,
-    .html-btn.primary {
-      border-color: var(--accent);
+    .html-btn.is-active {
+      border-color: transparent;
       background: var(--accent);
-      color: #ffffff;
+      color: var(--accent-on);
+    }
+
+    .html-btn.primary {
+      border-color: transparent;
+      background: #4ade80;
+      color: #14532d;
+      font-weight: 500;
+      min-height: 48px;
+    }
+
+    .html-btn.primary:hover {
+      background: #86efac;
+      color: #052e16;
     }
 
     .segmented button:active,
@@ -588,8 +650,8 @@
 
     .readout strong,
     .mass-value {
-      font-size: 1.6rem;
-      font-weight: 800;
+      font-size: 1.35rem;
+      font-weight: 600;
       color: var(--text);
       font-variant-numeric: tabular-nums;
     }
@@ -697,10 +759,16 @@
       display: grid;
       gap: 2px;
       padding: 10px 14px;
-      border: 1px solid var(--border);
+      border: 1px solid #e8eaef;
       border-radius: 16px;
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+      background: #ffffff;
+      color: #334155;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+
+    .mobile-speed .control-label,
+    .game-play-readout .control-label {
+      color: #64748b;
     }
 
     /* V závodu se rychlost kreslí do canvasu → HTML panel skryj, ať se nepřekrývá. */
@@ -727,10 +795,10 @@
     .mobile-dpad {
       pointer-events: auto;
       padding: 6px 8px;
-      border: 1px solid var(--border);
+      border: 1px solid #e8eaef;
       border-radius: 20px;
-      background: rgba(255, 255, 255, 0.86);
-      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
     }
 
     /* V závodu ukazujeme jen ← →, takže D-pad zploštíme do 1 řádku. */
@@ -788,10 +856,11 @@
       gap: 2px;
       min-width: 5.5rem;
       padding: 10px 14px;
-      border: 1px solid var(--border);
+      border: 1px solid #e8eaef;
       border-radius: 16px;
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+      background: #ffffff;
+      color: #334155;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     }
 
     .game-play-readout strong {
@@ -832,16 +901,19 @@
     .game-play-actions .html-btn {
       flex: none;
       min-width: auto;
-      padding: 0.55rem 1.15rem;
+      padding: 10px 16px;
       pointer-events: auto;
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     }
 
     .game-play-actions .html-btn.primary {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
+      background: #4ade80;
+      color: #14532d;
+      border-color: transparent;
     }
 
     .game-play-pause-btn.is-active {
@@ -870,15 +942,16 @@
     }
     .win-box {
       width: 100%;
-      background: var(--panel-bg);
+      background: var(--card-bg);
       padding: 2rem 2.5rem;
-      border-radius: 14px;
-      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      border: none;
       text-align: center;
-      box-shadow: 0 18px 48px rgba(0,0,0,0.22);
+      box-shadow: 0 20px 40px rgba(2, 6, 23, 0.35);
       box-sizing: border-box;
+      color: var(--text);
     }
-    .win-box h2 { margin-bottom: 0.75rem; color: var(--accent); }
+    .win-box h2 { margin-bottom: 0.75rem; color: var(--text); font-family: "Cooper Light", serif; font-weight: 400; }
     .win-overlay.win-celebrate .win-box {
       animation: winBoxPop 0.85s ease-out;
       box-shadow: 0 18px 48px rgba(0,0,0,0.22), 0 0 0 0 rgba(251, 191, 36, 0.45);
@@ -914,31 +987,32 @@
     }
     .win-actions button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
     .win-actions .is-secondary {
-      background: var(--panel-bg);
-      color: var(--text);
-      border-color: var(--border);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      border-color: transparent;
     }
     .win-actions .is-secondary:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--readout-bg);
+      border-color: transparent;
+      color: var(--text);
+      background: var(--idle-bg);
     }
     .race-record-panel {
       display: none;
       width: 100%;
       padding: 1rem 1.25rem;
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: 0 18px 48px rgba(0,0,0,0.22);
+      background: var(--card-bg);
+      border: none;
+      border-radius: var(--radius);
+      box-shadow: 0 20px 40px rgba(2, 6, 23, 0.35);
       box-sizing: border-box;
       text-align: left;
+      color: var(--text);
     }
     .race-record-panel.show { display: block; }
     .race-record-panel .race-record-msg {
       font-size: 13px;
       line-height: 1.35;
-      color: #07553A;
+      color: #86efac;
       font-weight: 500;
       margin-bottom: 8px;
     }
@@ -950,6 +1024,8 @@
       border-radius: 10px;
       margin-bottom: 8px;
       box-sizing: border-box;
+      background: #1e293b;
+      color: var(--text);
     }
     .race-record-panel input:focus {
       outline: none;
@@ -987,14 +1063,14 @@
       }
 
       .sim-topbar {
-        flex: 0 0 auto;
+        flex: 0 0 min(280px, 36vw);
+        width: min(280px, 36vw);
         max-height: none;
       }
 
       .html-controls {
-        /* 4 sloupce dělaly příliš úzké karty → překryvy. */
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: end;
+        grid-template-columns: 1fr;
+        align-items: stretch;
       }
 
       .mode-setup {
@@ -1010,13 +1086,9 @@
         min-width: 0;
       }
 
-      .html-controls .readout {
-        grid-column: span 1;
-      }
-
       .scene-card {
         min-height: auto;
-        overflow: visible;
+        overflow: hidden;
       }
 
       .viz-column {
@@ -1036,7 +1108,7 @@
 
     @media (max-width: 1100px) {
       .html-controls {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
       }
 
       .mode-setup {
@@ -1054,8 +1126,8 @@
         place-items: center;
         height: 100vh;
         height: 100dvh;
-        padding: 0;
-        background: var(--bg);
+        padding: 16px;
+        background: var(--page-bg);
       }
 
       .sim-topbar {
@@ -1067,8 +1139,9 @@
         z-index: 8;
         max-height: none;
         overflow: auto;
-        border-radius: 22px;
-        box-shadow: 0 18px 54px rgba(15, 23, 42, 0.18);
+        border-radius: var(--radius-canvas);
+        background: var(--page-bg);
+        box-shadow: none;
       }
 
       .html-controls {
@@ -1138,10 +1211,20 @@
     </div>
     <header class="sim-topbar">
       <div class="sim-topbar-intro">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-        <div>
-          <h1 class="panel-title">Newtonovy pohybové zákony</h1>
-        </div>
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Newtonovy pohybové zákony</h1>
+        <p class="hint">Vyber režim a spusť novou hru.</p>
       </div>
       <div class="html-controls" aria-label="Ovládání simulace Newtonovy pohybové zákony">
         <div class="mode-setup">
@@ -1389,24 +1472,25 @@
   }
   const UI = {
     font: '"Fenomen Sans", system-ui, sans-serif',
-    panel: '#ffffff',
-    surface: '#f4f5f8',
-    surfaceAlt: '#eceff5',
-    border: '#d9e0ea',
-    text: '#171923',
-    muted: '#6b7280',
-    accent: '#3d5a9a',
-    accentSoft: '#dbe8ff',
-    accentSoftBorder: '#bfd0ea',
-    success: '#059669',
-    shadow: 'rgba(15, 23, 42, 0.12)'
+    panel: '#2a3344',
+    surface: '#1e2533',
+    surfaceAlt: '#334155',
+    border: '#475569',
+    text: '#f8fafc',
+    muted: '#94a3b8',
+    accent: '#3b82f6',
+    accentSoft: '#1e3a5f',
+    accentSoftBorder: '#3b82f6',
+    success: '#16a34a',
+    shadow: 'rgba(2, 6, 23, 0.35)'
   };
   const CONTROL_PANEL = { x: 2, y: 2, w: 188, h: 842, radius: 22 };
   const EDITOR_PANEL_CX = CONTROL_PANEL.x + CONTROL_PANEL.w / 2;
   const EDITOR_UI_LEGACY_ORIGIN = { x: 2, y: 2 };
+  const EDITOR_UI_CANVAS_MARGIN = 14;
 
   function editorUiShift() {
-    const margin = 14;
+    const margin = EDITOR_UI_CANVAS_MARGIN;
     return {
       dx: PLAY.x + (margin - viewOffsetX) / viewScale - EDITOR_UI_LEGACY_ORIGIN.x,
       dy: PLAY.y + (margin - viewOffsetY) / viewScale - EDITOR_UI_LEGACY_ORIGIN.y
@@ -1422,18 +1506,43 @@
   }
 
   function resizeGameCanvas() {
-    const rect = wrap.getBoundingClientRect();
-    const cssW = Math.max(320, Math.round(rect.width));
-    const cssH = Math.max(320, Math.round(rect.height));
+    const cssW = Math.max(1, wrap.clientWidth || wrap.getBoundingClientRect().width);
+    const cssH = Math.max(1, wrap.clientHeight || wrap.getBoundingClientRect().height);
     const dpr = Math.max(1, window.devicePixelRatio || 1);
-    canvas.style.width = `${cssW}px`;
-    canvas.style.height = `${cssH}px`;
-    canvas.width = Math.round(cssW * dpr);
-    canvas.height = Math.round(cssH * dpr);
-    viewScale = Math.min(canvas.width / WORLD.w, canvas.height / WORLD.h);
-    viewOffsetX = (canvas.width - WORLD.w * viewScale) / 2;
-    viewOffsetY = (canvas.height - WORLD.h * viewScale) / 2;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.width = Math.max(1, Math.round(cssW * dpr));
+    canvas.height = Math.max(1, Math.round(cssH * dpr));
+    const pad = 16 * dpr;
+    const availH = Math.max(1, canvas.height - pad * 2);
+
+    if (appMode === 'editing') {
+      const panelLeft = EDITOR_UI_CANVAS_MARGIN;
+      const panelGap = 12 * dpr;
+      const grid = editorGridLayout();
+      const gridLeftInset = grid.ox - PLAY.x;
+      const visibleW = Math.max(1, grid.w);
+      const availW = Math.max(1, canvas.width - panelLeft - panelGap - pad);
+      viewScale = Math.min(
+        availW / (CONTROL_PANEL.w + visibleW),
+        availH / WORLD.h
+      );
+      viewOffsetX = panelLeft + CONTROL_PANEL.w * viewScale + panelGap - gridLeftInset * viewScale;
+      viewOffsetY = (canvas.height - WORLD.h * viewScale) / 2;
+    } else {
+      const availW = Math.max(1, canvas.width - pad * 2);
+      viewScale = Math.min(availW / WORLD.w, availH / WORLD.h);
+      viewOffsetX = (canvas.width - WORLD.w * viewScale) / 2;
+      viewOffsetY = (canvas.height - WORLD.h * viewScale) / 2;
+    }
     layoutMobileRaceDpad();
+  }
+
+  function scheduleGameCanvasResize() {
+    requestAnimationFrame(() => {
+      resizeGameCanvas();
+      requestAnimationFrame(resizeGameCanvas);
+    });
   }
 
   const DPAD_DRAG_HANDLE_SVG = `<svg width="114" height="114" viewBox="0 0 114 114" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M55.2322 113.268C56.2085 114.244 57.7915 114.244 58.7678 113.268L74.6777 97.3579C75.654 96.3816 75.654 94.7986 74.6777 93.8223C73.7014 92.846 72.1184 92.846 71.1421 93.8223L57 107.964L42.8579 93.8223C41.8816 92.846 40.2986 92.846 39.3223 93.8223C38.346 94.7986 38.346 96.3816 39.3223 97.3579L55.2322 113.268ZM58.7678 0.732231C57.7915 -0.24408 56.2085 -0.24408 55.2322 0.732231L39.3223 16.6421C38.346 17.6184 38.346 19.2014 39.3223 20.1777C40.2986 21.154 41.8816 21.154 42.8579 20.1777L57 6.03554L71.1421 20.1777C72.1184 21.154 73.7014 21.154 74.6777 20.1777C75.654 19.2014 75.654 17.6184 74.6777 16.6421L58.7678 0.732231ZM57 111.5H59.5L59.5 2.5H57H54.5L54.5 111.5H57Z" fill="black"/><path d="M0.732233 55.2322C-0.244078 56.2085 -0.244078 57.7915 0.732233 58.7678L16.6421 74.6777C17.6184 75.654 19.2014 75.654 20.1777 74.6777C21.154 73.7014 21.154 72.1184 20.1777 71.1421L6.03553 57L20.1777 42.8579C21.154 41.8816 21.154 40.2986 20.1777 39.3223C19.2014 38.346 17.6184 38.346 16.6421 39.3223L0.732233 55.2322ZM113.268 58.7678C114.244 57.7915 114.244 56.2085 113.268 55.2322L97.3579 39.3223C96.3816 38.346 94.7986 38.346 93.8223 39.3223C92.846 40.2986 92.846 41.8816 93.8223 42.8579L107.964 57L93.8223 71.1421C92.846 72.1184 92.846 73.7014 93.8223 74.6777C94.7986 75.654 96.3816 75.654 97.3579 74.6777L113.268 58.7678ZM2.5 57V59.5H111.5V57V54.5H2.5V57Z" fill="black"/></svg>`;
@@ -1767,7 +1876,8 @@
     wall:   { x: EDITOR_PANEL_CX - PALETTE_WALL_SIZE / 2, y: 95.35, w: PALETTE_WALL_SIZE, h: PALETTE_WALL_SIZE },
     coin:   { cx: EDITOR_PANEL_CX, cy: 230, r: 24 },
     line:   { x: EDITOR_PANEL_CX - PALETTE_LINE_W / 2, y: 300, w: PALETTE_LINE_W, h: 20 },
-    circle: { cx: EDITOR_PANEL_CX, cy: 390, r: 29.5 }
+    circle: { cx: EDITOR_PANEL_CX - 40, cy: 392, r: 29.5 },
+    rocket: { cx: EDITOR_PANEL_CX + 40, cy: 392, r: 29.5 }
   };
   const BORDER_LINE_WIDTH = 6;
   const FRICTION_COEF = 0.96;
@@ -1933,6 +2043,7 @@
   let raceStopwatchRunning = false;
   let raceObstacleWalls = [];
   let raceIntroSecondsLeft = 0;
+  let bludisteIntroSecondsLeft = 0;
   let bludisteScenario = 1;
   let bludisteVehicle = 'ufo';
   let bludistePresetPending = true;
@@ -2016,6 +2127,7 @@
     document.body.classList.toggle('mobile-playing', phase === 'playing');
     layoutMobileRaceDpad();
     syncDraggableDpadPanels();
+    scheduleGameCanvasResize();
   }
 
   function startMobileCountdown() {
@@ -2024,7 +2136,6 @@
     countdownTimer = null;
     newGame();
     setMobilePhase('playing');
-    resizeGameCanvas();
   }
 
   function setUiFont(weight, size) {
@@ -2108,9 +2219,9 @@
       stroke = null,
       textColor = null
     } = opts || {};
-    const resolvedFill = fill || (disabled ? '#edf0f4' : active ? UI.accent : UI.panel);
-    const resolvedStroke = stroke || (disabled ? '#c8d0da' : active ? UI.accent : UI.border);
-    const resolvedText = textColor || (disabled ? '#8a94a5' : active ? '#ffffff' : UI.text);
+    const resolvedFill = fill || (disabled ? '#1e293b' : active ? UI.accent : '#334155');
+    const resolvedStroke = stroke || (disabled ? '#475569' : active ? UI.accent : 'transparent');
+    const resolvedText = textColor || (disabled ? '#64748b' : active ? '#ffffff' : '#cbd5e1');
     fillRoundedRect(x, y, w, h, radius, resolvedFill);
     strokeRoundedRect(x, y, w, h, radius, resolvedStroke, 1.5);
     ctx.save();
@@ -2124,7 +2235,7 @@
 
   function drawControlPanelShell() {
     const p = CONTROL_PANEL;
-    drawUiCard(p.x, p.y, p.w, p.h, { radius: p.radius, fill: 'rgba(255,255,255,0.96)' });
+    drawUiCard(p.x, p.y, p.w, p.h, { radius: p.radius, fill: 'rgba(42, 51, 68, 0.96)' });
   }
 
   function frictionIsOn() {
@@ -2739,6 +2850,10 @@
       !isBludiste() ||
       !showPlayActions ||
       (bludisteScenario !== 1 && bludisteScenario !== 2 && bludisteScenario !== 3);
+    if (uiEls.newGameHtml) {
+      uiEls.newGameHtml.textContent =
+        isBludiste() && bludisteScenario === 4 ? 'Spustit editor' : 'Nová hra';
+    }
   }
 
   function setupBludisteLevel() {
@@ -4080,6 +4195,7 @@
     clearTrail();
     clearBojProjectiles();
     hideRaceNewRecordForm();
+    bludisteIntroSecondsLeft = 0;
     if (mode === 'zavod') setupZavodLevel();
     else if (mode === 'boj') setupBojLevel();
     else prepareBludisteLevelPreview();
@@ -4636,6 +4752,7 @@
     document.getElementById('winOverlay').classList.remove('show');
     clearWinCelebration();
     hideRaceNewRecordForm();
+    bludisteIntroSecondsLeft = 0;
     if (isBludiste()) prepareBludisteLevelPreview();
     setMobilePhase('setup');
     syncHtmlControls();
@@ -4658,6 +4775,7 @@
     resetAllDpadPanelsToDefault();
     setupBludisteScenarioLevel();
     resetPlayerState();
+    startBludisteIntro();
     document.getElementById('winOverlay').classList.remove('show');
     hideRaceNewRecordForm();
     syncHtmlControls();
@@ -4685,6 +4803,7 @@
       if (bludistePresetPending && bludisteUsesPresetFirst()) {
         bludistePresetPending = false;
         resetPlayerState();
+        startBludisteIntro();
         return;
       }
       startGeneratedMission();
@@ -4791,10 +4910,11 @@
     return mass.toFixed(1).replace('.', ',');
   }
 
-  function massColorRgb(t) {
+  function massColorRgb(t, battle) {
     const u = Math.max(0, Math.min(1, t));
-    const min = isBattleRocketStyle() ? BOJ_MASS_COLOR_MIN : MASS_COLOR_MIN;
-    const max = isBattleRocketStyle() ? BOJ_MASS_COLOR_MAX : MASS_COLOR_MAX;
+    const useBattle = battle || isBattleRocketStyle();
+    const min = useBattle ? BOJ_MASS_COLOR_MIN : MASS_COLOR_MIN;
+    const max = useBattle ? BOJ_MASS_COLOR_MAX : MASS_COLOR_MAX;
     return {
       r: Math.round(min.r + (max.r - min.r) * u),
       g: Math.round(min.g + (max.g - min.g) * u),
@@ -5186,6 +5306,13 @@
     if (isZavod() && !raceStopwatchRunning && raceIntroSecondsLeft > 0) {
       raceIntroSecondsLeft = Math.max(0, raceIntroSecondsLeft - dt);
     }
+    if (isBludiste() && appMode !== 'editing' && bludisteIntroSecondsLeft > 0) {
+      if (Math.hypot(player.vx, player.vy) > 12) {
+        bludisteIntroSecondsLeft = 0;
+      } else {
+        bludisteIntroSecondsLeft = Math.max(0, bludisteIntroSecondsLeft - dt);
+      }
+    }
     if (gameState === 'playing') {
       playElapsed += dt;
     }
@@ -5420,31 +5547,7 @@
     ctx.textBaseline = 'alphabetic';
   }
 
-  function drawRaceIntro() {
-    if (!isZavod() || raceStopwatchRunning || raceIntroSecondsLeft <= 0) return;
-
-    const sentences = [
-      'Dotkni se cílové čáry, leť zpět na start a zastav raketu za startovní čarou.',
-      'A snaž se to stihnout co nejrychleji!',
-    ];
-
-    const pad = 18;
-    const w = Math.min(PLAY.w - 120, 980);
-    const x = PLAY.x + (PLAY.w - w) / 2;
-    const y = PLAY.y + 84;
-    const fontSize = 20;
-    const lineH = 30;
-    const cardH = 112;
-
-    ctx.save();
-    drawUiCard(x, y, w, cardH, { radius: 18, fill: 'rgba(255, 255, 255, 0.92)', stroke: UI.border, shadow: false });
-    ctx.fillStyle = UI.text;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    setUiFont(700, fontSize);
-
-    const maxTextW = w - pad * 2;
-    const centerX = x + w / 2;
+  function wrapIntroLines(sentences, maxTextW) {
     const lines = [];
     for (const sentence of sentences) {
       const words = sentence.split(/\s+/);
@@ -5460,16 +5563,63 @@
       }
       if (line) lines.push(line);
     }
+    return lines;
+  }
 
+  function drawMissionIntro(sentences) {
+    const pad = 18;
+    const w = Math.min(PLAY.w - 120, 980);
+    const x = PLAY.x + (PLAY.w - w) / 2;
+    const y = PLAY.y + 84;
+    const fontSize = 20;
+    const lineH = 30;
+    const cardH = 112;
+
+    ctx.save();
+    drawUiCard(x, y, w, cardH, { radius: 18, fill: '#ffffff', stroke: '#cbd5e1', shadow: false });
+    ctx.fillStyle = '#334155';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    setUiFont(700, fontSize);
+
+    const lines = wrapIntroLines(sentences, w - pad * 2);
     const textBlockH = lines.length * lineH;
     let yy = y + (cardH - textBlockH) / 2;
-    for (let i = 0; i < lines.length; i += 1) {
-      ctx.fillText(lines[i], centerX, yy);
+    const centerX = x + w / 2;
+    for (const line of lines) {
+      ctx.fillText(line, centerX, yy);
       yy += lineH;
     }
     ctx.restore();
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
+  }
+
+  function drawRaceIntro() {
+    if (!isZavod() || raceStopwatchRunning || raceIntroSecondsLeft <= 0) return;
+    drawMissionIntro([
+      'Dotkni se cílové čáry, leť zpět na start a zastav raketu za startovní čarou.',
+      'A snaž se to stihnout co nejrychleji!',
+    ]);
+  }
+
+  function startBludisteIntro() {
+    bludisteIntroSecondsLeft = 8;
+  }
+
+  function drawBludisteIntro() {
+    if (
+      !isBludiste() ||
+      appMode === 'editing' ||
+      mobilePhase !== 'playing' ||
+      bludisteIntroSecondsLeft <= 0
+    ) {
+      return;
+    }
+    drawMissionIntro([
+      'Posbírej všechny mince.',
+      'Vyhýbej se překážkám.',
+    ]);
   }
 
   function drawRaceStart() {
@@ -5749,6 +5899,10 @@
     const cx = shiftEditorUiX(circle.cx);
     const cy = shiftEditorUiY(circle.cy);
     if (Math.hypot(x - cx, y - cy) <= ufoHitRadius() + 14) return 'circle';
+    const rocket = PALETTE.rocket;
+    const rx = shiftEditorUiX(rocket.cx);
+    const ry = shiftEditorUiY(rocket.cy);
+    if (Math.hypot(x - rx, y - ry) <= ufoHitRadius() + 14) return 'rocket';
     return null;
   }
 
@@ -5813,8 +5967,10 @@
       editorWalls.push([wx, wy]);
     } else if (editorTool === 'coin') {
       editorCoins.push({ x: center.x, y: center.y });
-    } else if (editorTool === 'circle') {
-      editorPlayer = { x: center.x, y: center.y };
+    } else if (editorTool === 'circle' || editorTool === 'rocket') {
+      const vehicle = editorTool === 'rocket' ? 'rocket' : 'ufo';
+      editorPlayer = { x: center.x, y: center.y, vehicle };
+      bludisteVehicle = vehicle;
     }
   }
 
@@ -5867,9 +6023,14 @@
       player.x = editorPlayer.x;
       player.y = editorPlayer.y;
     }
+    if (editorPlayer.vehicle === 'rocket' || editorPlayer.vehicle === 'ufo') {
+      bludisteVehicle = editorPlayer.vehicle;
+    }
     saveLevelStart();
     appMode = 'playing';
     resetPlayerState();
+    scheduleGameCanvasResize();
+    syncHtmlControls();
   }
 
   function drawFrictionToggle() {
@@ -6225,8 +6386,8 @@
     drawUiButton(L.backBox.x, L.backBox.y, L.backBox.w, L.backBox.h, 'Zpět', {
       fontSize: 15,
       radius: 10,
-      fill: '#ffffff',
-      stroke: UI.border
+      fill: '#334155',
+      stroke: 'transparent'
     });
     drawUiButton(
       L.vectorsBox.x,
@@ -6280,9 +6441,9 @@
       fontSize: 16,
       radius: 12,
       active,
-      fill: active ? '#e6faf1' : '#ffffff',
-      stroke: active ? '#92d8bb' : UI.border,
-      textColor: active ? UI.success : UI.text
+      fill: active ? '#14532d' : '#334155',
+      stroke: 'transparent',
+      textColor: active ? '#86efac' : UI.text
     });
   }
 
@@ -6293,9 +6454,9 @@
       fontSize: 18,
       radius: 12,
       disabled: !enabled,
-      fill: enabled ? '#e6faf1' : null,
-      stroke: enabled ? '#92d8bb' : null,
-      textColor: enabled ? UI.success : null
+      fill: enabled ? '#4ade80' : null,
+      stroke: 'transparent',
+      textColor: enabled ? '#14532d' : null
     });
   }
 
@@ -6304,13 +6465,13 @@
     drawUiButton(b.x, b.y, b.w, b.h, 'Zpět', {
       fontSize: 16,
       radius: 12,
-      fill: '#ffffff',
-      stroke: UI.border
+      fill: '#334155',
+      stroke: 'transparent'
     });
   }
 
   function drawEditorRunDisabledTooltip(clientX, clientY) {
-    const label = 'musíš vložit ufo';
+    const label = 'musíš vložit ufo nebo raketu';
     const rect = canvas.getBoundingClientRect();
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     const fontSize = 22;
@@ -6359,6 +6520,9 @@
     } else if (tool === 'circle') {
       const { cx, cy } = PALETTE.circle;
       drawUfoAt(cx, cy);
+    } else if (tool === 'rocket') {
+      const { cx, cy } = PALETTE.rocket;
+      drawRocketAt(cx, cy);
     }
     if (selected) {
       let bx, by, bw, bh;
@@ -6372,10 +6536,16 @@
         by = PALETTE.coin.cy - PALETTE.coin.r - 10;
         bw = (PALETTE.coin.r + 10) * 2;
         bh = bw;
+      } else if (tool === 'line') {
+        bx = PALETTE.line.x - 12;
+        by = PALETTE.line.y - 18;
+        bw = PALETTE.line.w + 24;
+        bh = PALETTE.line.h + 36;
       } else {
+        const item = tool === 'rocket' ? PALETTE.rocket : PALETTE.circle;
         const pad = ufoHitRadius() + 6;
-        bx = PALETTE.circle.cx - pad;
-        by = PALETTE.circle.cy - pad;
+        bx = item.cx - pad;
+        by = item.cy - pad;
         bw = pad * 2;
         bh = pad * 2;
       }
@@ -6395,6 +6565,7 @@
     drawPaletteItem('coin', editorTool === 'coin');
     drawPaletteItem('line', editorTool === 'line');
     drawPaletteItem('circle', editorTool === 'circle');
+    drawPaletteItem('rocket', editorTool === 'rocket');
 
     drawEditorFrameButton();
     drawEditorRunButton();
@@ -6434,7 +6605,11 @@
     }
     for (const coin of editorCoins) drawCoin(coin.x, coin.y);
     if (editorPlayer) {
-      drawUfoAt(editorPlayer.x, editorPlayer.y);
+      if (editorPlayer.vehicle === 'rocket') {
+        drawRocketAt(editorPlayer.x, editorPlayer.y);
+      } else {
+        drawUfoAt(editorPlayer.x, editorPlayer.y);
+      }
     }
   }
 
@@ -6758,6 +6933,21 @@
     ctx.stroke();
   }
 
+  function drawRocketAt(x, y) {
+    const hullRgb = massColorRgb(massT(), true);
+    const hull = rgbCss(hullRgb);
+    const hullDark = rgbCss(scaleRgb(hullRgb, 0.72));
+    ctx.save();
+    ctx.translate(x, y);
+    drawRocketBodyStyled(hull, BOJ_PLAYER_COCKPIT);
+    drawBojShipMotors(
+      { thrust: false, left: false, right: false },
+      hull,
+      hullDark
+    );
+    ctx.restore();
+  }
+
   function drawUfoAt(x, y) {
     const nozzleDist = PLAYER_R * 0.92;
     const motorDefs = [
@@ -6951,6 +7141,7 @@
     }
 
     if (isZavod()) drawRaceIntro();
+    if (isBludiste()) drawBludisteIntro();
     drawTrail();
     if (bojTrainingTrajectoriesOn()) drawBojTrainingBulletTrails();
     if (isBoj() || isBludisteRocket()) drawBojProjectiles();
@@ -7342,6 +7533,11 @@
     layoutMobileRaceDpad();
     syncDraggableDpadPanels();
   });
+
+  if (typeof ResizeObserver === 'function') {
+    const wrapResizeObserver = new ResizeObserver(() => resizeGameCanvas());
+    wrapResizeObserver.observe(wrap);
+  }
 
   resizeGameCanvas();
   initDraggableDpadPanels();
