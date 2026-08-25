@@ -15,8 +15,8 @@ const CONFETTI_COLORS = [
   "#047857",
   "#a7f3d0",
 ];
-const CANVAS_RIGHT_MARGIN = 40;
-const CANVAS_BOTTOM_MARGIN = 35;
+const CANVAS_RIGHT_MARGIN = 72;
+const CANVAS_BOTTOM_MARGIN = 52;
 const MIN_INNER_WIDTH = CANVAS_POSITION_MARGIN + DM * CANVAS_MAX_DM_W + CANVAS_RIGHT_MARGIN;
 const MIN_INNER_HEIGHT = CANVAS_POSITION_MARGIN + DM * CANVAS_MAX_DM_H + CANVAS_BOTTOM_MARGIN;
 const FREE_ZOOM_MIN = 1;
@@ -79,6 +79,7 @@ const areaMathKeypad = document.getElementById("area-math-keypad");
 const content = document.getElementById("content");
 const placedTilesLayer = document.getElementById("placed-tiles");
 const tileStack = document.getElementById("tile-stack");
+const hintEl = document.getElementById("hintEl");
 const canvasElement = document.getElementById("canvas");
 const canvasGroup = document.getElementById("canvas-group");
 const canvasTicks = document.getElementById("canvas-ticks");
@@ -97,6 +98,7 @@ let celebrationTimer = null;
 let areaKeypadDraft = "";
 let areaKeypadUnit = "";
 let isAreaKeypadOpen = false;
+let hintDismissed = false;
 const AREA_UNIT_LABELS = {
   dm2: "dm²",
   cm2: "cm²",
@@ -115,6 +117,14 @@ function getCanvasBounds() {
 
 function applyCanvasPosition() {
   canvasGroup.setAttribute("transform", `translate(${canvasPosition.x}, ${canvasPosition.y})`);
+}
+
+function dismissIntroHint() {
+  if (hintDismissed) {
+    return;
+  }
+  hintDismissed = true;
+  hintEl?.classList.add("is-hidden");
 }
 
 function getLocalPoint(clientX, clientY) {
@@ -325,6 +335,7 @@ function startDragFromStack(type, clientX, clientY, targetElement) {
 }
 
 function startDragPlacedTile(element, localX, localY) {
+  dismissIntroHint();
   const position = parseTranslate(element);
   bringToFront(element);
   element.classList.add("is-dragging");
@@ -434,6 +445,7 @@ tileStack.addEventListener("pointerdown", (event) => {
   }
 
   event.preventDefault();
+  dismissIntroHint();
   startDragFromStack(stackTile.dataset.type, event.clientX, event.clientY, stackTile);
   beginDragTracking(event.pointerId);
 });
@@ -461,15 +473,17 @@ function createLine(x1, y1, x2, y2) {
   return line;
 }
 
-function createLabel(text, x, y, anchor = "middle") {
+function createLabel(text, x, y, anchor = "middle", baseline = "auto") {
   const label = document.createElementNS(SVG_NS, "text");
   label.textContent = text;
   label.setAttribute("x", String(x));
   label.setAttribute("y", String(y));
   label.setAttribute("text-anchor", anchor);
+  label.setAttribute("dominant-baseline", baseline);
   label.setAttribute("fill", "#334155");
-  label.setAttribute("font-size", "10");
+  label.setAttribute("font-size", "22");
   label.setAttribute("font-family", "Fenomen Sans, ui-sans-serif, system-ui, sans-serif");
+  label.setAttribute("font-weight", "500");
   return label;
 }
 
@@ -690,8 +704,8 @@ function renderCanvas() {
   }
 
   const { widthDm, heightDm } = getCanvasSizeInDm();
-  canvasLabels.appendChild(createLabel(`${widthDm} dm`, CANVAS.w / 2, CANVAS.h + 13));
-  canvasLabels.appendChild(createLabel(`${heightDm} dm`, CANVAS.w + 13, CANVAS.h / 2, "start"));
+  canvasLabels.appendChild(createLabel(`${widthDm} dm`, CANVAS.w / 2, CANVAS.h + 28));
+  canvasLabels.appendChild(createLabel(`${heightDm} dm`, CANVAS.w + 16, CANVAS.h / 2, "start", "middle"));
 
   applyCanvasPosition();
   updateViewBox();
@@ -948,6 +962,7 @@ function updateAreaKeypadDisplay() {
 }
 
 function showAreaKeypad() {
+  dismissIntroHint();
   const parsed = parseAreaAnswer(areaValueInput.value);
   areaKeypadDraft = parsed.numericText;
   areaKeypadUnit = parsed.unit;
