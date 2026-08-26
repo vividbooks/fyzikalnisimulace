@@ -17,10 +17,10 @@
 
     /** Světlý režim — čitelná tyč, štítky a pozadí scény. */
     const COLORS = {
-      bg: "#f1f5f9",
+      bg: "#ffffe6",
       beam: "#ef4444",
-      pivot: "#db2777",
-      pivotNeedle: "#fce7f3",
+      pivot: "#3b82f6",
+      pivotNeedle: "#dbeafe",
       beamCradle: "#64748b",
       rope: "#475569",
       baseOuter: "#475569",
@@ -148,8 +148,6 @@
       { count: 4, slotIdx: 3 },
     ];
     const RESEARCH_FIXED_SIDE = "left";
-    const SITUATION_ARROW_GAP = 72;
-    const SITUATION_ARROW_R = 36;
 
     /** Kvízy 3–7: index 0 = vždy 1 závaží na odpovědi, index 1–4 = náhodně počet nebo dílek. */
     const QUIZ_TASK_COUNT = 5;
@@ -460,11 +458,6 @@
         add(PIVOT.x, STAND_FOOT_BOTTOM_Y);
         add(PIVOT.x - 40, STAND_FOOT_BOTTOM_Y + 24);
         add(PIVOT.x + 40, STAND_FOOT_BOTTOM_Y + 24);
-        const arrowExtent = SITUATION_ARROW_GAP + SITUATION_ARROW_R + 14;
-        add(PIVOT.x - BEAM_HALF - arrowExtent, PIVOT.y - SITUATION_ARROW_R);
-        add(PIVOT.x - BEAM_HALF - arrowExtent, PIVOT.y + SITUATION_ARROW_R);
-        add(PIVOT.x + BEAM_HALF + arrowExtent, PIVOT.y - SITUATION_ARROW_R);
-        add(PIVOT.x + BEAM_HALF + arrowExtent, PIVOT.y + SITUATION_ARROW_R);
       };
 
       const bbFull = hullCore([MAX_TILT, -MAX_TILT, 0]);
@@ -504,59 +497,6 @@
         Math.abs(dx) <= BEAM_LOCK_HIT_W / 2 &&
         Math.abs(dy) <= BEAM_LOCK_HIT_H / 2
       );
-    }
-
-    function situationArrowCenter(dir) {
-      const cx =
-        dir === "left"
-          ? PIVOT.x - BEAM_HALF - SITUATION_ARROW_GAP
-          : PIVOT.x + BEAM_HALF + SITUATION_ARROW_GAP;
-      return { cx, cy: PIVOT.y };
-    }
-
-    function hitSituationArrow(px, py, dir) {
-      const { cx, cy } = situationArrowCenter(dir);
-      return Math.hypot(px - cx, py - cy) <= SITUATION_ARROW_R + 8;
-    }
-
-    /** Šipky pro přepínání situací badatelského úkolu — vlevo a vpravo od tyče. */
-    function ResearchSituationArrows({ canPrev, canNext }) {
-      const mk = (dir, enabled) => {
-        const { cx, cy } = situationArrowCenter(dir);
-        const arm = 11;
-        const chevron =
-          dir === "left"
-            ? `M ${cx + arm * 0.45} ${cy - arm} L ${cx - arm * 0.55} ${cy} L ${cx + arm * 0.45} ${cy + arm}`
-            : `M ${cx - arm * 0.45} ${cy - arm} L ${cx + arm * 0.55} ${cy} L ${cx - arm * 0.45} ${cy + arm}`;
-        return html`
-          <g
-            key=${`situation-arrow-${dir}`}
-            style=${{ pointerEvents: "none", opacity: enabled ? 1 : 0.38 }}
-          >
-            <circle
-              cx=${cx}
-              cy=${cy}
-              r=${SITUATION_ARROW_R}
-              fill="rgba(255,255,255,0.96)"
-              stroke=${COLORS.pivot}
-              strokeWidth=${2.2}
-              style=${{ filter: "drop-shadow(0 3px 12px rgba(15, 23, 42, 0.12))" }}
-            />
-            <path
-              d=${chevron}
-              fill="none"
-              stroke=${COLORS.pivot}
-              strokeWidth=${3.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </g>
-        `;
-      };
-      return html`<g key="research-situation-arrows">
-        ${mk("left", canPrev)}
-        ${mk("right", canNext)}
-      </g>`;
     }
 
     /** Ikona zámečku nad páčkou (SVG, vyplněná a v barvě osy). */
@@ -935,6 +875,14 @@
       const [quizBoxState, setQuizBoxState] = useState(null);
       const [quizAnswerApplied, setQuizAnswerApplied] = useState(false);
       const [quizConfettiBurst, setQuizConfettiBurst] = useState(0);
+      const [hintVisible, setHintVisible] = useState(true);
+      const hintDismissedRef = useRef(false);
+
+      const dismissHint = useCallback(() => {
+        if (hintDismissedRef.current) return;
+        hintDismissedRef.current = true;
+        setHintVisible(false);
+      }, []);
 
       const isQuizTask = taskKind === "quiz";
       const isFinalTask = taskKind === "final";
@@ -1152,6 +1100,7 @@
       }
 
       function clearAllWeights() {
+        dismissHint();
         dragRef.current = null;
         beamPickupClientRef.current = null;
         setDragPx(null);
@@ -1428,17 +1377,13 @@
         );
       }
 
-      function goToPrevResearchSituation() {
+      function goToResearchSituation(idx) {
+        dismissHint();
         setResearchSituationIdx((prev) => {
-          const next = Math.max(0, prev - 1);
-          if (next !== prev) applyResearchSituation(next);
-          return next;
-        });
-      }
-
-      function goToNextResearchSituation() {
-        setResearchSituationIdx((prev) => {
-          const next = Math.min(RESEARCH_TASK_SITUATIONS.length - 1, prev + 1);
+          const next = Math.max(
+            0,
+            Math.min(RESEARCH_TASK_SITUATIONS.length - 1, idx),
+          );
           if (next !== prev) applyResearchSituation(next);
           return next;
         });
@@ -1461,12 +1406,23 @@
       }
 
       function onBalancePointerUp(e) {
-        if (dragRef.current) {
+        const drag = dragRef.current;
+        const pickup = beamPickupClientRef.current;
+        const wasTapRemove =
+          drag &&
+          pickup &&
+          Math.hypot(e.clientX - pickup.x, e.clientY - pickup.y) <
+            BEAM_DRAG_TAP_MAX_PX;
+        if (drag) {
           commitDrop(e.clientX, e.clientY);
         }
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => refreshHoverHint(e.clientX, e.clientY));
-        });
+        if (wasTapRemove) {
+          setHoverHint(null);
+        } else {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => refreshHoverHint(e.clientX, e.clientY));
+          });
+        }
         try {
           e.currentTarget.releasePointerCapture(e.pointerId);
         } catch (_) { /* nop */ }
@@ -1627,8 +1583,17 @@
             <a
               class="hub-back-to-sims"
               href=${LEVER_HUB_HREF}
-              aria-label="Zpět na přehled simulací"
-              >← Přehled simulací</a>
+              aria-label="Zpět"
+              ><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M15 18l-6-6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Zpět</a>
             <h1 class="sim-subheader-title">Páka</h1>
             <button
               type="button"
@@ -1732,7 +1697,7 @@
                       `
                     : html`<ol>
                         <li>
-                          V každé z následujících situací zavěs na druhou stranu páky
+                          V každé ze 4 situací zavěs na druhou stranu páky
                           libovolný počet závaží do jedné vzdálenosti od osy otáčení tak,
                           aby byla páka v rovnováze. (Všechna závaží zavěs pod sebe na
                           jedno místo. Nezavěšuj je na různá místa páky.)
@@ -1752,6 +1717,34 @@
             }}
           >
             <${ConfettiBurst} burstKey=${isQuizTask ? quizConfettiBurst : 0} />
+            ${hintVisible &&
+              html`<p class="sim-empty-hint" aria-live="polite">
+                Klepnutím na dírku na tyči zavěsíš závaží.
+              </p>`}
+            ${researchTaskOpen &&
+              taskKind === "research" &&
+              html`<div
+                class="research-situation-switcher"
+                role="group"
+                aria-label="Situace badatelského úkolu"
+              >
+                ${RESEARCH_TASK_SITUATIONS.map(
+                  (_, i) => html`<button
+                    type="button"
+                    class=${[
+                      "research-situation-btn",
+                      researchSituationIdx === i ? "is-active" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    aria-pressed=${researchSituationIdx === i ? "true" : "false"}
+                    aria-label=${`Situace ${i + 1}`}
+                    onClick=${() => goToResearchSituation(i)}
+                  >
+                    ${i + 1}
+                  </button>`,
+                )}
+              </div>`}
             <div
               class="stage-svg-scale-wrap"
               style=${{ "--scene-ar": `${SCENE_VIEW.w} / ${SCENE_VIEW.h}` }}
@@ -1767,24 +1760,9 @@
               }}
               onPointerDown=${(e) => {
                 if (!leverInteractive) return;
+                dismissHint();
                 const p = clientToLocalSvg(e.clientX, e.clientY, balanceSvgRef.current);
                 if (!p) return;
-                if (researchTaskOpen && taskKind === "research") {
-                  if (
-                    hitSituationArrow(p.x, p.y, "left") &&
-                    researchSituationIdx > 0
-                  ) {
-                    goToPrevResearchSituation();
-                    return;
-                  }
-                  if (
-                    hitSituationArrow(p.x, p.y, "right") &&
-                    researchSituationIdx < RESEARCH_TASK_SITUATIONS.length - 1
-                  ) {
-                    goToNextResearchSituation();
-                    return;
-                  }
-                }
                 if (hitBeamLock(p.x, p.y)) {
                   setBeamLocked((v) => !v);
                   return;
@@ -1890,17 +1868,11 @@
                   fontWeight=${800}
                   letterSpacing="-0.03em"
                   fontFamily=${FONT_STACK}
-                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 2px 10px rgba(219, 39, 119, 0.28))" }}
+                  style=${{ pointerEvents: "none", filter: "drop-shadow(0 2px 10px rgba(59, 130, 246, 0.28))" }}
                   aria-live="polite"
                 >
                   páka je v rovnováze
                 </text>`}
-              ${researchTaskOpen &&
-                taskKind === "research" &&
-                html`<${ResearchSituationArrows}
-                  canPrev=${researchSituationIdx > 0}
-                  canNext=${researchSituationIdx < RESEARCH_TASK_SITUATIONS.length - 1}
-                />`}
               <${BeamLockIcon} locked=${beamLocked} />
               ${balanceGhost}
               ${hoverHud}
