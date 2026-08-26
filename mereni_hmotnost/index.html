@@ -379,14 +379,20 @@
       transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
     .mass-verify-panel.mass-verify-panel--correct {
-      border-color: var(--success);
-      background-color: rgba(74, 222, 128, 0.16);
-      box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18);
+      border-color: #16a34a;
+      background-color: #ecfdf5;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+      color: var(--canvas-text);
     }
     .mass-verify-panel.mass-verify-panel--wrong {
-      border-color: var(--danger);
-      background-color: rgba(239, 68, 68, 0.18);
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
+      border-color: #dc2626;
+      background-color: #fef2f2;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
+      color: var(--canvas-text);
+    }
+    .mass-verify-panel.mass-verify-panel--correct .mass-verify-unit,
+    .mass-verify-panel.mass-verify-panel--wrong .mass-verify-unit {
+      color: var(--canvas-text);
     }
     .mass-verify-object-readout {
       width: 100%;
@@ -628,11 +634,11 @@
       min-height: 1.35em;
     }
     .mass-verify-result[data-status="ok"] {
-      color: var(--success);
+      color: #15803d;
     }
     .mass-verify-result[data-status="wrong"],
     .mass-verify-result[data-status="error"] {
-      color: var(--danger);
+      color: #b91c1c;
     }
     @media (max-width: 760px) {
       main {

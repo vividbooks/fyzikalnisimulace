@@ -178,6 +178,10 @@ button {
   line-height: 1.4;
 }
 
+.panel-lead + .panel-lead {
+  margin-top: 0.65rem;
+}
+
 .panel-btn-grid {
   display: grid;
   grid-template-columns: 1fr;
