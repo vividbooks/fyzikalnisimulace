@@ -348,7 +348,7 @@
     return {
       id: CUSTOM_ID,
       label: "Vlastní",
-      kind: "polygon",
+      kind: "path",
       fill: CUSTOM_FILL,
       stroke: CUSTOM_STROKE,
       path: "",
@@ -385,6 +385,7 @@
   const confettiLayer = document.getElementById("confetti");
   const app = document.getElementById("app");
   const guessCmBtn = document.getElementById("tool-guess-cm");
+  const showCmBtn = document.getElementById("tool-show-cm");
   const reshapeBtn = document.getElementById("tool-reshape");
   const pencilBtn = document.getElementById("tool-pencil");
   const drawShapeBtn = document.getElementById("tool-draw-shape");
@@ -433,6 +434,7 @@
     currentStroke: null,
     strokePoints: [],
     guessResult: null,
+    cmVisible: false,
     guideOn: false,
     weightFrom: null,
     weightSnap: -1,
@@ -799,7 +801,7 @@
   function showWeightHint() {
     if (!hintEl || state.pendingCustom) return;
     hintEl.textContent = "Polož závaží na otvor.";
-    hintEl.classList.remove("is-hidden");
+    hintEl.classList.remove("sim-empty-hint--top", "is-hidden");
   }
 
   function armWeightCarry(event) {
@@ -1033,13 +1035,20 @@
       syncDragHandle();
       return;
     }
-    if (currentShape.kind === "polygon" && VERTICES.length < 3) return;
+    if (
+      (currentShape.kind === "polygon" || currentShape.kind === "path") &&
+      VERTICES.length < 3
+    ) {
+      return;
+    }
     const path =
-      currentShape.kind === "circle" ? currentShape.path : polygonPath(VERTICES);
+      currentShape.kind === "polygon" ? polygonPath(VERTICES) : currentShape.path;
     if (currentShape.kind === "polygon") {
       currentShape.path = path;
       currentShape.bounds = boundsOf(VERTICES);
       placeHolesAtVertices();
+    } else if (currentShape.kind === "path") {
+      currentShape.bounds = boundsOf(VERTICES);
     }
     updateCentroid();
     const holeCuts = HOLES.map(([x, y]) => circlePath(x, y, HOLE_R)).join("");
@@ -1080,7 +1089,7 @@
       });
       return;
     }
-    if (next.kind === "polygon") {
+    if (next.kind === "polygon" || next.kind === "path") {
       if (!next.liveVertices) {
         next.liveVertices = next.vertices.map((vertex) => [vertex[0], vertex[1]]);
       }
@@ -1096,11 +1105,15 @@
     if (shapeHasCorners(next) && !next.holeBindings) {
       next.holeBindings = bindHolesToVertices(VERTICES, HOLES);
     }
-    centroid = next.kind === "polygon" ? polygonCentroid(VERTICES) : next.centroid;
+    centroid = next.kind === "circle" ? next.centroid : polygonCentroid(VERTICES);
     if (next.kind === "polygon") {
       next.centroid = centroid;
       next.bounds = boundsOf(VERTICES);
       next.path = polygonPath(VERTICES);
+    } else if (next.kind === "path") {
+      next.centroid = centroid;
+      next.bounds = boundsOf(VERTICES);
+      if (!next.path) next.path = catmullRomClosedPath(VERTICES);
     }
 
     app.style.setProperty("--shape-fill", next.fill);
@@ -1310,6 +1323,7 @@
       clearGuessResult();
     } else {
       dismissSceneHint();
+      setCmVisible(false);
     }
     if (tool !== "move" && (state.weightCarry || state.dragMode === "weight")) {
       cancelWeightCarry();
@@ -1326,6 +1340,7 @@
       drawShapeBtn.classList.toggle("is-active", tool === "draw-shape");
       drawShapeBtn.setAttribute("aria-pressed", String(tool === "draw-shape"));
     }
+    syncShowCmButton();
     syncDragHandle();
   }
 
@@ -1338,8 +1353,19 @@
     });
   }
 
+  const DRAW_OWN_HINT = "Nakresli vlastní útvar.";
+  const SCENE_HINT_HIDE_MS = 3000;
+  let sceneHintHideTimer = 0;
+
+  function clearSceneHintTimer() {
+    if (!sceneHintHideTimer) return;
+    clearTimeout(sceneHintHideTimer);
+    sceneHintHideTimer = 0;
+  }
+
   function syncSceneHint() {
     if (!hintEl) return;
+    clearSceneHintTimer();
     if (state.hintDismissed) {
       hintEl.classList.add("is-hidden");
       return;
@@ -1348,14 +1374,25 @@
       hintEl.classList.add("is-hidden");
       return;
     } else if (state.appMode === "lab" && customShape.empty) {
-      hintEl.textContent = "Nakresli vlastní útvar.";
+      hintEl.textContent = DRAW_OWN_HINT;
     } else {
       hintEl.textContent = "Pověs útvar na hřebík.";
     }
+    hintEl.classList.toggle(
+      "sim-empty-hint--top",
+      hintEl.textContent === DRAW_OWN_HINT
+    );
     hintEl.classList.remove("is-hidden");
+    if (hintEl.textContent === DRAW_OWN_HINT) {
+      sceneHintHideTimer = setTimeout(() => {
+        hintEl.classList.add("is-hidden");
+        sceneHintHideTimer = 0;
+      }, SCENE_HINT_HIDE_MS);
+    }
   }
 
   function dismissSceneHint() {
+    clearSceneHintTimer();
     state.hintDismissed = true;
     hintEl?.classList.add("is-hidden");
   }
@@ -1456,28 +1493,63 @@
     return result.length >= 5 ? result : null;
   }
 
-  function simplifyClosed(points) {
-    if (points.length < 4 || pathLength(points) < 36) return null;
+  function catmullRomClosedPath(verts) {
+    const n = verts.length;
+    if (n < 3) return polygonPath(verts);
+    const fmt = (x, y) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+    let d = `M${fmt(verts[0][0], verts[0][1])}`;
+    for (let i = 0; i < n; i += 1) {
+      const p0 = verts[(i - 1 + n) % n];
+      const p1 = verts[i];
+      const p2 = verts[(i + 1) % n];
+      const p3 = verts[(i + 2) % n];
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += `C${fmt(c1x, c1y)} ${fmt(c2x, c2y)} ${fmt(p2[0], p2[1])}`;
+    }
+    return `${d}Z`;
+  }
+
+  function catmullRomOpenPath(points) {
+    if (!points.length) return "";
+    if (points.length === 1) {
+      return `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    }
+    if (points.length === 2) {
+      return `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}L${points[1].x.toFixed(2)} ${points[1].y.toFixed(2)}`;
+    }
+    const pts = points.map((point) => [point.x, point.y]);
+    const fmt = (x, y) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+    let d = `M${fmt(pts[0][0], pts[0][1])}`;
+    for (let i = 0; i < pts.length - 1; i += 1) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += `C${fmt(c1x, c1y)} ${fmt(c2x, c2y)} ${fmt(p2[0], p2[1])}`;
+    }
+    return d;
+  }
+
+  function keepClosedStroke(points) {
+    if (points.length < 8 || pathLength(points) < 36) return null;
     const pts = points.map((point) => ({ x: point.x, y: point.y }));
     const first = pts[0];
     const last = pts[pts.length - 1];
-    if (Math.hypot(first.x - last.x, first.y - last.y) < 24) {
+    if (Math.hypot(first.x - last.x, first.y - last.y) < 28) {
       pts.pop();
     }
-    let epsilon = 4;
-    let result = simplifyPolyline(pts, epsilon);
-    while (result.length > 14 && epsilon < 36) {
-      epsilon += 2;
-      result = simplifyPolyline(pts, epsilon);
+    const simplified = simplifyPolyline(pts, 1.6);
+    if (simplified.length < 8) {
+      return resampleClosed(pts, Math.max(24, Math.round(pathLength(pts) / 8)));
     }
-    while (result.length < 6 && epsilon > 1.2) {
-      epsilon *= 0.7;
-      result = simplifyPolyline(pts, epsilon);
-    }
-    if (result.length < 5) {
-      return resampleClosed(pts, 8);
-    }
-    return result.map((point) => [point.x, point.y]);
+    return simplified.map((point) => [point.x, point.y]);
   }
 
   function fitVertices(verts) {
@@ -1491,13 +1563,16 @@
   }
 
   function makeHolesForCustom(verts) {
-    const count = verts.length <= 8 ? verts.length : 6;
-    const step = verts.length / count;
+    const ring =
+      resampleClosed(
+        verts.map(([x, y]) => ({ x, y })),
+        6
+      ) ||
+      [0, 1, 2, 3, 4, 5].map((i) => verts[Math.floor((i * verts.length) / 6)]);
     const holes = [];
-    for (let i = 0; i < count; i += 1) {
-      const index = Math.round(i * step) % verts.length;
-      const inward = vertexInward(verts, index);
-      const origin = verts[index];
+    for (let i = 0; i < ring.length; i += 1) {
+      const origin = ring[i];
+      const inward = vertexInward(ring, i);
       let x = origin[0] + inward.x * (HOLE_R + 12);
       let y = origin[1] + inward.y * (HOLE_R + 12);
       if (!pointInPolygon(x, y, verts)) {
@@ -1507,10 +1582,6 @@
       holes.push([x, y]);
     }
     return holes;
-  }
-
-  function draftPathData(points) {
-    return points.map((point, index) => `${index ? "L" : "M"}${point.x} ${point.y}`).join(" ");
   }
 
   function updateDraftPath(pending = false) {
@@ -1524,7 +1595,10 @@
     draftPath.removeAttribute("hidden");
     draftPath.classList.add("is-visible");
     draftPath.classList.toggle("is-pending", pending);
-    draftPath.setAttribute("d", draftPathData(state.draftPoints));
+    const d = pending
+      ? catmullRomClosedPath(state.pendingCustom || [])
+      : catmullRomOpenPath(state.draftPoints);
+    draftPath.setAttribute("d", d);
   }
 
   function clearDraft() {
@@ -1544,6 +1618,7 @@
     updateDraftPath();
     app.classList.add("is-drawing");
     if (shapeGroup) shapeGroup.setAttribute("opacity", "0.22");
+    clearSceneHintTimer();
     hintEl?.classList.add("is-hidden");
   }
 
@@ -1557,14 +1632,14 @@
   function finishShapeDraft() {
     state.drawingShape = false;
     app.classList.remove("is-drawing");
-    const verts = simplifyClosed(state.draftPoints);
+    const verts = keepClosedStroke(state.draftPoints);
     const area = verts ? Math.abs(polygonArea(verts)) : 0;
     if (!verts || area < MIN_SHAPE_AREA * 0.12) {
       clearDraft();
       state.hintDismissed = false;
       if (hintEl) {
         hintEl.textContent = "Nakresli větší uzavřený útvar.";
-        hintEl.classList.remove("is-hidden");
+        hintEl.classList.remove("sim-empty-hint--top", "is-hidden");
       }
       return;
     }
@@ -1582,10 +1657,10 @@
     customShape = {
       id: CUSTOM_ID,
       label: "Vlastní",
-      kind: "polygon",
+      kind: "path",
       fill: CUSTOM_FILL,
       stroke: CUSTOM_STROKE,
-      path: polygonPath(fitted),
+      path: catmullRomClosedPath(fitted),
       vertices: fitted.map((vertex) => [vertex[0], vertex[1]]),
       liveVertices: fitted.map((vertex) => [vertex[0], vertex[1]]),
       holes: holes.map((hole) => [hole[0], hole[1]]),
@@ -1868,6 +1943,23 @@
     if (!confettiRaf) confettiRaf = requestAnimationFrame(tickConfetti);
   }
 
+  function setCmVisible(visible) {
+    if (visible && state.tool === "guess-cm") visible = false;
+    state.cmVisible = visible;
+    if (showCmBtn) {
+      showCmBtn.classList.toggle("is-active", visible);
+      showCmBtn.setAttribute("aria-pressed", String(visible));
+    }
+    updateGuessVisuals();
+  }
+
+  function syncShowCmButton() {
+    if (!showCmBtn) return;
+    const blocked = state.tool === "guess-cm";
+    showCmBtn.disabled = blocked;
+    showCmBtn.setAttribute("aria-disabled", String(blocked));
+  }
+
   function clearGuessResult() {
     state.guessResult = null;
     guessLayer.replaceChildren();
@@ -1988,21 +2080,31 @@
   }
 
   function updateGuessVisuals() {
-    if (!state.guessResult || state.tool !== "guess-cm") {
+    const showGuess =
+      state.guessResult && state.tool === "guess-cm";
+    if (!showGuess && !state.cmVisible) {
       guessLayer.removeAttribute("hidden");
       guessLayer.classList.remove("is-visible");
       guessLayer.replaceChildren();
       return;
     }
 
-    const guess = state.guessResult;
-    const guessView = worldToView(guess.guessX, guess.guessY);
-    const guessInk = contrastInk(colorBehindWorld(guess.guessX, guess.guessY));
     guessLayer.removeAttribute("hidden");
     guessLayer.classList.add("is-visible");
     guessLayer.replaceChildren();
 
-    guessLayer.append(createCross(guessView.x, guessView.y, "guess-cross", guessInk));
+    if (state.cmVisible) {
+      const actual = localToWorld(centroid.x, centroid.y);
+      const actualView = worldToView(actual.x, actual.y);
+      guessLayer.append(createCross(actualView.x, actualView.y, "cm-cross", "#22c55e"));
+    }
+
+    if (showGuess) {
+      const guess = state.guessResult;
+      const guessView = worldToView(guess.guessX, guess.guessY);
+      const guessInk = contrastInk(colorBehindWorld(guess.guessX, guess.guessY));
+      guessLayer.append(createCross(guessView.x, guessView.y, "guess-cross", guessInk));
+    }
   }
 
   function updateClearDrawingsButton() {
@@ -2193,6 +2295,7 @@
     clearAllWeights();
     app.classList.remove("is-dragging");
     clearGuessResult();
+    setCmVisible(false);
     setTool(state.appMode === "lab" && currentShape?.empty ? "draw-shape" : "move");
     placeFreeCenter();
     render();
@@ -2459,6 +2562,11 @@
 
   guessCmBtn.addEventListener("click", () => {
     setTool(state.tool === "guess-cm" ? "move" : "guess-cm");
+  });
+
+  showCmBtn?.addEventListener("click", () => {
+    if (state.tool === "guess-cm") return;
+    setCmVisible(!state.cmVisible);
   });
 
   reshapeBtn.addEventListener("click", () => {
