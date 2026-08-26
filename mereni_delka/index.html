@@ -4063,17 +4063,43 @@
       });
 
       var workspaceExpanded = false;
+      /** @type {{ x: number, y: number, w: number, h: number } | null} */
+      var lastPlantLayoutFrame = null;
 
-      function relayoutBoardAfterChromeChange() {
+      function getPlantLayoutFrame() {
+        var wrap = document.querySelector(".plant-anim-wrap");
         if (
-          appRoot &&
-          appRoot.getAttribute("data-app-mode") === "plant" &&
-          appRoot.getAttribute("data-plant-view") !== "graph"
+          !wrap ||
+          !board ||
+          !appRoot ||
+          appRoot.getAttribute("data-app-mode") !== "plant" ||
+          appRoot.getAttribute("data-plant-view") === "graph"
         ) {
-          placeRulerAbovePlantTable();
-        } else {
-          applyLayout();
+          return null;
         }
+        var rect = wrap.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) return null;
+        var origin = boardXYFromClient(rect.left, rect.top);
+        var corner = boardXYFromClient(rect.right, rect.bottom);
+        var w = corner.fx - origin.fx;
+        var h = corner.fy - origin.fy;
+        if (!(w > 1) || !(h > 1)) return null;
+        return { x: origin.fx, y: origin.fy, w: w, h: h };
+      }
+
+      function keepRulerWithPlant(before) {
+        var after = getPlantLayoutFrame();
+        if (before && after) {
+          bx = after.x + (bx - before.x) * (after.w / before.w);
+          by = after.y + (by - before.y) * (after.h / before.h);
+        }
+        applyLayout();
+        lastPlantLayoutFrame = after;
+      }
+
+      function relayoutBoardAfterChromeChange(plantBefore) {
+        var before = plantBefore !== undefined ? plantBefore : lastPlantLayoutFrame;
+        keepRulerWithPlant(before);
         applyPencilLayout();
         applyCreditLayout();
         applyCucumbersLayout();
@@ -4082,6 +4108,7 @@
       }
 
       function setWorkspaceExpanded(open) {
+        var plantBefore = getPlantLayoutFrame();
         workspaceExpanded = !!open;
         if (appRoot) appRoot.classList.toggle("is-workspace-expanded", workspaceExpanded);
         var label = workspaceExpanded
@@ -4093,8 +4120,10 @@
           btn.setAttribute("aria-label", label);
           btn.setAttribute("title", label);
         });
+        relayoutBoardAfterChromeChange(plantBefore);
         window.requestAnimationFrame(function () {
-          relayoutBoardAfterChromeChange();
+          refreshZoomFocalAroundRuler();
+          schedulePlantChartRedraw();
         });
       }
 
@@ -4679,6 +4708,7 @@
         thetaDeg = 0;
 
         applyLayout();
+        lastPlantLayoutFrame = null;
       }
 
       /** V režimu Rostlina: pravítko vodorovně těsně nad tabulkou. */
@@ -4700,6 +4730,7 @@
         by = topMid.fy - gap;
         thetaDeg = 0;
         applyLayout();
+        lastPlantLayoutFrame = getPlantLayoutFrame();
       }
 
       function schedulePlaceRulerAbovePlantTable() {
