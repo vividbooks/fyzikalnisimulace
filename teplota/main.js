@@ -16,6 +16,7 @@ const ambientMathKeypad = document.getElementById('ambient-math-keypad');
 const coolingGraphBtn = document.getElementById('cooling-graph-btn');
 const coolingGraphTools = document.getElementById('cooling-graph-tools');
 const coolingChartSaveBtn = document.getElementById('cooling-chart-save-btn');
+const coolingChartUndoBtn = document.getElementById('cooling-chart-undo-btn');
 const coolingChartResetBtn = document.getElementById('cooling-chart-reset-btn');
 const coolingChartFitBtn = document.getElementById('cooling-chart-fit-btn');
 const coolingChartFitModeRow = document.getElementById('cooling-chart-fit-mode-row');
@@ -23,6 +24,7 @@ const coolingChartFitModeCurveBtn = document.getElementById('cooling-chart-fit-m
 const coolingChartFitModePolylineBtn = document.getElementById('cooling-chart-fit-mode-polyline-btn');
 const coolingChartWrap = document.getElementById('cooling-chart-wrap');
 const coolingChartEl = document.getElementById('cooling-chart');
+const coolingChartCursorEl = document.getElementById('cooling-chart-cursor');
 const coolingStopwatchEl = document.getElementById('cooling-stopwatch');
 const tempReadout = document.getElementById('temp-readout');
 const mercuryColumn = document.getElementById('mercury-column');
@@ -37,6 +39,58 @@ const subjectButtons = [...document.querySelectorAll('.subject-btn')];
 const boardStageEl = document.querySelector('.board-stage');
 const simFitEl = document.querySelector('.sim-fit');
 const simStageEl = document.querySelector('.sim-stage');
+const hintEl = document.getElementById('hintEl');
+
+const HINT_HIDE_MS = 3000;
+let hintHideTimer = 0;
+let hintDismissedFor = '';
+
+function setControlLabel(el, text) {
+  if (!el) return;
+  const label = el.querySelector('.action-btn__label');
+  if (label) label.textContent = text;
+  else el.textContent = text;
+}
+
+function hintModeKey() {
+  if (appMode === 'cooling' && coolingGraphVisible) return 'graph';
+  return appMode;
+}
+
+function hintTextForKey(key) {
+  if (key === 'graph') return 'Zakresli body závislosti teploty na čase.';
+  if (key === 'cooling') return 'Nech vodu ochladit a sleduj, jak klesá teplota.';
+  return 'Zapni hořák a sleduj, jak se těleso ohřívá.';
+}
+
+function clearHintTimer() {
+  if (hintHideTimer) {
+    window.clearTimeout(hintHideTimer);
+    hintHideTimer = 0;
+  }
+}
+
+function updateHint() {
+  if (!hintEl) return;
+  const key = hintModeKey();
+  hintEl.textContent = hintTextForKey(key);
+  const hide = hintDismissedFor === key;
+  hintEl.classList.toggle('is-hidden', hide);
+  clearHintTimer();
+  if (hide) return;
+  hintHideTimer = window.setTimeout(() => {
+    hintDismissedFor = key;
+    hintHideTimer = 0;
+    hintEl.classList.add('is-hidden');
+  }, HINT_HIDE_MS);
+}
+
+function dismissHint() {
+  if (!hintEl) return;
+  hintDismissedFor = hintModeKey();
+  clearHintTimer();
+  hintEl.classList.add('is-hidden');
+}
 
 const TEMP_START = 1;
 const TEMP_END = 99;
@@ -59,6 +113,7 @@ const CHART_Y_STEP = 4;
 const CHART_AXIS = '#1e6bb8';
 const CHART_CROSS_HALF = 7;
 const CHART_MAX_POINTS = 40;
+const CHART_UNDO_STACK_MAX = 40;
 
 const GOLD_PARTICLE_COLS = 7;
 const GOLD_PARTICLE_ROWS = 7;
@@ -120,6 +175,8 @@ let coolingChartPoints = [];
 let coolingChartHold = null;
 let coolingChartShowFit = false;
 let coolingChartFitMode = 'curve';
+let coolingChartUndoStack = [];
+let coolingChartDragUndoSnapshot = null;
 let coolingChartLayout = {
   W: 640,
   H: 420,
@@ -764,7 +821,7 @@ function openAmbientKeypad() {
     return;
   }
   ambientKeypadOpen = true;
-  ambientKeypadDraft = formatAmbientTemp(ambientTemp);
+  ambientKeypadDraft = '';
   clearAmbientKeypadError();
   updateAmbientKeypadDisplay();
   ambientKeypadOverlay.hidden = false;
@@ -893,15 +950,40 @@ function gasExpansionFromTemp(temp) {
   return ((t - TEMP_START) / (TEMP_END - TEMP_START)) ** 0.9;
 }
 
+function embedSvgInto(container, url) {
+  if (!container) return Promise.resolve(null);
+  return fetch(url)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Soubor ${url} nelze načíst.`);
+      return response.text();
+    })
+    .then((markup) => {
+      container.innerHTML = markup;
+      const svg = container.querySelector('svg');
+      if (svg) {
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+        svg.style.background = 'transparent';
+        svg.style.display = 'block';
+        svg.style.overflow = 'visible';
+      }
+      return svg;
+    })
+    .catch((error) => {
+      console.error(error);
+      return null;
+    });
+}
+
 function updateGasVessel(temp) {
-  const doc = gasVesselEl?.contentDocument;
-  if (!doc) return false;
+  const svg = gasVesselEl?.querySelector('svg');
+  if (!svg) return false;
 
   const expansion = gasExpansionFromTemp(temp);
   const lift = expansion * (GAS_LID_LIFT_MAX + GAS_LID_BASE_OFFSET);
   const scaleY = 1 + expansion * (GAS_FILL_SCALE_MAX - 1);
-  const lid = doc.getElementById('gas-lid');
-  const fill = doc.getElementById('gas-fill');
+  const lid = svg.querySelector('#gas-lid');
+  const fill = svg.querySelector('#gas-fill');
 
   if (lid) {
     lid.setAttribute('transform', `translate(0 ${GAS_LID_BASE_OFFSET - lift})`);
@@ -977,7 +1059,7 @@ function updateParticleAnimation(delta) {
 }
 
 function setBurnerFlame(power) {
-  const svg = burnerEl?.contentDocument?.documentElement;
+  const svg = burnerEl?.querySelector('svg');
   if (!svg) return false;
   svg.style.setProperty('--flame-power', String(power));
   return true;
@@ -1074,7 +1156,9 @@ function startHeatLoop() {
 function setBurnerOn(on) {
   burnerOn = on;
   burnerToggle.setAttribute('aria-pressed', String(burnerOn));
-  burnerToggle.textContent = burnerOn ? 'Vypnout hořák' : 'Zapnout hořák';
+  burnerToggle.classList.toggle('is-running', burnerOn);
+  setControlLabel(burnerToggle, burnerOn ? 'Vypnout hořák' : 'Zapnout hořák');
+  if (burnerOn) dismissHint();
   ensureBurnerFlame();
 }
 
@@ -1151,8 +1235,12 @@ function syncCoolingButton() {
     label = 'Pokračovat';
   }
 
-  coolingToggle.textContent = label;
+  setControlLabel(coolingToggle, label);
   coolingToggle.disabled = disabled;
+  coolingToggle.classList.toggle('is-running', coolingPlaying);
+  coolingToggle.classList.toggle('is-reset', coolingDone);
+  coolingToggle.classList.toggle('action-btn--primary', !coolingDone);
+  coolingToggle.classList.toggle('action-btn--danger', coolingDone);
   coolingToggle.setAttribute('aria-disabled', disabled ? 'true' : 'false');
   coolingToggle.setAttribute('aria-pressed', coolingPlaying ? 'true' : 'false');
 }
@@ -1168,6 +1256,7 @@ function onCoolingToggleClick() {
     coolingPlaying = false;
   } else {
     coolingPlaying = true;
+    dismissHint();
   }
 
   syncCoolingButton();
@@ -1614,6 +1703,78 @@ function chartDrawFittedCurve(parent, points) {
   parent.appendChild(path);
 }
 
+function cloneChartPoints(arr) {
+  return arr.map((point) => ({ t: point.t, y: point.y }));
+}
+
+function captureChartSnapshot() {
+  return {
+    points: cloneChartPoints(coolingChartPoints),
+    showFit: coolingChartShowFit,
+    fitMode: coolingChartFitMode,
+  };
+}
+
+function chartHasEditableState() {
+  return (
+    coolingChartPoints.length > 0 ||
+    coolingChartShowFit ||
+    coolingChartFitMode !== 'curve'
+  );
+}
+
+function updateChartUndoButton() {
+  if (!coolingChartUndoBtn) return;
+  coolingChartUndoBtn.disabled = coolingChartUndoStack.length === 0;
+}
+
+function pushChartUndoSnapshot(snapshot) {
+  const snap = snapshot || captureChartSnapshot();
+  coolingChartUndoStack.push(snap);
+  if (coolingChartUndoStack.length > CHART_UNDO_STACK_MAX) {
+    coolingChartUndoStack.shift();
+  }
+  updateChartUndoButton();
+}
+
+function clearChartUndoStack() {
+  coolingChartUndoStack.length = 0;
+  coolingChartDragUndoSnapshot = null;
+  updateChartUndoButton();
+}
+
+function restoreChartSnapshot(snap) {
+  coolingChartPoints = cloneChartPoints(snap.points);
+  coolingChartShowFit = snap.showFit;
+  coolingChartFitMode = snap.fitMode === 'polyline' ? 'polyline' : 'curve';
+}
+
+function undoLastChartEdit() {
+  if (coolingChartUndoStack.length === 0) return;
+  coolingChartHold = null;
+  coolingChartDragUndoSnapshot = null;
+  chartEndHoldListeners();
+  if (coolingChartEl) coolingChartEl.classList.remove('is-holding-point');
+  restoreChartSnapshot(coolingChartUndoStack.pop());
+  updateChartUndoButton();
+  redrawCoolingChart();
+}
+
+function commitPendingChartUndo() {
+  if (!coolingChartDragUndoSnapshot) return;
+  pushChartUndoSnapshot(coolingChartDragUndoSnapshot);
+  coolingChartDragUndoSnapshot = null;
+}
+
+function applyChartFitMode(mode) {
+  if (coolingChartPoints.length < 2) return;
+  if (coolingChartShowFit && coolingChartFitMode === mode) return;
+  pushChartUndoSnapshot();
+  coolingChartFitMode = mode;
+  coolingChartShowFit = true;
+  redrawCoolingChart();
+}
+
 function updateChartFitControls() {
   const canFit = coolingChartPoints.length >= 2;
   if (coolingChartFitBtn) {
@@ -1622,15 +1783,15 @@ function updateChartFitControls() {
     coolingChartFitBtn.classList.toggle('is-active', coolingChartShowFit && canFit);
     coolingChartFitBtn.setAttribute('aria-pressed', String(coolingChartShowFit && canFit));
   }
-  if (coolingChartFitModeRow) {
-    coolingChartFitModeRow.classList.toggle('is-visible', coolingChartShowFit && canFit);
-  }
   if (coolingChartFitModeCurveBtn && coolingChartFitModePolylineBtn) {
     const isCurve = coolingChartFitMode === 'curve';
-    coolingChartFitModeCurveBtn.classList.toggle('is-active', isCurve);
-    coolingChartFitModePolylineBtn.classList.toggle('is-active', !isCurve);
-    coolingChartFitModeCurveBtn.setAttribute('aria-pressed', String(isCurve));
-    coolingChartFitModePolylineBtn.setAttribute('aria-pressed', String(!isCurve));
+    const fitOn = coolingChartShowFit && canFit;
+    coolingChartFitModeCurveBtn.disabled = !canFit;
+    coolingChartFitModePolylineBtn.disabled = !canFit;
+    coolingChartFitModeCurveBtn.classList.toggle('is-active', fitOn && isCurve);
+    coolingChartFitModePolylineBtn.classList.toggle('is-active', fitOn && !isCurve);
+    coolingChartFitModeCurveBtn.setAttribute('aria-pressed', String(fitOn && isCurve));
+    coolingChartFitModePolylineBtn.setAttribute('aria-pressed', String(fitOn && !isCurve));
   }
 }
 
@@ -1653,12 +1814,23 @@ function chartCommitHold() {
       coolingChartPoints.length < CHART_MAX_POINTS &&
       !chartWouldReject(coords.t, coords.y)
     ) {
+      commitPendingChartUndo();
       coolingChartPoints.push({ t: coords.t, y: coords.y });
+      dismissHint();
+    } else {
+      coolingChartDragUndoSnapshot = null;
     }
   } else if (hold.mode === 'existing' && hold.index != null) {
     if (!chartWouldReject(coords.t, coords.y, hold.index)) {
+      const moved = coords.t !== hold.startT || coords.y !== hold.startY;
+      if (moved) commitPendingChartUndo();
+      else coolingChartDragUndoSnapshot = null;
       coolingChartPoints[hold.index] = { t: coords.t, y: coords.y };
+    } else {
+      coolingChartDragUndoSnapshot = null;
     }
+  } else {
+    coolingChartDragUndoSnapshot = null;
   }
 
   coolingChartPoints.sort((a, b) => a.t - b.t);
@@ -1726,6 +1898,29 @@ function chartMarkerFromTarget(target) {
   return null;
 }
 
+function hideChartCursor() {
+  if (coolingChartCursorEl) coolingChartCursorEl.hidden = true;
+}
+
+function updateChartCursor(ev) {
+  if (!coolingChartCursorEl || !coolingChartWrap || !coolingGraphVisible) {
+    hideChartCursor();
+    return;
+  }
+  if (coolingChartHold || ev.pointerType === 'touch') {
+    hideChartCursor();
+    return;
+  }
+  if (chartMarkerFromTarget(ev.target)) {
+    hideChartCursor();
+    return;
+  }
+
+  const rect = coolingChartWrap.getBoundingClientRect();
+  coolingChartCursorEl.style.transform = `translate(${ev.clientX - rect.left}px, ${ev.clientY - rect.top}px)`;
+  coolingChartCursorEl.hidden = false;
+}
+
 function onChartPointerDown(ev) {
   if (!coolingGraphVisible || !coolingChartEl) return;
   if (ev.button != null && ev.button !== 0) return;
@@ -1741,6 +1936,8 @@ function onChartPointerDown(ev) {
       index: idx,
       t: coolingChartPoints[idx].t,
       y: coolingChartPoints[idx].y,
+      startT: coolingChartPoints[idx].t,
+      startY: coolingChartPoints[idx].y,
     };
   } else {
     const coords = chartPlotCoordsFromEvent(ev);
@@ -1756,6 +1953,8 @@ function onChartPointerDown(ev) {
 
   ev.preventDefault();
   coolingChartHold = hold;
+  coolingChartDragUndoSnapshot = captureChartSnapshot();
+  hideChartCursor();
   coolingChartEl.classList.add('is-holding-point');
   if (typeof ev.pointerId === 'number' && coolingChartEl.setPointerCapture) {
     try {
@@ -1777,6 +1976,7 @@ function onChartDblClick(ev) {
   if (!marker) return;
   const idx = parseInt(marker.getAttribute('data-index'), 10);
   if (!Number.isFinite(idx) || idx < 0 || idx >= coolingChartPoints.length) return;
+  pushChartUndoSnapshot();
   coolingChartPoints.splice(idx, 1);
   if (coolingChartPoints.length < 2) coolingChartShowFit = false;
   redrawCoolingChart();
@@ -1866,13 +2066,21 @@ function saveCoolingChartAsImage() {
   img.src = url;
 }
 
-function resetCoolingChart() {
+function resetCoolingChart(options = {}) {
+  const recordUndo = options.recordUndo === true;
+  if (recordUndo && chartHasEditableState()) {
+    pushChartUndoSnapshot();
+  }
+
   coolingChartHold = null;
+  coolingChartDragUndoSnapshot = null;
   chartEndHoldListeners();
   if (coolingChartEl) coolingChartEl.classList.remove('is-holding-point');
   coolingChartPoints = [];
   coolingChartShowFit = false;
   coolingChartFitMode = 'curve';
+  if (!recordUndo) clearChartUndoStack();
+  else updateChartUndoButton();
   redrawCoolingChart();
 }
 
@@ -1946,6 +2154,7 @@ function setCoolingGraphVisible(visible) {
     syncCoolingButton();
   } else {
     appRoot.removeAttribute('data-cooling-view');
+    hideChartCursor();
     if (coolingWasPlayingBeforeGraph && !coolingDone) {
       coolingPlaying = true;
       syncCoolingButton();
@@ -1956,13 +2165,14 @@ function setCoolingGraphVisible(visible) {
   if (coolingGraphBtn) {
     coolingGraphBtn.classList.toggle('is-active', coolingGraphVisible);
     coolingGraphBtn.setAttribute('aria-pressed', String(coolingGraphVisible));
-    coolingGraphBtn.textContent = coolingGraphVisible ? 'Skrýt graf' : 'Zobrazit graf';
+    setControlLabel(coolingGraphBtn, coolingGraphVisible ? 'Skrýt graf' : 'Zobrazit graf');
   }
 
   updateChartFitControls();
   scheduleCoolingChartRedraw();
   syncAmbientTempControls();
   scheduleSimStageFit();
+  updateHint();
 }
 
 function showCoolingStage() {
@@ -1998,6 +2208,7 @@ function setAppMode(mode) {
 
   applySimulationState();
   scheduleSimStageFit();
+  updateHint();
 }
 
 burnerToggle.addEventListener('click', toggleBurner);
@@ -2034,29 +2245,38 @@ if (coolingChartEl) {
   coolingChartEl.addEventListener('pointerdown', onChartPointerDown);
   coolingChartEl.addEventListener('dblclick', onChartDblClick);
 }
+if (coolingChartWrap) {
+  coolingChartWrap.addEventListener('pointermove', updateChartCursor);
+  coolingChartWrap.addEventListener('pointerleave', hideChartCursor);
+}
 if (coolingChartSaveBtn) {
   coolingChartSaveBtn.addEventListener('click', saveCoolingChartAsImage);
 }
+if (coolingChartUndoBtn) {
+  coolingChartUndoBtn.addEventListener('click', undoLastChartEdit);
+  updateChartUndoButton();
+}
 if (coolingChartResetBtn) {
-  coolingChartResetBtn.addEventListener('click', resetCoolingChart);
+  coolingChartResetBtn.addEventListener('click', () => {
+    resetCoolingChart({ recordUndo: true });
+  });
 }
 if (coolingChartFitBtn) {
   coolingChartFitBtn.addEventListener('click', () => {
     if (coolingChartPoints.length < 2) return;
+    pushChartUndoSnapshot();
     coolingChartShowFit = !coolingChartShowFit;
     redrawCoolingChart();
   });
 }
 if (coolingChartFitModeCurveBtn) {
   coolingChartFitModeCurveBtn.addEventListener('click', () => {
-    coolingChartFitMode = 'curve';
-    redrawCoolingChart();
+    applyChartFitMode('curve');
   });
 }
 if (coolingChartFitModePolylineBtn) {
   coolingChartFitModePolylineBtn.addEventListener('click', () => {
-    coolingChartFitMode = 'polyline';
-    redrawCoolingChart();
+    applyChartFitMode('polyline');
   });
 }
 subjectButtons.forEach((button) => {
@@ -2069,11 +2289,12 @@ modeButtons.forEach((button) => {
     setAppMode(button.dataset.appMode);
   });
 });
-burnerEl.addEventListener('load', () => applySimulationState());
-gasVesselEl.addEventListener('load', () => {
-  if (activeSubject === 'gas') {
-    ensureGasVesselState();
-  }
+Promise.all([
+  embedSvgInto(burnerEl, 'assets/burner.svg'),
+  embedSvgInto(gasVesselEl, 'assets/gas-vessel.svg'),
+]).then(() => {
+  applySimulationState();
+  if (activeSubject === 'gas') ensureGasVesselState();
 });
 buildGoldParticleGrid();
 buildWaterParticles();
@@ -2105,8 +2326,9 @@ updateCoolingStopwatch();
 updateAmbientTempLabel();
 syncAmbientTempControls();
 if (coolingGraphBtn) {
-  coolingGraphBtn.textContent = 'Zobrazit graf';
+  setControlLabel(coolingGraphBtn, 'Zobrazit graf');
 }
+updateHint();
 startHeatLoop();
 
 function populateWaterParticles(animationData) {

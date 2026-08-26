@@ -11,7 +11,12 @@
   <div class="app-root" data-app-mode="heating">
     <aside class="left-panel">
       <div class="panel-copy">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
         <h1 class="panel-title">Teplota</h1>
         <div class="mode-switch" role="tablist" aria-label="Režim simulace">
           <button
@@ -66,10 +71,16 @@
           <button
             type="button"
             id="burner-toggle"
-            class="action-btn"
+            class="action-btn action-btn--primary"
             aria-pressed="false"
           >
-            Zapnout hořák
+            <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+            </svg>
+            <svg class="icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M7 5h3v14H7V5zm7 0h3v14h-3V5z"/>
+            </svg>
+            <span class="action-btn__label">Zapnout hořák</span>
           </button>
         </div>
       </div>
@@ -82,7 +93,13 @@
             class="action-btn action-btn--primary"
             aria-pressed="false"
           >
-            Nechat ochladit
+            <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+            </svg>
+            <svg class="icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M7 5h3v14H7V5zm7 0h3v14h-3V5z"/>
+            </svg>
+            <span class="action-btn__label">Nechat ochladit</span>
           </button>
         </div>
         <div class="stopwatch" aria-live="polite">
@@ -90,13 +107,17 @@
           <time class="stopwatch-time" id="cooling-stopwatch" datetime="PT0S">0 s</time>
         </div>
         <div class="panel-actions cooling-reset-row">
-          <button type="button" id="cooling-reset-btn" class="action-btn graph-secondary">
+          <button type="button" id="cooling-reset-btn" class="action-btn action-btn--danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             Reset
           </button>
           <button
             type="button"
             id="ambient-temp-btn"
-            class="action-btn graph-secondary"
+            class="action-btn"
           >
             Okolní teplota
           </button>
@@ -108,46 +129,66 @@
             class="action-btn graph-btn"
             aria-pressed="false"
           >
-            Zobrazit graf
+            <span class="action-btn__label">Zobrazit graf</span>
           </button>
         </div>
         <div class="graph-tools" id="cooling-graph-tools" aria-label="Nástroje grafu">
           <div class="panel-actions graph-actions">
-            <button type="button" class="action-btn" id="cooling-chart-save-btn">Uložit</button>
-            <button type="button" class="action-btn graph-secondary" id="cooling-chart-reset-btn">
-              Reset
+            <button type="button" class="action-btn action-btn--save" id="cooling-chart-save-btn">Uložit</button>
+            <button type="button" class="action-btn" id="cooling-chart-undo-btn" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 14H4v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 9a8 8 0 1 1-1.2 4.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Zpět
             </button>
+            <button type="button" class="action-btn action-btn--danger" id="cooling-chart-reset-btn">
+              Vymazat body
+            </button>
+          </div>
+          <div class="panel-actions graph-fit-row">
             <button
               type="button"
-              class="action-btn graph-secondary"
+              class="action-btn"
               id="cooling-chart-fit-btn"
               aria-pressed="false"
               disabled
             >
               Proložit
             </button>
-          </div>
-          <div
-            class="panel-actions graph-fit-mode-row"
-            id="cooling-chart-fit-mode-row"
-            aria-label="Typ proložení"
-          >
-            <button
-              type="button"
-              id="cooling-chart-fit-mode-curve-btn"
-              class="action-btn graph-secondary is-active"
-              aria-pressed="true"
+            <div
+              class="graph-fit-mode-row"
+              id="cooling-chart-fit-mode-row"
+              aria-label="Typ proložení"
             >
-              Křivka
-            </button>
-            <button
-              type="button"
-              id="cooling-chart-fit-mode-polyline-btn"
-              class="action-btn graph-secondary"
-              aria-pressed="false"
-            >
-              Lomená čára
-            </button>
+              <button
+                type="button"
+                id="cooling-chart-fit-mode-polyline-btn"
+                class="action-btn graph-fit-mode-btn"
+                aria-pressed="false"
+                aria-label="Lomená čára"
+                title="Lomená čára"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 4v15h15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M8.5 16.5 11.2 10l2.5 3.2L18 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="cooling-chart-fit-mode-curve-btn"
+                class="action-btn graph-fit-mode-btn"
+                aria-pressed="false"
+                aria-label="Křivka"
+                title="Křivka"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 16c3.4-9.5 10.6-9.5 14 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <circle cx="5" cy="16" r="2.15" stroke="currentColor" stroke-width="1.8"/>
+                  <circle cx="19" cy="16" r="2.15" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -155,6 +196,7 @@
 
     <div class="workspace">
       <div class="board-stage" aria-label="Simulace teploty">
+        <p class="sim-empty-hint" id="hintEl">Zapni hořák a sleduj, jak se těleso ohřívá.</p>
         <p class="ambient-temp-label" id="ambient-temp-label">Okolní teplota: 22 °C</p>
         <div class="sim-fit">
         <div class="sim-stage">
@@ -191,15 +233,12 @@
 
           <div class="gas-wrap" id="gas-subject" hidden>
             <div class="gas-scene">
-              <object
+              <div
                 id="gas-vessel"
                 class="gas-vessel"
-                type="image/svg+xml"
-                data="assets/gas-vessel.svg"
-                width="320"
-                height="250"
+                role="img"
                 aria-label="Nádoba s plynem"
-              ></object>
+              ></div>
               <div class="gas-detail" aria-label="Detail částic plynu">
                 <canvas id="gas-particles" class="gas-particles"></canvas>
               </div>
@@ -207,15 +246,12 @@
           </div>
 
           <div class="burner-wrap">
-            <object
+            <div
               id="burner"
               class="burner"
-              type="image/svg+xml"
-              data="assets/burner.svg"
-              width="113"
-              height="116"
+              role="img"
               aria-label="Hořák"
-            ></object>
+            ></div>
           </div>
         </div>
         </div>
@@ -226,6 +262,7 @@
             role="img"
             aria-label="Graf závislosti teploty vody na čase"
           ></svg>
+          <div class="cooling-chart-cursor" id="cooling-chart-cursor" hidden aria-hidden="true"></div>
         </div>
       </div>
     </div>
