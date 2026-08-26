@@ -1,4 +1,7 @@
-<svg width="1801" height="1409" viewBox="0 0 1801 1409" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<svg width="1801" height="1409" viewBox="0 0 1801 1409" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="background: transparent;">
+<style>
+  html, body, svg { background: transparent !important; }
+</style>
 <path d="M10.5938 189.879C10.5938 90.862 408.485 10.5898 899.307 10.5898C1390.13 10.5898 1788.02 90.862 1788.02 189.879" stroke="#1D1D1B" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M1740.93 1146.86C1595.58 1081.96 1271.92 1036.8 895.978 1036.8C527.933 1036.8 210 1080.08 60.4199 1142.8" stroke="#1D1D1B" stroke-width="21.18" stroke-linecap="round" stroke-linejoin="round"/>
 <g id="gas-fill">
