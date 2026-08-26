@@ -5,64 +5,231 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rychlost, dráha, čas</title>
   <style>
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+
     :root {
+      --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      --page-bg: #1e2533;
+      --bg: #1e2533;
+      --card-bg: #2a3344;
+      --panel-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #475569;
+      --border-strong: #475569;
+      --focus: #3b82f6;
+      --area-muted: #334155;
+      --readout-bg: #1e293b;
+      --canvas-bg: #ffffe6;
+      --canvas-text: #334155;
+      --success: #4ade80;
+      --danger: #ef4444;
+      --radius: 12px;
+      --radius-canvas: 24px;
+      --panel-w: min(300px, 34vw);
       --car-w: 529px;
       --car-h: 205px;
       --road-y: 184px;
       --road-h: 5px;
-      --car-offset-x: -60px;
+      --car-offset-x: 0px;
       --clock-size: 72px;
-      --clock-top: 12px;
-      --front-wheel-x: calc(50vw + var(--car-offset-x) - var(--car-w) / 2 + 381.793px);
+      --clock-top: 16px;
+      --scene-w: 100vw;
+      --scene-scale: 1;
+      --front-wheel-x: calc(50% + (381.793px - var(--car-w) / 2) * var(--scene-scale));
     }
+
+    * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background: #fff;
       overflow: hidden;
     }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: var(--font-app);
+      background: var(--page-bg);
+      color: var(--text);
+      color-scheme: dark;
+    }
+
+    button, input, select, label {
+      font-family: inherit;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 16px;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: 16px;
+      box-sizing: border-box;
+      background: var(--page-bg);
+    }
+
+    .setup-panel {
+      flex: 0 0 var(--panel-w);
+      width: var(--panel-w);
+      align-self: stretch;
+      overflow: auto;
+      padding: 8px 8px 16px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      color-scheme: dark;
+      scrollbar-gutter: stable;
+      min-width: 0;
+    }
+
+    .panel-head {
+      display: grid;
+      gap: 10px;
+    }
+
+    .panel-title {
+      margin: 0;
+      color: var(--text);
+      font-family: "Cooper Light", serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+    }
+
     .hub-back-to-sims {
-      position: fixed;
-      top: 12px;
-      left: 12px;
-      z-index: 20;
+      justify-self: start;
       display: inline-flex;
       align-items: center;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 0.88rem;
-      font-weight: 700;
+      align-self: flex-start;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #1e293b;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.2;
+      white-space: nowrap;
       text-decoration: none;
-      padding: 9px 14px;
-      border-radius: 12px;
-      border: 1px solid #E5E7EB;
-      background: rgba(255, 255, 255, 0.94);
-      color: #111827;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
+
+    .hub-back-to-sims svg {
+      display: block;
+      flex: 0 0 auto;
+    }
+
     .hub-back-to-sims:hover {
-      border-color: #3d5a9a;
-      color: #3d5a9a;
-      background: #f4f5f8;
+      color: #ffffff;
     }
-    .stage {
-      width: 100vw;
-      height: 100vh;
+
+    .hub-back-to-sims:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .workspace {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
       display: flex;
       flex-direction: column;
+      border-radius: var(--radius-canvas);
+      background: var(--canvas-bg);
+      overflow: hidden;
+    }
+
+    .sim-empty-hint {
+      position: absolute;
+      top: calc(var(--clock-top) + var(--clock-size) + 64px);
+      left: 50%;
+      z-index: 8;
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 40px;
+      width: max-content;
+      max-width: min(720px, calc(100% - 48px));
+      margin: 0;
+      padding: 12px 28px;
+      border: 2px solid #cbd5e1;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      pointer-events: none;
+      text-align: center;
+      font-family: var(--font-app);
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.35;
+      color: #334155;
+      transform: translateX(-50%);
+    }
+
+    .sim-empty-hint.is-hidden {
+      display: none;
+    }
+
+    .stage {
+      position: relative;
+      flex: 1 1 auto;
+      align-self: stretch;
+      width: 100%;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      padding: 220px 20px 24px;
       overflow: visible;
     }
+
     .top-hud {
-      position: fixed;
+      position: absolute;
       top: var(--clock-top);
       left: 50%;
-      transform: translateX(calc(-50% - 170px));
+      transform: translateX(-50%);
       z-index: 5;
+      width: max-content;
       pointer-events: none;
     }
     .hud-question-slot {
@@ -72,7 +239,7 @@
       transform: translateX(-50%);
       z-index: 6;
       width: max-content;
-      max-width: min(380px, calc(100vw - 48px));
+      max-width: min(620px, calc(100vw - 48px));
       pointer-events: none;
     }
     .hud-question-slot .speed-question-panel,
@@ -85,13 +252,13 @@
     .time-question-panel {
       display: none;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       width: max-content;
-      max-width: min(380px, calc(100vw - 48px));
-      padding: 10px 12px;
-      background: rgba(255, 255, 255, 0.94);
-      border: 1px solid #E5E7EB;
-      border-radius: 12px;
+      max-width: min(620px, calc(100vw - 48px));
+      padding: 16px 20px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
       box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
     }
     .speed-question-panel.is-visible,
@@ -102,7 +269,7 @@
     .calc-question-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       flex-wrap: wrap;
     }
     .speed-question-text,
@@ -114,16 +281,16 @@
     .distance-question-text,
     .time-question-text {
       margin: 0;
-      font: 600 13px/1.35 system-ui, -apple-system, sans-serif;
-      color: #111827;
+      font: 600 22px/1.35 var(--font-app);
+      color: var(--canvas-text);
     }
     .speed-answer-panel,
     .distance-answer-panel,
     .time-answer-panel {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
+      gap: 8px;
+      font: 600 22px/1.2 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       color: #374151;
     }
     .unit-fraction {
@@ -161,7 +328,7 @@
       color: #6B7280;
     }
     .unit-fraction--speedo {
-      font: 600 6.5px/1 system-ui, -apple-system, sans-serif;
+      font: 600 6.5px/1 var(--font-app);
     }
     .unit-fraction--speedo .unit-fraction-bar {
       min-width: 14px;
@@ -173,13 +340,13 @@
     .time-check-btn {
       appearance: none;
       flex-shrink: 0;
-      width: 28px;
-      height: 28px;
+      width: 36px;
+      height: 36px;
       border: 1px solid #111827;
       background: #fff;
       color: #111827;
-      border-radius: 8px;
-      font: 700 14px/1 system-ui, -apple-system, sans-serif;
+      border-radius: 10px;
+      font: 700 18px/1 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -243,7 +410,7 @@
     .time-answer-feedback {
       margin: 0;
       min-height: 1.1em;
-      font: 600 12px/1.3 system-ui, -apple-system, sans-serif;
+      font: 600 18px/1.3 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       color: #6B7280;
     }
     .speed-answer-panel.is-correct .speed-answer-input,
@@ -279,11 +446,11 @@
     .speed-answer-input,
     .distance-answer-input,
     .time-answer-input {
-      width: 76px;
-      border: 1px solid #D1D5DB;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
+      width: 110px;
+      border: 2px solid #D1D5DB;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font: 600 22px/1.2 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       color: #111827;
       text-align: center;
       background: #fff;
@@ -306,26 +473,29 @@
       display: flex;
       flex-direction: row;
       align-items: flex-start;
-      gap: 100px;
+      gap: 28px;
     }
     .clock-stack {
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
     }
     .speed-stack {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
     }
     .speed-readout {
-      font: 700 15px/1.2 system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      font: 700 24px/1.15 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       color: #111827;
       letter-spacing: -0.02em;
       white-space: nowrap;
+      font-variant-numeric: tabular-nums;
       filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.9));
     }
     .speed-readout-unit {
@@ -333,9 +503,9 @@
       color: #6B7280;
     }
     .distance-readout-wrap {
-      position: absolute;
-      top: 0;
-      left: calc(100% + 100px);
+      position: relative;
+      top: auto;
+      left: auto;
       display: flex;
       align-items: center;
       min-height: var(--clock-size);
@@ -383,14 +553,14 @@
       display: block;
       min-width: 2.5ch;
       text-align: center;
-      font: 700 22px/1.05 system-ui, -apple-system, sans-serif;
+      font: 700 22px/1.05 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.03em;
       color: #111827;
     }
     .distance-readout-unit {
       display: block;
-      font: 600 10px/1 system-ui, -apple-system, sans-serif;
+      font: 600 10px/1 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       letter-spacing: 0.02em;
       color: #6B7280;
     }
@@ -452,9 +622,9 @@
     }
     .instrument-cluster .stopwatch {
       display: block;
-      font: 700 13px/1.2 system-ui, -apple-system, sans-serif;
+      font: 700 24px/1.15 "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       color: #C92020;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
       white-space: nowrap;
       text-align: center;
       font-variant-numeric: tabular-nums;
@@ -474,29 +644,23 @@
       transform: rotate(var(--hand-sec, 0deg));
     }
     .controls-wrap {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(calc(-50% - 60px));
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      max-width: calc(100vw - 32px);
-      z-index: 10;
+      display: grid;
+      gap: 14px;
+      width: 100%;
     }
     .controls {
+      display: grid;
+      gap: 10px;
       width: 100%;
-      padding: 10px 12px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid #E5E7EB;
-      border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      padding: 16px;
+      background: var(--card-bg);
+      border: none;
+      border-radius: var(--radius);
     }
     .controls-fields {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
     }
     .setting-panel {
@@ -520,105 +684,115 @@
       margin-left: auto;
     }
     .controls-actions {
-      display: flex;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      width: 100%;
+      margin-top: 16px;
+    }
+    .car-picker {
+      display: grid;
       gap: 8px;
       width: 100%;
     }
-    .car-picker {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
-      padding: 10px 12px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid #E5E7EB;
-      border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-      z-index: 10;
-    }
     .car-btn {
       appearance: none;
-      border: 1px solid #D1D5DB;
-      background: #fff;
-      color: #374151;
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
-      padding: 9px 14px;
-      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.25;
+      padding: 10px 12px;
+      border-radius: var(--radius);
       cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      text-align: center;
+      white-space: normal;
+      transition: background 0.12s ease, color 0.12s ease;
     }
-    .car-btn:hover {
-      border-color: #9CA3AF;
-      background: #F9FAFB;
+    .car-btn:hover:not(.active):not(:disabled) {
+      color: var(--text);
     }
-    .car-btn.active {
-      background: #111827;
-      border-color: #111827;
-      color: #fff;
+    .car-btn.active,
+    .car-btn.active:hover {
+      background: var(--accent);
+      color: var(--accent-on);
+      border-color: transparent;
+      cursor: default;
     }
     .car-btn:disabled {
-      opacity: 0.55;
-      cursor: default;
+      opacity: 0.45;
+      cursor: not-allowed;
     }
-    .start-btn {
-      appearance: none;
-      border: 1px solid #15803D;
-      background: #16A34A;
-      color: #fff;
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
-      padding: 9px 18px;
-      border-radius: 999px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    .car-btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
-    .start-btn:hover:not(:disabled) {
-      background: #15803D;
-      border-color: #166534;
-    }
-    .start-btn:disabled {
-      opacity: 0.55;
-      cursor: default;
-    }
+    .start-btn,
     .pause-btn {
       appearance: none;
-      border: 1px solid #D97706;
-      background: #F59E0B;
-      color: #fff;
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
-      padding: 9px 18px;
-      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 400;
+      padding: 10px 12px;
+      border-radius: var(--radius);
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .start-btn {
+      background: #4ade80;
+      color: #14532d;
+    }
+    .start-btn:hover:not(:disabled) {
+      background: #86efac;
+      color: #052e16;
+    }
+    .start-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .pause-btn {
+      background: var(--idle-bg);
+      color: var(--idle-text);
     }
     .pause-btn:hover:not(:disabled) {
-      background: #D97706;
-      border-color: #B45309;
+      color: var(--text);
     }
     .pause-btn:disabled {
-      opacity: 0.55;
-      cursor: default;
+      opacity: 0.45;
+      cursor: not-allowed;
     }
     .distance-field {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 4px;
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
-      color: #374151;
+      gap: 6px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text);
       white-space: nowrap;
     }
     .distance-field-label {
-      font-size: 11px;
+      font-size: 12px;
+      font-weight: 500;
       line-height: 1;
-      color: #6B7280;
-      letter-spacing: 0.02em;
+      color: var(--text);
+      letter-spacing: 0.06em;
     }
     .distance-field-row {
       display: flex;
@@ -626,25 +800,28 @@
       gap: 6px;
     }
     .var-equals {
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
-      color: #374151;
+      font: inherit;
+      font-size: 14px;
+      color: var(--muted);
     }
     .var-equals em {
       font-style: italic;
     }
     .distance-field input {
       width: 76px;
-      border: 1px solid #D1D5DB;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font: 600 13px/1.2 system-ui, -apple-system, sans-serif;
-      color: #111827;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 10px;
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
       text-align: center;
-      background: #fff;
+      background: var(--readout-bg);
     }
     .distance-field input:focus {
-      outline: 2px solid #93C5FD;
-      border-color: #60A5FA;
+      outline: none;
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 22%, transparent);
     }
     .distance-field input.time-part {
       width: 48px;
@@ -657,11 +834,13 @@
       flex-shrink: 0;
       width: 40px;
       height: 40px;
-      border: 1px solid #D1D5DB;
-      background: #F9FAFB;
-      color: #111827;
-      border-radius: 10px;
-      font: 700 20px/1 system-ui, -apple-system, sans-serif;
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      border-radius: var(--radius);
+      font: inherit;
+      font-size: 20px;
+      font-weight: 400;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -672,15 +851,14 @@
       user-select: none;
     }
     .value-step-btn:hover:not(:disabled) {
-      background: #F3F4F6;
-      border-color: #9CA3AF;
+      color: var(--text);
     }
     .value-step-btn:active:not(:disabled) {
-      background: #E5E7EB;
+      background: var(--area-muted);
     }
     .value-step-btn:disabled {
-      opacity: 0.55;
-      cursor: default;
+      opacity: 0.45;
+      cursor: not-allowed;
     }
     @media (pointer: coarse) {
       .value-step-btn {
@@ -704,17 +882,18 @@
       width: min(100%, 300px);
       padding: 16px;
       border-radius: 16px;
-      background: #ffffff;
-      border: 1px solid #e8eaef;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
       box-shadow: 0 14px 42px rgba(15, 23, 42, 0.22);
       display: grid;
       gap: 12px;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: var(--font-app);
     }
     .answer-keypad-panel__title {
       margin: 0;
-      font: 650 0.9rem/1.3 system-ui, -apple-system, sans-serif;
-      color: #6b7280;
+      font-size: 0.9rem;
+      font-weight: 650;
+      color: var(--muted);
       text-align: center;
     }
     .answer-keypad-panel__display {
@@ -722,12 +901,14 @@
       height: 64px;
       min-height: 64px;
       padding: 10px 14px;
-      border: 2px solid #e8eaef;
+      border: 2px solid var(--border);
       border-radius: 10px;
-      background: #f4f5f8;
-      font: 650 1.5rem/1.2 system-ui, -apple-system, sans-serif;
+      background: var(--readout-bg);
+      font-size: 1.5rem;
+      font-weight: 650;
+      line-height: 1.2;
       text-align: center;
-      color: #171923;
+      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -756,8 +937,7 @@
       font: inherit;
     }
     body.is-keypad-open .stage,
-    body.is-keypad-open .controls-wrap,
-    body.is-keypad-open .car-picker,
+    body.is-keypad-open .setup-panel,
     body.is-keypad-open .instrument-cluster > .speed-stack,
     body.is-keypad-open .instrument-cluster .analog-clock,
     body.is-keypad-open .instrument-cluster .stopwatch,
@@ -766,8 +946,7 @@
       filter: blur(4px);
       transition: filter 0.2s ease;
     }
-    body.is-keypad-open .controls-wrap,
-    body.is-keypad-open .car-picker {
+    body.is-keypad-open .setup-panel {
       pointer-events: none;
     }
     .answer-keypad {
@@ -782,11 +961,13 @@
       appearance: none;
       -webkit-appearance: none;
       min-height: 44px;
-      border: 1px solid #e8eaef;
+      border: 1px solid var(--border);
       border-radius: 10px;
-      background: #f4f5f8;
-      color: #171923;
-      font: 650 1.125rem/1 system-ui, -apple-system, sans-serif;
+      background: var(--readout-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1.125rem;
+      font-weight: 650;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -801,11 +982,11 @@
       flex-shrink: 0;
     }
     .answer-keypad-key:hover:not(:disabled) {
-      border-color: #3d5a9a;
-      background: #eceff5;
+      border-color: var(--accent);
+      background: var(--area-muted);
     }
     .answer-keypad-key:active:not(:disabled) {
-      background: rgba(61, 90, 154, 0.12);
+      background: rgba(59, 130, 246, 0.16);
     }
     .answer-keypad-actions {
       display: flex;
@@ -837,22 +1018,22 @@
       flex-shrink: 0;
     }
     .answer-keypad-check {
-      background: #3d5a9a;
+      background: var(--accent);
       color: #fff;
-      box-shadow: 0 4px 14px rgba(61, 90, 154, 0.35);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
     }
     .answer-keypad-close {
-      background: #f4f5f8;
-      color: #6b7280;
-      border: 1px solid #e8eaef;
+      background: var(--readout-bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
       box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
     }
     .answer-keypad-action:hover:not(:disabled) {
       filter: brightness(1.05);
     }
     .answer-keypad-close:hover:not(:disabled) {
-      color: #171923;
-      border-color: #3d5a9a;
+      color: var(--text);
+      border-color: var(--accent);
     }
     .answer-keypad-action:active:not(:disabled) {
       transform: scale(0.97);
@@ -894,23 +1075,22 @@
     .distance-field input:disabled {
       opacity: 0.55;
       cursor: default;
-      background: #F3F4F6;
+      background: var(--area-muted);
     }
     .lane {
       position: relative;
-      width: 100vw;
-      height: var(--car-h);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      height: auto;
       overflow: visible;
-      flex-shrink: 0;
+      flex: 0 1 auto;
     }
     .lane-clip {
       position: absolute;
       inset: 0;
       overflow: hidden;
       z-index: 0;
-      isolation: isolate;
-      transform: translateZ(0);
-      -webkit-transform: translateZ(0);
     }
     .road-scroll {
       position: absolute;
@@ -940,8 +1120,8 @@
     .vegetation-item {
       position: absolute;
       left: 0;
-      bottom: calc(var(--car-h) - var(--road-y));
-      transform: translateX(110vw);
+      bottom: calc(100% * (var(--car-h) - var(--road-y)) / var(--car-h));
+      transform: translateX(calc(var(--scene-w) * 1.1));
       will-change: transform;
     }
     .stage.is-running .vegetation-item {
@@ -956,12 +1136,12 @@
       display: block;
     }
     @keyframes veg-drift {
-      from { transform: translate3d(110vw, 0, 0); }
-      to { transform: translate3d(-20vw, 0, 0); }
+      from { transform: translate3d(calc(var(--scene-w) * 1.1), 0, 0); }
+      to { transform: translate3d(calc(var(--scene-w) * -0.2), 0, 0); }
     }
     .scenery-unit {
       position: relative;
-      width: 100vw;
+      width: var(--scene-w);
       height: 100%;
       flex-shrink: 0;
     }
@@ -971,17 +1151,17 @@
     .road {
       position: absolute;
       left: -1px;
-      top: var(--road-y);
+      top: calc(100% * var(--road-y) / var(--car-h));
       width: calc(100% + 2px);
       height: var(--road-h);
       background: #111827;
     }
     .km-sign {
       position: absolute;
-      top: calc(var(--road-y) - 116px);
-      left: calc(var(--front-wheel-x) - 48px);
-      width: 96px;
-      height: 156px;
+      top: calc(100% * var(--road-y) / var(--car-h) - 116px * var(--scene-scale));
+      left: calc(var(--front-wheel-x) - 48px * var(--scene-scale));
+      width: calc(96px * var(--scene-scale));
+      height: calc(156px * var(--scene-scale));
       pointer-events: none;
       will-change: transform;
       transform: translate3d(0, 0, 0);
@@ -996,28 +1176,29 @@
     .stage[data-view="2"] .lane:not([data-car="2"]) { display: none; }
     .stage[data-view="3"] .lane:not([data-car="3"]) { display: none; }
     .car-drive {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      width: var(--car-w);
-      height: var(--car-h);
-      transform: translateX(calc(-50% + var(--car-offset-x)));
+      position: relative;
       z-index: 2;
+      width: min(100%, calc(var(--car-w) * var(--scene-scale)));
+      height: auto;
+      aspect-ratio: 529 / 205;
+      margin: 0 auto;
       overflow: visible;
     }
     .car-drive > svg {
-      position: relative;
+      position: absolute;
+      inset: 0;
       z-index: 1;
       display: block;
-      width: var(--car-w);
-      height: var(--car-h);
+      width: 100%;
+      height: 100%;
+      overflow: visible;
     }
     .jet-engine {
       position: absolute;
-      left: -148px;
-      top: 68px;
-      width: 160px;
-      height: 72px;
+      left: calc(-148px * var(--scene-scale));
+      top: calc(68px * var(--scene-scale));
+      width: calc(160px * var(--scene-scale));
+      height: calc(72px * var(--scene-scale));
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.35s ease, visibility 0.35s;
@@ -1067,7 +1248,7 @@
     }
     @keyframes scroll-road {
       0% { transform: translate3d(0, 0, 0); }
-      100% { transform: translate3d(-100vw, 0, 0); }
+      100% { transform: translate3d(calc(var(--scene-w) * -1), 0, 0); }
     }
     @keyframes wheels {
       from { transform: rotate(0deg); }
@@ -1088,7 +1269,7 @@
       animation-play-state: running;
     }
     .answer-confetti-canvas {
-      position: fixed;
+      position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
@@ -1099,8 +1280,7 @@
       .road-scroll, .wheel-spin, .vegetation-item { animation: none !important; }
       .jet-flame { animation: none !important; }
       body.is-keypad-open .stage,
-      body.is-keypad-open .controls-wrap,
-      body.is-keypad-open .car-picker,
+      body.is-keypad-open .setup-panel,
       body.is-keypad-open .instrument-cluster > .speed-stack,
       body.is-keypad-open .instrument-cluster .analog-clock,
       body.is-keypad-open .instrument-cluster .stopwatch,
@@ -1109,11 +1289,120 @@
         transition: none;
       }
     }
+    @media (max-width: 899.98px) {
+      .app {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding-left: max(10px, env(safe-area-inset-left, 0px));
+        padding-right: max(10px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+        padding-top: max(8px, env(safe-area-inset-top, 0px));
+        gap: 12px;
+      }
+      .sim-empty-hint {
+        font-size: 20px;
+        padding: 10px 18px;
+        max-width: min(720px, calc(100% - 24px));
+      }
+      .panel-title {
+        font-size: 28px;
+      }
+      .setup-panel {
+        order: 2;
+        flex: 0 1 auto;
+        width: 100%;
+        max-height: min(46vh, 520px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding: 8px 8px 16px;
+      }
+      .workspace {
+        order: 1;
+        flex: 1 1 auto;
+        min-height: min(52vh, 560px);
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-<a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-<canvas id="answerConfetti" class="answer-confetti-canvas" aria-hidden="true"></canvas>
+<div class="app">
+  <aside class="setup-panel" aria-label="Nastavení">
+    <div class="panel-head">
+      <a href="../index.html" class="hub-back-to-sims">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Zpět
+      </a>
+      <h1 class="panel-title">Rychlost, dráha, čas</h1>
+    </div>
+    <nav class="car-picker" aria-label="Výběr auta">
+      <button type="button" class="car-btn active" data-car="1">Výpočet rychlosti</button>
+      <button type="button" class="car-btn" data-car="2">Výpočet vzdálenosti</button>
+      <button type="button" class="car-btn" data-car="3">Výpočet času</button>
+    </nav>
+    <div class="controls-wrap">
+      <div class="controls-actions">
+        <button type="button" class="start-btn" id="startBtn">Spustit</button>
+        <button type="button" class="pause-btn" id="resetBtn" disabled>Zpět na start</button>
+      </div>
+      <nav class="controls" aria-label="Ovládání animace">
+        <div class="controls-fields">
+          <div class="setting-panel" id="goalSettingPanel" aria-label="Nastavení cíle">
+            <div class="distance-field">
+              <span class="distance-field-label">Cíl</span>
+              <span class="distance-field-row">
+                <span class="var-equals" aria-hidden="true"><em>s</em> =</span>
+                <input type="text" id="targetKmInput" value="60" readonly tabindex="-1" aria-label="Cílová vzdálenost v kilometrech" aria-live="polite" />
+                <span>km</span>
+              </span>
+            </div>
+            <div class="setting-steppers">
+              <button type="button" class="value-step-btn" id="targetKmDec" aria-label="Zkrátit cíl o 10 kilometrů">−</button>
+              <button type="button" class="value-step-btn" id="targetKmInc" aria-label="Prodloužit cíl o 10 kilometrů">+</button>
+            </div>
+          </div>
+          <div class="setting-panel" id="speedSettingPanel" hidden aria-label="Nastavení rychlosti">
+            <div class="distance-field">
+              <span class="distance-field-label">Rychlost</span>
+              <span class="distance-field-row">
+                <span class="var-equals" aria-hidden="true"><em>v</em> =</span>
+                <input type="text" id="targetSpeedInput" value="60" readonly tabindex="-1" aria-label="Rychlost v kilometrech za hodinu" aria-live="polite" />
+                <span class="unit-fraction" aria-label="kilometrů za hodinu">
+                  <span class="unit-fraction-part">km</span>
+                  <span class="unit-fraction-bar" aria-hidden="true"></span>
+                  <span class="unit-fraction-part">h</span>
+                </span>
+              </span>
+            </div>
+            <div class="setting-steppers">
+              <button type="button" class="value-step-btn" id="targetSpeedDec" aria-label="Zpomalit o 5 kilometrů za hodinu">−</button>
+              <button type="button" class="value-step-btn" id="targetSpeedInc" aria-label="Zrychlit o 5 kilometrů za hodinu">+</button>
+            </div>
+          </div>
+          <div class="setting-panel" id="timeSettingPanel" aria-label="Nastavení času">
+            <div class="distance-field">
+              <span class="distance-field-label">Čas</span>
+              <span class="distance-field-row">
+                <span class="var-equals" aria-hidden="true"><em>t</em> =</span>
+                <input type="text" class="time-part" id="targetHoursInput" value="1" readonly tabindex="-1" aria-label="Hodiny na stopkách" aria-live="polite" />
+                <span>h</span>
+              </span>
+            </div>
+            <div class="setting-steppers">
+              <button type="button" class="value-step-btn" id="targetHoursDec" aria-label="Zkrátit čas o půl hodiny">−</button>
+              <button type="button" class="value-step-btn" id="targetHoursInc" aria-label="Prodloužit čas o půl hodiny">+</button>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </aside>
+  <div class="workspace">
+    <p class="sim-empty-hint" id="hintEl">Nastav hodnoty a stiskni Spustit.</p>
+    <canvas id="answerConfetti" class="answer-confetti-canvas" aria-hidden="true"></canvas>
 <div class="top-hud">
   <div class="instrument-cluster" aria-label="Tachometr a hodiny">
   <div class="speed-stack">
@@ -1126,10 +1415,10 @@
       <line x1="13.72" y1="27.74" x2="8.28" y2="25.21" stroke="#9CA3AF" stroke-width="1.1" stroke-linecap="round"/>
       <line x1="36.87" y1="13.18" x2="35.94" y2="5.24" stroke="#374151" stroke-width="1.8" stroke-linecap="round"/>
       <line x1="62.75" y1="22.01" x2="67.45" y2="18.29" stroke="#9CA3AF" stroke-width="1.1" stroke-linecap="round"/>
-    <text x="59.05" y="51.00" text-anchor="middle" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">0</text>
-      <text x="21.62" y="52.09" text-anchor="middle" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">80</text>
-      <text x="37.45" y="18.15" text-anchor="middle" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">160</text>
-      <text x="57.26" y="26.35" text-anchor="middle" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">200</text>
+    <text x="59.05" y="51.00" text-anchor="middle" dominant-baseline="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">0</text>
+      <text x="21.62" y="52.09" text-anchor="middle" dominant-baseline="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">80</text>
+      <text x="37.45" y="18.15" text-anchor="middle" dominant-baseline="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">160</text>
+      <text x="57.26" y="26.35" text-anchor="middle" dominant-baseline="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="6.5" font-weight="600" fill="#6B7280">200</text>
     <foreignObject class="speedometer-unit" x="24" y="47" width="32" height="20">
       <div xmlns="http://www.w3.org/1999/xhtml" class="speedometer-unit-inner"><span class="unit-fraction unit-fraction--speedo" aria-label="kilometrů za hodinu">
   <span class="unit-fraction-part">km</span>
@@ -1228,8 +1517,7 @@
     </div>
   </div>
   </div>
-</div>
-<div class="distance-readout-wrap">
+  <div class="distance-readout-wrap">
   <div class="distance-readout" id="distanceReadoutEl" aria-live="polite">
     <svg class="distance-readout-icon" width="30" height="12" viewBox="0 0 30 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M2 9.5 Q15 1.5 28 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -1238,7 +1526,8 @@
     <span class="distance-readout-value" id="distanceReadout">0</span>
     <span class="distance-readout-unit">km</span>
   </div>
-</div>
+  </div>
+  </div>
 </div>
 <div id="answerKeypad" class="answer-keypad-overlay" hidden>
   <div class="answer-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="answerKeypadTitle">
@@ -1300,96 +1589,96 @@
       <div class="km-sign" data-sign-pool="0" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="1" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="2" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="3" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="4" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="5" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="6" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="7" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="8" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="9" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="10" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="11" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
@@ -1417,7 +1706,7 @@
         <path class="jet-flame jet-flame-core" d="M138 36 C118 30 92 31 58 36 C92 42 118 43 138 36Z" fill="#FFFBEB"/>
       </svg>
     </div>
-      <svg width="529" height="205" viewBox="0 0 529 205" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 529 205" preserveAspectRatio="xMidYMid meet" overflow="visible" fill="none" xmlns="http://www.w3.org/2000/svg">
         <mask id="mask_car_02" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="529" height="205">
         <path d="M0 0L528.26 0V204.96L0 204.96L0 0Z" fill="white"/>
         </mask>
@@ -1537,96 +1826,96 @@
       <div class="km-sign" data-sign-pool="0" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="1" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="2" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="3" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="4" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="5" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="6" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="7" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="8" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="9" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="10" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="11" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
@@ -1654,7 +1943,7 @@
         <path class="jet-flame jet-flame-core" d="M138 36 C118 30 92 31 58 36 C92 42 118 43 138 36Z" fill="#FFFBEB"/>
       </svg>
     </div>
-      <svg width="529" height="205" viewBox="0 0 529 205" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 529 205" preserveAspectRatio="xMidYMid meet" overflow="visible" fill="none" xmlns="http://www.w3.org/2000/svg">
         <mask id="mask_car_07" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="529" height="205">
         <path d="M0 0L528.26 0V204.96L0 204.96L0 0Z" fill="white"/>
         </mask>
@@ -1774,96 +2063,96 @@
       <div class="km-sign" data-sign-pool="0" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="1" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="2" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="3" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="4" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="5" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="6" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="7" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="8" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="9" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="10" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
       <div class="km-sign" data-sign-pool="11" aria-label="0 km" hidden>
         <svg width="48" height="78" viewBox="0 0 48 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="4" width="36" height="36" rx="3" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
-          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
-          <text x="24" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
+          <text class="km-num" x="24" y="22" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700" fill="#111827">0</text>
+          <text x="24" y="33" text-anchor="middle" font-family="'Fenomen Sans', ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="600" fill="#374151">km</text>
           <rect x="21" y="40" width="6" height="38" rx="1" fill="#9CA3AF"/>
         </svg>
       </div>
@@ -1891,7 +2180,7 @@
         <path class="jet-flame jet-flame-core" d="M138 36 C118 30 92 31 58 36 C92 42 118 43 138 36Z" fill="#FFFBEB"/>
       </svg>
     </div>
-      <svg width="529" height="205" viewBox="0 0 529 205" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 529 205" preserveAspectRatio="xMidYMid meet" overflow="visible" fill="none" xmlns="http://www.w3.org/2000/svg">
         <mask id="mask_car_09" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="529" height="205">
         <path d="M0 0L528.26 0V204.96L0 204.96L0 0Z" fill="white"/>
         </mask>
@@ -1995,74 +2284,16 @@
     </div>
   </div>
 </div>
-
-<div class="controls-wrap">
-<nav class="controls" aria-label="Ovládání animace">
-  <div class="controls-fields">
-    <div class="setting-panel" id="goalSettingPanel" aria-label="Nastavení cíle">
-      <div class="distance-field">
-        <span class="distance-field-label">Cíl</span>
-        <span class="distance-field-row">
-          <span class="var-equals" aria-hidden="true"><em>s</em> =</span>
-          <input type="text" id="targetKmInput" value="60" readonly tabindex="-1" aria-label="Cílová vzdálenost v kilometrech" aria-live="polite" />
-          <span>km</span>
-        </span>
-      </div>
-      <div class="setting-steppers">
-        <button type="button" class="value-step-btn" id="targetKmDec" aria-label="Zkrátit cíl o 10 kilometrů">−</button>
-        <button type="button" class="value-step-btn" id="targetKmInc" aria-label="Prodloužit cíl o 10 kilometrů">+</button>
-      </div>
-    </div>
-    <div class="setting-panel" id="speedSettingPanel" hidden aria-label="Nastavení rychlosti">
-      <div class="distance-field">
-        <span class="distance-field-label">Rychlost</span>
-        <span class="distance-field-row">
-          <span class="var-equals" aria-hidden="true"><em>v</em> =</span>
-          <input type="text" id="targetSpeedInput" value="60" readonly tabindex="-1" aria-label="Rychlost v kilometrech za hodinu" aria-live="polite" />
-          <span class="unit-fraction" aria-label="kilometrů za hodinu">
-  <span class="unit-fraction-part">km</span>
-  <span class="unit-fraction-bar" aria-hidden="true"></span>
-  <span class="unit-fraction-part">h</span>
-</span>
-        </span>
-      </div>
-      <div class="setting-steppers">
-        <button type="button" class="value-step-btn" id="targetSpeedDec" aria-label="Zpomalit o 5 kilometrů za hodinu">−</button>
-        <button type="button" class="value-step-btn" id="targetSpeedInc" aria-label="Zrychlit o 5 kilometrů za hodinu">+</button>
-      </div>
-    </div>
-    <div class="setting-panel" id="timeSettingPanel" aria-label="Nastavení času">
-      <div class="distance-field">
-        <span class="distance-field-label">Čas</span>
-        <span class="distance-field-row">
-          <span class="var-equals" aria-hidden="true"><em>t</em> =</span>
-          <input type="text" class="time-part" id="targetHoursInput" value="1" readonly tabindex="-1" aria-label="Hodiny na stopkách" aria-live="polite" />
-          <span>h</span>
-        </span>
-      </div>
-      <div class="setting-steppers">
-        <button type="button" class="value-step-btn" id="targetHoursDec" aria-label="Zkrátit čas o půl hodiny">−</button>
-        <button type="button" class="value-step-btn" id="targetHoursInc" aria-label="Prodloužit čas o půl hodiny">+</button>
-      </div>
-    </div>
-  </div>
-</nav>
-  <div class="controls-actions">
-    <button type="button" class="start-btn" id="startBtn">Spustit</button>
-    <button type="button" class="pause-btn" id="pauseBtn" disabled>Pauza</button>
-  </div>
 </div>
-
-<nav class="car-picker" aria-label="Výběr auta">
-    <button type="button" class="car-btn active" data-car="1">Výpočet rychlosti</button>
-    <button type="button" class="car-btn" data-car="2">Výpočet vzdálenosti</button>
-    <button type="button" class="car-btn" data-car="3">Výpočet času</button>
-</nav>
+</div>
 
 <script>
   const stage = document.querySelector('.stage');
+  const workspace = document.querySelector('.workspace');
+  const hintEl = document.getElementById('hintEl');
+  let hintDismissed = false;
   const startBtn = document.getElementById('startBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
   const goalSettingPanel = document.getElementById('goalSettingPanel');
   const speedSettingPanel = document.getElementById('speedSettingPanel');
   const timeSettingPanel = document.getElementById('timeSettingPanel');
@@ -2097,8 +2328,9 @@
   const SIGN_SPACING_VW = 6.25;
   const SIGN_W = 96;
   const SIGN_HALF_W = 48;
-  const CAR_OFFSET_X = -60;
+  const CAR_OFFSET_X = 0;
   const CAR_W_JS = 529;
+  const CAR_H_JS = 205;
   const FRONT_WHEEL_X_JS = 381.793;
   const KM_PER_SECOND_HAND_REV = 1;
   const KM_PER_MINUTE_HAND_REV = 60;
@@ -2165,9 +2397,45 @@
     return lane ? lane.querySelector('.road-scroll') : null;
   }
 
+  function getSceneWidth() {
+    return (workspace && workspace.clientWidth) || window.innerWidth;
+  }
+
+  function syncSceneWidth() {
+    const w = getSceneWidth();
+    if (w > 0) {
+      document.documentElement.style.setProperty('--scene-w', w + 'px');
+    }
+  }
+
+  function getSceneScale() {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--scene-scale');
+    const scale = parseFloat(raw);
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+  }
+
+  function syncSceneScale() {
+    syncSceneWidth();
+    if (!stage) return;
+    const cs = getComputedStyle(stage);
+    const availW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const availH = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    if (!(availW > 0)) return;
+    let scale = Math.min(1, availW / CAR_W_JS);
+    if (availH > 0) scale = Math.min(scale, availH / CAR_H_JS);
+    document.documentElement.style.setProperty('--scene-scale', String(Math.max(0.15, scale)));
+  }
+
   function getFrontWheelLeftPx() {
-    const vw = window.innerWidth;
-    return (vw / 2) + CAR_OFFSET_X - (CAR_W_JS / 2) + FRONT_WHEEL_X_JS;
+    const vw = getSceneWidth();
+    const scale = getSceneScale();
+    return vw / 2 + (FRONT_WHEEL_X_JS - CAR_W_JS / 2) * scale;
+  }
+
+  function dismissHint() {
+    if (hintDismissed) return;
+    hintDismissed = true;
+    hintEl?.classList.add('is-hidden');
   }
 
   function parseInlineTranslateX(scroll) {
@@ -2196,7 +2464,7 @@
       if (!duration || !Number.isFinite(duration) || duration <= 0) continue;
       if (currentTime === null || !Number.isFinite(currentTime)) continue;
       if (iterationProgress === null || !Number.isFinite(iterationProgress)) continue;
-      const loopWidthPx = window.innerWidth * (100 / 100);
+      const loopWidthPx = getSceneWidth();
       if (!loopWidthPx) continue;
       const completedIterations = Math.floor(currentTime / duration);
       return -(completedIterations + iterationProgress) * loopWidthPx;
@@ -2211,7 +2479,7 @@
     if (finished) return targetTravelKm;
     const scroll = getActiveRoadScroll();
     if (!scroll) return baseKm;
-    const loopWidthPx = window.innerWidth * (100 / 100);
+    const loopWidthPx = getSceneWidth();
     if (!loopWidthPx) return baseKm;
 
     const offsetPx = getRoadScrollOffsetPx(scroll);
@@ -2500,8 +2768,8 @@
       answerConfettiRaf = null;
     }
 
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const w = workspace ? workspace.clientWidth : window.innerWidth;
+    const h = workspace ? workspace.clientHeight : window.innerHeight;
     if (w <= 0 || h <= 0) return;
 
     const dpr = window.devicePixelRatio || 1;
@@ -2950,7 +3218,7 @@
     const lane = getActiveLane();
     if (!scroll || !lane) return;
 
-    const loopWidthPx = window.innerWidth * (100 / 100);
+    const loopWidthPx = getSceneWidth();
     if (!loopWidthPx) return;
 
     baseKm = Math.floor(targetTravelKm / KM_PER_LOOP) * KM_PER_LOOP;
@@ -2986,6 +3254,31 @@
     });
   }
 
+  function syncRunButtons() {
+    resetBtn.textContent = 'Zpět na start';
+    if (finished) {
+      startBtn.textContent = 'Pauza';
+      startBtn.disabled = true;
+      resetBtn.disabled = false;
+      return;
+    }
+    if (stage.classList.contains('is-running')) {
+      startBtn.textContent = 'Pauza';
+      startBtn.disabled = false;
+      resetBtn.disabled = false;
+      return;
+    }
+    if (paused) {
+      startBtn.textContent = 'Pokračovat';
+      startBtn.disabled = false;
+      resetBtn.disabled = false;
+      return;
+    }
+    startBtn.textContent = 'Spustit';
+    startBtn.disabled = false;
+    resetBtn.disabled = true;
+  }
+
   function pauseRun() {
     if (finished || paused || !stage.classList.contains('is-running')) return;
     paused = true;
@@ -2997,7 +3290,7 @@
       clearInterval(vegTimer);
       vegTimer = null;
     }
-    pauseBtn.textContent = 'Pokračovat';
+    syncRunButtons();
     updateJetEngine();
   }
 
@@ -3008,7 +3301,7 @@
     paused = false;
     stage.classList.remove('is-paused');
     stage.classList.add('is-running');
-    pauseBtn.textContent = 'Pauza';
+    syncRunButtons();
     startVegetation();
     updateJetEngine();
   }
@@ -3065,8 +3358,8 @@
 
     startBtn.disabled = false;
     startBtn.textContent = 'Spustit';
-    pauseBtn.disabled = true;
-    pauseBtn.textContent = 'Pauza';
+    resetBtn.disabled = true;
+    resetBtn.textContent = 'Zpět na start';
     setKmControlsEnabled(true);
     setSpeedControlsEnabled(true);
     setHoursControlsEnabled(true);
@@ -3109,10 +3402,10 @@
       clearInterval(vegTimer);
       vegTimer = null;
     }
-    startBtn.disabled = false;
-    startBtn.textContent = 'Zpět na start';
-    pauseBtn.disabled = true;
-    pauseBtn.textContent = 'Pauza';
+    startBtn.disabled = true;
+    startBtn.textContent = 'Pauza';
+    resetBtn.disabled = false;
+    resetBtn.textContent = 'Zpět na start';
     setKmControlsEnabled(false);
     setSpeedControlsEnabled(false);
     setHoursControlsEnabled(false);
@@ -3149,10 +3442,13 @@
     const lane = getActiveLane();
     if (!lane) return;
     if (travelKm === undefined) travelKm = getTravelKm();
-    const vw = window.innerWidth;
+    const vw = getSceneWidth();
+    const scale = getSceneScale();
     const frontWheelPx = getFrontWheelLeftPx();
-    const signWidthVw = (SIGN_W / vw) * 100;
-    const hideLeftVw = ((SIGN_HALF_W - frontWheelPx) / vw) * 100 - signWidthVw;
+    const signW = SIGN_W * scale;
+    const signHalfW = SIGN_HALF_W * scale;
+    const signWidthVw = (signW / vw) * 100;
+    const hideLeftVw = ((signHalfW - frontWheelPx) / vw) * 100 - signWidthVw;
     const hideRightVw = 105;
     let markers = [];
 
@@ -3305,8 +3601,14 @@
   }
 
   startBtn.addEventListener('click', () => {
-    if (finished || stage.classList.contains('is-running') || paused) {
-      resetToStart();
+    dismissHint();
+    if (finished) return;
+    if (paused) {
+      resumeRun();
+      return;
+    }
+    if (stage.classList.contains('is-running')) {
+      pauseRun();
       return;
     }
     if (isDistanceCalcMode() || isTimeCalcMode()) {
@@ -3334,10 +3636,7 @@
     updateSpeedQuestionPanel();
     updateDistanceQuestionPanel();
     updateTimeQuestionPanel();
-    startBtn.disabled = false;
-    startBtn.textContent = 'Zpět na start';
-    pauseBtn.disabled = false;
-    pauseBtn.textContent = 'Pauza';
+    syncRunButtons();
     if (isDistanceCalcMode()) {
       setSpeedControlsEnabled(false);
       setHoursControlsEnabled(false);
@@ -3383,9 +3682,9 @@
     });
   }
 
-  pauseBtn.addEventListener('click', () => {
-    if (paused) resumeRun();
-    else pauseRun();
+  resetBtn.addEventListener('click', () => {
+    dismissHint();
+    resetToStart();
   });
 
   carButtons.forEach((btn) => {
@@ -3393,6 +3692,7 @@
       if (finished || stage.classList.contains('is-running') || paused) return;
       carButtons.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
+      dismissHint();
       stage.dataset.view = btn.dataset.car;
       if (speedAnswerInput) speedAnswerInput.value = '';
       if (distanceAnswerInput) distanceAnswerInput.value = '';
@@ -3422,6 +3722,26 @@
   }
 
   initAnswerKeypad();
+
+  const dismissHintOnInteract = (event) => {
+    if (event.target.closest?.('.hub-back-to-sims')) return;
+    dismissHint();
+  };
+  document.querySelector('.setup-panel')?.addEventListener('pointerdown', dismissHintOnInteract);
+  workspace?.addEventListener('pointerdown', dismissHintOnInteract);
+
+  syncSceneScale();
+  requestAnimationFrame(syncSceneScale);
+  window.addEventListener('resize', () => {
+    syncSceneScale();
+    updateKmSigns();
+  });
+  if (typeof ResizeObserver !== 'undefined' && workspace) {
+    new ResizeObserver(() => {
+      syncSceneScale();
+      updateKmSigns();
+    }).observe(workspace);
+  }
 
   updateKmSigns();
   updateSettingPanels();
