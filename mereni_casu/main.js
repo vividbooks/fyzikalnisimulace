@@ -124,10 +124,14 @@ function createHourglass(unitEl, { fallSpeed, flipSpeed, sandPalette, onStateCha
       animationData: data,
     });
 
-    lottieEl.addEventListener('click', onFlip);
+    lottieEl.addEventListener('click', () => {
+      dismissHint();
+      onFlip();
+    });
     lottieEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        dismissHint();
         onFlip();
       }
     });
@@ -510,7 +514,9 @@ function createStopwatch({
   }
 
   function updateControls() {
-    btnStart.textContent = running ? 'Zastavit' : 'Spustit';
+    const label = btnStart.querySelector('.action-btn__label');
+    if (label) label.textContent = running ? 'Zastavit' : 'Spustit';
+    else btnStart.textContent = running ? 'Zastavit' : 'Spustit';
     btnStart.classList.toggle('is-running', running);
   }
 
@@ -550,6 +556,7 @@ function createStopwatch({
   }
 
   function onStart() {
+    dismissHint();
     setRunning(!running);
   }
 
@@ -580,6 +587,47 @@ function createStopwatch({
   renderTimes();
 }
 
+const HINT_HIDE_MS = 3000;
+let hintHideTimer = 0;
+let hintDismissedFor = '';
+
+function clearHintTimer() {
+  if (hintHideTimer) {
+    window.clearTimeout(hintHideTimer);
+    hintHideTimer = 0;
+  }
+}
+
+function hintTextForMode(mode) {
+  return mode === 'stopwatch'
+    ? 'Změř dobu jednoho kyvu nebo tepu.'
+    : 'Klepnutím na hodiny se hodiny přetočí.';
+}
+
+function updateHint() {
+  const hintEl = document.getElementById('hintEl');
+  if (!hintEl) return;
+  const mode = document.querySelector('.app-root')?.dataset.appMode || 'hourglass';
+  hintEl.textContent = hintTextForMode(mode);
+  const hide = hintDismissedFor === mode;
+  hintEl.classList.toggle('is-hidden', hide);
+  clearHintTimer();
+  if (hide) return;
+  hintHideTimer = window.setTimeout(() => {
+    hintDismissedFor = mode;
+    hintHideTimer = 0;
+    hintEl.classList.add('is-hidden');
+  }, HINT_HIDE_MS);
+}
+
+function dismissHint() {
+  const hintEl = document.getElementById('hintEl');
+  const mode = document.querySelector('.app-root')?.dataset.appMode || 'hourglass';
+  hintDismissedFor = mode;
+  clearHintTimer();
+  hintEl?.classList.add('is-hidden');
+}
+
 function initModeSwitch() {
   const appRoot = document.querySelector('.app-root');
   const hourglassStage = document.querySelector('.stage--hourglass');
@@ -597,6 +645,7 @@ function initModeSwitch() {
       });
       hourglassStage.classList.toggle('hidden', mode !== 'hourglass');
       stopwatchStage.classList.toggle('hidden', mode !== 'stopwatch');
+      updateHint();
     });
   });
 }
@@ -657,6 +706,7 @@ function initStopwatch() {
 
 initModeSwitch();
 initStopwatch();
+updateHint();
 
 const hourglasses = [];
 
@@ -671,6 +721,7 @@ function initFlipAllButton() {
   if (!btn) return;
 
   btn.addEventListener('click', () => {
+    dismissHint();
     hourglasses.forEach((hg) => hg.flip());
     updateFlipAllButton();
   });

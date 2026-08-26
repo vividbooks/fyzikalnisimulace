@@ -12,7 +12,12 @@
   <div class="app-root" data-app-mode="hourglass">
     <aside class="left-panel">
       <div class="panel-copy">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
         <h1 class="panel-title">Měření času</h1>
         <div class="mode-switch" role="tablist" aria-label="Režim simulace">
           <button
@@ -37,9 +42,6 @@
       </div>
 
       <div class="hourglass-panel">
-        <p class="panel-text">
-          Klepnutím na hodiny se hodiny přetočí.
-        </p>
         <div class="panel-actions">
           <button type="button" class="action-btn action-btn--primary" id="flip-all-hourglasses">
             Otočit všechny hodiny
@@ -76,12 +78,22 @@
 
         <div class="panel-actions">
           <button type="button" class="action-btn action-btn--primary" id="btn-start">
-            Spustit
+            <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+            </svg>
+            <svg class="icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M7 5h3v14H7V5zm7 0h3v14h-3V5z"/>
+            </svg>
+            <span class="action-btn__label">Spustit</span>
           </button>
           <button type="button" class="action-btn" id="btn-lap">
             Mezičas
           </button>
-          <button type="button" class="action-btn graph-secondary" id="btn-reset">
+          <button type="button" class="action-btn action-btn--danger" id="btn-reset">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             Reset
           </button>
         </div>
@@ -95,6 +107,7 @@
 
     <div class="workspace">
       <div class="board-stage" aria-label="Simulace měření času">
+        <p class="sim-empty-hint" id="hintEl">Klepnutím na hodiny se hodiny přetočí.</p>
         <div class="stage stage--hourglass">
           <div class="hourglass-unit hourglass-unit--xlarge">
             <div class="lottie" role="button" tabindex="0" aria-label="Otočit velké hodiny"></div>
