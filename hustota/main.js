@@ -788,7 +788,7 @@ class Field {
     const totalHeight = this.getTotalHeight();
     if (this.squareCount <= 1 && this.rowCount <= 1) return;
 
-    ctx.strokeStyle = 'rgba(88, 166, 255, 0.35)';
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.35)';
     ctx.lineWidth = 2;
 
     for (let i = 1; i < this.squareCount; i++) {
