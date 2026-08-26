@@ -7,33 +7,60 @@
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
   <title>Graf pohybu</title>
-  <style>
+    <style>
     @font-face {
       font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
-        format("opentype");
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
 
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+
     :root {
-      --axis: #1e6bb8;
-      --grid: rgba(30, 107, 184, 0.22);
+      --axis: #3b82f6;
+      --grid: rgba(59, 130, 246, 0.2);
       --track: #111;
-      --bg: #f4f7fb;
-      --panel: #fff;
-      --panel-bg: #ffffff;
-      --accent: #3d5a9a;
-      --accent-hover: #334b81;
-      --text: #171923;
-      --muted: #6b7280;
-      --border: #e8eaef;
-      --focus: #3d5a9a;
-      --area-muted: #eceff5;
-      --readout-bg: #f4f5f8;
-      --handle: #1e6bb8;
-      --square: #c8ccd4;
+      --bg: #1e2533;
+      --page-bg: #1e2533;
+      --panel: #ffffe6;
+      --panel-bg: #2a3344;
+      --card-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #475569;
+      --border-strong: #475569;
+      --focus: #3b82f6;
+      --area-muted: #334155;
+      --readout-bg: #1e293b;
+      --canvas-bg: #ffffe6;
+      --canvas-text: #334155;
+      --handle: #3b82f6;
+      --square: #94a3b8;
+      --success: #4ade80;
+      --danger: #ef4444;
+      --radius: 12px;
+      --radius-canvas: 24px;
     }
 
     * {
@@ -44,6 +71,7 @@
     body {
       margin: 0;
       height: 100%;
+      overflow: hidden;
     }
 
     body {
@@ -52,6 +80,7 @@
       font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
+      color-scheme: dark;
     }
 
     button,
@@ -61,17 +90,36 @@
       font-family: inherit;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .app {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: row;
+      flex-wrap: nowrap;
       align-items: stretch;
-      align-content: stretch;
-      gap: clamp(10px, 1.8vw, 20px);
+      gap: 16px;
       width: 100%;
+      height: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
       margin: 0 auto;
-      padding: clamp(8px, 1.2vw, 14px);
-      min-height: 100dvh;
+      padding: 16px;
       box-sizing: border-box;
+      overflow: hidden;
     }
 
     .viz-column {
@@ -84,14 +132,20 @@
     }
 
     .chart-wrap {
+      position: relative;
       flex: 1 1 0;
-      min-height: min(240px, 42vh);
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      background: var(--panel);
-      border-radius: 14px;
-      padding: clamp(12px, 1.4vw, 18px) clamp(12px, 1.4vw, 18px) 8px;
-      border: 1px solid var(--border);
+      background: var(--canvas-bg);
+      border-radius: var(--radius-canvas);
+      padding: 16px 16px 10px;
+      border: none;
+    }
+
+    .app.is-custom-graph .chart-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
     }
 
     .chart-svg {
@@ -108,6 +162,7 @@
     }
 
     .chart-svg text {
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       -webkit-user-select: none;
       user-select: none;
       pointer-events: none;
@@ -115,11 +170,12 @@
 
     .track-section {
       flex: 0 0 auto;
+      flex-shrink: 0;
       margin-top: 0;
-      background: var(--panel);
-      border-radius: 14px;
-      padding: 10px 14px 6px;
-      border: 1px solid var(--border);
+      background: var(--canvas-bg);
+      border-radius: var(--radius-canvas);
+      padding: 18px 16px 14px;
+      border: none;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -133,7 +189,7 @@
       width: 100%;
       flex: 0 0 auto;
       height: auto;
-      aspect-ratio: 648 / 116;
+      aspect-ratio: 648 / 124;
       margin-left: 0;
       margin-right: 0;
       max-width: none;
@@ -141,7 +197,12 @@
       user-select: none;
     }
 
+    .app.is-dual-track .track-section > .track-svg {
+      aspect-ratio: 648 / 167;
+    }
+
     .track-section > .track-svg text {
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
       -webkit-user-select: none;
       user-select: none;
       pointer-events: none;
@@ -165,28 +226,117 @@
     }
 
     .setup-panel {
-      flex: 0 0 min(320px, 100%);
+      flex: 0 0 min(320px, 36vw);
       align-self: stretch;
       overflow: auto;
-      padding: 18px;
-      border-radius: 22px;
+      padding: 8px 8px 16px;
+      border-radius: 0;
       scrollbar-gutter: stable;
-      color-scheme: light;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
+      color-scheme: dark;
+      border: none;
+      background: transparent;
       color: var(--text);
+      min-width: 0;
     }
 
     .panel-title {
-      margin: 0 0 6px;
-      font-size: 1.125rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--text);
+      font-family: "Cooper Light", serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
     }
 
     .controls {
       display: grid;
-      gap: 20px;
+      gap: 14px;
+    }
+
+    .panel-head {
+      display: grid;
+      gap: 10px;
+    }
+
+    .hub-back-to-sims {
+      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #1e293b;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.2;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .hub-back-to-sims svg {
+      display: block;
+      flex: 0 0 auto;
+    }
+
+    .hub-back-to-sims:hover {
+      color: #ffffff;
+    }
+
+    .hub-back-to-sims:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 4px;
+      border-radius: var(--radius);
+      background: var(--card-bg);
+    }
+
+    .mode-switch__btn {
+      appearance: none;
+      min-height: 40px;
+      padding: 10px 8px;
+      border: 1px solid transparent;
+      border-radius: calc(var(--radius) - 2px);
+      background: transparent;
+      color: var(--idle-text);
+      font: inherit;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .mode-switch__btn:hover:not(.is-active) {
+      color: var(--text);
+    }
+
+    .mode-switch__btn.is-active,
+    .mode-switch__btn.is-active:hover {
+      background: var(--accent);
+      color: var(--accent-on);
+      cursor: default;
+    }
+
+    .mode-switch__btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .sim-card {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--card-bg);
     }
 
     .row {
@@ -195,22 +345,34 @@
     }
 
     .row-label {
-      font-weight: 650;
-      font-size: 0.8125rem;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--text);
     }
 
     .actions-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .actions-row button {
-      flex: 1 1 auto;
-      min-width: min(100%, 7rem);
+      width: 100%;
+      min-width: 0;
+      padding-inline: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .actions-row button svg {
+      display: block;
+      flex: 0 0 auto;
     }
 
     .dual-graph-block {
@@ -228,75 +390,154 @@
       display: none !important;
     }
 
-    .graph-axis-y-panel .graph-target-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-      margin: 0;
-      padding: 0;
-      border: none;
+    .variant-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
     }
 
-    .graph-axis-y-panel .graph-target-label {
-      font-weight: 650;
-      font-size: 0.8125rem;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--muted);
+    .variant-toggle--3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
     }
 
-    .hub-back-to-sims {
-      display: inline-flex;
-      align-items: center;
-      font-size: 0.88rem;
-      font-weight: 700;
-      text-decoration: none;
-      padding: 9px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--area-muted);
+    .variant-toggle--3 .variant-btn {
+      min-height: 56px;
+      padding: 8px 6px;
+      font-size: 12px;
+      line-height: 1.25;
+      white-space: normal;
+      overflow-wrap: break-word;
+      hyphens: none;
+    }
+
+    .variant-btn,
+    .toggle-btn {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.25;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .variant-btn:hover:not(.is-active):not(:disabled),
+    .toggle-btn:hover:not(.is-active) {
       color: var(--text);
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
 
-    .hub-back-to-sims:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--readout-bg);
+    .variant-btn.is-active,
+    .variant-btn.is-active:hover,
+    .toggle-btn.is-active,
+    .toggle-btn.is-active:hover {
+      border-color: transparent;
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    .variant-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .variant-btn:focus-visible,
+    .toggle-btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
 
     button {
       font: inherit;
-      padding: 10px 16px;
-      border-radius: 10px;
-      border: 1px solid var(--accent);
-      background: var(--accent);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.9rem;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font-weight: 400;
+      font-size: 14px;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     button:hover:not(:disabled) {
-      background: var(--accent-hover);
-      border-color: var(--accent-hover);
+      color: var(--text);
     }
 
     button:active:not(:disabled) {
-      transform: translateY(1px);
+      transform: none;
+    }
+
+    #btnRun {
+      background: #4ade80;
+      color: #14532d;
+    }
+
+    #btnRun:hover:not(:disabled) {
+      color: #052e16;
+      background: #86efac;
+    }
+
+    #btnRun.is-pause {
+      background: var(--idle-bg);
+      color: var(--idle-text);
+    }
+
+    #btnRun.is-pause:hover:not(:disabled) {
+      color: var(--text);
+      background: var(--idle-bg);
+    }
+
+    #btnRun.is-save {
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    #btnRun.is-save:hover:not(:disabled) {
+      background: var(--accent-hover);
+      color: var(--accent-on);
+    }
+
+    #btnRun .btn-icon-pause,
+    #btnRun .btn-icon-save,
+    #btnRun.is-pause .btn-icon-play,
+    #btnRun.is-pause .btn-icon-save,
+    #btnRun.is-save .btn-icon-play,
+    #btnRun.is-save .btn-icon-pause {
+      display: none;
+    }
+
+    #btnRun.is-pause .btn-icon-pause,
+    #btnRun.is-save .btn-icon-save {
+      display: block;
+    }
+
+    #btnReset {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    #btnReset:hover:not(:disabled) {
+      color: #ffffff;
+      background: #dc2626;
     }
 
     button.secondary {
-      background: var(--panel-bg);
-      color: var(--accent);
-      border-color: var(--border);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      border-color: transparent;
     }
 
     button.secondary:hover:not(:disabled) {
-      border-color: var(--accent);
-      background: var(--readout-bg);
+      color: var(--text);
     }
 
     button:disabled {
@@ -307,110 +548,41 @@
     .timer {
       font-variant-numeric: tabular-nums;
       font-size: 1.35rem;
-      font-weight: 700;
+      font-weight: 600;
       letter-spacing: 0.06em;
       padding: 12px 18px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      border: 1px solid transparent;
       background: var(--readout-bg);
       width: 100%;
       text-align: center;
-      color: var(--accent);
-    }
-
-    .dual-check,
-    .graph-target-wrap label {
-      font-size: 0.9rem;
-      font-weight: 600;
       color: var(--text);
-      cursor: pointer;
-      user-select: none;
     }
 
-    .dual-check input,
-    .graph-target-wrap input {
-      margin-right: 8px;
-      vertical-align: middle;
-      accent-color: var(--accent);
-    }
-
-    .graph-target-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px 14px;
-    }
-
-    .graph-target-wrap input:disabled {
-      cursor: not-allowed;
-    }
-
-    .graph-mode-wrap {
-      display: grid;
-      gap: 8px;
-    }
-
-    .graph-mode-wrap label {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text);
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .graph-mode-wrap input {
-      margin-right: 8px;
-      vertical-align: middle;
-      accent-color: var(--accent);
-    }
-
-    .custom-graph-panel {
-      flex: 0 0 auto;
-      background: var(--panel);
-      border-radius: 14px;
-      padding: 14px 16px;
-      border: 1px solid var(--border);
-      display: grid;
-      gap: 10px;
-    }
-
-    .custom-graph-panel[hidden] {
+    .custom-graph-panel[hidden],
+    .sim-card[hidden] {
       display: none !important;
-    }
-
-    .custom-graph-panel .row-label {
-      margin: 0;
     }
 
     .custom-axis-settings {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
-    }
-
-    @media (max-width: 699.98px) {
-      .custom-axis-settings {
-        grid-template-columns: 1fr;
-      }
     }
 
     .custom-axis-block {
       margin: 0;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--readout-bg);
+      padding: 0;
+      border: none;
       display: grid;
       gap: 8px;
     }
 
     .custom-axis-block legend {
-      font-size: 0.8125rem;
-      font-weight: 650;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 0 4px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: #bfdbfe;
+      padding: 0;
     }
 
     .custom-axis-inline-row {
@@ -420,29 +592,28 @@
       align-items: end;
     }
 
-    @media (max-width: 479.98px) {
-      .custom-axis-inline-row {
-        grid-template-columns: 1fr;
-      }
-    }
-
     .custom-field {
       display: grid;
       gap: 4px;
       font-size: 0.875rem;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--text);
     }
 
     .custom-field > input,
     .custom-step-input input {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      background: var(--readout-bg);
       color: var(--text);
       font-size: 0.9rem;
+    }
+
+    .custom-field > input::placeholder,
+    .custom-step-input input::placeholder {
+      color: var(--muted);
     }
 
     .custom-step-input {
@@ -463,7 +634,7 @@
       display: flex;
       flex-direction: column;
       border-left: 1px solid var(--border);
-      border-radius: 0 7px 7px 0;
+      border-radius: 0 11px 11px 0;
       overflow: hidden;
     }
 
@@ -480,6 +651,8 @@
       line-height: 1;
       cursor: pointer;
       min-height: 0;
+      border-radius: 0;
+      font-weight: 400;
     }
 
     .custom-step-btn:hover {
@@ -505,15 +678,54 @@
       display: none !important;
     }
 
+    .sim-empty-hint {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: max-content;
+      max-width: min(720px, calc(100% - 48px));
+      margin: 0;
+      padding: 12px 28px;
+      border: 2px solid #cbd5e1;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      pointer-events: none;
+      text-align: center;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.35;
+      color: #334155;
+      transform: translateX(-50%);
+    }
+
+    .sim-empty-hint.is-hidden {
+      display: none;
+    }
+
     @media (max-width: 899.98px) {
       .app {
         flex-direction: column;
         flex-wrap: nowrap;
-        padding-left: max(8px, env(safe-area-inset-left, 0px));
-        padding-right: max(8px, env(safe-area-inset-right, 0px));
-        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        padding-left: max(10px, env(safe-area-inset-left, 0px));
+        padding-right: max(10px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
         padding-top: max(8px, env(safe-area-inset-top, 0px));
         gap: 12px;
+      }
+
+      .sim-empty-hint {
+        font-size: 20px;
+        padding: 10px 18px;
+      }
+
+      .panel-title {
+        font-size: 28px;
       }
 
       .viz-column {
@@ -531,31 +743,36 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
-        border-radius: 18px;
-        padding: 14px 16px;
+        border-radius: 0;
+        padding: 8px 8px 16px;
       }
 
       .chart-wrap {
         flex: 1 1 55%;
-        min-height: 200px;
+        min-height: 0;
       }
 
       .track-section {
         flex: 0 0 auto;
+      }
+
+      .custom-axis-inline-row {
+        grid-template-columns: 1fr;
       }
     }
 
     .help-dialog {
       max-width: min(520px, calc(100vw - 48px));
       padding: 0;
-      border: 1px solid #dde3ec;
-      border-radius: 8px;
-      background: var(--panel);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel-bg);
+      color: var(--text);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     }
 
     .help-dialog::backdrop {
-      background: rgba(26, 26, 26, 0.35);
+      background: rgba(15, 23, 42, 0.55);
     }
 
     .help-dialog-inner {
@@ -564,75 +781,169 @@
 
     .help-dialog-inner h2 {
       margin: 0 0 14px;
-      font-size: 1rem;
-      font-weight: 700;
+      font-family: "Cooper Light", serif;
+      font-size: 1.35rem;
+      font-weight: 400;
       color: var(--text);
     }
 
     .help-dialog-inner p {
       margin: 0 0 18px;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       color: var(--muted);
       line-height: 1.5;
     }
 
     .help-dialog-inner > button {
       margin-top: 16px;
+      width: 100%;
     }
-
   </style>
+
 </head>
 <body>
   <div class="app">
     <aside class="setup-panel" aria-label="Nastavení">
       <div class="controls">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-        <h1 class="panel-title">Graf pohybu</h1>
-
-        <div class="row">
-          <span class="row-label">Akce</span>
-          <div class="actions-row" aria-label="Akce simulace">
-            <button type="button" id="btnRun">Spustit</button>
-            <button type="button" id="btnUndo" class="secondary" disabled>Zpět</button>
-            <button type="button" id="btnReset" class="secondary">Reset</button>
-            <button type="button" id="btnHelp" class="secondary">Nápověda</button>
+        <div class="panel-head">
+          <a href="../index.html" class="hub-back-to-sims">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Zpět
+          </a>
+          <h1 class="panel-title">Graf pohybu</h1>
+          <div class="mode-switch" role="group" aria-label="Režim">
+            <button type="button" class="mode-switch__btn is-active" data-graph-mode="cyclist" aria-pressed="true">Cyklista</button>
+            <button type="button" class="mode-switch__btn" data-graph-mode="custom" aria-pressed="false">Vlastní graf</button>
           </div>
-        </div>
-
-        <div id="timerRow" class="row" aria-label="Časomíra">
-          <span class="row-label">Čas</span>
-          <span class="timer" id="timer" aria-live="polite">00 : 00</span>
-        </div>
-
-        <div class="row">
-          <span class="row-label">Režim</span>
-          <div class="graph-mode-wrap">
+          <div class="sr-only">
             <label><input type="radio" name="graphMode" value="cyclist" checked /> Cyklista</label>
             <label><input type="radio" name="graphMode" value="custom" /> Vlastní graf</label>
           </div>
         </div>
 
-        <div id="axisYCyclistPanel" class="row graph-axis-y-panel">
-          <span class="graph-target-wrap axis-y-wrap">
-            <span class="graph-target-label">Osa Y</span>
+        <div class="sim-card">
+          <div class="actions-row" aria-label="Akce simulace">
+            <button type="button" id="btnRun">
+              <svg class="btn-icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+              </svg>
+              <svg class="btn-icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M6 5h4v14H6zM14 5h4v14h-4z"/>
+              </svg>
+              <svg class="btn-icon-save" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 5h11l3 3v11H5V5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M8 5v5h8V5M8 19v-6h8v6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              </svg>
+              <span id="btnRunLabel">Spustit</span>
+            </button>
+            <button type="button" id="btnReset">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Reset
+            </button>
+          </div>
+          <div class="actions-row">
+            <button type="button" id="btnUndo" class="secondary" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 14H4v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 9a8 8 0 1 1-1.2 4.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Zpět
+            </button>
+            <button type="button" id="btnHelp" class="secondary">Nápověda</button>
+          </div>
+          <div id="timerRow" class="row" aria-label="Časomíra">
+            <span class="row-label">Čas</span>
+            <span class="timer" id="timer" aria-live="polite">00 : 00</span>
+          </div>
+        </div>
+
+        <div id="axisYCyclistPanel" class="sim-card graph-axis-y-panel">
+          <span class="row-label">Osa Y</span>
+          <div class="variant-toggle variant-toggle--3" role="group" aria-label="Osa Y">
+            <button type="button" class="variant-btn is-active" data-axis-y="start" aria-pressed="true">Vzdálenost od startu</button>
+            <button type="button" class="variant-btn" data-axis-y="cumulative" aria-pressed="false">Celkově<br />ujetá vzdálenost</button>
+            <button type="button" class="variant-btn" data-axis-y="velocity" aria-pressed="false">Rychlost</button>
+          </div>
+          <div class="sr-only">
             <label><input type="radio" name="axisY" value="start" checked /> Vzdálenost od startu</label>
             <label><input type="radio" name="axisY" value="cumulative" /> Celkově ujetá vzdálenost</label>
             <label><input type="radio" name="axisY" value="velocity" /> Rychlost</label>
-          </span>
+          </div>
         </div>
 
-        <div id="dualGraphRow" class="row">
+        <div id="dualGraphRow" class="sim-card">
           <span class="row-label">Grafy</span>
           <div class="dual-graph-block">
-            <label class="dual-check">
-              <input type="checkbox" id="chkDualGraph" />
-              Dva cyklisti
-            </label>
+            <button type="button" id="btnDualGraph" class="toggle-btn" aria-pressed="false">Dva cyklisti</button>
+            <input type="checkbox" id="chkDualGraph" class="sr-only" />
             <span id="graphTargetWrap" class="graph-target-wrap graph-target-under-dual" hidden>
-              <span class="graph-target-label">Upravovat</span>
-              <label><input type="radio" name="graphTarget" value="1" checked disabled /> graf 1</label>
-              <label><input type="radio" name="graphTarget" value="2" disabled /> graf 2</label>
+              <span class="row-label">Upravovat</span>
+              <div class="variant-toggle" role="group" aria-label="Upravovat">
+                <button type="button" class="variant-btn is-active" data-graph-target="1" aria-pressed="true">graf 1</button>
+                <button type="button" class="variant-btn" data-graph-target="2" aria-pressed="false" disabled>graf 2</button>
+              </div>
+              <div class="sr-only">
+                <label><input type="radio" name="graphTarget" value="1" checked disabled /> graf 1</label>
+                <label><input type="radio" name="graphTarget" value="2" disabled /> graf 2</label>
+              </div>
             </span>
+          </div>
+        </div>
+
+        <div id="customGraphPanel" class="sim-card custom-graph-panel" hidden aria-label="Nastavení vlastních os">
+          <span class="row-label">Vlastní osy</span>
+          <div class="custom-axis-settings">
+            <fieldset class="custom-axis-block">
+              <legend>Osa X</legend>
+              <label class="custom-field">
+                Název
+                <input type="text" id="customXName" value="Čas" maxlength="40" />
+              </label>
+              <div class="custom-axis-inline-row">
+                <label class="custom-field">
+                  Jednotka
+                  <input type="text" id="customXUnit" value="s" maxlength="16" />
+                </label>
+                <label class="custom-field">
+                  Velikost dílku
+                  <div class="custom-step-input">
+                    <input type="text" id="customXStep" value="1" inputmode="decimal" autocomplete="off" />
+                    <span class="custom-step-spin">
+                      <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose X">▲</button>
+                      <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose X">▼</button>
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </fieldset>
+            <fieldset class="custom-axis-block">
+              <legend>Osa Y</legend>
+              <label class="custom-field">
+                Název
+                <input type="text" id="customYName" value="" maxlength="40" placeholder="např. Teplota" />
+              </label>
+              <div class="custom-axis-inline-row">
+                <label class="custom-field">
+                  Jednotka
+                  <input type="text" id="customYUnit" value="" maxlength="16" placeholder="např. m, kg, °C" />
+                </label>
+                <label class="custom-field">
+                  Velikost dílku
+                  <div class="custom-step-input">
+                    <input type="text" id="customYStep" value="1" inputmode="decimal" autocomplete="off" />
+                    <span class="custom-step-spin">
+                      <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose Y">▲</button>
+                      <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose Y">▼</button>
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </fieldset>
           </div>
         </div>
       </div>
@@ -640,61 +951,11 @@
 
     <div class="viz-column" aria-label="Simulace">
       <div class="chart-wrap">
+        <p class="sim-empty-hint" id="hintEl">Nakresli graf pohybu a stiskni Spustit.</p>
         <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
       </div>
-      <div id="customGraphPanel" class="custom-graph-panel" hidden aria-label="Nastavení vlastních os">
-        <span class="row-label">Vlastní osy</span>
-        <div class="custom-axis-settings">
-          <fieldset class="custom-axis-block">
-            <legend>Osa X</legend>
-            <label class="custom-field">
-              Název
-              <input type="text" id="customXName" value="Čas" maxlength="40" />
-            </label>
-            <div class="custom-axis-inline-row">
-              <label class="custom-field">
-                Jednotka
-                <input type="text" id="customXUnit" value="s" maxlength="16" />
-              </label>
-              <label class="custom-field">
-                Velikost dílku
-                <div class="custom-step-input">
-                  <input type="text" id="customXStep" value="1" inputmode="decimal" autocomplete="off" />
-                  <span class="custom-step-spin">
-                    <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose X">▲</button>
-                    <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose X">▼</button>
-                  </span>
-                </div>
-              </label>
-            </div>
-          </fieldset>
-          <fieldset class="custom-axis-block">
-            <legend>Osa Y</legend>
-            <label class="custom-field">
-              Název
-              <input type="text" id="customYName" value="" maxlength="40" placeholder="např. Teplota" />
-            </label>
-            <div class="custom-axis-inline-row">
-              <label class="custom-field">
-                Jednotka
-                <input type="text" id="customYUnit" value="" maxlength="16" placeholder="např. m, kg, °C" />
-              </label>
-              <label class="custom-field">
-                Velikost dílku
-                <div class="custom-step-input">
-                  <input type="text" id="customYStep" value="1" inputmode="decimal" autocomplete="off" />
-                  <span class="custom-step-spin">
-                    <button type="button" class="custom-step-btn custom-step-up" aria-label="Zvětšit velikost dílku na ose Y">▲</button>
-                    <button type="button" class="custom-step-btn custom-step-down" aria-label="Zmenšit velikost dílku na ose Y">▼</button>
-                  </span>
-                </div>
-              </label>
-            </div>
-          </fieldset>
-        </div>
-      </div>
       <div id="trackSection" class="track-section">
-        <svg id="track" class="track-svg" viewBox="0 -34 648 116" preserveAspectRatio="xMidYMin meet" aria-label="Dráha"></svg>
+        <svg id="track" class="track-svg" viewBox="0 -42 648 124" preserveAspectRatio="xMidYMin meet" aria-label="Dráha"></svg>
       </div>
     </div>
   </div>
@@ -745,10 +1006,14 @@
   const btnReset = document.getElementById("btnReset");
   const btnHelp = document.getElementById("btnHelp");
   const chkDualGraph = document.getElementById("chkDualGraph");
+  const btnDualGraph = document.getElementById("btnDualGraph");
   const graphTargetWrap = document.getElementById("graphTargetWrap");
   const helpDialog = document.getElementById("helpDialog");
   const helpDialogClose = document.getElementById("helpDialogClose");
   const timerEl = document.getElementById("timer");
+  const btnRunLabel = document.getElementById("btnRunLabel");
+  const hintEl = document.getElementById("hintEl");
+  const appEl = document.querySelector(".app");
 
   /** Plot margins inside SVG viewBox */
   const ml = 78;
@@ -765,6 +1030,10 @@
   /** Druhý jezdec — modrá helma. */
   const RIDER2_HELMET_FILL = GRAPH2_COLOR;
   const RIDER2_HELMET_STROKE = "#1D4ED8";
+  const AXIS_COLOR = "#3b82f6";
+  const TICK_LABEL_COLOR = "#334155";
+  const CANVAS_BG = "#ffffe6";
+  const AXIS_FONT = '"Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
 
   function tToX(t) {
     return ml + (t / T_MAX) * pw;
@@ -1057,7 +1326,55 @@
       if (r1) r1.checked = true;
       syncGraphTargetRadios();
     }
+    if (appEl) appEl.classList.toggle("is-custom-graph", customGraphMode);
     updateActionButton();
+    syncModeChrome();
+  }
+
+  function setRadioValue(name, value) {
+    const el = document.querySelector('input[name="' + name + '"][value="' + value + '"]');
+    if (!el || el.checked) return false;
+    el.checked = true;
+    el.dispatchEvent(new Event("change"));
+    return true;
+  }
+
+  function updateHint() {
+    if (!hintEl) return;
+    if (customGraphMode) {
+      hintEl.textContent = "Nakresli body vlastního grafu.";
+      hintEl.classList.toggle("is-hidden", points.length > 0);
+      return;
+    }
+    hintEl.textContent = "Nakresli graf pohybu a stiskni Spustit.";
+    const hasPoints = points.length > 0 || (dualGraph && points2.length > 0);
+    hintEl.classList.toggle("is-hidden", hasPoints || running);
+  }
+
+  function syncModeChrome() {
+    document.querySelectorAll("[data-graph-mode]").forEach(function (btn) {
+      const on = (btn.getAttribute("data-graph-mode") === "custom") === customGraphMode;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    document.querySelectorAll("[data-axis-y]").forEach(function (btn) {
+      const on = btn.getAttribute("data-axis-y") === yAxisMode;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    if (appEl) appEl.classList.toggle("is-dual-track", dualGraph && !customGraphMode);
+    if (btnDualGraph) {
+      btnDualGraph.classList.toggle("is-active", dualGraph);
+      btnDualGraph.setAttribute("aria-pressed", dualGraph ? "true" : "false");
+    }
+    const activeGraph = dualGraph ? getActiveGraph() : 1;
+    document.querySelectorAll("[data-graph-target]").forEach(function (btn) {
+      const on = String(btn.getAttribute("data-graph-target")) === String(activeGraph);
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.disabled = !dualGraph;
+    });
+    updateHint();
   }
 
   function sanitizeFilenamePart(value) {
@@ -1116,7 +1433,7 @@
     bg.setAttribute("y", "0");
     bg.setAttribute("width", String(W));
     bg.setAttribute("height", String(H));
-    bg.setAttribute("fill", "#ffffff");
+    bg.setAttribute("fill", CANVAS_BG);
     clone.insertBefore(bg, clone.firstChild);
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
 
@@ -1129,7 +1446,7 @@
     if (!ctx) return;
 
     ctx.scale(scale, scale);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = CANVAS_BG;
     ctx.fillRect(0, 0, W, H);
 
     const img = new Image();
@@ -1208,10 +1525,12 @@
       const smax = isCustomGraphMode() || !usesVelocityAxisMode() ? S_MAX : velocityGraphMaxMps();
       arr[i].s = Math.min(smax, Math.max(0, arr[i].s));
     }
-    if (arr.length && arr[0].t < eps) arr[0].t = eps;
+    if (arr.length && arr[0].t < eps) {
+      arr[0].t = arr[0].t <= 1e-6 ? 0 : eps;
+    }
 
     if (usesCumulativeAxisMode()) {
-      let minS = 0;
+      let minS = firstPointIsAtT0(arr) ? arr[0].s : 0;
       for (let i = 0; i < arr.length; i++) {
         if (arr[i].s < minS) arr[i].s = minS;
         minS = arr[i].s;
@@ -1223,14 +1542,24 @@
     }
   }
 
+  function firstPointIsAtT0(arr) {
+    return !!(arr.length && arr[0].t <= 1e-9);
+  }
+
+  function graphStartS(arr) {
+    return firstPointIsAtT0(arr) ? arr[0].s : 0;
+  }
+
   /** Stejné zamítnutí jako při přidávání bodu (příliš blízko počátku / existujícímu uzlu). */
   function wouldRejectNewPoint(targetArr, g, t, val) {
     const nt = t / T_MAX;
     const nScale = isCustomGraphMode() || !usesVelocityAxisMode() ? S_MAX : velocityGraphMaxMps();
-    const oriSpeed = !isCustomGraphMode() && usesVelocityAxisMode() ? velocityV0ForGraph(g) : 0;
+    const originS = !isCustomGraphMode() && usesVelocityAxisMode()
+      ? velocityV0ForGraph(g)
+      : graphStartS(targetArr);
     const nearOrigin =
       targetArr.length > 0 &&
-      nt * nt + Math.pow((val - oriSpeed) / nScale, 2) < 0.03 * 0.03;
+      nt * nt + Math.pow((val - originS) / nScale, 2) < 0.03 * 0.03;
     if (nearOrigin) return true;
     return targetArr.some(function (p) {
       const dx = (p.t - t) / T_MAX;
@@ -1252,10 +1581,11 @@
     return { t: newPt.t, s: newPt.s };
   }
 
-  /** Počátek [0,0] + uživatelské body daného grafu. */
+  /** Počátek + uživatelské body. Bod v čase 0 s zadává výchozí vzdálenost cyklisty. */
   function verticesFrom(arr) {
     sortPointsArr(arr);
     if (arr.length === 0) return [];
+    if (firstPointIsAtT0(arr)) return arr.slice();
     return [{ t: 0, s: 0 }].concat(arr);
   }
 
@@ -1518,22 +1848,30 @@
   }
 
   function updateActionButton() {
+    btnRun.classList.remove("is-save", "is-pause");
     if (isCustomGraphMode()) {
-      btnRun.textContent = "Uložit";
+      if (btnRunLabel) btnRunLabel.textContent = "Uložit";
+      btnRun.classList.add("is-save");
       btnRun.disabled = false;
       updateUndoButton();
+      updateHint();
       return;
     }
     if (running) {
-      btnRun.textContent = "Pozastavit";
+      if (btnRunLabel) btnRunLabel.textContent = "Pozastavit";
+      btnRun.classList.add("is-pause");
       btnRun.disabled = false;
       updateUndoButton();
+      updateHint();
       return;
     }
-    btnRun.textContent = "Spustit";
-    const ok = points.length >= 1 || (dualGraph && points2.length >= 1);
+    if (btnRunLabel) btnRunLabel.textContent = "Spustit";
+    const ok =
+      (points.length >= 1 || (dualGraph && points2.length >= 1)) &&
+      simEndTime() > 0;
     btnRun.disabled = !ok;
     updateUndoButton();
+    updateHint();
   }
 
   /** Červený bod na grafu během / po simulaci – (t, s) = časomíra + dráha z grafu. */
@@ -1661,8 +1999,10 @@
   function buildDefs(svg) {
     const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
     defs.innerHTML =
-      '<marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">' +
-      '<path d="M0,0 L8,4 L0,8 Z" fill="#1e6bb8" /></marker>';
+      '<marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" overflow="visible">' +
+      '<path d="M1.5,1 L7,4 L1.5,7" fill="none" stroke="' +
+      AXIS_COLOR +
+      '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></marker>';
     svg.appendChild(defs);
   }
 
@@ -1701,7 +2041,7 @@
   }
 
   function drawAxes(svg) {
-    const axisColor = "#1e6bb8";
+    const axisColor = AXIS_COLOR;
     const ax = document.createElementNS("http://www.w3.org/2000/svg", "g");
     ax.setAttribute("pointer-events", "none");
 
@@ -1730,6 +2070,7 @@
     xl.setAttribute("y", H - 6);
     xl.setAttribute("text-anchor", "middle");
     xl.setAttribute("fill", axisColor);
+    xl.setAttribute("font-family", AXIS_FONT);
     xl.setAttribute("font-size", "14");
     xl.textContent = isCustomGraphMode() ? customAxis.xName : "Čas";
     ax.appendChild(xl);
@@ -1743,6 +2084,7 @@
     yl.setAttribute("text-anchor", "middle");
     yl.setAttribute("dominant-baseline", "middle");
     yl.setAttribute("fill", axisColor);
+    yl.setAttribute("font-family", AXIS_FONT);
     yl.setAttribute("font-size", "14");
     yl.setAttribute(
       "transform",
@@ -1771,7 +2113,8 @@
       lab.setAttribute("y", mt + ph + 22);
       lab.setAttribute("text-anchor", "middle");
       lab.setAttribute("font-size", "11");
-      lab.setAttribute("fill", "#444");
+      lab.setAttribute("font-family", AXIS_FONT);
+      lab.setAttribute("fill", TICK_LABEL_COLOR);
       lab.textContent = isCustomGraphMode()
         ? formatAxisTickValue(t * customAxis.xStep, customAxis.xUnit)
         : String(t) + " s";
@@ -1792,7 +2135,8 @@
       lab.setAttribute("y", y + 4);
       lab.setAttribute("text-anchor", "end");
       lab.setAttribute("font-size", "11");
-      lab.setAttribute("fill", "#444");
+      lab.setAttribute("font-family", AXIS_FONT);
+      lab.setAttribute("fill", TICK_LABEL_COLOR);
       lab.textContent = isCustomGraphMode()
         ? formatAxisTickValue(si * customAxis.yStep, customAxis.yUnit)
         : usesVelocityAxisMode()
@@ -1818,6 +2162,7 @@
 
   function redrawChart() {
     resetPlaybackToStartIfPaused();
+    updateHint();
     chartEl.innerHTML = "";
     buildDefs(chartEl);
     drawGrid(chartEl);
@@ -1889,7 +2234,10 @@
 
     handlesLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
     handlesLayer.setAttribute("class", "handles");
-    if (!usesVelocityAxisMode()) {
+    const needDummyOrigin =
+      !usesVelocityAxisMode() &&
+      (!firstPointIsAtT0(points) || (dualGraph && !firstPointIsAtT0(points2)));
+    if (needDummyOrigin) {
       const origin = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       origin.setAttribute("cx", tToX(0));
       origin.setAttribute("cy", sToY(0));
@@ -2031,13 +2379,12 @@
   /** Spodní okraj výřezu dráhy (souřadnice os Y); nálepky pod čárou používají TH. */
   const TH = 82;
   /** Horní rezerva viewBoxu dráhy (záporná souřadnice), aby byl vidět horní díl figurky. */
-  const TRACK_VIEW_Y_MIN = -34;
-  /** viewBox výška = TH − TRACK_VIEW_Y_MIN */
-  const TRACK_VIEW_HEIGHT = TH - TRACK_VIEW_Y_MIN;
+  const TRACK_VIEW_Y_MIN = -42;
   /** Hlavní čára dráhy (osa červeného cyklisty). */
   const TRACK_LINE_Y = 28;
-  /** Osa modrého cyklisty (režim Dva cyklisti). */
-  const TRACK_LINE2_Y = TRACK_LINE_Y + 28;
+  /** Osa modrého cyklisty — dost místa pod prvním jezdcem, ať se figurky nepřekrývají. */
+  const TRACK_LINE2_Y = TRACK_LINE_Y + 61;
+  const TH_DUAL = TRACK_LINE2_Y + 36;
   /** Šířka figurky cyklisty ve vlastních souřadnicích (viewBox šířka SVG, polovina pro centrovaní na dráze). */
   const TRACK_RIDER_W = 57;
   const TRACK_RIDER_HALF_W = TRACK_RIDER_W / 2;
@@ -2343,11 +2690,12 @@
       tick.setAttribute("x2", x);
       tick.setAttribute("y1", String(ly));
       tick.setAttribute("y2", String(ly + 10));
-      tick.setAttribute("stroke", "#444");
+      tick.setAttribute("stroke", TICK_LABEL_COLOR);
       trackEl.appendChild(tick);
       const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
       lab.setAttribute("font-size", "11");
-      lab.setAttribute("fill", "#444");
+      lab.setAttribute("font-family", AXIS_FONT);
+      lab.setAttribute("fill", TICK_LABEL_COLOR);
       lab.textContent = si * 10 + labelBase + " m";
       if (si === 0) {
         lab.setAttribute("x", String(TRACK_X_MARGIN + 2));
@@ -2384,7 +2732,11 @@
       return;
     }
     trackEl.innerHTML = "";
-    trackEl.setAttribute("viewBox", "0 " + TRACK_VIEW_Y_MIN + " " + TW + " " + TRACK_VIEW_HEIGHT);
+    const trackBottomY = dualGraph ? TH_DUAL : TH;
+    trackEl.setAttribute(
+      "viewBox",
+      "0 " + TRACK_VIEW_Y_MIN + " " + TW + " " + (trackBottomY - TRACK_VIEW_Y_MIN)
+    );
     trackRider2 = null;
     trackRider1Marker = null;
     trackLine2 = null;
@@ -2672,7 +3024,11 @@
         : arr[dragIdx - 1];
     const next = arr[dragIdx + 1];
     const eps = 0.03;
-    if (prev) t = Math.max(prev.t + eps, t);
+    if (dragIdx === 0 && !usesVelocityAxisMode()) {
+      t = Math.max(0, t);
+    } else if (prev) {
+      t = Math.max(prev.t + eps, t);
+    }
     if (next) t = Math.min(next.t - eps, t);
 
     if (usesVelocityAxisMode()) {
@@ -2921,11 +3277,39 @@
       if (r1) r1.checked = true;
     }
     syncGraphTargetRadios();
+    syncModeChrome();
     redrawChart();
+  });
+
+  if (btnDualGraph) {
+    btnDualGraph.addEventListener("click", function () {
+      chkDualGraph.checked = !chkDualGraph.checked;
+      chkDualGraph.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+
+  document.querySelectorAll("[data-graph-mode]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setRadioValue("graphMode", btn.getAttribute("data-graph-mode"));
+    });
+  });
+
+  document.querySelectorAll("[data-axis-y]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setRadioValue("axisY", btn.getAttribute("data-axis-y"));
+    });
+  });
+
+  document.querySelectorAll("[data-graph-target]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (!dualGraph) return;
+      setRadioValue("graphTarget", btn.getAttribute("data-graph-target"));
+    });
   });
 
   document.querySelectorAll('input[name="graphTarget"]').forEach(function (el) {
     el.addEventListener("change", function () {
+      syncModeChrome();
       if (dualGraph) redrawChart();
     });
   });
@@ -2940,6 +3324,7 @@
         clearUndoStack();
         resetGraphDataAndPlayback();
       }
+      syncModeChrome();
       redrawChart();
     });
   });
