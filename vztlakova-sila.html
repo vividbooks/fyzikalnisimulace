@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Simulace ze zdroje: https://github.com/FrantisekVvb/vztlakova_sila -->
-<html lang="cs" data-theme="tokyo-midnight">
+<html lang="cs">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -11,155 +11,218 @@
     <style>
       @font-face {
         font-family: "Fenomen Sans";
-        src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf") format("opentype");
+        src: url("vztlakova_sila/assets/fonts/FenomenSans-Book.otf") format("opentype");
         font-weight: 400;
         font-style: normal;
         font-display: swap;
       }
 
+      @font-face {
+        font-family: "Fenomen Sans";
+        src: url("vztlakova_sila/assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Cooper Light";
+        src: url("vztlakova_sila/assets/fonts/Cooper-Light.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: block;
+      }
+
       :root {
+        --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        --page-bg: #1e2533;
+        --bg: #1e2533;
+        --card-bg: #2a3344;
+        --panel-bg: #2a3344;
+        --idle-bg: #334155;
+        --idle-text: #cbd5e1;
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --accent-on: #ffffff;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: #475569;
+        --border-strong: #475569;
+        --focus: #3b82f6;
+        --area-muted: #334155;
+        --readout-bg: #1e293b;
+        --readout-text: #f8fafc;
+        --canvas-bg: #ffffe6;
+        --canvas-text: #334155;
+        --rope: #64748b;
+        --weight-stroke: rgba(15, 23, 42, 0.22);
+        --scale-body: #2a3344;
+        --scale-border: #475569;
+        --tank-glass-stroke: #64748b;
+        --tank-glass-glow: rgba(100, 116, 139, 0.28);
+        --success: #4ade80;
+        --danger: #ef4444;
+        --radius: 12px;
+        --radius-canvas: 24px;
+        --panel-w: min(300px, 34vw);
         color-scheme: dark;
-
-        /* Tokyo midnight — hluboká noc + jemné cyan / violet záře */
-        --bg-base: #05070e;
-        --bg-glow-cyan: rgba(56, 189, 248, 0.085);
-        --bg-glow-violet: rgba(167, 139, 250, 0.065);
-
-        --bg: #0a0f1a;
-        --text: #e8eaf2;
-        --muted: #8b95ab;
-        --accent: #5eb8ff;
-        --accent-hover: #93d0ff;
-        --canvas-border: rgba(120, 160, 220, 0.12);
-        --border: rgba(120, 140, 190, 0.26);
-        --focus: #5eb8ff;
-        --area-muted: rgba(255, 255, 255, 0.065);
-        --rope: #8b96ab;
-        --weight-stroke: rgba(255, 255, 255, 0.55);
-        --scale-body: #121a2a;
-        --scale-border: rgba(100, 150, 210, 0.38);
-        --readout-bg: #080e18;
-        --readout-text: #dce4f5;
-        --tank-glass-stroke: rgba(200, 225, 255, 0.82);
-        --tank-glass-glow: rgba(120, 180, 255, 0.55);
-        --danger: #fb7185;
-        --success: #34d399;
       }
 
       * {
         box-sizing: border-box;
       }
 
+      html,
       body {
         margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
         min-height: 100vh;
         min-height: 100dvh;
-        background-color: var(--bg-base);
-        background-image:
-          radial-gradient(ellipse 125% 95% at 50% -28%, var(--bg-glow-cyan), transparent 54%),
-          radial-gradient(ellipse 72% 58% at 108% 38%, var(--bg-glow-violet), transparent 50%),
-          radial-gradient(ellipse 58% 42% at -12% 82%, rgba(56, 189, 248, 0.045), transparent 44%),
-          linear-gradient(168deg, #04060d 0%, #080d18 42%, #050812 100%);
-        background-attachment: fixed;
+        font-family: var(--font-app);
+        font-weight: 400;
+        background: var(--page-bg);
         color: var(--text);
-        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+        color-scheme: dark;
       }
 
       button,
       input,
       select,
-      textarea {
+      textarea,
+      label {
         font-family: inherit;
       }
 
       .app {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: row;
+        flex-wrap: nowrap;
         align-items: stretch;
-        align-content: stretch;
-        gap: clamp(10px, 1.8vw, 20px);
-        max-width: none;
+        gap: 16px;
         width: 100%;
+        height: 100vh;
+        height: 100dvh;
         margin: 0 auto;
-        padding: clamp(8px, 1.2vw, 14px);
-        min-height: 100dvh;
+        padding: 16px;
         box-sizing: border-box;
+        background: var(--page-bg);
       }
 
       .viz-column {
+        position: relative;
         flex: 1 1 0;
         min-width: 0;
         min-height: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: center;
+        padding: 8px;
+        border-radius: var(--radius-canvas);
+        background: var(--canvas-bg);
+        overflow: hidden;
+      }
+
+      .sim-empty-hint {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        z-index: 8;
+        display: block;
+        width: max-content;
+        max-width: min(720px, calc(100% - 48px));
+        margin: 0;
+        padding: 12px 28px;
+        border: 2px solid #cbd5e1;
+        border-radius: 999px;
+        background: #ffffff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+        pointer-events: none;
+        text-align: center;
+        font-family: var(--font-app);
+        font-size: 28px;
+        font-weight: 400;
+        line-height: 1.35;
+        color: #334155;
+        transform: translateX(-50%);
+      }
+
+      .sim-empty-hint.is-hidden {
+        display: none;
       }
 
       .setup-panel {
-        flex: 0 0 min(320px, 100%);
-        max-height: none;
+        flex: 0 0 var(--panel-w);
+        width: var(--panel-w);
         align-self: stretch;
         overflow: auto;
-        padding: 18px;
-        border-radius: 22px;
-        scrollbar-gutter: stable;
-
-        color-scheme: light;
-        --panel-bg: #ffffff;
-        --text: #171923;
-        --muted: #6b7280;
-        --accent: #2563eb;
-        --accent-hover: #1d4ed8;
-        --border: #e8eaef;
-        --focus: #2563eb;
-        --area-muted: #eceff5;
-        --readout-bg: #f4f5f8;
-        --readout-text: #171923;
-        --danger: #dc2626;
-        --success: #059669;
-
-        border: 1px solid var(--border);
-        background: var(--panel-bg);
-        box-shadow:
-          0 20px 48px rgba(0, 0, 0, 0.34),
-          0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+        padding: 8px 8px 16px;
+        border: none;
+        border-radius: 0;
+        background: transparent;
         color: var(--text);
+        color-scheme: dark;
+        scrollbar-gutter: stable;
+        min-width: 0;
+      }
+
+      .panel-head {
+        display: grid;
+        gap: 10px;
       }
 
       .panel-title {
-        margin: 0 0 6px;
-        font-size: 1.125rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
+        margin: 0;
         color: var(--text);
+        font-family: "Cooper Light", serif;
+        font-size: 32px;
+        font-weight: 400;
+        letter-spacing: 0.01em;
+        line-height: 1.15;
       }
 
       .hub-back-to-sims {
+        justify-self: start;
         display: inline-flex;
         align-items: center;
         align-self: flex-start;
-        font-size: 0.88rem;
-        font-weight: 700;
-        text-decoration: none;
-        padding: 9px 14px;
-        margin: 0 0 14px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: var(--area-muted);
+        gap: 6px;
+        padding: 6px 12px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        background: #1e293b;
         color: var(--text);
-        transition: border-color 0.15s, color 0.15s, background 0.15s;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-decoration: none;
+      }
+
+      .hub-back-to-sims svg {
+        display: block;
+        flex: 0 0 auto;
       }
 
       .hub-back-to-sims:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: var(--readout-bg);
+        color: #ffffff;
+      }
+
+      .hub-back-to-sims:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
       }
 
       .controls {
         display: grid;
         gap: 20px;
+        margin-top: 18px;
       }
 
       .row {
@@ -172,26 +235,46 @@
       }
 
       label {
-        font-weight: 650;
-        font-size: 0.8125rem;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
+        font-weight: 400;
+        font-size: 0.875rem;
+        letter-spacing: 0;
         color: var(--muted);
       }
 
-      label.check-label {
-        display: flex;
+      .toggle-btn {
+        appearance: none;
+        display: inline-flex;
         align-items: center;
-        gap: 12px;
-        text-transform: none;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text);
+        justify-content: center;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 14px;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        background: var(--idle-bg);
+        color: var(--idle-text);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.25;
         cursor: pointer;
+        transition: background 0.12s ease, color 0.12s ease;
+        -webkit-tap-highlight-color: transparent;
       }
 
-      label.check-label.check-label--immersion-gap {
-        margin-top: 30px;
+      .toggle-btn:hover {
+        color: var(--text);
+      }
+
+      .toggle-btn[aria-pressed="true"],
+      .toggle-btn[aria-pressed="true"]:hover {
+        background: var(--accent);
+        color: var(--accent-on);
+      }
+
+      .toggle-btn:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
       }
 
       .sub {
@@ -214,14 +297,14 @@
         -webkit-appearance: none;
         appearance: none;
         border-radius: 999px;
-        background: var(--area-muted);
+        background: var(--idle-bg);
         outline: none;
       }
 
       input[type="range"]::-moz-range-track {
         height: 6px;
         border-radius: 999px;
-        background: var(--area-muted);
+        background: var(--idle-bg);
       }
 
       input[type="range"]::-moz-range-progress {
@@ -236,9 +319,9 @@
         width: 18px;
         height: 18px;
         border-radius: 50%;
-        background: var(--bg);
+        background: #ffffff;
         border: 2px solid var(--accent);
-        box-shadow: 0 0 20px rgba(94, 184, 255, 0.25);
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
         cursor: pointer;
       }
 
@@ -246,46 +329,28 @@
         width: 18px;
         height: 18px;
         border-radius: 50%;
-        background: var(--bg);
+        background: #ffffff;
         border: 2px solid var(--accent);
-        box-shadow: 0 0 20px rgba(94, 184, 255, 0.25);
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
         cursor: pointer;
-      }
-
-      .setup-panel input[type="range"] {
-        background: var(--area-muted);
-      }
-
-      .setup-panel input[type="range"]::-moz-range-track {
-        background: var(--area-muted);
-      }
-
-      .setup-panel input[type="range"]::-webkit-slider-thumb {
-        background: var(--panel-bg);
-        box-shadow: 0 1px 5px rgba(37, 99, 235, 0.28);
-      }
-
-      .setup-panel input[type="range"]::-moz-range-thumb {
-        background: var(--panel-bg);
-        box-shadow: 0 1px 5px rgba(37, 99, 235, 0.28);
       }
 
       input[type="number"],
       select {
         width: 100%;
-        border-radius: 10px;
-        padding: 11px 12px;
+        border-radius: var(--radius);
+        padding: 10px 12px;
         border: 1px solid var(--border);
-        background: var(--bg);
+        background: var(--idle-bg);
         color: var(--text);
         outline: none;
         font-size: 0.95rem;
+        font-weight: 400;
         transition: border-color 0.15s, box-shadow 0.15s;
       }
 
-      .setup-panel input[type="number"],
-      .setup-panel select {
-        background: var(--panel-bg);
+      select option {
+        background: var(--card-bg);
         color: var(--text);
       }
 
@@ -295,35 +360,35 @@
         box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 22%, transparent);
       }
 
-      input[type="checkbox"] {
-        width: 1.05rem;
-        height: 1.05rem;
-        accent-color: var(--accent);
-      }
-
       .val {
         font-variant-numeric: tabular-nums;
-        font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
-        font-weight: 700;
+        font-family: var(--font-app);
+        font-weight: 600;
         font-size: 1.05rem;
         color: var(--accent);
       }
 
-      .setup-panel .val {
-        color: var(--accent);
-      }
-
-      /* Telefony: simulace nahoře, nastavení dole se skrolováním */
       @media (max-width: 899.98px) {
         .app {
           flex-direction: column;
           flex-wrap: nowrap;
           align-items: stretch;
-          padding-left: max(8px, env(safe-area-inset-left, 0px));
-          padding-right: max(8px, env(safe-area-inset-right, 0px));
-          padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+          padding-left: max(10px, env(safe-area-inset-left, 0px));
+          padding-right: max(10px, env(safe-area-inset-right, 0px));
+          padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
           padding-top: max(8px, env(safe-area-inset-top, 0px));
           gap: 12px;
+        }
+
+        .sim-empty-hint {
+          top: 16%;
+          font-size: 20px;
+          padding: 10px 18px;
+          max-width: min(720px, calc(100% - 24px));
+        }
+
+        .panel-title {
+          font-size: 28px;
         }
 
         .viz-column {
@@ -342,16 +407,12 @@
           overflow-y: auto;
           -webkit-overflow-scrolling: touch;
           overscroll-behavior: contain;
-          border-radius: 18px;
-          padding: 14px 16px;
-        }
-
-        .hub-back-to-sims {
-          margin-bottom: 10px;
+          padding: 8px 8px 16px;
         }
 
         .controls {
           gap: 16px;
+          margin-top: 14px;
         }
       }
     </style>
@@ -359,18 +420,24 @@
   <body>
     <div class="app">
       <aside class="setup-panel" aria-label="Ovládání">
-        <div class="controls">
-          <a href="index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <div class="panel-head">
+          <a href="index.html" class="hub-back-to-sims">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Zpět
+          </a>
           <h1 class="panel-title">Vztlaková síla</h1>
-
+        </div>
+        <div class="controls">
             <div class="row">
               <label for="material">Materiál závaží</label>
               <select id="material">
-                <option value="beton" selected>Beton (2 000 kg/m³)</option>
-                <option value="fe">Železo/ocel (7 850 kg/m³)</option>
-                <option value="cu">Měď (8 960 kg/m³)</option>
-                <option value="ag">Stříbro (10 000 kg/m³)</option>
-                <option value="au">Zlato (19 300 kg/m³)</option>
+                <option value="beton" selected>Beton (2 000 kg na m³)</option>
+                <option value="fe">Železo/ocel (7 850 kg na m³)</option>
+                <option value="cu">Měď (8 960 kg na m³)</option>
+                <option value="ag">Stříbro (10 000 kg na m³)</option>
+                <option value="au">Zlato (19 300 kg na m³)</option>
               </select>
             </div>
 
@@ -383,35 +450,32 @@
             <div class="row">
               <label for="liquid">Kapalina</label>
               <select id="liquid">
-                <option value="water" selected>Voda (1 000 kg/m³)</option>
-                <option value="sea">Mořská voda (1 025 kg/m³)</option>
-                <option value="oil">Rostlinný olej (920 kg/m³)</option>
-                <option value="ethanol">Etanol (789 kg/m³)</option>
-                <option value="glycerin">Glycerin (1 260 kg/m³)</option>
+                <option value="water" selected>Voda (1 000 kg na m³)</option>
+                <option value="sea">Mořská voda (1 025 kg na m³)</option>
+                <option value="oil">Rostlinný olej (920 kg na m³)</option>
+                <option value="ethanol">Etanol (789 kg na m³)</option>
+                <option value="glycerin">Glycerin (1 260 kg na m³)</option>
               </select>
             </div>
 
             <div class="row row-immersion">
-              <label>Ponoření</label>
-              <p class="sub">Chyť závaží a táhni nahoru nebo dolů.</p>
               <!-- Hodnotu udržuje skript při tažení (dříve posuvník). -->
               <input id="bottomDepth" type="hidden" value="0" />
               <input id="bottomDepth2" type="hidden" value="0" />
-              <label class="check-label check-label--immersion-gap" for="enable2">
-                <input id="enable2" type="checkbox" />
+              <button type="button" id="enable2" class="toggle-btn" aria-pressed="false">
                 Druhé závaží
-              </label>
+              </button>
             </div>
 
             <div id="w2Wrap" class="row" style="display: none; gap: 10px">
               <div class="row">
                 <label for="material2">Materiál 2. závaží</label>
                 <select id="material2">
-                  <option value="beton" selected>Beton (2 000 kg/m³)</option>
-                  <option value="fe">Železo/ocel (7 850 kg/m³)</option>
-                  <option value="cu">Měď (8 960 kg/m³)</option>
-                  <option value="ag">Stříbro (10 000 kg/m³)</option>
-                  <option value="au">Zlato (19 300 kg/m³)</option>
+                  <option value="beton" selected>Beton (2 000 kg na m³)</option>
+                  <option value="fe">Železo/ocel (7 850 kg na m³)</option>
+                  <option value="cu">Měď (8 960 kg na m³)</option>
+                  <option value="ag">Stříbro (10 000 kg na m³)</option>
+                  <option value="au">Zlato (19 300 kg na m³)</option>
                 </select>
               </div>
 
@@ -425,6 +489,7 @@
       </aside>
 
       <div class="viz-column">
+        <p class="sim-empty-hint" id="hintEl">Chyť závaží a táhni nahoru nebo dolů.</p>
         <canvas
           id="cv"
           width="1200"
@@ -460,6 +525,7 @@
 
         const els = {
           vizColumn: document.querySelector(".viz-column"),
+          hintEl: document.getElementById("hintEl"),
           cv: document.getElementById("cv"),
           material: document.getElementById("material"),
           vol: document.getElementById("vol"),
@@ -670,7 +736,7 @@
           // Maximum posuvu: nejhlubší dno závaží + mezera nad hladinou.
           const maxX = Math.max(0, maxBottomDepth + airGapCm);
 
-          const enable2 = !!(els.enable2 && els.enable2.checked);
+          const enable2 = !!(els.enable2 && els.enable2.getAttribute("aria-pressed") === "true");
 
           const { xUser, xBottom: xBottom1 } = readBottomDepthField(
             els.bottomDepth,
@@ -838,10 +904,9 @@
         function syncCanvasSize() {
           if (!els.vizColumn || !els.cv) return;
           const col = els.vizColumn.getBoundingClientRect();
-          const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-          const margin = 12;
-          const maxH = Math.max(220, vh - col.top - margin);
-          const maxW = Math.max(200, col.width);
+          const inset = 8;
+          const maxH = Math.max(220, col.height - inset * 2);
+          const maxW = Math.max(200, col.width - inset * 2);
           canvasLayoutScale = Math.min(maxW / DESIGN_W, maxH / DESIGN_H, 2.75);
           canvasDpr = Math.min(2, window.devicePixelRatio || 1);
 
@@ -928,10 +993,10 @@
 
             const bodyFill =
               getComputedStyle(document.documentElement).getPropertyValue("--scale-body").trim() ||
-              "#ffffff";
+              "#2a3344";
             const bodyBorder =
               getComputedStyle(document.documentElement).getPropertyValue("--scale-border").trim() ||
-              "#e2e5eb";
+              "#475569";
             const rBody = 14 * Z * SCALE_SHRINK;
             const rDisp = 10 * Z * SCALE_SHRINK;
             const mSide = 14 * Z * SCALE_SHRINK;
@@ -940,7 +1005,7 @@
             ctx.fillStyle = bodyFill;
             ctx.strokeStyle = bodyBorder;
             ctx.lineWidth = Math.max(2, 1.5 * Z * SCALE_SHRINK);
-            roundRect(ctx, scaleX, scaleY, scaleW, scaleH, rBody, true, false);
+            roundRect(ctx, scaleX, scaleY, scaleW, scaleH, rBody, true, true);
 
             const dispX = scaleX + mSide;
             const dispY = scaleY + mTop;
@@ -948,7 +1013,7 @@
             const dispH = 112 * Z * SCALE_SHRINK;
             const readBg =
               getComputedStyle(document.documentElement).getPropertyValue("--readout-bg").trim() ||
-              "#f4f5f8";
+              "#1e293b";
             ctx.fillStyle = readBg;
             roundRect(ctx, dispX, dispY, dispW, dispH, rDisp, true, false);
             ctx.strokeStyle = bodyBorder;
@@ -957,21 +1022,15 @@
 
             const readTx =
               getComputedStyle(document.documentElement).getPropertyValue("--readout-text").trim() ||
-              "#171923";
+              "#f8fafc";
             ctx.fillStyle = readTx;
             const fontPx = 78 * Z * SCALE_SHRINK;
-            ctx.font = `800 ${fontPx}px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif`;
+            ctx.font = `600 ${fontPx}px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             const tDisp = tensionDisplayedN(valueN);
             const txt = formatDecimalCs(tDisp, 2) + " N";
-            ctx.shadowColor = "rgba(94, 184, 255, 0.55)";
-            ctx.shadowBlur = 16 * Z * SCALE_SHRINK;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
             ctx.fillText(txt, dispX + dispW / 2, dispY + dispH / 2);
-            ctx.shadowBlur = 0;
-            ctx.shadowColor = "transparent";
             return { hookX, hookBottomY };
           }
 
@@ -1021,13 +1080,13 @@
           ctx.fill();
           ctx.restore();
 
-          // Akvárium — výrazný obrys + měkký „neon“ pod světlem tokijské noci
+          // Akvárium — jemný skleněný obrys na krémovém plátně
           const tankStroke =
             getComputedStyle(document.documentElement).getPropertyValue("--tank-glass-stroke").trim() ||
-            "#b6c0cf";
+            "#64748b";
           const tankGlow =
             getComputedStyle(document.documentElement).getPropertyValue("--tank-glass-glow").trim() ||
-            "rgba(120, 180, 255, 0.55)";
+            "rgba(100, 116, 139, 0.28)";
           ctx.save();
           ctx.lineCap = "round";
           ctx.lineJoin = "round";
@@ -1039,13 +1098,13 @@
           ctx.arcTo(tankX + tankW, yBottom, tankX + tankW, yBottom - tankBottomR, tankBottomR);
           ctx.lineTo(tankX + tankW, tankY);
           ctx.strokeStyle = tankGlow;
-          ctx.lineWidth = 14 * Z;
+          ctx.lineWidth = 10 * Z;
           ctx.shadowColor = tankGlow;
-          ctx.shadowBlur = 22 * Z;
+          ctx.shadowBlur = 8 * Z;
           ctx.stroke();
           ctx.shadowBlur = 0;
           ctx.strokeStyle = tankStroke;
-          ctx.lineWidth = 6.5 * Z;
+          ctx.lineWidth = 5 * Z;
           ctx.stroke();
           ctx.restore();
 
@@ -1087,17 +1146,14 @@
 
             const acc =
               getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() ||
-              "#3d5a9a";
+              "#3b82f6";
             ctx.fillStyle = acc;
-            ctx.shadowColor = "rgba(94, 184, 255, 0.65)";
-            ctx.shadowBlur = 10 * Z;
             fillCircle(ctx, attachX, attachY, 5 * Z);
-            ctx.shadowBlur = 0;
 
             ctx.fillStyle = materialFlat(materialKey);
-            ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
-            ctx.shadowBlur = 18 * Z;
-            ctx.shadowOffsetY = 6 * Z;
+            ctx.shadowColor = "rgba(15, 23, 42, 0.18)";
+            ctx.shadowBlur = 12 * Z;
+            ctx.shadowOffsetY = 4 * Z;
             roundRect(ctx, x, y, sizePx, sizePx, 10 * Z, true, false);
             ctx.shadowBlur = 0;
             ctx.shadowOffsetY = 0;
@@ -1214,6 +1270,20 @@
           syncCanvasSize();
         }
 
+        let hintDismissed = false;
+        function dismissHint() {
+          if (hintDismissed) return;
+          hintDismissed = true;
+          if (els.hintEl) els.hintEl.classList.add("is-hidden");
+        }
+
+        const dismissHintOnInteract = (event) => {
+          if (event.target.closest && event.target.closest(".hub-back-to-sims")) return;
+          dismissHint();
+        };
+        document.querySelector(".setup-panel")?.addEventListener("pointerdown", dismissHintOnInteract);
+        if (els.vizColumn) els.vizColumn.addEventListener("pointerdown", dismissHintOnInteract);
+
         window.addEventListener("resize", onResizeCanvas);
         if (window.visualViewport) {
           window.visualViewport.addEventListener("resize", onResizeCanvas);
@@ -1234,7 +1304,7 @@
         els.vol.addEventListener("input", onAnyChange);
         if (els.enable2 && els.w2Wrap) {
           const sync2Vis = () => {
-            const on = els.enable2.checked;
+            const on = els.enable2.getAttribute("aria-pressed") === "true";
             if (on && !prevEnable2 && els.bottomDepth2) {
               els.bottomDepth2.value = els.bottomDepth.value;
               if (els.vol2 && els.vol) els.vol2.value = els.vol.value;
@@ -1243,7 +1313,11 @@
             els.w2Wrap.style.display = on ? "grid" : "none";
             render();
           };
-          els.enable2.addEventListener("change", sync2Vis);
+          els.enable2.addEventListener("click", () => {
+            const on = els.enable2.getAttribute("aria-pressed") !== "true";
+            els.enable2.setAttribute("aria-pressed", on ? "true" : "false");
+            sync2Vis();
+          });
           sync2Vis();
         }
         if (els.material2) els.material2.addEventListener("change", onAnyChange);
@@ -1305,7 +1379,7 @@
     </script>
 
     <noscript>
-      <p style="padding: 1rem; text-align: center; color: var(--muted, #8b95ab)">
+      <p style="padding: 1rem; text-align: center; color: var(--muted, #94a3b8)">
         Zapni JavaScript — bez něj simulace nefunguje.
       </p>
     </noscript>

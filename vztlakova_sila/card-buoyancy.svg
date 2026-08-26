@@ -8,11 +8,11 @@
 <g clip-path="url(#tankInner)">
   <path d="M 124 586.00 L 150.44 586.10 L 176.89 586.31 L 203.33 586.55 L 229.78 586.74 L 256.22 586.82 L 282.67 586.79 L 309.11 586.66 L 335.56 586.48 L 362.00 586.26 L 388.44 586.00 L 414.89 585.70 L 441.33 585.38 L 467.78 585.09 L 494.22 584.92 L 520.67 584.93 L 547.11 585.15 L 573.56 585.51 L 600.00 585.91 L 626.44 586.21 L 652.89 586.32 L 679.33 586.23 L 705.78 586.00 L 732.22 585.76 L 758.67 585.59 L 785.11 585.56 L 811.56 585.66 L 838.00 585.81 L 864.44 585.94 L 890.89 586.01 L 917.33 586.02 L 943.78 586.00 L 970.22 586.00 L 996.67 586.01 L 1023.11 586.04 L 1049.56 586.05 L 1076.00 586.01 L 1076 1236 A 36 36 0 0 1 1040.00 1272 L 160.00 1272 A 36 36 0 0 1 124 1236.00 Z" fill="rgba(59, 130, 246, 0.52)"/>
 </g>
-<path d="M 120 356 L 120 1240 A 36 36 0 0 0 156 1276 L 1044 1276 A 36 36 0 0 0 1080 1240 L 1080 356" fill="none" stroke="rgba(120, 180, 255, 0.55)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 120 356 L 120 1240 A 36 36 0 0 0 156 1276 L 1044 1276 A 36 36 0 0 0 1080 1240 L 1080 356" fill="none" stroke="rgba(200, 225, 255, 0.82)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="600" y1="348.5345510625422" x2="600" y2="407.8015" stroke="#8b96ab" stroke-width="6" stroke-linecap="round"/>
-<circle cx="600" cy="407.8015" r="10" fill="#5eb8ff"/>
-<rect x="430.5345" y="423.8015" width="338.93089787551556" height="338.93089787551556" rx="20" ry="20" fill="#8a8f94" stroke="rgba(255, 255, 255, 0.55)" stroke-width="6.4"/>
+<path d="M 120 356 L 120 1240 A 36 36 0 0 0 156 1276 L 1044 1276 A 36 36 0 0 0 1080 1240 L 1080 356" fill="none" stroke="rgba(100, 116, 139, 0.28)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 120 356 L 120 1240 A 36 36 0 0 0 156 1276 L 1044 1276 A 36 36 0 0 0 1080 1240 L 1080 356" fill="none" stroke="#64748b" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="600" y1="348.5345510625422" x2="600" y2="407.8015" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+<circle cx="600" cy="407.8015" r="10" fill="#3b82f6"/>
+<rect x="430.5345" y="423.8015" width="338.93089787551556" height="338.93089787551556" rx="20" ry="20" fill="#8a8f94" stroke="rgba(15, 23, 42, 0.22)" stroke-width="6.4"/>
 
 <defs>
   <clipPath id="weightClip">
