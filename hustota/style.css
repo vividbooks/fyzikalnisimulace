@@ -1,24 +1,63 @@
+@font-face {
+  font-family: "Fenomen Sans";
+  src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fenomen Sans";
+  src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+  --canvas-bg: #ffffe6;
+  --canvas-text: #334155;
+  --bg: #ffffe6;
+  --panel-bg: #2a3344;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --border: #475569;
+  --area-muted: #334155;
+  --readout-bg: #1e293b;
+  --success: #4ade80;
+  --danger: #ef4444;
+  --radius: 12px;
+}
+
 html {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+  background: var(--canvas-bg);
 }
 
 body {
   min-height: 100%;
   height: 100%;
   margin: 0;
-  background: #ffffff;
-  font-family: system-ui, -apple-system, sans-serif;
-  color: #0b1220;
+  background: var(--canvas-bg);
+  font-family: var(--font-app);
+  color: var(--canvas-text);
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+button {
+  font-family: inherit;
 }
 
 .app-shell {
@@ -111,10 +150,7 @@ body.fields-mode--two .arena-composite {
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 4px 16px rgba(2, 6, 23, 0.06);
+  background: var(--canvas-bg);
 }
 
 .global-actions-center {
@@ -125,21 +161,45 @@ body.fields-mode--two .arena-composite {
   flex-wrap: wrap;
 }
 
-.global-actions .simulations-overview-btn {
+.hub-back-to-sims {
   position: absolute;
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-width: auto;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--area-muted);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
   white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.hub-back-to-sims svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.hub-back-to-sims:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--readout-bg);
 }
 
 .field-mode-toggle {
   display: inline-flex;
   padding: 3px;
   border-radius: 12px;
-  background: #f1f5f9;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
 }
 
 .field-mode-btn {
@@ -147,7 +207,7 @@ body.fields-mode--two .arena-composite {
   border: none;
   border-radius: 9px;
   background: transparent;
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
@@ -155,13 +215,13 @@ body.fields-mode--two .arena-composite {
 }
 
 .field-mode-btn[aria-pressed="true"] {
-  background: #ffffff;
-  color: #2563eb;
-  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.08);
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: none;
 }
 
 .field-mode-btn:hover:not([aria-pressed="true"]) {
-  color: #0b1220;
+  color: var(--text);
 }
 
 .global-actions .panel-btn {
@@ -170,18 +230,19 @@ body.fields-mode--two .arena-composite {
 
 .mask-btn[aria-pressed="true"],
 .pause-btn[aria-pressed="true"] {
-  background: #eff6ff;
-  border-color: rgba(37, 99, 235, 0.45);
-  color: #2563eb;
+  background: var(--accent);
+  border-color: transparent;
+  color: #ffffff;
 }
 
 .stats {
   width: 100%;
   padding: 14px 16px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  box-shadow: 0 10px 26px rgba(2, 6, 23, 0.08);
+  border-radius: var(--radius);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: none;
 }
 
 .stats-actions {
@@ -191,14 +252,14 @@ body.fields-mode--two .arena-composite {
 .panel-btn {
   flex: 1;
   padding: 10px 12px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 12px;
-  background: #ffffff;
-  color: #0b1220;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-bg);
+  color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(2, 6, 23, 0.08);
+  box-shadow: none;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -206,23 +267,22 @@ body.fields-mode--two .arena-composite {
   font-family: inherit;
 }
 
-.global-actions .simulations-overview-btn {
-  flex: none;
-}
-
 .panel-btn:hover {
-  background: #f8fafc;
-  border-color: rgba(37, 99, 235, 0.35);
-  color: #2563eb;
+  background: var(--readout-bg);
+  border-color: var(--accent);
+  color: #ffffff;
 }
 
 .help-dialog {
   width: min(620px, calc(100vw - 2rem));
   max-width: calc(100vw - 2rem);
   padding: 0;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.18);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-bg);
+  color: var(--text);
+  color-scheme: dark;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
   margin: auto;
   position: fixed;
   inset: 0;
@@ -230,7 +290,7 @@ body.fields-mode--two .arena-composite {
 }
 
 .help-dialog::backdrop {
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(15, 23, 42, 0.55);
 }
 
 .help-dialog-header {
@@ -238,7 +298,7 @@ body.fields-mode--two .arena-composite {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+  border-bottom: 1px solid var(--border);
 }
 
 .help-dialog-header h2 {
@@ -252,15 +312,15 @@ body.fields-mode--two .arena-composite {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #64748b;
+  color: var(--muted);
   font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .help-dialog-close:hover {
-  background: #f1f5f9;
-  color: #0b1220;
+  background: var(--area-muted);
+  color: var(--text);
 }
 
 .help-dialog-list {
@@ -275,7 +335,7 @@ body.fields-mode--two .arena-composite {
 
 .stats-label {
   font-size: 0.9rem;
-  opacity: 0.8;
+  color: var(--muted);
   margin-bottom: 6px;
 }
 
@@ -295,7 +355,7 @@ body.fields-mode--two .arena-composite {
 .stat-item + .stat-item {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid rgba(15, 23, 42, 0.10);
+  border-top: 1px solid var(--border);
 }
 
 .arena-composite {
@@ -330,10 +390,10 @@ body.fields-mode--two .arena-composite {
 .arena-size-btn {
   width: 36px;
   height: 36px;
-  border: 2px solid #58a6ff;
+  border: 2px solid var(--accent);
   border-radius: 50%;
-  background: #ffffff;
-  color: #2563eb;
+  background: var(--panel-bg);
+  color: var(--accent);
   font-size: 1.4rem;
   font-weight: 700;
   line-height: 1;
@@ -341,34 +401,36 @@ body.fields-mode--two .arena-composite {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.18);
+  box-shadow: none;
 }
 
 .arena-size-btn:hover {
-  background: #eff6ff;
+  background: var(--readout-bg);
+  color: #ffffff;
 }
 
 .arena-size-btn--minus {
-  border-color: #ef4444;
-  color: #dc2626;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.18);
+  border-color: var(--danger);
+  color: var(--danger);
+  box-shadow: none;
 }
 
 .arena-size-btn--minus:hover {
-  background: #fef2f2;
+  background: var(--readout-bg);
+  color: #ffffff;
 }
 
 .arena-size-btn:disabled {
   opacity: 1;
   cursor: not-allowed;
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #94a3b8;
+  background: var(--area-muted);
+  border-color: var(--border);
+  color: var(--muted);
   box-shadow: none;
 }
 
 .arena-size-btn:disabled:hover {
-  background: #f1f5f9;
+  background: var(--area-muted);
 }
 
 .arena {
@@ -376,11 +438,9 @@ body.fields-mode--two .arena-composite {
   width: 500px;
   height: 500px;
   background: #0d1117;
-  border: 4px solid #58a6ff;
+  border: 4px solid var(--accent);
   border-radius: 8px;
-  box-shadow:
-    0 0 40px rgba(88, 166, 255, 0.15),
-    inset 0 0 60px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -396,7 +456,7 @@ canvas {
 }
 
 .arena-composite.show-resize-hint .resize-handle::after {
-  background: rgba(37, 99, 235, 0.8);
+  background: var(--accent);
   animation: resize-handle-pulse 1.6s ease-in-out infinite;
 }
 
@@ -416,14 +476,14 @@ canvas {
   transform: translateX(-50%);
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(88, 166, 255, 0.35);
-  color: #2563eb;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  color: var(--canvas-text);
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
   z-index: 4;
   animation: resize-hint-pulse 1.6s ease-in-out infinite;
   transition: opacity 0.35s ease, transform 0.35s ease;
@@ -475,15 +535,15 @@ canvas {
 .resize-handle::after {
   content: '';
   position: absolute;
-  background: rgba(88, 166, 255, 0.55);
+  background: rgba(59, 130, 246, 0.55);
   border-radius: 999px;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  box-shadow: none;
   transition: background 0.15s, transform 0.15s;
 }
 
 .resize-handle:hover::after,
 .resize-handle.active::after {
-  background: rgba(37, 99, 235, 0.85);
+  background: var(--accent);
 }
 
 .resize-handle.n::after,
@@ -538,14 +598,14 @@ canvas {
 
 .stat-item--ball-count .channel-scrub:focus-visible,
 .stat-item--area .channel-scrub:focus-visible {
-  outline: 2px solid #58a6ff;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 10px;
 }
 
 .stat-item--ball-count .channel-scrub:hover .channel-scrub-inner,
 .stat-item--area .channel-scrub:hover .channel-scrub-inner {
-  background: rgba(88, 166, 255, 0.12);
+  background: rgba(59, 130, 246, 0.18);
 }
 
 .stat-item--ball-count .channel-scrub-inner,
@@ -574,7 +634,7 @@ canvas {
   border: none;
   background: transparent;
   font-family: inherit;
-  color: #0b1220;
+  color: var(--text);
 }
 
 .stat-item--ball-count .channel-scrub-arrow:hover,

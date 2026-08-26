@@ -21,11 +21,11 @@
 <stop offset="100%" stop-color="hsl(52.524 86% 34%)"/>
 </radialGradient>
 </defs>
-<rect x="28" y="-3.5" width="44" height="3.5" rx="1.75" fill="rgba(88,166,255,0.55)"/>
-<rect x="28" y="100" width="44" height="3.5" rx="1.75" fill="rgba(88,166,255,0.55)"/>
-<rect x="-3.5" y="28" width="3.5" height="44" rx="1.75" fill="rgba(88,166,255,0.55)"/>
-<rect x="100" y="28" width="3.5" height="44" rx="1.75" fill="rgba(88,166,255,0.55)"/>
-<rect x="0" y="0" width="100" height="100" rx="1.6" fill="#0d1117" stroke="#58a6ff" stroke-width="0.8"/>
+<rect x="28" y="-3.5" width="44" height="3.5" rx="1.75" fill="rgba(59,130,246,0.55)"/>
+<rect x="28" y="100" width="44" height="3.5" rx="1.75" fill="rgba(59,130,246,0.55)"/>
+<rect x="-3.5" y="28" width="3.5" height="44" rx="1.75" fill="rgba(59,130,246,0.55)"/>
+<rect x="100" y="28" width="3.5" height="44" rx="1.75" fill="rgba(59,130,246,0.55)"/>
+<rect x="0" y="0" width="100" height="100" rx="1.6" fill="#0d1117" stroke="#3b82f6" stroke-width="0.8"/>
 <circle cx="71" cy="31" r="3.6" fill="url(#hustota-ball-2)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
 <circle cx="69.9" cy="29.9" r="0.9" fill="rgba(255,255,255,0.45)"/>
 <circle cx="30" cy="70" r="3.6" fill="url(#hustota-ball-0)" stroke="rgba(0,0,0,0.2)" stroke-width="0.25"/>
