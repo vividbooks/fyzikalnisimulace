@@ -120,6 +120,7 @@
       padding: 16px;
       box-sizing: border-box;
       overflow: hidden;
+      position: relative;
     }
 
     .viz-column {
@@ -146,6 +147,75 @@
     .app.is-custom-graph .chart-wrap {
       flex: 1 1 auto;
       min-height: 0;
+    }
+
+    .chart-stage {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .chart-plot {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+    }
+
+    .chart-plot .chart-svg {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .chart-tools {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: flex-start;
+      padding-top: 2px;
+      z-index: 30;
+    }
+
+    .chart-zoom-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .chart-zoom-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #ffffff;
+    }
+
+    .chart-zoom-btn .chart-zoom-icon--out {
+      display: none;
+    }
+
+    .chart-zoom-btn[aria-pressed="true"] .chart-zoom-icon--in {
+      display: none;
+    }
+
+    .chart-zoom-btn[aria-pressed="true"] .chart-zoom-icon--out {
+      display: block;
+    }
+
+    .app.is-chart-expanded .chart-wrap {
+      position: absolute;
+      inset: 16px;
+      z-index: 40;
+      flex: none;
     }
 
     .chart-svg {
@@ -759,6 +829,13 @@
       .custom-axis-inline-row {
         grid-template-columns: 1fr;
       }
+
+      .app.is-chart-expanded .chart-wrap {
+        inset: max(8px, env(safe-area-inset-top, 0px))
+          max(10px, env(safe-area-inset-right, 0px))
+          max(12px, env(safe-area-inset-bottom, 0px))
+          max(10px, env(safe-area-inset-left, 0px));
+      }
     }
 
     .help-dialog {
@@ -952,7 +1029,26 @@
     <div class="viz-column" aria-label="Simulace">
       <div class="chart-wrap">
         <p class="sim-empty-hint" id="hintEl">Nakresli graf pohybu a stiskni Spustit.</p>
-        <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
+        <div class="chart-stage">
+          <div class="chart-plot">
+            <svg id="chart" class="chart-svg" viewBox="0 0 648 340" aria-label="Graf vzdálenost–čas"></svg>
+          </div>
+          <div class="chart-tools">
+            <button type="button" id="chartZoomBtn" class="chart-zoom-btn" aria-label="Zvětšit graf" aria-pressed="false">
+              <svg class="chart-zoom-icon chart-zoom-icon--in" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="M20 20l-4-4"></path>
+                <path d="M11 8v6"></path>
+                <path d="M8 11h6"></path>
+              </svg>
+              <svg class="chart-zoom-icon chart-zoom-icon--out" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="M20 20l-4-4"></path>
+                <path d="M8 11h6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
       <div id="trackSection" class="track-section">
         <svg id="track" class="track-svg" viewBox="0 -42 648 124" preserveAspectRatio="xMidYMin meet" aria-label="Dráha"></svg>
@@ -1014,6 +1110,8 @@
   const btnRunLabel = document.getElementById("btnRunLabel");
   const hintEl = document.getElementById("hintEl");
   const appEl = document.querySelector(".app");
+  const chartZoomBtn = document.getElementById("chartZoomBtn");
+  let chartExpanded = false;
 
   /** Plot margins inside SVG viewBox */
   const ml = 78;
@@ -1235,6 +1333,10 @@
     return !isCustomGraphMode() && yAxisMode === "cumulative";
   }
 
+  function allowsStartDistanceAtT0() {
+    return !isCustomGraphMode() && yAxisMode === "start";
+  }
+
   const CUSTOM_STEP_SPIN_DELTA = 0.1;
   const CUSTOM_STEP_MIN = 0.1;
 
@@ -1339,16 +1441,38 @@
     return true;
   }
 
+  const HINT_HIDE_MS = 3000;
+  let hintHideTimer = 0;
+  let hintDismissedFor = "";
+
+  function clearHintTimer() {
+    if (hintHideTimer) {
+      clearTimeout(hintHideTimer);
+      hintHideTimer = 0;
+    }
+  }
+
   function updateHint() {
     if (!hintEl) return;
-    if (customGraphMode) {
-      hintEl.textContent = "Nakresli body vlastního grafu.";
-      hintEl.classList.toggle("is-hidden", points.length > 0);
+    const modeKey = customGraphMode ? "custom" : "cyclist";
+    hintEl.textContent = customGraphMode
+      ? "Nakresli body vlastního grafu."
+      : "Nakresli graf pohybu a stiskni Spustit.";
+    const hasPoints = customGraphMode
+      ? points.length > 0
+      : points.length > 0 || (dualGraph && points2.length > 0) || running;
+    const hide = hasPoints || hintDismissedFor === modeKey;
+    hintEl.classList.toggle("is-hidden", hide);
+    if (hide) {
+      clearHintTimer();
       return;
     }
-    hintEl.textContent = "Nakresli graf pohybu a stiskni Spustit.";
-    const hasPoints = points.length > 0 || (dualGraph && points2.length > 0);
-    hintEl.classList.toggle("is-hidden", hasPoints || running);
+    if (hintHideTimer) return;
+    hintHideTimer = setTimeout(function () {
+      hintDismissedFor = modeKey;
+      hintHideTimer = 0;
+      if (hintEl) hintEl.classList.add("is-hidden");
+    }, HINT_HIDE_MS);
   }
 
   function syncModeChrome() {
@@ -1526,11 +1650,11 @@
       arr[i].s = Math.min(smax, Math.max(0, arr[i].s));
     }
     if (arr.length && arr[0].t < eps) {
-      arr[0].t = arr[0].t <= 1e-6 ? 0 : eps;
+      arr[0].t = allowsStartDistanceAtT0() && arr[0].t <= 1e-6 ? 0 : eps;
     }
 
     if (usesCumulativeAxisMode()) {
-      let minS = firstPointIsAtT0(arr) ? arr[0].s : 0;
+      let minS = 0;
       for (let i = 0; i < arr.length; i++) {
         if (arr[i].s < minS) arr[i].s = minS;
         minS = arr[i].s;
@@ -1547,7 +1671,7 @@
   }
 
   function graphStartS(arr) {
-    return firstPointIsAtT0(arr) ? arr[0].s : 0;
+    return allowsStartDistanceAtT0() && firstPointIsAtT0(arr) ? arr[0].s : 0;
   }
 
   /** Stejné zamítnutí jako při přidávání bodu (příliš blízko počátku / existujícímu uzlu). */
@@ -1585,7 +1709,7 @@
   function verticesFrom(arr) {
     sortPointsArr(arr);
     if (arr.length === 0) return [];
-    if (firstPointIsAtT0(arr)) return arr.slice();
+    if (allowsStartDistanceAtT0() && firstPointIsAtT0(arr)) return arr.slice();
     return [{ t: 0, s: 0 }].concat(arr);
   }
 
@@ -2236,7 +2360,9 @@
     handlesLayer.setAttribute("class", "handles");
     const needDummyOrigin =
       !usesVelocityAxisMode() &&
-      (!firstPointIsAtT0(points) || (dualGraph && !firstPointIsAtT0(points2)));
+      (!allowsStartDistanceAtT0() ||
+        !firstPointIsAtT0(points) ||
+        (dualGraph && !firstPointIsAtT0(points2)));
     if (needDummyOrigin) {
       const origin = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       origin.setAttribute("cx", tToX(0));
@@ -3024,7 +3150,7 @@
         : arr[dragIdx - 1];
     const next = arr[dragIdx + 1];
     const eps = 0.03;
-    if (dragIdx === 0 && !usesVelocityAxisMode()) {
+    if (dragIdx === 0 && allowsStartDistanceAtT0()) {
       t = Math.max(0, t);
     } else if (prev) {
       t = Math.max(prev.t + eps, t);
@@ -3371,6 +3497,27 @@
       if (!customGraphMode) return;
       syncCustomAxisFromInputs();
     });
+  });
+
+  function setChartExpanded(open) {
+    chartExpanded = !!open;
+    if (appEl) appEl.classList.toggle("is-chart-expanded", chartExpanded);
+    if (chartZoomBtn) {
+      chartZoomBtn.setAttribute("aria-pressed", String(chartExpanded));
+      chartZoomBtn.setAttribute(
+        "aria-label",
+        chartExpanded ? "Zavřít zvětšený graf" : "Zvětšit graf"
+      );
+    }
+  }
+
+  if (chartZoomBtn) {
+    chartZoomBtn.addEventListener("click", function () {
+      setChartExpanded(!chartExpanded);
+    });
+  }
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && chartExpanded) setChartExpanded(false);
   });
 
   btnHelp.addEventListener("click", function () {
