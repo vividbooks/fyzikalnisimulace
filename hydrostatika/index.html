@@ -2,15 +2,23 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
   <title>Hydrostatická tlaková síla</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=fedits-ux" />
 </head>
 <body>
   <main class="scene" aria-label="Hydrostatická tlaková síla">
-    <aside class="setup-panel">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
       <div class="panel-copy">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
         <h1 class="panel-title">Hydrostatická tlaková síla</h1>
       </div>
 
@@ -65,11 +73,12 @@
       </section>
 
       <div class="panel-actions">
-        <button class="panel-action-btn" id="resetBtn" type="button">RESET</button>
+        <button class="panel-action-btn" id="resetBtn" type="button">Reset</button>
       </div>
     </aside>
 
     <div class="scene-workspace" aria-label="Pracovní plocha">
+      <p class="sim-empty-hint" id="hintEl">Chytni válec a ponoř ho do kapaliny.</p>
       <div class="scene-stage">
       <div class="scene__wrap">
     <svg class="scene__svg" width="2108" height="2120" viewBox="0 0 2108 2120" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

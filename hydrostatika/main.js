@@ -80,6 +80,10 @@ let diskOffset = 0;
 let attached = true;
 let ballCount = 0;
 let drag = null;
+let hintStep = "immerse";
+const hintEl = document.getElementById("hintEl");
+const HINT_IMMERSE = "Chytni válec a ponoř ho do kapaliny.";
+const HINT_BALLS = "Přidej do válce několik kuliček a sleduj, co se stane.";
 let velocity = 0;
 let falling = false;
 let lastTime = 0;
@@ -120,6 +124,46 @@ function ballMinX() {
 
 function ballMaxX() {
   return narrowTube ? BALL_MAX_X_NARROW : BALL_MAX_X_WIDE;
+}
+
+function createTubeGrabHandle() {
+  const parent = hit?.parentNode;
+  if (!parent || parent.querySelector(".tube-grab-handle")) return;
+
+  const handle = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  handle.setAttribute("class", "tube-grab-handle");
+  handle.setAttribute("transform", "translate(920 575)");
+  handle.setAttribute("aria-hidden", "true");
+
+  const motion = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  motion.setAttribute("class", "tube-grab-handle__motion is-nudging");
+
+  const disk = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  disk.setAttribute("class", "tube-grab-handle__disk");
+  disk.setAttribute("r", "78");
+
+  const dots = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  dots.setAttribute("class", "tube-grab-handle__dots");
+  const cols = [-18, 18];
+  const rows = [-28, 0, 28];
+  rows.forEach((y) => {
+    cols.forEach((x) => {
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("cx", String(x));
+      dot.setAttribute("cy", String(y));
+      dot.setAttribute("r", "9");
+      dots.append(dot);
+    });
+  });
+
+  motion.append(disk, dots);
+  handle.append(motion);
+  parent.append(handle);
+}
+
+function stopTubeGrabNudge() {
+  const motion = svg?.querySelector(".tube-grab-handle__motion");
+  motion?.classList.remove("is-nudging");
 }
 
 function applyHitRect() {
@@ -216,6 +260,7 @@ function applyDiskOffset(y) {
     frozenDepthOffset = diskOffset;
   }
   updateDepthMarker();
+  syncSceneHint();
 }
 
 function diskDepthM() {
@@ -437,8 +482,29 @@ function tick(now) {
   raf = 0;
 }
 
+function syncSceneHint() {
+  if (!hintEl) return;
+
+  if (hintStep === "immerse" && displayedDepthOffset() > WATER_OFFSET) {
+    hintStep = ballCount > 0 ? "done" : "balls";
+  }
+
+  if (hintStep === "balls" && ballCount > 0) {
+    hintStep = "done";
+  }
+
+  if (hintStep === "done") {
+    hintEl.classList.add("is-hidden");
+    return;
+  }
+
+  hintEl.textContent = hintStep === "balls" ? HINT_BALLS : HINT_IMMERSE;
+  hintEl.classList.remove("is-hidden");
+}
+
 function onPointerDown(event) {
   event.preventDefault();
+  stopTubeGrabNudge();
   stopFall();
   attached = canAttach();
   if (attached) {
@@ -566,11 +632,15 @@ function resetScene() {
   applyTubeOffset(0);
   applyDiskOffset(0);
   renderBalls();
+  hintStep = "immerse";
+  syncSceneHint();
+  svg?.querySelector(".tube-grab-handle__motion")?.classList.add("is-nudging");
 }
 
 addBallBtn.addEventListener("click", (event) => {
   event.preventDefault();
   addBall();
+  syncSceneHint();
 });
 
 removeBallBtn.addEventListener("click", (event) => {
@@ -672,3 +742,4 @@ document.querySelectorAll("button[data-liquid]").forEach((btn) => {
 });
 
 applySetup();
+createTubeGrabHandle();
