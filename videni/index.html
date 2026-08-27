@@ -7,12 +7,17 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Barevné vidění</title>
-    <link rel="stylesheet" href="style.css?v=disorders-3" />
+    <link rel="stylesheet" href="style.css?v=fedits-ux2" />
   </head>
   <body>
     <div class="app">
       <header class="hud" aria-label="Ovládání">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
         <h1 class="hud-title">Barevné vidění</h1>
         <div class="hud-actions">
           <button type="button" id="src-photo" class="hud-btn is-active" aria-pressed="true">
@@ -34,6 +39,7 @@
         </div>
       </header>
 
+      <div class="workspace">
       <main class="stage" aria-label="Obrázek s barevnými složkami">
         <button
           type="button"
@@ -203,6 +209,7 @@
           </button>
         </div>
       </footer>
+      </div>
     </div>
 
     <script src="main.js?v=disorders-3"></script>

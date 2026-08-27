@@ -1,21 +1,47 @@
 @font-face {
   font-family: "Fenomen Sans";
-  src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
-    format("opentype");
+  src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Fenomen Sans";
+  src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cooper Light";
+  src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
 :root {
-  color-scheme: light;
-  --bg: #f4f5f8;
-  --text: #171923;
-  --muted: #6b7280;
-  --accent: #3d5a9a;
-  --border: #e8eaef;
-  --panel: #ffffff;
+  color-scheme: dark;
   --font: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+  --page-bg: #1e2533;
+  --bg: #1e2533;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-on: #ffffff;
+  --border: #475569;
+  --border-strong: #475569;
+  --panel: #2a3344;
+  --idle-bg: #334155;
+  --idle-text: #cbd5e1;
+  --canvas-bg: #ffffe6;
+  --canvas-text: #334155;
+  --focus: #3b82f6;
+  --radius: 12px;
+  --radius-canvas: 24px;
   --red: #e03131;
   --green: #2f9e44;
   --blue: #1971c2;
@@ -48,11 +74,17 @@ button {
 .app {
   position: relative;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  background: var(--bg);
+  padding: max(16px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+  gap: 12px;
+  box-sizing: border-box;
+  background: var(--page-bg);
   overflow: hidden;
 }
 
@@ -61,9 +93,7 @@ button {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
-  padding: max(16px, env(safe-area-inset-top, 0px))
-    max(20px, env(safe-area-inset-right, 0px)) 12px
-    max(20px, env(safe-area-inset-left, 0px));
+  padding: 0;
 }
 
 .hub-back-to-sims {
@@ -73,32 +103,45 @@ button {
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  padding: 9px 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--panel);
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #1e293b;
   color: var(--text);
-  font-size: 0.88rem;
-  font-weight: 600;
-  line-height: 1;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
   text-decoration: none;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.hub-back-to-sims svg {
+  display: block;
+  flex: 0 0 auto;
 }
 
 .hub-back-to-sims:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--bg);
+  color: #ffffff;
+}
+
+.hub-back-to-sims:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .hud-title {
   grid-column: 1 / -1;
   grid-row: 1;
   justify-self: center;
+  margin: 0;
   text-align: center;
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  color: var(--text);
+  font-family: "Cooper Light", serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
   pointer-events: none;
 }
 
@@ -117,15 +160,14 @@ button {
   appearance: none;
   min-height: 36px;
   padding: 7px 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel);
-  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
   font-size: 0.86rem;
-  font-weight: 600;
+  font-weight: 400;
   line-height: normal;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .hud-btn--file {
@@ -163,18 +205,32 @@ button {
 }
 
 .hud-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text);
+}
+
+.hud-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .hud-btn.is-active {
-  border-color: var(--accent);
+  border-color: transparent;
   background: var(--accent);
-  color: #ffffff;
+  color: var(--accent-on);
 }
 
 .hud-btn.is-active:hover {
-  color: #ffffff;
+  color: var(--accent-on);
+}
+
+.workspace {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-canvas);
+  background: var(--canvas-bg);
 }
 
 .stage {
@@ -185,7 +241,7 @@ button {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: 8px 20px;
+  padding: 16px 16px 8px;
 }
 
 .frame {
@@ -225,17 +281,21 @@ button {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: 1px solid rgba(51, 65, 85, 0.16);
+  border-radius: var(--radius);
   background: #ffffff;
-  color: var(--text);
+  color: var(--canvas-text);
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
 }
 
 .photo-nav:hover {
-  border-color: var(--accent);
   color: var(--accent);
+}
+
+.photo-nav:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .app.is-upload .photo-nav {
@@ -251,17 +311,20 @@ button {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: #ffffff;
-  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 }
 
 .zoom-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text);
+}
+
+.zoom-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .zoom-icon--out {
@@ -276,7 +339,16 @@ button {
 
 .app.is-zoomed {
   grid-template-rows: 1fr;
+  padding: 0;
+  gap: 0;
   background: #111318;
+}
+
+.app.is-zoomed .workspace {
+  position: relative;
+  border-radius: 0;
+  background: #111318;
+  grid-template-rows: 1fr;
 }
 
 .app.is-zoomed .dock {
@@ -320,6 +392,8 @@ button {
   bottom: max(12px, env(safe-area-inset-bottom, 0px));
   z-index: 6;
   pointer-events: auto;
+  background: #ffffff;
+  color: var(--canvas-text);
 }
 
 .app.is-zoomed .zoom-icon--in {
@@ -334,9 +408,7 @@ button {
   display: grid;
   justify-items: center;
   gap: 12px;
-  padding: 8px max(20px, env(safe-area-inset-right, 0px))
-    max(20px, env(safe-area-inset-bottom, 0px))
-    max(20px, env(safe-area-inset-left, 0px));
+  padding: 8px 16px 16px;
 }
 
 .dock-bar {
@@ -356,29 +428,32 @@ button {
   min-width: 7.5rem;
   min-height: 40px;
   padding: 8px 18px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel);
-  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: 400;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .mode-toggle-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text);
+}
+
+.mode-toggle-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .mode-toggle-btn.is-active {
   background: var(--accent);
-  border-color: var(--accent);
-  color: #ffffff;
+  border-color: transparent;
+  color: var(--accent-on);
 }
 
 .mode-toggle-btn.is-active:hover {
-  color: #ffffff;
+  color: var(--accent-on);
 }
 
 .channels {
@@ -402,14 +477,14 @@ button {
   min-width: 148px;
   min-height: 52px;
   padding: 10px 20px;
-  border: 2px solid var(--border);
+  border: 2px solid transparent;
   border-radius: 999px;
-  background: var(--panel);
-  color: var(--muted);
+  background: var(--idle-bg);
+  color: var(--idle-text);
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
     box-shadow 0.15s ease;
 }
@@ -573,20 +648,22 @@ button {
 .channel:disabled,
 .channel:disabled.is-on,
 .channel:disabled:hover {
-  background: #d7d9df;
-  border-color: #d7d9df;
-  color: #8b909a;
+  background: var(--idle-bg);
+  border-color: transparent;
+  color: var(--muted);
   box-shadow: none;
   cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .channel-scrub.is-disabled {
-  background: #d7d9df;
-  border-color: #d7d9df;
-  color: #8b909a;
+  background: var(--idle-bg);
+  border-color: transparent;
+  color: var(--muted);
   box-shadow: none;
   cursor: not-allowed;
   pointer-events: none;
+  opacity: 0.55;
 }
 
 .disorders .channel {
@@ -614,6 +691,15 @@ button {
     grid-column: 1;
     grid-row: 3;
     justify-self: start;
+  }
+
+  .stage {
+    padding: 12px 8px 6px;
+    gap: 8px;
+  }
+
+  .dock {
+    padding: 6px 8px 12px;
   }
 
   .channel,
