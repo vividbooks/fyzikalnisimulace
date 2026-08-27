@@ -2,16 +2,27 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
   <title>Tlak</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=fedits-hint1" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace tlaku">
-    <aside class="setup-panel">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
       <div class="panel-copy">
-        <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
         <h1 class="panel-title">Tlak</h1>
+      </div>
+
+      <section class="panel-section" aria-label="Režim simulace">
         <div class="mode-switch" role="tablist" aria-label="Režim simulace">
           <button
             type="button"
@@ -58,7 +69,7 @@
             Výpočet plochy
           </button>
         </div>
-      </div>
+      </section>
 
       <div class="stats-panel" aria-live="polite">
         <p class="stats-panel__item stats-panel__item--weight" id="weightStatItem">
@@ -146,10 +157,12 @@
     </aside>
 
     <div class="scene-workspace">
+      <p class="sim-empty-hint" id="hintEl">Chytni krychli a přesuň ji nebo změň její velikost.</p>
       <div class="stage" id="stage">
         <div class="floor" id="floor" aria-label="Podlaha s 5 čtverci"></div>
         <div class="cube-layer" id="cubeLayer" aria-label="Krychle na ploše"></div>
         <div class="floor floor--front" id="floorFront" aria-hidden="true"></div>
+        <div class="weight-label-layer" id="weightLabelLayer" aria-hidden="true"></div>
       </div>
     </div>
   </main>
@@ -214,6 +227,6 @@
     </div>
   </div>
 
-  <script src="main.js"></script>
+  <script src="main.js?v=fedits-hint1"></script>
 </body>
 </html>
