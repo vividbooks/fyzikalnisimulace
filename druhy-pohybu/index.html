@@ -2,36 +2,172 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
   <title>Druhy pohybů</title>
   <style>
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+
+    :root {
+      --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      --page-bg: #1e2533;
+      --bg: #1e2533;
+      --card-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #475569;
+      --border-strong: #475569;
+      --focus: #3b82f6;
+      --canvas-bg: #ffffe6;
+      --canvas-text: #334155;
+      --success: #4ade80;
+      --danger: #ef4444;
+      --radius: 12px;
+      --radius-canvas: 24px;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #ffffff;
-      color: #1a1a1a;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: var(--font-app);
+      background: var(--page-bg);
+      color: var(--text);
+      color-scheme: dark;
+    }
+
+    button, input, select, label {
+      font-family: inherit;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: 16px;
+      box-sizing: border-box;
+      background: var(--page-bg);
+    }
+
+    .app-head {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 16px;
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+
+    .hub-back-to-sims {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #1e293b;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.2;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .hub-back-to-sims svg {
+      display: block;
+      flex: 0 0 auto;
+    }
+
+    .hub-back-to-sims:hover {
+      color: #ffffff;
+    }
+
+    .hub-back-to-sims:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .panel-title {
+      margin: 0;
+      min-width: 0;
+      color: var(--text);
+      font-family: "Cooper Light", serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+    }
+
+    .workspace {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius-canvas);
+      background: var(--canvas-bg);
+      overflow: hidden;
     }
 
     #stage {
-      position: fixed;
+      position: absolute;
       inset: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
     }
 
     #animation-svg {
       display: block;
       width: 100%;
       height: 100%;
-      background: #ffffff;
+      background: transparent;
     }
 
     .ui-overlay {
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
       right: 0;
@@ -40,13 +176,7 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      padding: 16px 20px;
-      pointer-events: none;
-    }
-
-    .ui-overlay h1 {
-      font-size: 1.05rem;
-      font-weight: 600;
+      padding: 16px 20px 8px;
       pointer-events: none;
     }
 
@@ -78,21 +208,23 @@
       align-items: center;
       gap: 10px;
       padding: 10px 14px;
-      border: 1px solid #e5e5e5;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: var(--canvas-text);
       cursor: pointer;
       user-select: none;
-      transition: border-color 0.15s, background 0.15s;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
     }
 
     .ball-option:has(input:checked) {
-      border-color: #3b50f0;
-      background: rgba(244, 246, 255, 0.95);
+      border-color: var(--accent);
+      background: #eff6ff;
+      color: #1e3a8a;
     }
 
     .ball-option input {
-      accent-color: #3b50f0;
+      accent-color: var(--accent);
     }
 
     .ball-option span {
@@ -117,10 +249,10 @@
       width: 44px;
       height: 44px;
       padding: 0;
-      border: 1px solid #d1d5db;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.96);
-      color: #4b5563;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: var(--canvas-text);
       font-family: inherit;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
@@ -199,7 +331,8 @@
     }
 
     .quiz-wrap {
-      position: fixed;
+      position: absolute;
+      top: 58%;
       left: 50%;
       z-index: 10;
       transform: translateX(-50%);
@@ -209,11 +342,13 @@
       align-items: center;
       gap: 10px;
       padding: 12px 16px;
-      border: 1px solid #e5e5e5;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: var(--canvas-text);
       max-width: min(calc(100% - 32px), 520px);
       width: max-content;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     }
 
     .quiz-row {
@@ -235,12 +370,12 @@
       gap: 8px;
       min-width: 148px;
       padding: 6px 10px;
-      border: 2px solid #d1d5db;
+      border: 2px solid #cbd5e1;
       border-radius: 8px;
       background: #fff;
       font-size: 0.95rem;
       font-family: inherit;
-      color: #1a1a1a;
+      color: var(--canvas-text);
       cursor: pointer;
       transition: border-color 0.15s, background-color 0.15s;
     }
@@ -313,11 +448,12 @@
 
     #verify-btn {
       margin-top: 4px;
-      padding: 8px 20px;
+      min-height: 44px;
+      padding: 10px 20px;
       border: none;
-      border-radius: 8px;
-      background: #3b50f0;
-      color: #fff;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: var(--accent-on);
       font-size: 0.95rem;
       font-weight: 600;
       font-family: inherit;
@@ -325,7 +461,12 @@
     }
 
     #verify-btn:hover {
-      background: #3246d8;
+      background: var(--accent-hover);
+    }
+
+    #verify-btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
 
     #confetti-canvas {
@@ -335,74 +476,83 @@
       pointer-events: none;
     }
 
-    .hub-back-to-sims {
-      position: fixed;
-      top: 12px;
-      left: 12px;
-      z-index: 20;
-      display: inline-flex;
-      align-items: center;
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 700;
-      text-decoration: none;
-      padding: 9px 14px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      background: rgba(255, 255, 255, 0.94);
-      color: #111827;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
-    }
+    @media (max-width: 899.98px) {
+      .app {
+        padding: max(8px, env(safe-area-inset-top, 0px))
+          max(10px, env(safe-area-inset-right, 0px))
+          max(12px, env(safe-area-inset-bottom, 0px))
+          max(10px, env(safe-area-inset-left, 0px));
+        gap: 10px;
+      }
 
-    .hub-back-to-sims:hover {
-      border-color: #3b50f0;
-      color: #3b50f0;
-      background: #f4f6ff;
+      .panel-title {
+        font-size: 28px;
+      }
+
+      .ui-overlay {
+        padding: 12px 12px 8px;
+      }
+
+      .ball-option {
+        padding: 8px 10px;
+        gap: 8px;
+      }
     }
 
   </style>
 </head>
 <body>
-  <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-  <div id="stage"></div>
+  <div class="app">
+    <header class="app-head">
+      <a href="../index.html" class="hub-back-to-sims">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Zpět
+      </a>
+      <h1 class="panel-title">Druhy pohybů</h1>
+    </header>
 
-  <div class="ui-overlay">
-    <h1>Druhy pohybů</h1>
-    <div class="picker-wrap">
-      <h2>Vyber kuličku</h2>
-      <div id="ball-picker"></div>
-    </div>
-  </div>
+    <div class="workspace">
+      <div id="stage"></div>
 
-  <div class="quiz-wrap" id="quiz-wrap">
-    <div class="quiz-row">
-      <span>Pohyb kuličky je</span>
-      <div class="quiz-select" id="path-type" data-label="Tvar dráhy pohybu">
-        <button type="button" class="quiz-select-btn" aria-haspopup="listbox" aria-expanded="false">
-          <span class="quiz-select-value is-empty"></span>
-          <span class="quiz-select-chevron" aria-hidden="true">▾</span>
-        </button>
-        <ul class="quiz-select-menu" role="listbox" hidden>
-          <li class="quiz-select-option" role="option" data-value="přímočarý">přímočarý</li>
-          <li class="quiz-select-option" role="option" data-value="křivočarý">křivočarý</li>
-        </ul>
+      <div class="ui-overlay">
+        <div class="picker-wrap">
+          <h2>Vyber kuličku</h2>
+          <div id="ball-picker"></div>
+        </div>
+      </div>
+
+      <div class="quiz-wrap" id="quiz-wrap">
+        <div class="quiz-row">
+          <span>Pohyb kuličky je</span>
+          <div class="quiz-select" id="path-type" data-label="Tvar dráhy pohybu">
+            <button type="button" class="quiz-select-btn" aria-haspopup="listbox" aria-expanded="false">
+              <span class="quiz-select-value is-empty"></span>
+              <span class="quiz-select-chevron" aria-hidden="true">▾</span>
+            </button>
+            <ul class="quiz-select-menu" role="listbox" hidden>
+              <li class="quiz-select-option" role="option" data-value="přímočarý">přímočarý</li>
+              <li class="quiz-select-option" role="option" data-value="křivočarý">křivočarý</li>
+            </ul>
+          </div>
+        </div>
+        <div class="quiz-row">
+          <span>Pohyb kuličky je</span>
+          <div class="quiz-select" id="speed-type" data-label="Rovnoměrnost pohybu">
+            <button type="button" class="quiz-select-btn" aria-haspopup="listbox" aria-expanded="false">
+              <span class="quiz-select-value is-empty"></span>
+              <span class="quiz-select-chevron" aria-hidden="true">▾</span>
+            </button>
+            <ul class="quiz-select-menu" role="listbox" hidden>
+              <li class="quiz-select-option" role="option" data-value="rovnoměrný">rovnoměrný</li>
+              <li class="quiz-select-option" role="option" data-value="nerovnoměrný">nerovnoměrný</li>
+            </ul>
+          </div>
+        </div>
+        <button id="verify-btn" type="button">Ověřit</button>
       </div>
     </div>
-    <div class="quiz-row">
-      <span>Pohyb kuličky je</span>
-      <div class="quiz-select" id="speed-type" data-label="Rovnoměrnost pohybu">
-        <button type="button" class="quiz-select-btn" aria-haspopup="listbox" aria-expanded="false">
-          <span class="quiz-select-value is-empty"></span>
-          <span class="quiz-select-chevron" aria-hidden="true">▾</span>
-        </button>
-        <ul class="quiz-select-menu" role="listbox" hidden>
-          <li class="quiz-select-option" role="option" data-value="rovnoměrný">rovnoměrný</li>
-          <li class="quiz-select-option" role="option" data-value="nerovnoměrný">nerovnoměrný</li>
-        </ul>
-      </div>
-    </div>
-    <button id="verify-btn" type="button">Ověřit</button>
   </div>
 
   <script src="main.js"></script>
