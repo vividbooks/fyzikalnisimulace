@@ -10,28 +10,57 @@
   <style>
     @font-face {
       font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
-        format("opentype");
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
 
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+
     :root {
-      color-scheme: light;
-      --bg: #f4f5f8;
-      --sim-text: #e5e7eb;
+      --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      --page-bg: #1e2533;
+      --bg: #1e2533;
+      --card-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #475569;
+      --border-strong: #475569;
+      --focus: #3b82f6;
+      --canvas-bg: #000000;
+      --canvas-text: #334155;
+      --radius: 12px;
+      --radius-canvas: 24px;
+
+      --sim-text: #f8fafc;
       --sim-muted: #94a3b8;
       --sim-accent: #38bdf8;
       --ok: #22c55e;
       --warn: #f59e0b;
       --bad: #fb7185;
 
-      --canvas-bg: #0b1020;
-      --canvas-border: #1f2a44;
-
-      --axis: #94a3b8;
-      --tick: #94a3b8;
+      --axis: #64748b;
+      --tick: #64748b;
       --ray: #38bdf8;
       --ray2: #c4b5fd;
       --lens: #60a5fa;
@@ -41,33 +70,28 @@
       --candle-wax: #fecdd3;
       --flame: #fbbf24;
       --flame2: #fde68a;
-
-      --panel-bg: #ffffff;
-      --text: #171923;
-      --muted: #6b7280;
-      --accent: #3d5a9a;
-      --accent-hover: #334b81;
-      --border: #e8eaef;
-      --area-muted: #eceff5;
-      --readout-bg: #f4f5f8;
     }
 
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     html,
     body {
-      margin: 0;
+      width: 100%;
       height: 100%;
+      overflow: hidden;
     }
 
     body {
       min-height: 100vh;
       min-height: 100dvh;
-      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
-      background: var(--bg);
+      font-family: var(--font-app);
+      background: var(--page-bg);
       color: var(--text);
+      color-scheme: dark;
     }
 
     button {
@@ -77,18 +101,17 @@
     .app {
       display: flex;
       flex-direction: column;
-      align-items: stretch;
-      gap: clamp(10px, 1.5vh, 14px);
+      gap: 12px;
       width: 100%;
-      max-width: none;
+      height: 100vh;
+      height: 100dvh;
       margin: 0 auto;
-      padding: clamp(8px, 1.2vw, 14px);
-      padding-left: max(8px, env(safe-area-inset-left, 0px));
-      padding-right: max(8px, env(safe-area-inset-right, 0px));
-      padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
-      padding-top: max(8px, env(safe-area-inset-top, 0px));
-      min-height: 100dvh;
+      padding: max(16px, env(safe-area-inset-top, 0px))
+        max(16px, env(safe-area-inset-right, 0px))
+        max(16px, env(safe-area-inset-bottom, 0px))
+        max(16px, env(safe-area-inset-left, 0px));
       box-sizing: border-box;
+      background: var(--page-bg);
     }
 
     .viz-column {
@@ -97,88 +120,112 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-    }
-
-    .sim-topbar {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--panel-bg);
-      color: var(--text);
-    }
-
-    .sim-topbar-intro {
-      flex: 1 1 auto;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .sim-topbar-heading {
-      display: flex;
-      align-items: center;
       gap: 12px;
-      min-width: 0;
     }
 
-    .sim-topbar-copy {
+    .app-head {
       display: flex;
-      align-items: baseline;
-      gap: 10px;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-
-    .sim-topbar-intro .panel-title {
-      margin: 0;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 16px;
       flex: 0 0 auto;
-      white-space: nowrap;
+      min-width: 0;
     }
 
-    .sim-topbar-intro .hint {
+    .hub-back-to-sims {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #1e293b;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.2;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .hub-back-to-sims svg {
+      display: block;
+      flex: 0 0 auto;
+    }
+
+    .hub-back-to-sims:hover {
+      color: #ffffff;
+    }
+
+    .hub-back-to-sims:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .panel-title {
       margin: 0;
       min-width: 0;
+      color: var(--text);
+      font-family: "Cooper Light", serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+    }
+
+    .hint {
+      margin: 0;
+      flex: 1 1 220px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
     }
 
     .menuBtn {
       appearance: none;
       flex: 0 0 auto;
-      border: 1px solid var(--accent);
+      margin-left: auto;
+      border: 1px solid transparent;
       background: var(--accent);
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-weight: 700;
+      color: var(--accent-on);
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-weight: 400;
       font-size: 0.9rem;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
     }
 
     .menuBtn:hover {
       background: var(--accent-hover);
-      border-color: var(--accent-hover);
+    }
+
+    .menuBtn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
 
     .menuBtn[aria-expanded="true"] {
-      background: var(--panel-bg);
-      color: var(--accent);
-      border-color: var(--accent);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+    }
+
+    .workspace {
+      flex: 1 1 auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius-canvas);
+      background: var(--canvas-bg);
+      overflow: hidden;
     }
 
     .sim-menu-panel {
       display: none;
       flex: 0 0 auto;
-      margin-top: 10px;
-      padding: 14px 16px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--panel-bg);
+      padding: 16px 16px 12px;
       color: var(--text);
     }
 
@@ -193,31 +240,28 @@
 
     .scene-card {
       flex: 1 1 auto;
-      min-height: min(78vh, calc(100dvh - 200px));
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      border-radius: 14px;
       overflow: hidden;
-      border: 1px solid var(--canvas-border);
       background: var(--canvas-bg);
-      margin-top: 10px;
     }
 
     .sceneWrap {
       position: relative;
       flex: 1 1 auto;
       min-height: 0;
+      min-width: 0;
       display: flex;
-      align-items: stretch;
+      align-items: center;
+      justify-content: center;
+      background: var(--canvas-bg);
     }
 
     canvas {
       display: block;
-      width: 100%;
-      height: 100%;
-      flex: 1 1 auto;
-      min-height: 320px;
-      border-radius: 0;
+      width: auto;
+      height: auto;
       background: var(--canvas-bg);
       border: none;
       touch-action: none;
@@ -228,69 +272,104 @@
       gap: 14px;
     }
 
-    .sim-menu-grid {
+    .sim-menu-rows {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 12px 20px;
-      align-items: start;
+      gap: 8px;
     }
 
-    .sim-menu-col {
+    .sim-menu-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(140px, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .lens-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(51, 65, 85, 0.55);
+    }
+
+    .sim-menu-tools {
+      display: grid;
+      gap: 8px;
+      align-content: stretch;
+    }
+
+    .lens-group button,
+    .sim-menu-tools button {
+      appearance: none;
       min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      border: 1px solid transparent;
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      font-weight: 400;
+      font-size: 0.88rem;
+      cursor: pointer;
+      width: auto;
     }
 
-    .sim-menu-col .row,
-    .sim-menu-col .uiToggle,
-    .sim-menu-col .lensToggle {
-      width: 100%;
+    .lens-group button:hover,
+    .sim-menu-tools button:hover {
+      color: var(--text);
+    }
+
+    .lens-group button:focus-visible,
+    .sim-menu-tools button:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .lens-group button[aria-pressed="true"],
+    .sim-menu-tools button[aria-pressed="true"] {
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    .sim-menu-tools .taskBtn {
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    .sim-menu-tools .taskBtn:hover {
+      background: var(--accent-hover);
+      color: var(--accent-on);
+    }
+
+    .helperMenu {
+      display: none;
+      margin-top: 0;
+      padding-top: 0;
+      gap: 6px;
     }
 
     @media (max-width: 760px) {
-      .sim-menu-grid {
+      .sim-menu-layout {
         grid-template-columns: 1fr;
       }
 
-      .sim-topbar {
-        flex-wrap: wrap;
-      }
-
-      .sim-topbar-intro {
-        flex-basis: 100%;
-      }
-
-      .sim-topbar-heading {
-        flex-wrap: wrap;
+      .app-head {
         align-items: flex-start;
       }
 
-      .sim-topbar-copy {
-        flex-wrap: wrap;
+      .panel-title {
+        flex-basis: 100%;
+        font-size: 26px;
       }
 
-      .sim-topbar-intro .panel-title {
-        white-space: normal;
+      .hint {
+        flex-basis: 100%;
       }
 
       .menuBtn {
-        margin-left: auto;
+        margin-left: 0;
       }
-    }
-
-    .panel-title {
-      margin: 0;
-      font-size: 1.125rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .hint {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.45;
     }
 
     .row {
@@ -299,86 +378,27 @@
     }
 
     .row-label {
-      font-weight: 650;
+      font-weight: 600;
       font-size: 0.8125rem;
       letter-spacing: 0.02em;
       text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .hub-back-to-sims {
-      display: inline-flex;
-      flex: 0 0 auto;
-      align-items: center;
-      font-size: 0.88rem;
-      font-weight: 700;
-      text-decoration: none;
-      padding: 9px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--area-muted);
-      color: var(--text);
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
-    }
-
-    .hub-back-to-sims:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--readout-bg);
-    }
-
-    .lensToggle {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      user-select: none;
-    }
-
-    .lensToggle button {
-      appearance: none;
-      min-width: 0;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 0.88rem;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s, transform 0.08s;
-    }
-
-    .lensToggle button:hover {
-      border-color: var(--accent);
-    }
-
-    .lensToggle button[aria-pressed="true"] {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
+      color: #64748b;
     }
 
     .taskBtn {
       appearance: none;
-      border: 1px solid var(--accent);
+      border: 1px solid transparent;
       background: var(--accent);
-      color: #fff;
+      color: var(--accent-on);
       padding: 10px 16px;
-      border-radius: 10px;
-      font-weight: 700;
+      border-radius: var(--radius);
+      font-weight: 400;
       font-size: 0.9rem;
       cursor: pointer;
-      width: 100%;
-      transition: background 0.15s, border-color 0.15s, transform 0.08s;
-    }
-
-    .taskBtn:hover {
-      background: var(--accent-hover);
-      border-color: var(--accent-hover);
     }
 
     .taskBtn:active {
-      transform: translateY(1px);
+      transform: none;
     }
 
     dialog.taskDialog {
@@ -389,15 +409,15 @@
       width: 100%;
     }
     dialog.taskDialog::backdrop {
-      background: rgba(2, 6, 23, 0.55);
+      background: rgba(15, 23, 42, 0.62);
       backdrop-filter: blur(5px);
     }
     .taskPanel {
-      background: #0f172a;
-      color: var(--sim-text);
-      border-radius: 14px;
-      border: 1px solid rgba(148,163,184,0.26);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      background: var(--card-bg);
+      color: var(--text);
+      border-radius: var(--radius-canvas);
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
       padding: 16px 16px 14px;
       display: grid;
       gap: 12px;
@@ -410,23 +430,27 @@
     }
     .taskTitle {
       margin: 0;
-      font-size: 1.1rem;
-      font-weight: 950;
-      color: var(--sim-text);
+      font-family: "Cooper Light", serif;
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: var(--text);
     }
     .closeBtn {
       appearance: none;
-      border: 1px solid rgba(148,163,184,0.35);
-      background: rgba(15,23,42,0.08);
-      color: var(--sim-text);
-      padding: 8px 10px;
-      border-radius: 999px;
-      font-weight: 900;
+      border: 1px solid var(--border-strong);
+      background: #1e293b;
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-weight: 400;
       cursor: pointer;
+    }
+    .closeBtn:hover {
+      color: #ffffff;
     }
     .taskBody {
       margin: 0;
-      color: var(--sim-text);
+      color: var(--idle-text);
       line-height: 1.5;
       font-size: 0.98rem;
     }
@@ -436,107 +460,72 @@
       display: grid;
       gap: 6px;
     }
-    .taskBody li { color: var(--sim-text); }
-    .taskBody strong { font-weight: 950; }
+    .taskBody li { color: var(--idle-text); }
+    .taskBody strong { font-weight: 600; color: var(--text); }
 
-    .uiToggle {
-      display: grid;
-      gap: 8px;
-      user-select: none;
-    }
-
-    .uiToggle > button {
-      appearance: none;
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s, transform 0.08s;
-      width: 100%;
-      text-align: left;
-    }
-
-    .uiToggle > button:hover {
-      border-color: var(--accent);
-    }
-
-    .uiToggle > button[aria-pressed="true"] {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
-
-    .helperMenu {
-      display: none;
-      margin-top: 0;
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
-      gap: 6px;
-    }
     .helperMenu[data-open="true"] {
       display: grid;
     }
     .helperMenuGrid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      align-items: start;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      align-items: stretch;
+      justify-content: flex-end;
     }
-    .helperGroupTitle {
-      font-size: 0.78rem;
-      color: var(--muted);
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      margin: 0 0 6px;
+
+    .helperOptionGroup {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .helperOptionGroup + .helperOptionGroup {
+      padding-left: 18px;
+      border-left: 1px solid var(--border);
     }
 
     .helperOption {
       appearance: none;
-      width: 100%;
-      text-align: left;
-      border: 1px solid var(--border);
-      background: var(--area-muted);
-      color: var(--text);
-      padding: 8px 10px;
-      border-radius: 10px;
-      font-weight: 650;
+      width: auto;
+      flex: 0 0 auto;
+      text-align: center;
+      border: 1px solid transparent;
+      background: #ffffff;
+      color: var(--canvas-text);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-weight: 400;
       font-size: 0.88rem;
       cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
       white-space: nowrap;
     }
 
     .helperOption:hover {
-      border-color: var(--accent);
+      color: var(--accent);
     }
 
     .helperOption[data-selected="true"] {
       background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
+      color: var(--accent-on);
     }
   </style>
 </head>
 <body>
   <main class="app">
     <div class="viz-column" aria-label="Simulace">
-      <header class="sim-topbar">
-        <div class="sim-topbar-intro">
-          <div class="sim-topbar-heading">
-            <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-            <div class="sim-topbar-copy">
-              <h1 class="panel-title">Hledání skutečného obrazu</h1>
-              <p class="hint">
-                Pohybuj plamínkem svíčky a stínítkem sleduj, jaký obraz plamínku je vidět na stínítku.
-              </p>
-            </div>
-          </div>
-        </div>
+      <header class="app-head">
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Hledání skutečného obrazu</h1>
+        <p class="hint">
+          Pohybuj plamínkem svíčky a stínítkem sleduj, jaký obraz plamínku je vidět na stínítku.
+        </p>
         <button
           id="menuBtn"
           type="button"
@@ -548,6 +537,7 @@
         </button>
       </header>
 
+      <div class="workspace">
       <div
         id="simMenuPanel"
         class="sim-menu-panel"
@@ -556,38 +546,31 @@
         hidden
       >
         <div class="controls">
-          <div class="sim-menu-grid">
-            <div class="sim-menu-col">
-              <div class="row">
-                <span class="row-label">Typ čočky</span>
-                <div id="lensToggle" class="lensToggle" role="group" aria-label="Typ čočky">
+          <div class="row">
+            <span class="row-label">Typ čočky</span>
+            <div class="sim-menu-rows">
+              <div class="sim-menu-layout">
+                <div id="lensToggle" class="lens-group" role="group" aria-label="Typ čočky">
                   <button id="convergingBtn" type="button" aria-pressed="true">Spojka</button>
                   <button id="divergingBtn" type="button" aria-pressed="false">Rozptylka</button>
                   <button id="noLensBtn" type="button" aria-pressed="false">Bez čočky</button>
                   <button id="cameraBtn" type="button" aria-pressed="false">Camera obscura</button>
                 </div>
-              </div>
-              <button id="taskBtn" class="taskBtn" type="button">Badatelský úkol</button>
-            </div>
-            <div class="sim-menu-col">
-              <div class="row">
-                <span class="row-label">Pomocné paprsky</span>
-                <div class="uiToggle" role="group" aria-label="Pomocné paprsky">
+                <div class="sim-menu-tools">
+                  <button id="taskBtn" class="taskBtn" type="button">Badatelský úkol</button>
                   <button id="helperRaysBtn" type="button" aria-pressed="false">Pomocné paprsky</button>
-                  <div id="helperMenu" class="helperMenu" data-open="false" role="menu" aria-label="Volba počtu paprsků">
-                    <div class="helperMenuGrid">
-                      <div>
-                        <p class="helperGroupTitle">Počet</p>
-                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="2" aria-checked="false">2 paprsky</button>
-                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="5" aria-checked="true" data-selected="true">5 paprsků</button>
-                        <button class="helperOption" type="button" role="menuitemradio" data-helper-count="all" aria-checked="false">Všechny paprsky</button>
-                      </div>
-                      <div>
-                        <p class="helperGroupTitle">Odkud</p>
-                        <button class="helperOption" type="button" role="menuitemradio" data-helper-points="1" aria-checked="false">1 bod</button>
-                        <button class="helperOption" type="button" role="menuitemradio" data-helper-points="2" aria-checked="true" data-selected="true">2 body</button>
-                      </div>
-                    </div>
+                </div>
+              </div>
+              <div id="helperMenu" class="helperMenu" data-open="false" role="menu" aria-label="Volba počtu paprsků">
+                <div class="helperMenuGrid">
+                  <div class="helperOptionGroup" role="group" aria-label="Počet">
+                    <button class="helperOption" type="button" role="menuitemradio" data-helper-count="2" aria-checked="false">2 paprsky</button>
+                    <button class="helperOption" type="button" role="menuitemradio" data-helper-count="5" aria-checked="true" data-selected="true">5 paprsků</button>
+                    <button class="helperOption" type="button" role="menuitemradio" data-helper-count="all" aria-checked="false">Všechny paprsky</button>
+                  </div>
+                  <div class="helperOptionGroup" role="group" aria-label="Odkud">
+                    <button class="helperOption" type="button" role="menuitemradio" data-helper-points="1" aria-checked="false">1 bod</button>
+                    <button class="helperOption" type="button" role="menuitemradio" data-helper-points="2" aria-checked="true" data-selected="true">2 body</button>
                   </div>
                 </div>
               </div>
@@ -600,6 +583,7 @@
         <div class="sceneWrap">
           <canvas id="scene" width="1600" height="660" aria-label="Optická lavice se spojnou čočkou"></canvas>
         </div>
+      </div>
       </div>
     </div>
 
@@ -822,41 +806,31 @@
 
       ctx.save();
       ctx.strokeStyle = "rgba(148,163,184,0.78)";
-      ctx.fillStyle = "rgba(226,232,240,0.92)";
       ctx.lineWidth = 2.5;
-      ctx.font = '900 20px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
+      ctx.font = '600 26px "Fenomen Sans", ui-sans-serif, system-ui, sans-serif';
       ctx.textAlign = "center";
-      ctx.textBaseline = "top";
+      ctx.textBaseline = "middle";
 
       marks.forEach((m) => {
         if (m.x < 26 || m.x > canvas.width - 26) return;
-        // small tick + label (without drawing the full axis)
         const y = state.axisY;
         ctx.beginPath();
         ctx.moveTo(m.x, y - 14);
         ctx.lineTo(m.x, y + 14);
         ctx.stroke();
 
-        // label with subtle pill background for readability
-        const labelY = y + 18;
-        const padX = 10;
-        const padY = 5;
-        const w = ctx.measureText(m.label).width + padX * 2;
-        const h = 28;
+        const pillH = 38;
+        const pillW = Math.max(52, ctx.measureText(m.label).width + 22);
+        const labelY = y + 18 + pillH / 2;
         ctx.save();
-        ctx.fillStyle = "rgba(15,23,42,0.40)";
-        ctx.strokeStyle = "rgba(148,163,184,0.30)";
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#e8eaef";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        roundRectPath(ctx, m.x - w / 2, labelY - padY, w, h, 999);
+        roundRectPath(ctx, m.x - pillW / 2, labelY - pillH / 2, pillW, pillH, pillH / 2);
         ctx.fill();
         ctx.stroke();
-        ctx.restore();
-
-        ctx.save();
-        ctx.shadowColor = "rgba(0,0,0,0.35)";
-        ctx.shadowBlur = 6;
-        ctx.fillStyle = "rgba(226,232,240,0.94)";
+        ctx.fillStyle = "#171923";
         ctx.fillText(m.label, m.x, labelY);
         ctx.restore();
       });
@@ -925,7 +899,9 @@
 
     const FLAME_SVG_W = 12;
     const FLAME_SVG_H = 29;
-    const FLAME_SVG_MARKUP = `<svg width="12" height="29" viewBox="0 0 12 29" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79016 18.9447C4.79016 18.9447 6.39764 18.6087 6.76546 20.2253C7.13328 21.8419 6.30683 27.5771 6.30683 27.5771" fill="white"/><path d="M4.79016 18.9447C4.79016 18.9447 6.39764 18.6087 6.76546 20.2253C7.13328 21.8419 6.30683 27.5771 6.30683 27.5771" stroke="#1D1D1B" stroke-width="1.68923" stroke-linecap="round" stroke-linejoin="round"/><g opacity="0.9"><path d="M5.97039 23.2453C3.25945 23.2453 1.13428 20.0575 1.13428 15.9888C1.13428 14.0135 1.84721 10.3399 2.55559 7.579C4.08135 1.62583 5.0395 1.13086 5.96585 1.13086C6.8922 1.13086 7.84126 1.62582 9.37155 7.57446C10.0845 10.3444 10.8019 14.0181 10.8019 15.9843C10.8019 20.053 8.6768 23.2407 5.97039 23.2407V23.2453Z" fill="#FFDD00"/><path d="M5.97135 2.27047C7.18378 2.27047 9.66767 12.6102 9.66767 15.9932C9.66767 19.3762 8.01023 22.1144 5.97135 22.1144C3.93247 22.1144 2.27047 19.3717 2.27047 15.9932C2.27047 12.6147 4.73167 2.27047 5.97135 2.27047ZM5.97135 0C3.9688 0 2.87443 1.77552 1.45765 7.30184C0.731102 10.1354 0 13.918 0 15.9932C0 20.6976 2.62014 24.3849 5.97135 24.3849C9.32257 24.3849 11.9381 20.6976 11.9381 15.9932C11.9381 13.9271 11.2025 10.1399 10.4714 7.2973C9.05011 1.77097 7.95574 0 5.96681 0H5.97135Z" fill="#F03B50"/><path d="M5.97057 2.26975C7.183 2.26975 9.66689 12.6095 9.66689 15.9925C9.66689 19.3755 8.00945 22.1137 5.97057 22.1137C3.93169 22.1137 2.26969 19.3709 2.26969 15.9925C2.26969 12.614 4.73089 2.26975 5.97057 2.26975ZM5.97057 0.907471C4.71273 0.907471 4.09061 2.21527 3.60473 3.43678C3.19605 4.46757 2.76013 5.87981 2.33782 7.52363C1.62489 10.3027 0.90741 13.9945 0.90741 15.9925C0.90741 20.1883 3.13248 23.476 5.97057 23.476C8.80866 23.476 11.0292 20.1883 11.0292 15.9925C11.0292 14.0035 10.3072 10.3072 9.59424 7.52363C9.17193 5.87981 8.73601 4.46757 8.32732 3.43678C7.84598 2.21072 7.22387 0.907471 5.97057 0.907471Z" fill="#FF8158"/><path d="M5.96948 6.34804C6.86859 9.33598 7.85397 13.9042 7.85397 15.993C7.85397 18.6631 6.637 20.2978 5.97403 20.2978C5.31105 20.2978 4.08952 18.6631 4.08952 15.993C4.08952 13.8951 5.07492 9.33143 5.96948 6.34804ZM5.96948 2.27026C4.73434 2.27026 2.26862 12.61 2.26862 15.993C2.26862 19.376 3.92606 22.1142 5.96948 22.1142C8.01291 22.1142 9.66582 19.3715 9.66582 15.993C9.66582 12.6145 7.18191 2.27026 5.96948 2.27026Z" fill="#F6AF34"/></g></svg>`;
+    /** Spodní hrana plamínku v souřadnicích SVG (pod ní je prázdno po knotu). */
+    const FLAME_SVG_BOTTOM = 24.3849;
+    const FLAME_SVG_MARKUP = `<svg width="12" height="29" viewBox="0 0 12 29" fill="none" xmlns="http://www.w3.org/2000/svg"><g opacity="0.9"><path d="M5.97039 23.2453C3.25945 23.2453 1.13428 20.0575 1.13428 15.9888C1.13428 14.0135 1.84721 10.3399 2.55559 7.579C4.08135 1.62583 5.0395 1.13086 5.96585 1.13086C6.8922 1.13086 7.84126 1.62582 9.37155 7.57446C10.0845 10.3444 10.8019 14.0181 10.8019 15.9843C10.8019 20.053 8.6768 23.2407 5.97039 23.2407V23.2453Z" fill="#FFDD00"/><path d="M5.97135 2.27047C7.18378 2.27047 9.66767 12.6102 9.66767 15.9932C9.66767 19.3762 8.01023 22.1144 5.97135 22.1144C3.93247 22.1144 2.27047 19.3717 2.27047 15.9932C2.27047 12.6147 4.73167 2.27047 5.97135 2.27047ZM5.97135 0C3.9688 0 2.87443 1.77552 1.45765 7.30184C0.731102 10.1354 0 13.918 0 15.9932C0 20.6976 2.62014 24.3849 5.97135 24.3849C9.32257 24.3849 11.9381 20.6976 11.9381 15.9932C11.9381 13.9271 11.2025 10.1399 10.4714 7.2973C9.05011 1.77097 7.95574 0 5.96681 0H5.97135Z" fill="#F03B50"/><path d="M5.97057 2.26975C7.183 2.26975 9.66689 12.6095 9.66689 15.9925C9.66689 19.3755 8.00945 22.1137 5.97057 22.1137C3.93169 22.1137 2.26969 19.3709 2.26969 15.9925C2.26969 12.614 4.73089 2.26975 5.97057 2.26975ZM5.97057 0.907471C4.71273 0.907471 4.09061 2.21527 3.60473 3.43678C3.19605 4.46757 2.76013 5.87981 2.33782 7.52363C1.62489 10.3027 0.90741 13.9945 0.90741 15.9925C0.90741 20.1883 3.13248 23.476 5.97057 23.476C8.80866 23.476 11.0292 20.1883 11.0292 15.9925C11.0292 14.0035 10.3072 10.3072 9.59424 7.52363C9.17193 5.87981 8.73601 4.46757 8.32732 3.43678C7.84598 2.21072 7.22387 0.907471 5.97057 0.907471Z" fill="#FF8158"/><path d="M5.96948 6.34804C6.86859 9.33598 7.85397 13.9042 7.85397 15.993C7.85397 18.6631 6.637 20.2978 5.97403 20.2978C5.31105 20.2978 4.08952 18.6631 4.08952 15.993C4.08952 13.8951 5.07492 9.33143 5.96948 6.34804ZM5.96948 2.27026C4.73434 2.27026 2.26862 12.61 2.26862 15.993C2.26862 19.376 3.92606 22.1142 5.96948 22.1142C8.01291 22.1142 9.66582 19.3715 9.66582 15.993C9.66582 12.6145 7.18191 2.27026 5.96948 2.27026Z" fill="#F6AF34"/></g></svg>`;
     let flameSvgImage = null;
     let flameSvgLoadPromise = null;
 
@@ -957,7 +933,13 @@
       const x = state.screenX;
       const top = state.screenY - SCREEN_HALF_LEN;
       const bottom = state.screenY + SCREEN_HALF_LEN;
-      return { x: x - 16, y: top - 12, w: 32, h: (bottom - top) + 24 };
+      const handlePad = 28;
+      return {
+        x: x - handlePad,
+        y: top - 12,
+        w: handlePad * 2,
+        h: (bottom - top) + 24
+      };
     }
 
     function flameFlicker(x, baseY, height, onWhite, t) {
@@ -1077,6 +1059,35 @@
       }
     }
 
+    // Průhledné pixely mají RGB = 0, takže rozmazání nepřednásobených dat
+    // vtáhne do barvy černou. Barvy proto přednásobíme alfou a po rozostření
+    // je vrátíme zpět.
+    function premultiply(data) {
+      for (let p = 0; p < data.length; p += 4) {
+        const a = data[p + 3] / 255;
+        if (a === 1) continue;
+        data[p] *= a;
+        data[p + 1] *= a;
+        data[p + 2] *= a;
+      }
+    }
+
+    function unpremultiply(data) {
+      for (let p = 0; p < data.length; p += 4) {
+        const a = data[p + 3] / 255;
+        if (a === 0) {
+          data[p] = 0;
+          data[p + 1] = 0;
+          data[p + 2] = 0;
+          continue;
+        }
+        if (a === 1) continue;
+        data[p] /= a;
+        data[p + 1] /= a;
+        data[p + 2] /= a;
+      }
+    }
+
     function gaussianBlurImageData(imageData, radiusPx) {
       const radius = Math.max(1, Math.round(radiusPx));
       const { width: w, height: h, data } = imageData;
@@ -1086,10 +1097,12 @@
       }
       const tmp = flameBlurTmp;
       const passes = radius >= 6 ? 3 : 2;
+      premultiply(data);
       for (let i = 0; i < passes; i++) {
         boxBlurPass(data, tmp, w, h, radius, true);
         boxBlurPass(tmp, data, w, h, radius, false);
       }
+      unpremultiply(data);
     }
 
     function drawBlurredFlame(x, baseY, height, inverted, flicker, blurPx, alpha) {
@@ -1159,6 +1172,37 @@
       ctx.restore();
     }
 
+    function drawGrabHandle(x, y, opts = {}) {
+      const showDisk = opts.disk !== false;
+      const dotR = showDisk ? 3.2 : 3.8;
+      const cols = showDisk ? [-6, 6] : [-7, 7];
+      const rows = showDisk ? [-8.5, 0, 8.5] : [-10, 0, 10];
+      ctx.save();
+      ctx.translate(x, y);
+      if (showDisk) {
+        ctx.shadowColor = "rgba(15, 23, 42, 0.38)";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 3;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 24, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+      ctx.fillStyle = opts.color || "#3b82f6";
+      for (let r = 0; r < rows.length; r += 1) {
+        for (let c = 0; c < cols.length; c += 1) {
+          ctx.beginPath();
+          ctx.arc(cols[c], rows[r], dotR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
     function drawScreen() {
       const x = state.screenX;
       const top = state.screenY - SCREEN_HALF_LEN;
@@ -1172,10 +1216,13 @@
       ctx.lineTo(x, bottom);
       ctx.stroke();
       ctx.restore();
+      drawGrabHandle(x, state.screenY);
     }
 
     function drawSceneCandle(now) {
       drawFlame(state.candleX, state.candleBaseY, state.candleHeight, { inverted: false, t: now });
+      const flameCenterY = state.candleBaseY - state.candleHeight * 0.52;
+      drawGrabHandle(state.candleX, flameCenterY, { disk: false, color: "#f97316" });
     }
 
     function candleFlamePoint(baseY, height) {
@@ -1185,9 +1232,12 @@
     }
 
     function candleBottomPoint(baseY, height) {
-      // Flame-only object: bottom is its baseY (near wick).
-      void height;
-      return { x: state.candleX, y: baseY };
+      // Spodek plamínku leží nad baseY — v SVG zbývá pod ním prostor po knotu.
+      const H = clamp(Math.abs(height), 18, 320);
+      return {
+        x: state.candleX,
+        y: baseY - H * ((FLAME_SVG_H - FLAME_SVG_BOTTOM) / FLAME_SVG_H)
+      };
     }
 
     function imageYFromObjectY(yObj, m, yAxis = state.axisY) {
@@ -1909,6 +1959,7 @@
         simMenuPanel.setAttribute("data-open", String(open));
         simMenuPanel.hidden = !open;
         menuBtn.setAttribute("aria-expanded", String(open));
+        requestAnimationFrame(fitCanvasToWrap);
       });
     }
 
@@ -1959,11 +2010,33 @@
         if (!inside) closeTask();
       });
     }
+    function fitCanvasToWrap() {
+      const wrap = canvas.parentElement;
+      if (!wrap) return;
+      const rw = wrap.clientWidth;
+      const rh = wrap.clientHeight;
+      if (rw < 1 || rh < 1) return;
+      const ar = canvas.width / canvas.height;
+      let w = rw;
+      let h = w / ar;
+      if (h > rh) {
+        h = rh;
+        w = h * ar;
+      }
+      canvas.style.width = `${Math.max(1, Math.floor(w))}px`;
+      canvas.style.height = `${Math.max(1, Math.floor(h))}px`;
+    }
+
     function animate(now) {
       draw(now);
       requestAnimationFrame(animate);
     }
     applyPositionLimits();
+    fitCanvasToWrap();
+    if (typeof ResizeObserver === "function" && canvas.parentElement) {
+      new ResizeObserver(() => fitCanvasToWrap()).observe(canvas.parentElement);
+    }
+    window.addEventListener("resize", fitCanvasToWrap);
     ensureFlameSvgLoaded()
       .then(() => requestAnimationFrame(animate))
       .catch(() => requestAnimationFrame(animate));
