@@ -9,9 +9,9 @@ const JET_HEIGHT = 72;
 const ZELENA_GRAVITY = 1100;
 const ZELENA_RESTITUTION = 0.74;
 const ZELENA_START = { x: 40, y: 40, vx: 260, vy: 90 };
-const ZELENA_BRAKE_START = 0.62;
-const ZELENA_STOP_FRACTION = 0.84;
-const ZELENA_STOP_HOLD = 1.2;
+const ZELENA_BRAKE_START = 0.55;
+const ZELENA_STOP_FRACTION = 0.72;
+const ZELENA_STOP_HOLD = 2.4;
 const ZLUTA_BELT_THICKNESS = 20;
 const ZLUTA_ARC_HEIGHT = 96;
 const ZLUTA_BELT_STRIPE_SPACING = 28;
@@ -408,7 +408,7 @@ function stepZelenaPhysics(dt) {
   const onFloor = state.y >= stageMetrics.floorY - 0.01;
   const settled = onFloor && Math.abs(state.vy) < 55;
 
-  if (state.braking && state.vx <= 0 && settled) {
+  if (state.braking && state.vx < 12 && settled) {
     state.vx = 0;
     state.vy = 0;
     state.y = stageMetrics.floorY;
