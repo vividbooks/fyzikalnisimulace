@@ -63,6 +63,8 @@
       --clock-top: 16px;
       --scene-w: 100vw;
       --scene-scale: 1;
+      --car-draw-w: 529px;
+      --car-draw-h: 205px;
       --front-wheel-x: calc(50% + (381.793px - var(--car-w) / 2) * var(--scene-scale));
     }
 
@@ -1084,11 +1086,15 @@
       min-width: 0;
       height: auto;
       overflow: visible;
-      flex: 0 1 auto;
+      flex: none;
+      align-self: stretch;
     }
     .lane-clip {
       position: absolute;
-      inset: 0;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 100%;
       overflow: hidden;
       z-index: 0;
     }
@@ -1120,7 +1126,7 @@
     .vegetation-item {
       position: absolute;
       left: 0;
-      bottom: calc(100% * (var(--car-h) - var(--road-y)) / var(--car-h));
+      bottom: calc(var(--car-draw-h) * 21 / 205);
       transform: translateX(calc(var(--scene-w) * 1.1));
       will-change: transform;
     }
@@ -1149,16 +1155,11 @@
       margin-left: -1px;
     }
     .road {
-      position: absolute;
-      left: -1px;
-      top: calc(100% * var(--road-y) / var(--car-h));
-      width: calc(100% + 2px);
-      height: var(--road-h);
-      background: #111827;
+      display: none;
     }
     .km-sign {
       position: absolute;
-      top: calc(100% * var(--road-y) / var(--car-h) - 116px * var(--scene-scale));
+      top: calc(var(--car-draw-h) * 68 / 205);
       left: calc(var(--front-wheel-x) - 48px * var(--scene-scale));
       width: calc(96px * var(--scene-scale));
       height: calc(156px * var(--scene-scale));
@@ -1175,22 +1176,38 @@
     .stage[data-view="1"] .lane:not([data-car="1"]) { display: none; }
     .stage[data-view="2"] .lane:not([data-car="2"]) { display: none; }
     .stage[data-view="3"] .lane:not([data-car="3"]) { display: none; }
+    .car-scale {
+      position: relative;
+      width: var(--car-draw-w);
+      height: var(--car-draw-h);
+      margin: 0 auto;
+    }
     .car-drive {
       position: relative;
       z-index: 2;
-      width: min(100%, calc(var(--car-w) * var(--scene-scale)));
-      height: auto;
-      aspect-ratio: 529 / 205;
-      margin: 0 auto;
+      width: var(--car-draw-w);
+      height: var(--car-draw-h);
       overflow: visible;
+    }
+    .road-line {
+      position: absolute;
+      z-index: 0;
+      top: calc(var(--car-draw-h) * 184 / 205 - var(--road-h) / 2);
+      left: 50%;
+      width: 400vw;
+      height: var(--road-h);
+      transform: translateX(-50%);
+      background: #111827;
+      pointer-events: none;
     }
     .car-drive > svg {
       position: absolute;
-      inset: 0;
+      left: 0;
+      top: 0;
       z-index: 1;
       display: block;
-      width: 100%;
-      height: 100%;
+      width: var(--car-draw-w);
+      height: var(--car-draw-h);
       overflow: visible;
     }
     .jet-engine {
@@ -1322,6 +1339,9 @@
         flex: 1 1 auto;
         min-height: min(52vh, 560px);
         width: 100%;
+      }
+      .stage {
+        padding: 120px 12px 16px;
       }
     }
   </style>
@@ -1577,10 +1597,8 @@
     <div class="lane-clip">
       <div class="road-scroll scenery-scroll scenery-scroll-1">
       <div class="scenery-unit">
-        <div class="road" aria-hidden="true"></div>
       </div>
       <div class="scenery-unit">
-        <div class="road" aria-hidden="true"></div>
       </div>
       </div>
       <div class="vegetation-layer" aria-hidden="true"></div>
@@ -1683,7 +1701,9 @@
         </svg>
       </div>
     </div>
+    <div class="car-scale">
     <div class="car-drive">
+    <div class="road-line" aria-hidden="true"></div>
     <div class="jet-engine" aria-hidden="true">
       <svg width="160" height="72" viewBox="0 0 160 72" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -1808,16 +1828,15 @@
         </g>
       </svg>
     </div>
+    </div>
   </div>
 
   <div class="lane" data-car="2" data-variant="7" data-drive="8" data-wheels="1.03" data-delay="0">
     <div class="lane-clip">
       <div class="road-scroll scenery-scroll scenery-scroll-2">
       <div class="scenery-unit">
-        <div class="road" aria-hidden="true"></div>
       </div>
       <div class="scenery-unit">
-        <div class="road" aria-hidden="true"></div>
       </div>
       </div>
       <div class="vegetation-layer" aria-hidden="true"></div>
@@ -1920,7 +1939,9 @@
         </svg>
       </div>
     </div>
+    <div class="car-scale">
     <div class="car-drive">
+    <div class="road-line" aria-hidden="true"></div>
     <div class="jet-engine" aria-hidden="true">
       <svg width="160" height="72" viewBox="0 0 160 72" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -2045,16 +2066,15 @@
         </g>
       </svg>
     </div>
+    </div>
   </div>
 
   <div class="lane" data-car="3" data-variant="9" data-drive="8" data-wheels="1.03" data-delay="0">
     <div class="lane-clip">
       <div class="road-scroll scenery-scroll scenery-scroll-3">
       <div class="scenery-unit">
-        <div class="road" aria-hidden="true"></div>
       </div>
       <div class="scenery-unit">
-        <div class="road" aria-hidden="true"></div>
       </div>
       </div>
       <div class="vegetation-layer" aria-hidden="true"></div>
@@ -2157,7 +2177,9 @@
         </svg>
       </div>
     </div>
+    <div class="car-scale">
     <div class="car-drive">
+    <div class="road-line" aria-hidden="true"></div>
     <div class="jet-engine" aria-hidden="true">
       <svg width="160" height="72" viewBox="0 0 160 72" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -2281,6 +2303,7 @@
           </g>
         </g>
       </svg>
+    </div>
     </div>
   </div>
 </div>
@@ -2423,7 +2446,10 @@
     if (!(availW > 0)) return;
     let scale = Math.min(1, availW / CAR_W_JS);
     if (availH > 0) scale = Math.min(scale, availH / CAR_H_JS);
-    document.documentElement.style.setProperty('--scene-scale', String(Math.max(0.15, scale)));
+    scale = Math.max(0.15, scale);
+    document.documentElement.style.setProperty('--scene-scale', String(scale));
+    document.documentElement.style.setProperty('--car-draw-w', (CAR_W_JS * scale) + 'px');
+    document.documentElement.style.setProperty('--car-draw-h', (CAR_H_JS * scale) + 'px');
   }
 
   function getFrontWheelLeftPx() {
