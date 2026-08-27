@@ -2,21 +2,24 @@ const BALL_R = 33;
 const BALL_CENTER = 33;
 const VELOCITY = 160;
 const MODRA_START_X = 80;
-const MODRA_JET_DELAY = 2;
+const MODRA_JET_DELAY = 1;
 const JET_NOZZLE_RIGHT = 156;
 const JET_HEIGHT = 72;
 
 const ZELENA_GRAVITY = 1100;
 const ZELENA_RESTITUTION = 0.74;
 const ZELENA_START = { x: 40, y: 40, vx: 260, vy: 90 };
+const ZELENA_BRAKE_START = 0.62;
+const ZELENA_STOP_FRACTION = 0.84;
+const ZELENA_STOP_HOLD = 1.2;
 const ZLUTA_BELT_THICKNESS = 20;
 const ZLUTA_ARC_HEIGHT = 96;
 const ZLUTA_BELT_STRIPE_SPACING = 28;
 const SEDA_SPEED = 145;
 
 const stageMetrics = {
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: 1,
+  height: 1,
   get groundY() {
     return this.height / 2;
   },
@@ -255,12 +258,13 @@ function resetSedaMode() {
 
 function sedaVisibleBounds() {
   const width = stageMetrics.width;
+  const stageRect = stage.getBoundingClientRect();
   const overlay = document.querySelector(".ui-overlay");
   const overlayBottom = overlay
-    ? overlay.getBoundingClientRect().bottom
+    ? overlay.getBoundingClientRect().bottom - stageRect.top
     : 120;
   const quizTop = quizWrap
-    ? quizWrap.getBoundingClientRect().top
+    ? quizWrap.getBoundingClientRect().top - stageRect.top
     : stageMetrics.floorY + BALL_R + 20;
   const margin = BALL_R + 12;
 
@@ -372,11 +376,27 @@ function createZelenaState() {
     vx: ZELENA_START.vx,
     vy: ZELENA_START.vy,
     prevX: ZELENA_START.x,
+    braking: false,
+    decel: 0,
+    stopHold: 0,
   };
 }
 
 function resetZelenaState() {
   zelenaState = createZelenaState();
+}
+
+function zelenaStopX() {
+  return Math.min(
+    stageMetrics.width - BALL_R - 24,
+    stageMetrics.width * ZELENA_STOP_FRACTION,
+  );
+}
+
+function beginZelenaBrake(state) {
+  const remaining = Math.max(48, zelenaStopX() - state.x);
+  state.braking = true;
+  state.decel = (state.vx * state.vx) / (2 * remaining);
 }
 
 function stepZelenaPhysics(dt) {
@@ -385,9 +405,37 @@ function stepZelenaPhysics(dt) {
   const state = zelenaState;
   state.prevX = state.x;
 
+  const onFloor = state.y >= stageMetrics.floorY - 0.01;
+  const settled = onFloor && Math.abs(state.vy) < 55;
+
+  if (state.braking && state.vx <= 0 && settled) {
+    state.vx = 0;
+    state.vy = 0;
+    state.y = stageMetrics.floorY;
+    state.stopHold += dt;
+    if (state.stopHold >= ZELENA_STOP_HOLD) {
+      resetZelenaState();
+    }
+    return state;
+  }
+
+  if (!state.braking && state.x >= stageMetrics.width * ZELENA_BRAKE_START) {
+    beginZelenaBrake(state);
+  }
+
   state.vy += ZELENA_GRAVITY * dt;
+
+  if (state.braking) {
+    state.vx = Math.max(0, state.vx - state.decel * dt);
+  }
+
   state.x += state.vx * dt;
   state.y += state.vy * dt;
+
+  if (state.x > zelenaStopX()) {
+    state.x = zelenaStopX();
+    state.vx = 0;
+  }
 
   if (state.y > stageMetrics.floorY) {
     state.y = stageMetrics.floorY;
@@ -421,9 +469,14 @@ let lastFrame = performance.now();
 let rotation = 0;
 let rafId = null;
 
+function measureStage() {
+  const rect = stage.getBoundingClientRect();
+  stageMetrics.width = Math.max(1, rect.width);
+  stageMetrics.height = Math.max(1, rect.height);
+}
+
 function updateStageSize() {
-  stageMetrics.width = window.innerWidth;
-  stageMetrics.height = window.innerHeight;
+  measureStage();
 
   if (animationSvg) {
     animationSvg.setAttribute(
@@ -489,6 +542,7 @@ function updateBeltAnimation(ballX) {
 }
 
 function createStageSvg() {
+  measureStage();
   animationSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   animationSvg.setAttribute("viewBox", `0 0 ${stageMetrics.width} ${stageMetrics.height}`);
   animationSvg.setAttribute("width", "100%");
@@ -502,7 +556,7 @@ function createStageSvg() {
   floorLine.setAttribute("x2", String(stageMetrics.width));
   floorLine.setAttribute("y1", String(stageMetrics.floorY + BALL_R));
   floorLine.setAttribute("y2", String(stageMetrics.floorY + BALL_R));
-  floorLine.setAttribute("stroke", "#E5E7EB");
+  floorLine.setAttribute("stroke", "#CBD5E1");
   floorLine.setAttribute("stroke-width", "2");
 
   beltGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -510,8 +564,8 @@ function createStageSvg() {
   beltGroup.setAttribute("visibility", "hidden");
 
   beltShape = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  beltShape.setAttribute("fill", "#F3F4F6");
-  beltShape.setAttribute("stroke", "#D1D5DB");
+  beltShape.setAttribute("fill", "#F1F5F9");
+  beltShape.setAttribute("stroke", "#CBD5E1");
   beltShape.setAttribute("stroke-width", "2");
 
   beltTopEdge = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -544,6 +598,10 @@ function createStageSvg() {
   stage.appendChild(animationSvg);
 
   window.addEventListener("resize", updateStageSize);
+  if (typeof ResizeObserver === "function") {
+    const resizeObserver = new ResizeObserver(() => updateStageSize());
+    resizeObserver.observe(stage);
+  }
 }
 
 function resetAnimation() {
