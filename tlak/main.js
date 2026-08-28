@@ -57,15 +57,17 @@ const WEIGHT_DISPLAY_HEIGHT = 150;
 const WEIGHT_ARROW_SHAFT_TOP = 91.4248;
 const WEIGHT_ARROW_SHAFT_BOTTOM = 147.925;
 const WEIGHT_ARROW_HEAD_TIP = 148.632;
-const WEIGHT_ARROW_LABEL_Y = 144;
 const WEIGHT_ARROW_SHAFT_X = 45.4326;
+const WEIGHT_ARROW_SHAFT_HALF = 1.8;
+const WEIGHT_ARROW_HEAD_SCALE = 1.35;
+const WEIGHT_MARKER_SCALE = 1.12;
 const WEIGHT_ARROW_BASE_LENGTH =
   WEIGHT_ARROW_HEAD_TIP - WEIGHT_ARROW_SHAFT_TOP;
 const TILE_SPACING_STAGE = TILE_FRONT_WIDTH;
 const LAYER_OFFSET_X = 150;
 const LAYER_OFFSET_Y = -150;
 const STAGE_FIT_PADDING = 16;
-const SCENE_SHIFT_UP = 0.06;
+const SCENE_SHIFT_UP = 0.03;
 const SPRING_BASE_Y = 84.9248;
 const SPRING_COIL_TOP = 34.5;
 const SPRING_COIL_BOTTOM = 124.5;
@@ -85,7 +87,9 @@ const stage = document.getElementById("stage");
 const floor = document.getElementById("floor");
 const floorFront = document.getElementById("floorFront");
 const cubeLayer = document.getElementById("cubeLayer");
+const weightLabelLayer = document.getElementById("weightLabelLayer");
 const sceneWorkspace = document.querySelector(".scene-workspace");
+const hintEl = document.getElementById("hintEl");
 const labModeBtn = document.getElementById("labModeBtn");
 const pressureCalcToggleBtn = document.getElementById("pressureCalcToggleBtn");
 const weightCalcToggleBtn = document.getElementById("weightCalcToggleBtn");
@@ -127,6 +131,7 @@ if (
   !floor ||
   !floorFront ||
   !cubeLayer ||
+  !weightLabelLayer ||
   !sceneWorkspace ||
   !labModeBtn ||
   !pressureCalcToggleBtn ||
@@ -172,6 +177,8 @@ let floorHighlightLayer = null;
 let drag = null;
 let nextCubeId = 0;
 let showWeight = true;
+let hintDismissed = false;
+let hintTimer = null;
 let appMode = "lab";
 let weightDisplayTemplate = "";
 
@@ -247,8 +254,8 @@ function buildBoxSvgMarkup(widthUnits, heightUnits) {
 
   return [
     `<svg class="cube__svg" viewBox="0 0 ${round(g.vbW)} ${round(g.vbH)}" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`,
-    `<path d="${outline}" fill="#d7e0f4"/>`,
-    `<path d="${outline}${edges}" stroke="#3d5a9a" stroke-width="3"/>`,
+    `<path d="${outline}" fill="#bfdbfe"/>`,
+    `<path d="${outline}${edges}" stroke="#3b82f6" stroke-width="3"/>`,
     `<path class="cube__base-edges" d="${baseEdges}" stroke="#dc2626" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
     "</svg>",
   ].join("");
@@ -267,12 +274,13 @@ function unitCubeStageHeight() {
 
 function getWeightMarkerStageSize(heightUnits) {
   const unitSize = getCubeStageSize(1, heightUnits);
-  const scale = unitSize.width / WEIGHT_DISPLAY_WIDTH;
+  const width = unitSize.width * WEIGHT_MARKER_SCALE;
+  const scale = width / WEIGHT_DISPLAY_WIDTH;
   const arrowViewHeight =
     WEIGHT_ARROW_BASE_LENGTH * heightUnits +
     (WEIGHT_DISPLAY_HEIGHT - WEIGHT_ARROW_HEAD_TIP);
   return {
-    width: unitSize.width,
+    width,
     height: arrowViewHeight * scale,
   };
 }
@@ -303,7 +311,7 @@ function getMaxSceneContentBounds() {
   const maxSpringDrop = SPRING_REST_LENGTH * MAX_SPRING_COMPRESSION;
   const springBottom = FLOOR_Y_OFFSET + 209.5 + LAYER_OFFSET_Y;
   const arrowBottom =
-    TILE_CY + maxSpringDrop + marker.height + LAYER_OFFSET_Y;
+    TILE_CY + maxSpringDrop + marker.height + 40 + LAYER_OFFSET_Y;
   const bottom = Math.max(arrowBottom, springBottom);
 
   return { left, right, top, bottom };
@@ -693,6 +701,8 @@ function verifyAreaInput() {
   const roundedInput = Math.round(value * 10) / 10;
   const roundedCorrect = Math.round(getTotalArea() * 10) / 10;
   if (Math.abs(roundedInput - roundedCorrect) < 0.05) {
+    document.body.classList.remove("mode-hide-floor");
+    refreshFloorPresentation();
     setWeightVisible(true);
     showAreaFeedback("Správně!", "success");
     celebrateCorrectAnswer();
@@ -700,6 +710,37 @@ function verifyAreaInput() {
   }
 
   showAreaFeedback("To není správně. Zkus to znovu.", "error");
+}
+
+const LAB_HINT = "Chytni krychli a\u00A0přesuň ji nebo změň její velikost.";
+const CALC_HINTS = {
+  pressure: "Z tíhy a\u00A0plochy dopočítej tlak. Klikni do políčka a\u00A0zadej výsledek.",
+  weight: "Z tlaku a\u00A0plochy dopočítej tíhu. Klikni do políčka a\u00A0zadej výsledek.",
+  area: "Z tíhy a\u00A0tlaku dopočítej plochu. Klikni do políčka a\u00A0zadej výsledek.",
+};
+
+function clearHintTimer() {
+  if (hintTimer === null) return;
+  window.clearTimeout(hintTimer);
+  hintTimer = null;
+}
+
+function showCanvasHint(text, autoHideMs = 0) {
+  if (!hintEl) return;
+  clearHintTimer();
+  hintEl.textContent = text;
+  hintEl.classList.remove("is-hidden");
+  if (autoHideMs > 0) {
+    hintTimer = window.setTimeout(() => {
+      hintEl.classList.add("is-hidden");
+      hintTimer = null;
+    }, autoHideMs);
+  }
+}
+
+function hideCanvasHint() {
+  clearHintTimer();
+  hintEl?.classList.add("is-hidden");
 }
 
 function setAppMode(mode) {
@@ -737,12 +778,18 @@ function setAppMode(mode) {
   areaInputEl.value = "";
 
   if (isLab) {
+    if (hintDismissed) hideCanvasHint();
+    else showCanvasHint(LAB_HINT);
     setWeightVisible(true);
     removeAllCubes();
     placeInitialCube();
     updatePressureDisplay();
     return;
   }
+
+  const text = CALC_HINTS[mode];
+  if (text) showCanvasHint(text, 3000);
+  else hideCanvasHint();
 
   setWeightVisible(false);
   placeRandomCube();
@@ -761,6 +808,7 @@ function removeWeightMarkers() {
   for (const marker of cubeLayer.querySelectorAll(".weight-marker")) {
     marker.remove();
   }
+  weightLabelLayer.replaceChildren();
 }
 
 function getWeightArrowExtension(heightUnits) {
@@ -769,10 +817,13 @@ function getWeightArrowExtension(heightUnits) {
 
 function buildWeightArrowShaftPath(extension) {
   const shaftBottom = WEIGHT_ARROW_SHAFT_BOTTOM + extension;
+  const left = WEIGHT_ARROW_SHAFT_X - WEIGHT_ARROW_SHAFT_HALF;
+  const right = WEIGHT_ARROW_SHAFT_X + WEIGHT_ARROW_SHAFT_HALF;
+  const topCap = WEIGHT_ARROW_SHAFT_TOP - 1;
 
   return [
-    `M46.4326 ${WEIGHT_ARROW_SHAFT_TOP}V90.4248H44.4326V${WEIGHT_ARROW_SHAFT_TOP}H45.4326H46.4326`,
-    `M45.4326 ${WEIGHT_ARROW_SHAFT_TOP}H44.4326V${shaftBottom}H45.4326H46.4326V${WEIGHT_ARROW_SHAFT_TOP}H45.4326`,
+    `M${right} ${WEIGHT_ARROW_SHAFT_TOP}V${topCap}H${left}V${WEIGHT_ARROW_SHAFT_TOP}H${WEIGHT_ARROW_SHAFT_X}H${right}`,
+    `M${WEIGHT_ARROW_SHAFT_X} ${WEIGHT_ARROW_SHAFT_TOP}H${left}V${shaftBottom}H${WEIGHT_ARROW_SHAFT_X}H${right}V${WEIGHT_ARROW_SHAFT_TOP}H${WEIGHT_ARROW_SHAFT_X}`,
   ].join("Z") + "Z";
 }
 
@@ -786,11 +837,13 @@ function applyWeightArrowGeometry(svg, heightUnits) {
   }
 
   if (head) {
-    if (extension > 0) {
-      head.setAttribute("transform", `translate(0 ${extension})`);
-    } else {
-      head.removeAttribute("transform");
-    }
+    const cx = WEIGHT_ARROW_SHAFT_X;
+    const cy = WEIGHT_ARROW_HEAD_TIP;
+    const scale = `translate(${cx} ${cy}) scale(${WEIGHT_ARROW_HEAD_SCALE}) translate(${-cx} ${-cy})`;
+    head.setAttribute(
+      "transform",
+      extension > 0 ? `translate(0 ${extension}) ${scale}` : scale
+    );
   }
 
   // Include a little room below the tip so the label stays inside the viewBox.
@@ -806,7 +859,7 @@ function applyWeightArrowGeometry(svg, heightUnits) {
   return { extension, arrowViewHeight };
 }
 
-function createWeightMarker(weight, heightUnits, left, top, width, height) {
+function createWeightMarker(heightUnits, left, top, width, height) {
   const marker = document.createElement("div");
   marker.className = "weight-marker";
   marker.style.left = `${left}%`;
@@ -820,24 +873,23 @@ function createWeightMarker(weight, heightUnits, left, top, width, height) {
   if (!svg) return marker;
 
   svg.setAttribute("aria-hidden", "true");
+  applyWeightArrowGeometry(svg, heightUnits);
 
-  const { extension } = applyWeightArrowGeometry(svg, heightUnits);
-
-  const label = svg.querySelector(".weight-display__label");
-  if (label) {
-    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", "77");
-    text.setAttribute("y", String(WEIGHT_ARROW_LABEL_Y + extension));
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("dominant-baseline", "middle");
-    text.setAttribute("fill", "#dc2626");
-    text.setAttribute("class", "weight-display__label-text");
-    text.textContent = formatWeightLabel(weight);
-    label.replaceWith(text);
-  }
+  const leftoverLabel = svg.querySelector(".weight-display__label");
+  leftoverLabel?.remove();
 
   marker.appendChild(svg);
   return marker;
+}
+
+function createWeightLabel(weight, leftPct, topPct, fontPx) {
+  const label = document.createElement("div");
+  label.className = "weight-label";
+  label.textContent = formatWeightLabel(weight);
+  label.style.left = `${leftPct}%`;
+  label.style.top = `${topPct}%`;
+  label.style.fontSize = `${fontPx}px`;
+  return label;
 }
 
 function updateWeightArrows() {
@@ -855,7 +907,7 @@ function updateWeightArrows() {
 
       const unitSize = getCubeStageSize(1, cube.heightUnits);
       const markerWidth =
-        (unitSize.width / STAGE_WIDTH) * stageRect.width;
+        (unitSize.width / STAGE_WIDTH) * stageRect.width * WEIGHT_MARKER_SCALE;
       const scale = markerWidth / WEIGHT_DISPLAY_WIDTH;
       const arrowViewHeight =
         WEIGHT_ARROW_BASE_LENGTH * cube.heightUnits +
@@ -875,7 +927,6 @@ function updateWeightArrows() {
         const top = tileCenterY;
 
         const marker = createWeightMarker(
-          weightPerTile,
           cube.heightUnits,
           (left / stageRect.width) * 100,
           (top / stageRect.height) * 100,
@@ -883,6 +934,21 @@ function updateWeightArrows() {
           (markerHeight / stageRect.height) * 100,
         );
         cube.el.insertAdjacentElement("beforebegin", marker);
+
+        const extension = getWeightArrowExtension(cube.heightUnits);
+        const tipY =
+          top +
+          markerHeight *
+            ((WEIGHT_ARROW_HEAD_TIP + extension - WEIGHT_ARROW_SHAFT_TOP) /
+              arrowViewHeight);
+        const fontPx = Math.max(11, 16 * scale);
+        const label = createWeightLabel(
+          weightPerTile,
+          (tileCenterX / stageRect.width) * 100,
+          ((tipY + 2) / stageRect.height) * 100,
+          fontPx,
+        );
+        weightLabelLayer.appendChild(label);
       }
     }
   });
@@ -1413,6 +1479,12 @@ function releasePointerCaptureSafe(element, pointerId) {
   }
 }
 
+function dismissSceneHint() {
+  if (hintDismissed) return;
+  hintDismissed = true;
+  hideCanvasHint();
+}
+
 function onCubePointerDown(event) {
   if (!isPrimaryPointerDown(event) || drag || isChallengeMode()) return;
   if (event.target.closest(".cube-handle")) return;
@@ -1422,6 +1494,7 @@ function onCubePointerDown(event) {
   if (!cube) return;
 
   beginDrag(cube, event.pointerId, event.clientX, event.clientY);
+  dismissSceneHint();
 }
 
 function onResizePointerDown(event, cube, axis) {
@@ -1430,6 +1503,7 @@ function onResizePointerDown(event, cube, axis) {
   event.preventDefault();
   event.stopPropagation();
   beginResize(cube, axis, event.pointerId, event.clientX, event.clientY);
+  dismissSceneHint();
 }
 
 function onPointerMove(event) {
