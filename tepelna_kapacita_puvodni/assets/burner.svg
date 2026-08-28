@@ -1,5 +1,9 @@
-<svg width="113" height="116" viewBox="0 0 113 116" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="113" height="116" viewBox="0 0 113 116" fill="none" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
 <style>
+  html,
+  svg {
+    background: transparent;
+  }
   svg {
     --flame-power: 0.7;
   }
