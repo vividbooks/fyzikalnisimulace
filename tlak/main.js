@@ -178,6 +178,7 @@ let drag = null;
 let nextCubeId = 0;
 let showWeight = true;
 let hintDismissed = false;
+let hintTimer = null;
 let appMode = "lab";
 let weightDisplayTemplate = "";
 
@@ -700,6 +701,8 @@ function verifyAreaInput() {
   const roundedInput = Math.round(value * 10) / 10;
   const roundedCorrect = Math.round(getTotalArea() * 10) / 10;
   if (Math.abs(roundedInput - roundedCorrect) < 0.05) {
+    document.body.classList.remove("mode-hide-floor");
+    refreshFloorPresentation();
     setWeightVisible(true);
     showAreaFeedback("Správně!", "success");
     celebrateCorrectAnswer();
@@ -707,6 +710,37 @@ function verifyAreaInput() {
   }
 
   showAreaFeedback("To není správně. Zkus to znovu.", "error");
+}
+
+const LAB_HINT = "Chytni krychli a\u00A0přesuň ji nebo změň její velikost.";
+const CALC_HINTS = {
+  pressure: "Z tíhy a\u00A0plochy dopočítej tlak. Klikni do políčka a\u00A0zadej výsledek.",
+  weight: "Z tlaku a\u00A0plochy dopočítej tíhu. Klikni do políčka a\u00A0zadej výsledek.",
+  area: "Z tíhy a\u00A0tlaku dopočítej plochu. Klikni do políčka a\u00A0zadej výsledek.",
+};
+
+function clearHintTimer() {
+  if (hintTimer === null) return;
+  window.clearTimeout(hintTimer);
+  hintTimer = null;
+}
+
+function showCanvasHint(text, autoHideMs = 0) {
+  if (!hintEl) return;
+  clearHintTimer();
+  hintEl.textContent = text;
+  hintEl.classList.remove("is-hidden");
+  if (autoHideMs > 0) {
+    hintTimer = window.setTimeout(() => {
+      hintEl.classList.add("is-hidden");
+      hintTimer = null;
+    }, autoHideMs);
+  }
+}
+
+function hideCanvasHint() {
+  clearHintTimer();
+  hintEl?.classList.add("is-hidden");
 }
 
 function setAppMode(mode) {
@@ -744,12 +778,18 @@ function setAppMode(mode) {
   areaInputEl.value = "";
 
   if (isLab) {
+    if (hintDismissed) hideCanvasHint();
+    else showCanvasHint(LAB_HINT);
     setWeightVisible(true);
     removeAllCubes();
     placeInitialCube();
     updatePressureDisplay();
     return;
   }
+
+  const text = CALC_HINTS[mode];
+  if (text) showCanvasHint(text, 3000);
+  else hideCanvasHint();
 
   setWeightVisible(false);
   placeRandomCube();
@@ -1442,7 +1482,7 @@ function releasePointerCaptureSafe(element, pointerId) {
 function dismissSceneHint() {
   if (hintDismissed) return;
   hintDismissed = true;
-  hintEl?.classList.add("is-hidden");
+  hideCanvasHint();
 }
 
 function onCubePointerDown(event) {
