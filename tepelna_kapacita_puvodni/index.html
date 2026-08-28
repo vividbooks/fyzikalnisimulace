@@ -7,19 +7,30 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
     />
     <title>Tepelná kapacita</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=fedits-hint5" />
   </head>
   <body>
     <main class="scene" aria-label="Simulace tepelné kapacity">
-      <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
       <div
         class="supply-strip"
         id="supply-strip"
         role="toolbar"
         aria-label="Zásobník – přetáhněte věc na plochu"
-      ></div>
+      >
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="scene-title">Tepelná<br />kapacita</h1>
+        <div class="supply-items" id="supply-items"></div>
+      </div>
 
       <div class="scene-workspace" id="scene-workspace">
+        <p class="sim-empty-hint" id="hintEl">
+          Přetáhni těleso z horního okraje na hořák.
+        </p>
         <div
           class="pool-water-overlay-wrap"
           id="pool-water-overlay-wrap"
@@ -312,6 +323,6 @@
         </div>
       </div>
     </main>
-    <script src="main.js"></script>
+    <script src="main.js?v=fedits-hint5"></script>
   </body>
 </html>

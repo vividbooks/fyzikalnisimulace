@@ -1,6 +1,7 @@
 const scene = document.querySelector(".scene");
 const sceneWorkspace = document.querySelector("#scene-workspace");
 const supplyStrip = document.querySelector("#supply-strip");
+const supplyItemsEl = document.querySelector("#supply-items");
 const setupEl = document.querySelector("#setup");
 const workspaceControlsEl = document.querySelector("#workspace-controls");
 const poolSetupEl = document.querySelector("#pool-setup");
@@ -8,6 +9,7 @@ const poolsEl = document.querySelector("#pools");
 const poolSlots = [...document.querySelectorAll(".pool-slot")];
 const pools = [...document.querySelectorAll(".pool")];
 const workspaceEl = sceneWorkspace || scene;
+const hintEl = document.querySelector("#hintEl");
 
 const SUPPLY_SCALE = 0.5;
 const DEFAULT_SPAWN_MASS_G = 1000;
@@ -410,19 +412,170 @@ function getSupplyThumbnailSize(typeKey) {
   );
 }
 
-function createItemVisual(typeKey, width, height) {
-  const config = ITEM_CATALOG[typeKey];
-  const visual = document.createElement("object");
-  visual.className = `vessel-visual ${config.visualClass}`;
-  visual.type = "image/svg+xml";
-  visual.data = config.svg;
-  visual.width = width;
-  visual.height = height;
-  visual.setAttribute("tabindex", "-1");
-  visual.setAttribute("aria-hidden", "true");
+function makeEmbeddedSvgTransparent(el) {
+  if (!el || el.tagName !== "OBJECT") return;
+
+  const apply = () => {
+    const doc = el.contentDocument;
+    const root = doc?.documentElement;
+    if (root) {
+      root.style.background = "transparent";
+    }
+    if (doc?.body) {
+      doc.body.style.background = "transparent";
+    }
+  };
+
+  el.addEventListener("load", apply);
+  apply();
+}
+
+const svgInlineCache = new Map();
+
+async function fetchSvgElement(url) {
+  if (!svgInlineCache.has(url)) {
+    const response = await fetch(url);
+    const text = await response.text();
+    const parsed = new DOMParser().parseFromString(text, "image/svg+xml");
+    const svg = parsed.documentElement;
+    if (!svg || svg.tagName.toLowerCase() !== "svg") {
+      throw new Error(`Neplatné SVG: ${url}`);
+    }
+    svgInlineCache.set(url, svg);
+  }
+  return svgInlineCache.get(url).cloneNode(true);
+}
+
+function setVisualSize(visual, width, height) {
+  if (!visual) return;
+  visual.setAttribute("width", String(width));
+  visual.setAttribute("height", String(height));
   visual.style.width = `${width}px`;
   visual.style.height = `${height}px`;
+}
+
+function getSvgRoot(el) {
+  if (!el) return null;
+  if (el instanceof SVGSVGElement) return el;
+  return el.querySelector?.("svg") ?? el.contentDocument?.documentElement ?? null;
+}
+
+function svgGetById(el, id) {
+  const root = getSvgRoot(el);
+  if (!root) return null;
+  return root.querySelector(`#${CSS.escape(id)}`);
+}
+
+function hydrateSvgHost(host, sourceSvg) {
+  const viewBox = sourceSvg.getAttribute("viewBox");
+  if (viewBox) {
+    host.setAttribute("viewBox", viewBox);
+  }
+  const fill = sourceSvg.getAttribute("fill");
+  if (fill) {
+    host.setAttribute("fill", fill);
+  }
+  host.style.background = "transparent";
+  host.replaceChildren(
+    ...[...sourceSvg.childNodes].map((node) => document.importNode(node, true))
+  );
+}
+
+function withLightVesselStrokes(svgText) {
+  return svgText
+    .replaceAll('stroke="#1D1D1B"', 'stroke="#e2e8f0"')
+    .replaceAll('stroke="black"', 'stroke="#e2e8f0"');
+}
+
+const supplyImageSrcCache = new Map();
+
+async function getSupplyImageSrc(typeKey) {
+  const config = ITEM_CATALOG[typeKey];
+  if (typeKey !== "water" && typeKey !== "oil" && typeKey !== "alcohol") {
+    return config.svg;
+  }
+  if (supplyImageSrcCache.has(typeKey)) {
+    return supplyImageSrcCache.get(typeKey);
+  }
+  const response = await fetch(config.svg);
+  const svgText = withLightVesselStrokes(await response.text());
+  const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`;
+  supplyImageSrcCache.set(typeKey, src);
+  return src;
+}
+
+function createItemVisual(typeKey, width, height, options = {}) {
+  const config = ITEM_CATALOG[typeKey];
+  const asImage = Boolean(options.asImage);
+
+  if (asImage) {
+    const visual = document.createElement("img");
+    visual.className = `vessel-visual ${config.visualClass}`;
+    visual.src = options.src || config.svg;
+    visual.alt = "";
+    visual.setAttribute("tabindex", "-1");
+    visual.setAttribute("aria-hidden", "true");
+    setVisualSize(visual, width, height);
+    visual.style.background = "transparent";
+    return visual;
+  }
+
+  const visual = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  visual.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  visual.classList.add("vessel-visual", config.visualClass);
+  visual.setAttribute("tabindex", "-1");
+  visual.setAttribute("aria-hidden", "true");
+  visual.setAttribute("fill", "none");
+  setVisualSize(visual, width, height);
+  visual.style.background = "transparent";
+  visual.style.display = "block";
+
+  fetchSvgElement(config.svg)
+    .then((svg) => {
+      hydrateSvgHost(visual, svg);
+      visual.dispatchEvent(new Event("load"));
+    })
+    .catch(() => {});
+
   return visual;
+}
+
+async function inlineExistingObjects() {
+  const objects = [...document.querySelectorAll('object[type="image/svg+xml"]')];
+  await Promise.all(
+    objects.map(async (obj) => {
+      const url = obj.getAttribute("data");
+      if (!url) return;
+      try {
+        const svg = document.importNode(await fetchSvgElement(url), true);
+        const className = obj.getAttribute("class");
+        if (className) {
+          svg.setAttribute("class", className);
+        }
+        const width = obj.getAttribute("width");
+        const height = obj.getAttribute("height");
+        if (width && height) {
+          setVisualSize(svg, width, height);
+        }
+        svg.style.background = "transparent";
+        svg.style.display = "block";
+        const ariaLabel = obj.getAttribute("aria-label");
+        if (ariaLabel) {
+          svg.setAttribute("aria-label", ariaLabel);
+        }
+        if (obj.hasAttribute("aria-hidden")) {
+          svg.setAttribute("aria-hidden", obj.getAttribute("aria-hidden"));
+        }
+        svg.dataset.src = url;
+        obj.replaceWith(svg);
+      } catch {
+        makeEmbeddedSvgTransparent(obj);
+      }
+    })
+  );
+
+  burners.splice(0, burners.length, ...document.querySelectorAll(".burner"));
+  pools.splice(0, pools.length, ...document.querySelectorAll(".pool"));
 }
 
 function buildVesselDOM(typeKey, instanceId) {
@@ -540,7 +693,50 @@ function clampSpawnPosition(typeKey, left, top) {
   };
 }
 
+const HINT_TEXT = {
+  burner: "Přetáhni těleso z horního okraje na hořák.",
+  pool: "Přetáhni cihlu z horního okraje do bazénu.",
+};
+
+let burnerHintDismissed = false;
+let poolHintDismissed = false;
+
+function isCurrentHintDismissed() {
+  return isPoolMode() ? poolHintDismissed : burnerHintDismissed;
+}
+
+function onStartHintInteract(event) {
+  if (event.target instanceof Element && event.target.closest(".heat-source-btn")) {
+    return;
+  }
+  dismissStartHint();
+}
+
+function updateStartHint() {
+  if (!hintEl) return;
+  hintEl.textContent = isPoolMode() ? HINT_TEXT.pool : HINT_TEXT.burner;
+  hintEl.classList.toggle("is-hidden", isCurrentHintDismissed());
+}
+
+function dismissStartHint() {
+  if (isPoolMode()) {
+    poolHintDismissed = true;
+  } else {
+    burnerHintDismissed = true;
+  }
+  hintEl?.classList.add("is-hidden");
+  if (burnerHintDismissed && poolHintDismissed) {
+    document.removeEventListener("pointerdown", onStartHintInteract, true);
+  }
+}
+
+function initStartHint() {
+  updateStartHint();
+  document.addEventListener("pointerdown", onStartHintInteract, true);
+}
+
 function spawnVessel(typeKey, left, top) {
+  dismissStartHint();
   const config = ITEM_CATALOG[typeKey];
   const instanceId = `v-${nextVesselInstanceId}`;
   nextVesselInstanceId += 1;
@@ -697,7 +893,9 @@ function startSpawnFromSupply(typeKey, event) {
   const handle = document.createElement("div");
   handle.className = "vessel-handle";
   handle.appendChild(
-    createItemVisual(typeKey, displaySize.width, displaySize.height)
+    createItemVisual(typeKey, displaySize.width, displaySize.height, {
+      asImage: true,
+    })
   );
   ghost.appendChild(handle);
   document.body.appendChild(ghost);
@@ -724,7 +922,7 @@ function startSpawnFromSupply(typeKey, event) {
   event.preventDefault();
 }
 
-function initSupplyStrip() {
+async function initSupplyStrip() {
   if (!supplyStrip) return;
 
   for (const typeKey of SUPPLY_ITEM_ORDER) {
@@ -740,7 +938,8 @@ function initSupplyStrip() {
     const visual = createItemVisual(
       typeKey,
       thumbSize.width,
-      thumbSize.height
+      thumbSize.height,
+      { asImage: true, src: await getSupplyImageSrc(typeKey) }
     );
     visual.classList.add("supply-item__visual");
     button.appendChild(visual);
@@ -754,7 +953,7 @@ function initSupplyStrip() {
       startSpawnFromSupply(typeKey, event);
     });
 
-    supplyStrip.appendChild(button);
+    (supplyItemsEl || supplyStrip).appendChild(button);
   }
 }
 
@@ -950,13 +1149,8 @@ function morphPoolWaterPath(pathD, riseFactor) {
 
 function applyPoolWaterLevel(poolIndex) {
   const poolEl = getPoolElement(poolIndex);
-  const doc = poolEl?.contentDocument;
-  if (!doc) {
-    return false;
-  }
-
-  const fillPath = doc.getElementById("pool-water-fill");
-  const surfacePath = doc.getElementById("pool-water-surface");
+  const fillPath = svgGetById(poolEl, "pool-water-fill");
+  const surfacePath = svgGetById(poolEl, "pool-water-surface");
 
   if (!fillPath || !surfacePath) {
     return false;
@@ -982,7 +1176,10 @@ function syncPoolVisual() {
       continue;
     }
 
-    if (poolEl.getAttribute("data") !== "assets/pool.svg") {
+    if (
+      poolEl.getAttribute("data") !== "assets/pool.svg" &&
+      poolEl.dataset.src !== "assets/pool.svg"
+    ) {
       poolEl.setAttribute("data", "assets/pool.svg");
     }
 
@@ -1401,18 +1598,11 @@ function updateSolidBrickVisualSize(visual, massG, brickKey) {
   if (!visual) return;
 
   const { width, height } = getSolidBrickDisplaySize(massG, brickKey);
-
-  visual.width = width;
-  visual.height = height;
-  visual.style.width = `${width}px`;
-  visual.style.height = `${height}px`;
+  setVisualSize(visual, width, height);
 }
 
 function updateFluidVolume(visual, massG, densityGPerL) {
-  const doc = visual?.contentDocument;
-  if (!doc) return;
-
-  const fluid = doc.getElementById("fluid");
+  const fluid = svgGetById(visual, "fluid");
   if (!fluid) return;
 
   const pathData = getFluidPathData(massG, densityGPerL);
@@ -1632,7 +1822,7 @@ function updateDisplays() {
 
 function setBurnerFlame() {
   burners.forEach((burnerEl, index) => {
-    const svg = burnerEl?.contentDocument?.documentElement;
+    const svg = getSvgRoot(burnerEl);
     if (!svg) return;
 
     if (isPoolMode() || index >= sim.burnerCount) {
@@ -1703,6 +1893,7 @@ function updateHeatSourceUI() {
   updateCoolingAvailability();
   updatePoolCountButtons();
   updatePoolFrontFrame();
+  updateStartHint();
 }
 
 function updateCoolingAvailability() {
@@ -1757,6 +1948,9 @@ function setHeatSource(source) {
       : [];
 
   sim.heatSource = next;
+  if (next === "pool") {
+    burnerHintDismissed = true;
+  }
   setBurnerOn(false);
 
   if (next === "pool") {
@@ -2267,7 +2461,7 @@ function createVesselController({
 
   if (densityGPerL) {
     visual?.addEventListener("load", applyFluidVolume);
-    if (visual?.contentDocument) {
+    if (svgGetById(visual, "fluid")) {
       applyFluidVolume();
     }
   }
@@ -2426,9 +2620,10 @@ function initBurnerControls() {
   setPowerW(Number(powerSlider?.value ?? sim.powerW));
 
   burners.forEach((burnerEl) => {
-    if (burnerEl.contentDocument) {
+    if (getSvgRoot(burnerEl)) {
       setBurnerFlame();
     }
+    burnerEl.addEventListener("load", setBurnerFlame);
   });
 }
 
@@ -2520,8 +2715,9 @@ function startThermalSimulation() {
   requestAnimationFrame(tick);
 }
 
-if (workspaceEl && setupEl) {
-  initSupplyStrip();
+async function bootSimulation() {
+  await inlineExistingObjects();
+  await initSupplyStrip();
   initWorkspaceTouchLock();
 
   window.addEventListener("resize", () => {
@@ -2532,14 +2728,21 @@ if (workspaceEl && setupEl) {
     updatePoolBrickHitLayer();
     updatePoolFrontFrame();
   });
+
+  initHeatSourceControls();
+  initStartHint();
+  pools.forEach((poolEl) => {
+    poolEl.addEventListener("load", syncPoolVisual);
+  });
+  initBurnerCountControls();
+  initPoolCountControls();
+  initCoolingControls();
+  initBurnerControls();
+  startThermalSimulation();
+  setBurnerFlame();
+  syncPoolVisual();
 }
 
-initHeatSourceControls();
-pools.forEach((poolEl) => {
-  poolEl.addEventListener("load", syncPoolVisual);
-});
-initBurnerCountControls();
-initPoolCountControls();
-initCoolingControls();
-initBurnerControls();
-startThermalSimulation();
+if (workspaceEl && setupEl) {
+  bootSimulation();
+}
