@@ -1327,7 +1327,7 @@
           <div class="control-row" id="bojTrainingOptionsControls" hidden>
             <span class="control-label">Zobrazení</span>
             <div class="button-row">
-              <button type="button" class="html-btn" id="bojTrainingVectorsBtn">Vektory vypnuté</button>
+              <button type="button" class="html-btn" id="bojTrainingVectorsBtn">Zobrazení směru rychlosti vypnuté</button>
               <button type="button" class="html-btn" id="bojTrainingTrajectoriesBtn">Trajektorie střel vypnuté</button>
             </div>
           </div>
@@ -1380,7 +1380,7 @@
         </div>
         <div class="control-row" id="vectorsControls">
           <span class="control-label">Zobrazení</span>
-          <button type="button" class="html-btn" id="vectorsBtn">Vektory vypnuté</button>
+          <button type="button" class="html-btn" id="vectorsBtn">Zobrazení směru rychlosti vypnuté</button>
         </div>
         <div class="control-row" id="massControls">
           <div class="mass-head">
@@ -2049,6 +2049,7 @@
   let raceFinishTime = 0;
   let racePhase = 'outbound';
   let raceObstaclesEnabled = false;
+  let raceVelocityVectorsVisible = false;
   let raceStopwatchRunning = false;
   let raceObstacleWalls = [];
   let raceIntroSecondsLeft = 0;
@@ -2779,8 +2780,8 @@
     if (uiEls.bojTrainingOptionsControls) uiEls.bojTrainingOptionsControls.hidden = !isBojTraining();
     if (uiEls.bojTrainingVectorsBtn) {
       uiEls.bojTrainingVectorsBtn.textContent = bojTrainingVectorsVisible
-        ? 'Vektory zapnuté'
-        : 'Vektory vypnuté';
+        ? 'Zobrazení směru rychlosti zapnuté'
+        : 'Zobrazení směru rychlosti vypnuté';
       uiEls.bojTrainingVectorsBtn.classList.toggle('is-active', bojTrainingVectorsVisible);
     }
     if (uiEls.bojTrainingTrajectoriesBtn) {
@@ -2807,8 +2808,11 @@
     uiEls.raceObstacles.textContent = raceObstaclesEnabled ? 'Překážky zapnuté' : 'Překážky vypnuté';
     uiEls.raceObstacles.classList.toggle('is-active', raceObstaclesEnabled);
     syncFrictionControls();
-    uiEls.vectorsBtn.textContent = velocityVectorsVisible ? 'Vektory zapnuté' : 'Vektory vypnuté';
-    uiEls.vectorsBtn.classList.toggle('is-active', velocityVectorsVisible);
+    const vectorsOn = isZavod() ? raceVelocityVectorsVisible : velocityVectorsVisible;
+    uiEls.vectorsBtn.textContent = vectorsOn
+      ? 'Zobrazení směru rychlosti zapnuté'
+      : 'Zobrazení směru rychlosti vypnuté';
+    uiEls.vectorsBtn.classList.toggle('is-active', vectorsOn);
     uiEls.massRange.value = playerMass.toFixed(1);
     uiEls.massRange.disabled = !settingsEditable || !isBludiste();
     uiEls.massValue.textContent = formatMass(playerMass);
@@ -4216,7 +4220,10 @@
     clearBojProjectiles();
     hideRaceNewRecordForm();
     bludisteIntroSecondsLeft = 0;
-    if (mode === 'zavod') setupZavodLevel();
+    if (mode === 'zavod') {
+      raceVelocityVectorsVisible = false;
+      setupZavodLevel();
+    }
     else if (mode === 'boj') setupBojLevel();
     else prepareBludisteLevelPreview();
     resetPlayerState();
@@ -4807,6 +4814,7 @@
     if (isZavod()) {
       setupZavodLevel();
       resetPlayerState();
+      syncHtmlControls();
       return;
     }
     if (isBoj()) {
@@ -6182,11 +6190,11 @@
     drawHead(color, color, 1.2);
   }
 
-  function drawVelocityArrowLabel(tipX, tipY, angle, magnitude) {
+  function drawVelocityArrowLabel(tipX, tipY, angle, magnitude, labelText) {
     const offset = 24;
     const lx = tipX + Math.cos(angle) * offset;
     const ly = tipY + Math.sin(angle) * offset;
-    const text = String(Math.round(magnitude));
+    const text = labelText ?? String(Math.round(magnitude));
     ctx.save();
     setUiFont(600, 16);
     ctx.textAlign = 'center';
@@ -6200,7 +6208,7 @@
     ctx.restore();
   }
 
-  function drawVelocityArrowLine(originX, originY, tipX, tipY, color, magnitude) {
+  function drawVelocityArrowLine(originX, originY, tipX, tipY, color, magnitude, labelText) {
     const angle = Math.atan2(tipY - originY, tipX - originX);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -6214,7 +6222,7 @@
     ctx.lineWidth = 3.5;
     ctx.stroke();
     drawVelocityArrowHead(tipX, tipY, angle, color);
-    drawVelocityArrowLabel(tipX, tipY, angle, magnitude);
+    drawVelocityArrowLabel(tipX, tipY, angle, magnitude, labelText);
   }
 
   function drawVelocityComponentArrow(originX, originY, value, horizontal, color) {
@@ -6260,23 +6268,48 @@
 
   function playerVelocityVectorsVisible() {
     if (isBojTraining()) return bojTrainingVectorsVisible;
-    if (isBludiste() || isZavod()) return velocityVectorsVisible;
+    if (isZavod()) return raceVelocityVectorsVisible;
+    if (isBludiste()) return velocityVectorsVisible;
     return false;
+  }
+
+  function vehicleForwardDir() {
+    if (isBludiste() && !isBludisteRocket()) return { x: 1, y: 0 };
+    const angle = shipAngle() - Math.PI / 2;
+    return { x: Math.cos(angle), y: Math.sin(angle) };
+  }
+
+  function drawIdleVelocityPreview(originX, originY) {
+    const dir = vehicleForwardDir();
+    const len = PLAYER_R + 48;
+    drawVelocityArrowLine(
+      originX,
+      originY,
+      originX + dir.x * len,
+      originY + dir.y * len,
+      UI.velR,
+      0,
+      'v'
+    );
   }
 
   function drawVelocityVectors() {
     if (!playerVelocityVectorsVisible()) return;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(PLAY.x, PLAY.y, PLAY.w, PLAY.h);
+    ctx.rect(PLAY.x, PLAY.y, PLAY.w, playH());
     ctx.clip();
 
     const originX = playerScreenX();
     const originY = player.y;
 
-    drawVelocityComponentArrow(originX, originY, player.vx, true, UI.velX);
-    drawVelocityComponentArrow(originX, originY, player.vy, false, UI.velY);
-    drawResultantVelocityArrow(originX, originY);
+    if (mobilePhase !== 'playing' && playerSpeed() < 0.5) {
+      drawIdleVelocityPreview(originX, originY);
+    } else {
+      drawVelocityComponentArrow(originX, originY, player.vx, true, UI.velX);
+      drawVelocityComponentArrow(originX, originY, player.vy, false, UI.velY);
+      drawResultantVelocityArrow(originX, originY);
+    }
 
     ctx.restore();
   }
@@ -7449,8 +7482,13 @@
   uiEls.frictionNormal.addEventListener('click', () => onFrictionControlClick('normal'));
   uiEls.frictionIce.addEventListener('click', () => onFrictionControlClick('ice'));
   uiEls.vectorsBtn.addEventListener('click', () => {
-    if (!isBludiste()) return;
-    velocityVectorsVisible = !velocityVectorsVisible;
+    if (isZavod()) {
+      raceVelocityVectorsVisible = !raceVelocityVectorsVisible;
+    } else if (isBludiste()) {
+      velocityVectorsVisible = !velocityVectorsVisible;
+    } else {
+      return;
+    }
     syncHtmlControls();
   });
   if (uiEls.bojTrainingVectorsBtn) {
