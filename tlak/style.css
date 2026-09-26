@@ -232,15 +232,21 @@ input {
 
 .stats-panel__item {
   margin: 0;
-  padding: 10px 12px;
+  padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card-bg);
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 1.45rem;
   font-weight: 400;
+  line-height: 1.35;
   white-space: normal;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.stats-panel .panel-label {
+  margin-bottom: 8px;
+  font-size: 16px;
 }
 
 .stats-panel__item.is-success {
@@ -293,7 +299,7 @@ input {
 .stats-panel__field {
   display: inline-flex;
   align-items: center;
-  min-width: 72px;
+  min-width: 96px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--readout-bg);
@@ -307,13 +313,13 @@ input {
 }
 
 .stats-panel__input {
-  width: 72px;
+  width: 96px;
   padding: 6px 8px;
   border: 0;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 1.35rem;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
   caret-color: var(--accent);
@@ -328,7 +334,7 @@ input {
 }
 
 .stats-panel__feedback {
-  font-size: 0.82rem;
+  font-size: 1.05rem;
   font-weight: 400;
 }
 
