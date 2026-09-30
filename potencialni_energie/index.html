@@ -648,7 +648,8 @@
       flex: 0 0 auto;
       position: relative;
       width: var(--scene-stage-width);
-      max-width: 100%;
+      /* Bez max-width: jinak se v shrink-to-fit rodiči přístroj zúží a změří menší. */
+      max-width: none;
       min-height: 0;
     }
 
