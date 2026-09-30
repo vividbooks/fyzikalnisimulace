@@ -470,7 +470,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding: 88px 16px 16px;
+      padding: 88px 16px var(--ground-band, 16px);
       border-radius: var(--radius-canvas);
       background: var(--canvas-bg);
       isolation: isolate;
@@ -518,35 +518,40 @@
     body.env-moon .space-backdrop,
     body.env-weightless .space-backdrop { opacity: 1; }
 
+    /* Povrch přes celou šířku plátna (jako v Siloměru). */
+    .earth-grass,
     .moon-surface {
       position: absolute;
       inset: 0;
       z-index: 0;
       pointer-events: none;
       line-height: 0;
-      opacity: 0;
+      overflow: hidden;
       transition: opacity 320ms ease;
     }
 
+    .earth-grass img,
     .moon-surface img {
       position: absolute;
-      left: var(--ground-surface-center-x, 50%);
-      bottom: var(--ground-surface-bottom, 0px);
+      left: 0;
+      right: 0;
+      bottom: 0;
       display: block;
-      width: var(--ground-surface-width, min(52vw, 480px));
-      max-width: none;
-      margin: 0;
+      width: 100%;
       height: auto;
-      transform: translateX(-50%);
     }
 
+    .earth-grass { opacity: 1; }
+    .moon-surface { opacity: 0; }
+    body.env-moon .earth-grass,
+    body.env-weightless .earth-grass { opacity: 0; }
     body.env-moon .moon-surface { opacity: 1; }
 
     .viz-fit {
       position: relative;
       z-index: 1;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       width: 100%;
       height: 100%;
@@ -584,7 +589,7 @@
       user-select: none;
     }
 
-    .ground-grass { opacity: 1; }
+    .ground-grass { display: none; }
 
     .ground-weightless {
       display: none;
@@ -601,7 +606,7 @@
       --scene-stage-width: calc(var(--scene-content-width) + var(--scene-label-pad));
       --grass-scale: 0.56;
       /* Spodek povrchu (y≈415) → horní hrana zeleného valu (y≈332.5) */
-      --grass-ground-lift: calc(82.529 / 345 * var(--scene-content-width) * var(--grass-scale));
+      --grass-ground-lift: 0px;
       flex: 0 0 auto;
       position: relative;
       width: var(--scene-stage-width);
@@ -717,7 +722,7 @@
         flex: 0 0 auto;
         height: min(70dvh, 560px);
         width: 100%;
-        padding: 56px 8px 0;
+        padding: 56px 8px var(--ground-band, 8px);
       }
 
       .panel-title { font-size: 28px; }
@@ -798,8 +803,11 @@
     <div class="viz-column" id="vizColumn" aria-label="Simulace">
       <p class="sim-empty-hint" id="hintEl">Nastav výšku tělesa a&nbsp;stiskni Spustit pád.</p>
       <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
+      <div id="earth-grass" class="earth-grass" aria-hidden="true">
+        <img src="assets/travnik-siroky.svg" alt="" width="990" height="415" decoding="async" />
+      </div>
       <div id="moon-surface" class="moon-surface" aria-hidden="true">
-        <img src="assets/mesic-povrch.svg" alt="" width="535" height="533" decoding="async" />
+        <img src="assets/mesic-povrch-siroky.svg" alt="" width="535" height="533" decoding="async" />
       </div>
       <div class="viz-fit" id="vizFit">
         <div class="viz-scale-box" id="vizScaleBox">
@@ -1263,8 +1271,20 @@
     );
   }
 
+  /** Horní hrana povrchu v assetu (y / výška obrázku): tráva 332/415, Měsíc ~470/533 uprostřed. */
+  const GROUND_TOP_RATIO = { earth: 83 / 990, moon: 66 / 535 };
+
+  function layoutGroundBand() {
+    const colEl = document.getElementById("vizColumn");
+    if (!colEl) return;
+    const ratio = GROUND_TOP_RATIO[state.environment];
+    const band = ratio ? Math.round(colEl.clientWidth * ratio) : 16;
+    colEl.style.setProperty("--ground-band", `${band}px`);
+  }
+
   function fitVizToScreen() {
     if (!vizFitEl || !vizScaleBoxEl || !vizPresentationEl) return;
+    layoutGroundBand();
 
     const availW = vizFitEl.clientWidth;
     const availH = vizFitEl.clientHeight;
@@ -1282,6 +1302,12 @@
     vizScaleBoxEl.style.width = `${naturalW * scale}px`;
     vizScaleBoxEl.style.height = `${naturalH * scale}px`;
     vizPresentationEl.style.transform = `scale(${scale})`;
+    /* Na úzkém displeji se přístroj zúží víc, než odpovídá naturalW/H — box stáhnout
+       na skutečnou velikost, aby přístroj stál na povrchu. */
+    const realRect = vizPresentationEl.getBoundingClientRect();
+    if (realRect.height > 0 && realRect.height < naturalH * scale - 1) {
+      vizScaleBoxEl.style.height = `${realRect.height}px`;
+    }
     layoutMoonSurface();
   }
 
