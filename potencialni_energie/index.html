@@ -470,7 +470,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding: 88px 16px var(--ground-band, 16px);
+      padding: 76px 16px var(--ground-band, 16px);
       border-radius: var(--radius-canvas);
       background: var(--canvas-bg);
       isolation: isolate;
@@ -539,6 +539,38 @@
       display: block;
       width: 100%;
       height: auto;
+    }
+
+    /* Měsíc: nízký pás povrchu přes celou šířku + Země nad obzorem. */
+    .moon-surface img.moon-band {
+      height: var(--moon-band-h, 72px);
+    }
+
+    .moon-surface img.moon-earth {
+      left: auto;
+      right: 9%;
+      bottom: calc(var(--moon-band-h, 72px) * 0.62);
+      width: auto;
+      height: calc(var(--moon-band-h, 72px) * 1.35);
+    }
+
+    /* Země: zelený pás přes celou šířku, tráva se stromem v pevné výšce uprostřed. */
+    .earth-grass::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--grass-green, 64px);
+      background: #57d976;
+    }
+
+    .earth-grass img {
+      left: 4%;
+      right: auto;
+      width: auto;
+      height: calc(var(--grass-green, 64px) * 415 / 83);
+      transform: none;
     }
 
     .earth-grass { opacity: 1; }
@@ -807,7 +839,8 @@
         <img src="assets/travnik-siroky.svg" alt="" width="990" height="415" decoding="async" />
       </div>
       <div id="moon-surface" class="moon-surface" aria-hidden="true">
-        <img src="assets/mesic-povrch-siroky.svg" alt="" width="535" height="533" decoding="async" />
+        <img class="moon-earth" src="assets/mesic-zeme.svg" alt="" width="100" height="67" decoding="async" />
+        <img class="moon-band" src="assets/mesic-povrch-pas.svg" alt="" width="1000" height="120" decoding="async" />
       </div>
       <div class="viz-fit" id="vizFit">
         <div class="viz-scale-box" id="vizScaleBox">
@@ -1272,13 +1305,22 @@
   }
 
   /** Horní hrana povrchu v assetu (y / výška obrázku): tráva 332/415, Měsíc ~470/533 uprostřed. */
-  const GROUND_TOP_RATIO = { earth: 83 / 990, moon: 66 / 535 };
+  /** Pás měsíčního povrchu: výška podle plátna; vrchol oblouku je ve 20/120 výšky pásu. */
+  const MOON_BAND_TOP = 20 / 120;
 
   function layoutGroundBand() {
     const colEl = document.getElementById("vizColumn");
     if (!colEl) return;
-    const ratio = GROUND_TOP_RATIO[state.environment];
-    const band = ratio ? Math.round(colEl.clientWidth * ratio) : 16;
+    let band = 16;
+    if (state.environment === "moon") {
+      const bandH = Math.round(Math.min(96, Math.max(52, colEl.clientHeight * 0.1)));
+      colEl.style.setProperty("--moon-band-h", `${bandH}px`);
+      band = Math.round(bandH * (1 - MOON_BAND_TOP)) - 2;
+    } else if (state.environment === "earth") {
+      const green = Math.round(Math.min(80, Math.max(44, colEl.clientHeight * 0.08)));
+      colEl.style.setProperty("--grass-green", `${green}px`);
+      band = green;
+    }
     colEl.style.setProperty("--ground-band", `${band}px`);
   }
 
@@ -1298,7 +1340,7 @@
     const naturalH = vizPresentationEl.offsetHeight;
     if (naturalW <= 0 || naturalH <= 0) return;
 
-    const scale = Math.min(availW / naturalW, availH / naturalH, 1);
+    const scale = Math.min(availW / naturalW, availH / naturalH, 1.6);
     vizScaleBoxEl.style.width = `${naturalW * scale}px`;
     vizScaleBoxEl.style.height = `${naturalH * scale}px`;
     vizPresentationEl.style.transform = `scale(${scale})`;
