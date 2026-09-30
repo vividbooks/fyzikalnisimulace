@@ -864,7 +864,7 @@
         <div class="body-info" id="bodyInfo" aria-live="polite">
           <span class="body-info__name" id="bodyInfoName">Koule</span>
           <span class="body-info__row"><i class="qty">V</i> = <span class="body-info__value" id="bodyInfoVolume">—</span> cm³</span>
-          <span class="body-info__row"><i class="qty">m</i> = <span class="body-info__value" id="bodyInfoMass">—</span></span>
+          <span class="body-info__row"><i class="qty">m</i> = <span class="body-info__value" id="bodyInfoMass">—</span> <span id="bodyInfoMassUnit">kg</span></span>
         </div>
           <div class="sim-label-slot">
             <img
@@ -1651,7 +1651,13 @@
     if (!preset) return;
     if (bodyInfoNameEl) bodyInfoNameEl.textContent = preset.name || "Koule";
     if (bodyInfoVolumeEl) bodyInfoVolumeEl.textContent = formatNum(preset.volumeCm3, 0);
-    if (bodyInfoMassEl) bodyInfoMassEl.textContent = formatPresetMass(preset);
+    if (bodyInfoMassEl) {
+      /* Číslo modře, jednotka (kg / g) černě jako u objemu. */
+      const [num, unit] = formatPresetMass(preset).split(" ");
+      bodyInfoMassEl.textContent = num;
+      const unitEl = document.getElementById("bodyInfoMassUnit");
+      if (unitEl) unitEl.textContent = unit;
+    }
   }
 
   function updatePanelStats() {

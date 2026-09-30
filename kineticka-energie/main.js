@@ -432,7 +432,13 @@ ${hole(-0.02, 0.12, 0.16)}
 
   function updateStats() {
     const obj = currentObject();
-    massValueEl.textContent = formatMass(obj.mass);
+    {
+      /* Číslo modře, jednotka (kg / g) černě jako u objemu. */
+      const [num, unit] = formatMass(obj.mass).split(" ");
+      massValueEl.textContent = num;
+      const unitEl = document.getElementById("massUnit");
+      if (unitEl) unitEl.textContent = unit;
+    }
     if (bodyInfoNameEl) bodyInfoNameEl.textContent = obj.name;
     if (volumeValueEl) volumeValueEl.textContent = formatNumber(obj.volume);
     speedValueEl.innerHTML = `${formatNumber(state.speed)} <span class="unit-frac" aria-label="metrů za sekundu"><span class="unit-frac__num">m</span><span class="unit-frac__den">s</span></span>`;
