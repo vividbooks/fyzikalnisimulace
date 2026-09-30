@@ -503,7 +503,58 @@
       transform: translateX(-50%);
     }
 
-    .sim-empty-hint.is-hidden { display: none; }
+    .sim-empty-hint.is-hidden { visibility: hidden; }
+
+    /* Horní lišta plátna: vlevo údaje o tělese, uprostřed nápověda. */
+    .viz-topbar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 8;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .viz-topbar .sim-empty-hint {
+      position: static;
+      flex: 1 1 auto;
+      width: auto;
+      max-width: none;
+      margin: 0 auto;
+      transform: none;
+    }
+
+    .body-info {
+      flex: 0 0 auto;
+      display: grid;
+      gap: 2px;
+      min-width: 150px;
+      padding: 10px 16px 12px;
+      border: 2px solid #cbd5e1;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      color: #334155;
+      font-size: 20px;
+      line-height: 1.3;
+    }
+
+    .body-info__name {
+      margin-bottom: 2px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+
+    .body-info__value {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
 
     .space-backdrop {
       position: absolute;
@@ -762,11 +813,24 @@
       .panel-title { font-size: 28px; }
 
       .sim-empty-hint {
-        top: 10px;
-        font-size: 16px;
-        padding: 8px 16px;
-        max-width: calc(100% - 24px);
+        font-size: 15px;
+        padding: 8px 14px;
       }
+
+      .viz-topbar {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        gap: 8px;
+      }
+
+      .body-info {
+        min-width: 0;
+        padding: 6px 10px 8px;
+        font-size: 15px;
+      }
+
+      .body-info__name { font-size: 11px; }
     }
   </style>
 </head>
@@ -835,7 +899,14 @@
     </aside>
 
     <div class="viz-column" id="vizColumn" aria-label="Simulace">
-      <p class="sim-empty-hint" id="hintEl">Nastav výšku tělesa a&nbsp;stiskni Spustit pád.</p>
+      <div class="viz-topbar">
+        <div class="body-info" id="bodyInfo" aria-live="polite">
+          <span class="body-info__name" id="bodyInfoName">Koule</span>
+          <span class="body-info__row">V = <span class="body-info__value" id="bodyInfoVolume">—</span> cm³</span>
+          <span class="body-info__row">m = <span class="body-info__value" id="bodyInfoMass">—</span></span>
+        </div>
+        <p class="sim-empty-hint" id="hintEl">Nastav výšku tělesa a&nbsp;stiskni Spustit pád.</p>
+      </div>
       <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
       <div id="earth-grass" class="earth-grass" aria-hidden="true">
         <img src="assets/travnik-siroky.svg" alt="" width="990" height="415" decoding="async" />
@@ -1598,7 +1669,20 @@
   const heightValueEl = document.getElementById("heightValue");
   const hintEl = document.getElementById("hintEl");
 
+  const bodyInfoNameEl = document.getElementById("bodyInfoName");
+  const bodyInfoVolumeEl = document.getElementById("bodyInfoVolume");
+  const bodyInfoMassEl = document.getElementById("bodyInfoMass");
+
+  function updateBodyInfo() {
+    const preset = getCurrentPreset();
+    if (!preset) return;
+    if (bodyInfoNameEl) bodyInfoNameEl.textContent = preset.name || "Koule";
+    if (bodyInfoVolumeEl) bodyInfoVolumeEl.textContent = formatNum(preset.volumeCm3, 0);
+    if (bodyInfoMassEl) bodyInfoMassEl.textContent = formatPresetMass(preset);
+  }
+
   function updatePanelStats(showEnergy) {
+    updateBodyInfo();
     if (statMassEl) statMassEl.textContent = formatNum(state.mass, 2);
     if (statEnergyEl) {
       statEnergyEl.textContent = showEnergy
