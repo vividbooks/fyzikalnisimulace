@@ -115,20 +115,21 @@ ${wheelMarkup(178)}`;
 </g>`;
   }
 
-  /** Velikost ve scéně odpovídá objemu (poloměr ~ ∛V); koule 300 cm³ má r = 70,5. */
-  const KOULE_R = 70.5;
-  const TENISAK_R = KOULE_R * Math.cbrt(150 / 300);
-  const PENOVY_R = KOULE_R * Math.cbrt(500 / 300);
+    /** Poloměr ve scéně podle objemu (r ~ ∛V); 300 cm³ odpovídá r = 70,5. */
+  const radiusForVolume = (v) => 70.5 * Math.cbrt(v / 300);
+  const KOULE_R = radiusForVolume(500);
+  const TENISAK_R = radiusForVolume(150);
+  const PENOVY_R = radiusForVolume(500);
 
   const OBJECTS = [
     {
       id: "koule",
       name: "Koule",
       mass: 1,
-      volume: 300,
+      volume: 500,
       width: 2 * KOULE_R + 7.05,
       height: 2 * KOULE_R + 7.05,
-      markup: () => ballMarkup(KOULE_R, "#EF3A50", "#813A50", "1 kg", 40),
+      markup: () => ballMarkup(KOULE_R, "#EF3A50", "#813A50", "1 kg", 46),
     },
     {
       id: "tenisak",
