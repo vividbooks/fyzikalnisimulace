@@ -153,8 +153,9 @@ ${hole(-0.02, 0.12, 0.16)}
       name: "Bowlingová koule",
       mass: 1,
       volume: 500,
-      width: 2 * KOULE_R + 7.05,
-      height: 2 * KOULE_R + 7.05,
+      /* Rozměr = přesně průměr kresby, jinak se koule otáčí kolem posunutého středu a „poskakuje“. */
+      width: 2 * KOULE_R,
+      height: 2 * KOULE_R,
       markup: () => bowlingMarkup(KOULE_R),
     },
     {
