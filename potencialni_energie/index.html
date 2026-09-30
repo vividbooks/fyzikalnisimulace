@@ -614,12 +614,13 @@
       height: 100%;
       min-width: 0;
       min-height: 0;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .viz-scale-box {
       position: relative;
-      overflow: hidden;
+      /* visible: popisek výšky u širokých těles (láhev) přesahuje vlevo z kresby přístroje. */
+      overflow: visible;
       flex-shrink: 0;
     }
 
