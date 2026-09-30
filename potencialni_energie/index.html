@@ -1313,17 +1313,15 @@
   function layoutGroundBand() {
     const colEl = document.getElementById("vizColumn");
     if (!colEl) return;
-    let band = 16;
-    if (state.environment === "moon") {
-      const bandH = Math.round(Math.min(96, Math.max(52, colEl.clientHeight * 0.1)));
-      colEl.style.setProperty("--moon-band-h", `${bandH}px`);
-      band = Math.round(bandH * (1 - MOON_BAND_TOP)) - 2;
-    } else if (state.environment === "earth") {
-      const green = Math.round(Math.min(80, Math.max(44, colEl.clientHeight * 0.08)));
-      colEl.style.setProperty("--grass-green", `${green}px`);
-      band = green;
-    }
-    colEl.style.setProperty("--ground-band", `${band}px`);
+    /* Stejná výška země ve všech prostředích → přístroj má všude stejnou velikost
+       (i ve stavu beztíže, kde povrch není vidět). */
+    const ground = Math.round(Math.min(80, Math.max(44, colEl.clientHeight * 0.08)));
+    colEl.style.setProperty("--grass-green", `${ground}px`);
+    colEl.style.setProperty(
+      "--moon-band-h",
+      `${Math.round((ground + 2) / (1 - MOON_BAND_TOP))}px`
+    );
+    colEl.style.setProperty("--ground-band", `${ground}px`);
   }
 
   function fitVizToScreen() {
