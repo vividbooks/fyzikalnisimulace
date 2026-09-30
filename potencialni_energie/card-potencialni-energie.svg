@@ -1,23 +1,13 @@
-<svg width="370" height="566" viewBox="-4 186 370 566" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <!-- Karta Potenciální energie: měřič s melounem, bez popisků a nápisů. -->
-  <rect x="239" y="300" width="44" height="449" rx="10" fill="#EEF2F6" stroke="#3E3E3E" stroke-width="3"/>
-  <rect x="239" y="720" width="44" height="29" rx="9" fill="#EF3A50"/>
-  <path d="M248 316V735" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.75"/>
-  
-  <line x1="283" y1="731.5" x2="295" y2="731.5" stroke="#3E3E3E" stroke-width="2.5" stroke-linecap="round"/><line x1="283" y1="697.0" x2="290" y2="697.0" stroke="#3E3E3E" stroke-width="1.5" stroke-linecap="round"/><line x1="283" y1="662.6" x2="295" y2="662.6" stroke="#3E3E3E" stroke-width="2.5" stroke-linecap="round"/><line x1="283" y1="628.1" x2="290" y2="628.1" stroke="#3E3E3E" stroke-width="1.5" stroke-linecap="round"/><line x1="283" y1="593.7" x2="295" y2="593.7" stroke="#3E3E3E" stroke-width="2.5" stroke-linecap="round"/><line x1="283" y1="559.2" x2="290" y2="559.2" stroke="#3E3E3E" stroke-width="1.5" stroke-linecap="round"/><line x1="283" y1="524.8" x2="295" y2="524.8" stroke="#3E3E3E" stroke-width="2.5" stroke-linecap="round"/><line x1="283" y1="490.3" x2="290" y2="490.3" stroke="#3E3E3E" stroke-width="1.5" stroke-linecap="round"/><line x1="283" y1="455.8" x2="295" y2="455.8" stroke="#3E3E3E" stroke-width="2.5" stroke-linecap="round"/><line x1="283" y1="421.4" x2="290" y2="421.4" stroke="#3E3E3E" stroke-width="1.5" stroke-linecap="round"/><line x1="283" y1="386.9" x2="295" y2="386.9" stroke="#3E3E3E" stroke-width="2.5" stroke-linecap="round"/><line x1="283" y1="352.5" x2="290" y2="352.5" stroke="#3E3E3E" stroke-width="1.5" stroke-linecap="round"/><line x1="283" y1="318.0" x2="295" y2="318.0" stroke="#3E3E3E" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="64" y="623" width="121" height="13" rx="6.5" fill="#3E3E3E"/>
-  <path d="M125.5 630.5V652" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/>
-  <rect x="1.5" y="646.5" width="236" height="101" rx="10" fill="#D6DCE4" stroke="#3E3E3E" stroke-width="3"/>
-  <rect x="1.5" y="646.5" width="236" height="14" rx="7" fill="#B9C2CE"/>
-  <rect x="22" y="672" width="195" height="54" rx="8" fill="#3E3E3E"/>
-  <circle cx="12" cy="736" r="3.5" fill="#8A94A3"/>
-  <circle cx="227" cy="736" r="3.5" fill="#8A94A3"/>
-  <circle cx="12" cy="671" r="3.5" fill="#8A94A3"/>
-  <circle cx="227" cy="671" r="3.5" fill="#8A94A3"/>
-  <rect x="159" y="192" width="204" height="112" rx="16" fill="#3E3E3E"/>
-  <rect x="169" y="202" width="184" height="92" rx="10" fill="#1B2A22"/>
-  <circle cx="261.5" cy="731.5" r="9.5" fill="black"/>
-  <g transform="translate(62.5 520.5) scale(1.033)">
+<svg width="380" height="812" viewBox="-10 -58 384 816" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <!-- Karta Potenciální energie: schematický měřič, meloun ve výšce 1 m. Bez popisků. -->
+  <rect x="239" y="63" width="44" height="686" rx="14" fill="#FFFFFF" stroke="#3E3E3E" stroke-width="10"/>
+  <rect x="242" y="716" width="38" height="30" rx="11" fill="#EF3A50"/>
+  <line x1="283" y1="623.0" x2="305" y2="623.0" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/><line x1="283" y1="514.5" x2="305" y2="514.5" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/><line x1="283" y1="406.0" x2="305" y2="406.0" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/><line x1="283" y1="297.5" x2="305" y2="297.5" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/><line x1="283" y1="189.0" x2="305" y2="189.0" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/><line x1="283" y1="80.5" x2="305" y2="80.5" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/>
+  <rect x="159" y="-46" width="204" height="112" rx="18" fill="#2F3B35" stroke="#3E3E3E" stroke-width="10"/>
+  <rect x="64" y="620" width="121" height="16" rx="8" fill="#3E3E3E"/>
+  <path d="M125.5 632V652" stroke="#3E3E3E" stroke-width="12" stroke-linecap="round"/>
+  <rect x="3" y="648" width="236" height="98" rx="14" fill="#C9D1DB" stroke="#3E3E3E" stroke-width="10"/>
+  <g transform="translate(51.56 264.98) scale(1.1957)">
   <defs>
     <clipPath id="melounTvarKarta"><ellipse cx="61" cy="50" rx="59.5" ry="48.5"/></clipPath>
   </defs>
