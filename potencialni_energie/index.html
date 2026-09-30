@@ -660,18 +660,20 @@
 
     /* Pevná šířka slotu = nejširší popisek; přístroj se při přepnutí neposune. */
     .sim-label-slot {
-      flex: 0 0 clamp(52px, 12vw, 115px);
-      width: clamp(52px, 12vw, 115px);
+      flex: 0 0 clamp(96px, 18vw, 200px);
+      width: clamp(96px, 18vw, 200px);
       align-self: center;
       position: relative;
-      min-height: 53px;
+      min-height: 90px;
     }
 
     .sim-label-slot .sim-label {
       display: none;
       width: auto;
       max-width: 100%;
-      height: auto;
+      height: 90px;
+      object-fit: contain;
+      object-position: left center;
       pointer-events: none;
       user-select: none;
     }
