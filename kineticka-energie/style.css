@@ -684,3 +684,6 @@ body.env-weightless .stage .spring-dark { stroke: #B8BEC8; }
   .viz-side { top: 10px; left: 10px; gap: 6px; }
   .sim-label-slot .sim-label { height: 44px; }
 }
+
+/* Značky veličin kurzívou (m, V, g …), jednotky zůstávají stojatě. */
+i.qty { font-style: italic; }

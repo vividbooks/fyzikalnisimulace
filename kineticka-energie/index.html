@@ -7,7 +7,7 @@
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
   <title>Kinetická energie</title>
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace kinetické energie">
@@ -26,7 +26,7 @@
       <section class="panel-section" aria-label="Prostředí">
         <span class="panel-label">Prostředí</span>
         <div class="env-toggle" id="envToggle" role="radiogroup" aria-label="Prostředí simulace"></div>
-        <span class="panel-note">Tíhové zrychlení g = <span id="gravityValue">10</span> N/kg</span>
+        <span class="panel-note">Tíhové zrychlení <i class="qty">g</i> = <span id="gravityValue">10</span> N/kg</span>
       </section>
 
       <section class="panel-section" aria-label="Výběr tělesa">
@@ -74,8 +74,8 @@
       <div class="viz-side">
         <div class="body-info" id="bodyInfo" aria-live="polite">
           <span class="body-info__name" id="bodyInfoName">Bowlingová koule</span>
-          <span class="body-info__row">V = <span class="body-info__value" id="volumeValue">500</span> cm³</span>
-          <span class="body-info__row">m = <span class="body-info__value" id="massValue">1 kg</span></span>
+          <span class="body-info__row"><i class="qty">V</i> = <span class="body-info__value" id="volumeValue">500</span> cm³</span>
+          <span class="body-info__row"><i class="qty">m</i> = <span class="body-info__value" id="massValue">1 kg</span></span>
         </div>
         <div class="sim-label-slot">
           <img class="sim-label sim-label-earth" src="assets/sim-label.svg" width="66" height="53" alt="Země, g = 10 N/kg" />

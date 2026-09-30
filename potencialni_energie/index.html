@@ -500,6 +500,8 @@
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
     }
 
+    i.qty { font-style: italic; }
+
     .body-info {
       display: grid;
       gap: 2px;
@@ -834,7 +836,7 @@
       <section class="panel-section" aria-label="Prostředí">
         <span class="panel-label">Prostředí</span>
         <div class="env-toggle" id="envToggle" role="radiogroup" aria-label="Prostředí simulace"></div>
-        <span class="panel-note">Tíhové zrychlení g = <span id="valGravity">—</span></span>
+        <span class="panel-note">Tíhové zrychlení <i class="qty">g</i> = <span id="valGravity">—</span></span>
       </section>
 
       <section class="panel-section" aria-label="Těleso">
@@ -861,8 +863,8 @@
         <div class="viz-side">
         <div class="body-info" id="bodyInfo" aria-live="polite">
           <span class="body-info__name" id="bodyInfoName">Koule</span>
-          <span class="body-info__row">V = <span class="body-info__value" id="bodyInfoVolume">—</span> cm³</span>
-          <span class="body-info__row">m = <span class="body-info__value" id="bodyInfoMass">—</span></span>
+          <span class="body-info__row"><i class="qty">V</i> = <span class="body-info__value" id="bodyInfoVolume">—</span> cm³</span>
+          <span class="body-info__row"><i class="qty">m</i> = <span class="body-info__value" id="bodyInfoMass">—</span></span>
         </div>
           <div class="sim-label-slot">
             <img
