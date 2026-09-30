@@ -129,26 +129,19 @@ ${hole(-0.02, 0.12, 0.16)}
 <path d="M${f(cx - 0.78 * R)} ${f(cy - 0.05 * R)}A${f(0.78 * R)} ${f(0.78 * R)} 0 0 1 ${f(cx - 0.1 * R)} ${f(cy - 0.77 * R)}" stroke="white" stroke-width="${f(R * 0.08)}" stroke-linecap="round" fill="none" opacity="0.75"/>`;
   }
 
-  /** Pěnový míč podle dodaného SVG (66 × 66): barevné pruhy + obrys, póry pěny, stín a odlesk. */
+  /** Pěnový míč podle dodaného SVG (66 × 66), zvětšený na zadaný poloměr. */
   function foamMarkup(r) {
     const k = (2 * r) / 66;
-    const id = "penovyClip" + Math.random().toString(36).slice(2, 8);
     return `
 <g fill="none" transform="translate(0 ${-2 * r}) scale(${k})">
-<defs><clipPath id="${id}"><circle cx="33" cy="33" r="31.4"/></clipPath></defs>
-<g clip-path="url(#${id})">
 <path d="M0.0118035 32.212L33.7903 65.9905C42.5018 65.7852 50.377 62.2042 56.1602 56.5053L9.49485 9.83997C3.79595 15.6232 0.214951 23.4983 0.00964355 32.2098L0.0118035 32.212Z" fill="#F03B50"/>
 <path d="M0 33.0004C0 51.2252 14.7735 66.0008 33.0005 66.0008C33.2641 66.0008 33.5278 65.9965 33.7893 65.99L0.0108063 32.2115C0.00432292 32.473 0 32.7367 0 33.0004Z" fill="#AD0404"/>
 <path d="M33.0008 0.00012207C23.8009 0.00012207 15.4805 3.76697 9.49634 9.83975L56.1617 56.5051C62.2344 50.5209 66.0013 42.2005 66.0013 33.0006C66.0013 14.7758 51.2278 0.00012207 33.0008 0.00012207Z" fill="#FF8158"/>
-<circle cx="23.5" cy="14.1" r="1.49" fill="#7A1010" opacity="0.18"/><circle cx="9.9" cy="34.9" r="1.23" fill="#7A1010" opacity="0.18"/><circle cx="9.1" cy="33.4" r="0.93" fill="#7A1010" opacity="0.18"/><circle cx="29.4" cy="9.8" r="0.98" fill="#7A1010" opacity="0.18"/><circle cx="28.9" cy="50.7" r="1.01" fill="#7A1010" opacity="0.18"/><circle cx="18.1" cy="39.9" r="1.75" fill="#7A1010" opacity="0.18"/><circle cx="37.2" cy="27.4" r="1.78" fill="#7A1010" opacity="0.18"/><circle cx="21.6" cy="13.8" r="1.01" fill="#7A1010" opacity="0.18"/><circle cx="22.7" cy="50.1" r="1.06" fill="#7A1010" opacity="0.18"/><circle cx="37.4" cy="40.5" r="1.24" fill="#7A1010" opacity="0.18"/><circle cx="35.6" cy="9.4" r="0.95" fill="#7A1010" opacity="0.18"/><circle cx="17.1" cy="42.7" r="1.28" fill="#7A1010" opacity="0.18"/><circle cx="23.0" cy="37.6" r="1.31" fill="#7A1010" opacity="0.18"/><circle cx="22.2" cy="48.9" r="1.53" fill="#7A1010" opacity="0.18"/><circle cx="19.2" cy="37.0" r="1.37" fill="#7A1010" opacity="0.18"/><circle cx="53.3" cy="45.4" r="1.16" fill="#7A1010" opacity="0.18"/><circle cx="28.6" cy="46.9" r="1.04" fill="#7A1010" opacity="0.18"/><circle cx="32.4" cy="8.1" r="1.5" fill="#7A1010" opacity="0.18"/><circle cx="47.3" cy="36.9" r="1.69" fill="#7A1010" opacity="0.18"/><circle cx="22.9" cy="43.5" r="1.43" fill="#7A1010" opacity="0.18"/><circle cx="37.3" cy="30.6" r="1.66" fill="#7A1010" opacity="0.18"/><circle cx="57.0" cy="31.6" r="1.5" fill="#7A1010" opacity="0.18"/><circle cx="9.3" cy="43.9" r="1.48" fill="#7A1010" opacity="0.18"/><circle cx="21.4" cy="26.8" r="1.5" fill="#7A1010" opacity="0.18"/><circle cx="7.2" cy="30.9" r="1.05" fill="#7A1010" opacity="0.18"/><circle cx="47.5" cy="13.0" r="1.12" fill="#7A1010" opacity="0.18"/>
-<circle cx="45" cy="47" r="30" fill="#5A0808" opacity="0.16"/>
-</g>
-<circle cx="33" cy="33" r="31.4" stroke="#8E1F1F" stroke-width="3.2"/>
-<path opacity="0.8" d="M33.0038 7.2C47.3 7.2 58.8 18.7 58.8 33" stroke="#FFF3EC" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.75" d="M33.0038 3.80225C49.1301 3.80225 62.2028 16.8749 62.2028 33.0013" stroke="#F2F2F2" stroke-width="2.59336" stroke-linecap="round" stroke-linejoin="round"/>
 </g>`;
   }
 
-  /** Poloměr ve scéně podle objemu (r ~ ∛V); 300 cm³ odpovídá r = 70,5. */
+    /** Poloměr ve scéně podle objemu (r ~ ∛V); 300 cm³ odpovídá r = 70,5. */
   const radiusForVolume = (v) => 70.5 * Math.cbrt(v / 300);
   const KOULE_R = radiusForVolume(500);
   const TENISAK_R = radiusForVolume(150);
