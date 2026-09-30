@@ -484,7 +484,6 @@
     }
 
     .body-info {
-      flex: 0 0 auto;
       display: grid;
       gap: 2px;
       min-width: 150px;
@@ -666,28 +665,30 @@
     }
 
     /* Pevná šířka slotu = nejširší popisek; přístroj se při přepnutí neposune. */
+    /* Levý sloupec plátna: údaje o tělese a pod nimi prostředí (g). */
+    .viz-side {
+      flex: 0 0 auto;
+      display: grid;
+      justify-items: start;
+      gap: 14px;
+    }
+
     .sim-label-slot {
-      flex: 0 0 clamp(96px, 18vw, 200px);
-      width: clamp(96px, 18vw, 200px);
-      align-self: center;
       position: relative;
-      min-height: 90px;
+      padding-left: 4px;
     }
 
     .sim-label-slot .sim-label {
       display: none;
       width: auto;
-      max-width: 100%;
-      height: 90px;
-      object-fit: contain;
-      object-position: left center;
+      height: 72px;
       pointer-events: none;
       user-select: none;
     }
 
-    .viz-presentation.env-earth .sim-label-earth,
-    .viz-presentation.env-moon .sim-label-moon,
-    .viz-presentation.env-weightless .sim-label-weightless { display: block; }
+    body.env-earth .sim-label-earth,
+    body.env-moon .sim-label-moon,
+    body.env-weightless .sim-label-weightless { display: block; }
 
     .scene-svg {
       display: block;
@@ -787,6 +788,9 @@
       }
 
       .body-info__name { font-size: 11px; }
+
+      .viz-side { gap: 6px; }
+      .sim-label-slot .sim-label { height: 44px; }
     }
   </style>
 </head>
@@ -846,10 +850,38 @@
 
     <div class="viz-column" id="vizColumn" aria-label="Simulace">
       <div class="viz-topbar">
+        <div class="viz-side">
         <div class="body-info" id="bodyInfo" aria-live="polite">
           <span class="body-info__name" id="bodyInfoName">Koule</span>
           <span class="body-info__row">V = <span class="body-info__value" id="bodyInfoVolume">—</span> cm³</span>
           <span class="body-info__row">m = <span class="body-info__value" id="bodyInfoMass">—</span></span>
+        </div>
+          <div class="sim-label-slot">
+            <img
+              class="sim-label sim-label-earth"
+              src="assets/sim-label.svg"
+              width="66"
+              height="53"
+              alt="Země, g = 10 N/kg"
+              decoding="async"
+            />
+            <img
+              class="sim-label sim-label-moon"
+              src="assets/sim-label-moon.svg"
+              width="69"
+              height="53"
+              alt="Měsíc, g = 1,6 N/kg"
+              decoding="async"
+            />
+            <img
+              class="sim-label sim-label-weightless"
+              src="assets/sim-label-weightless.svg"
+              width="115"
+              height="53"
+              alt="Stav beztíže, g = 0 N/kg"
+              decoding="async"
+            />
+          </div>
         </div>
         <p class="sim-empty-hint" id="hintEl">Nastav výšku tělesa a&nbsp;stiskni Spustit pád.</p>
       </div>
@@ -923,32 +955,6 @@
             width="667"
             height="159"
             alt=""
-            decoding="async"
-          />
-        </div>
-        <div class="sim-label-slot">
-          <img
-            class="sim-label sim-label-earth"
-            src="assets/sim-label.svg"
-            width="66"
-            height="53"
-            alt="Země, g = 10 N/kg"
-            decoding="async"
-          />
-          <img
-            class="sim-label sim-label-moon"
-            src="assets/sim-label-moon.svg"
-            width="69"
-            height="53"
-            alt="Měsíc, g = 1,6 N/kg"
-            decoding="async"
-          />
-          <img
-            class="sim-label sim-label-weightless"
-            src="assets/sim-label-weightless.svg"
-            width="115"
-            height="53"
-            alt="Stav beztíže, g = 0 N/kg"
             decoding="async"
           />
         </div>
