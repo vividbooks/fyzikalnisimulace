@@ -475,20 +475,18 @@
       pointer-events: none;
     }
 
-    .viz-topbar .sim-empty-hint {
-      font-size: 20px;
-      padding: 10px 20px;
-      align-self: flex-start;
-      position: static;
-      flex: 1 1 auto;
-      width: auto;
-      max-width: none;
-      margin: 0 auto;
-      transform: none;
+    /* Nápověda uprostřed plátna (zmizí po první interakci). */
+    .sim-empty-hint--center {
+      top: 50%;
+      left: 50%;
+      z-index: 9;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
     }
 
     .viz-actions {
       flex: 0 0 auto;
+      margin-left: auto;
       display: flex;
       gap: 8px;
       pointer-events: auto;
@@ -813,9 +811,9 @@
       .viz-side { gap: 6px; }
 
       .viz-actions { gap: 6px; margin-left: auto; }
+      .sim-empty-hint--center { top: 50%; }
       .viz-actions .action-btn { min-height: 34px; padding: 6px 10px; font-size: 13px; gap: 6px; }
-      /* Na telefonu není vedle údajů a tlačítek místo pro nápovědu. */
-      .viz-topbar .sim-empty-hint { display: none; }
+
       .sim-label-slot .sim-label { height: 44px; }
     }
   </style>
@@ -858,6 +856,7 @@
     </aside>
 
     <div class="viz-column" id="vizColumn" aria-label="Simulace">
+      <p class="sim-empty-hint sim-empty-hint--center" id="hintEl">Nastav výšku tělesa a&nbsp;stiskni Spustit pád.</p>
       <div class="viz-topbar">
         <div class="viz-side">
         <div class="body-info" id="bodyInfo" aria-live="polite">
@@ -892,7 +891,6 @@
             />
           </div>
         </div>
-        <p class="sim-empty-hint" id="hintEl">Nastav výšku a&nbsp;stiskni Spustit pád.</p>
         <div class="actions-row viz-actions" aria-label="Akce simulace">
           <button type="button" id="btnRun" class="action-btn action-btn--run">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
