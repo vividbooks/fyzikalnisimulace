@@ -693,6 +693,7 @@
 
     .scene-svg {
       display: block;
+      overflow: visible;
       width: 100%;
       height: auto;
       flex: 0 0 auto;
@@ -711,7 +712,7 @@
     }
 
     .scene-height-label text {
-      font-size: 18px;
+      font-size: 28px;
       font-weight: 600;
       fill: #334155;
     }
@@ -1561,13 +1562,13 @@
   function drawEnergyScale() {
     const g = document.getElementById("energyScale");
     if (!g) return;
-    const x = 239;
+    const x = 283;
     for (let e = 0; e <= MAX_ENERGY_J; e += 5) {
       const y = ELLIPSE_REST_CY - e * ENERGY_TO_HEIGHT;
       const major = e % 10 === 0;
       const tick = document.createElementNS(SVG_NS, "line");
-      tick.setAttribute("x1", String(x - (major ? 12 : 7)));
-      tick.setAttribute("x2", String(x));
+      tick.setAttribute("x1", String(x));
+      tick.setAttribute("x2", String(x + (major ? 12 : 7)));
       tick.setAttribute("y1", String(y));
       tick.setAttribute("y2", String(y));
       tick.setAttribute("stroke", "#3E3E3E");
@@ -1576,9 +1577,9 @@
       g.appendChild(tick);
       if (major) {
         const t = document.createElementNS(SVG_NS, "text");
-        t.setAttribute("x", String(x - 16));
+        t.setAttribute("x", String(x + 16));
         t.setAttribute("y", String(y + 5));
-        t.setAttribute("text-anchor", "end");
+        t.setAttribute("text-anchor", "start");
         t.setAttribute("font-size", "14");
         t.setAttribute("fill", "#3E3E3E");
         t.textContent = e + " J";
@@ -1605,9 +1606,9 @@
       peakMarksEl.appendChild(lineEl);
 
       const numberEl = document.createElementNS(SVG_NS, "text");
-      numberEl.setAttribute("x", String(LAUNCHER_CX + PEAK_MARK_RX + 4));
+      numberEl.setAttribute("x", String(LAUNCHER_CX - PEAK_MARK_RX - 5));
       numberEl.setAttribute("y", String(y + 4));
-      numberEl.setAttribute("text-anchor", "start");
+      numberEl.setAttribute("text-anchor", "end");
       numberEl.setAttribute("font-size", "11");
       numberEl.setAttribute("font-weight", "700");
       numberEl.setAttribute("fill", PEAK_MARK_COLOR);
@@ -1965,10 +1966,18 @@
     updateLabels();
   });
 
-  btnRun.addEventListener("click", () => {
+  btnRun.addEventListener("click", startFall);
+
+  /* Nápověda na plátně zmizí po první interakci se simulací (panel i plátno). */
+  function hideHintOnce() {
     if (hintEl) hintEl.classList.add("is-hidden");
-    startFall();
-  });
+    ["pointerdown", "keydown", "input"].forEach((type) =>
+      document.removeEventListener(type, hideHintOnce, true)
+    );
+  }
+  ["pointerdown", "keydown", "input"].forEach((type) =>
+    document.addEventListener(type, hideHintOnce, true)
+  );
   btnReset.addEventListener("click", resetSimulation);
 
   applyEnvironmentUI();
