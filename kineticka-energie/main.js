@@ -103,6 +103,32 @@ ${wheelMarkup(178)}`;
 <path d="M${f(cx - 0.26 * R)} ${f(cy - 0.7 * R)}Q${f(cx)} ${f(cy - 0.82 * R)} ${f(cx + 0.26 * R)} ${f(cy - 0.7 * R)}" stroke="white" stroke-width="${f(R * 0.09)}" stroke-linecap="round" fill="none" opacity="0.7"/>`;
   }
 
+  /** Bowlingová koule: tmavě modrá lesklá, jemné mramorování, tři otvory na prsty a odlesk. */
+  function bowlingMarkup(r) {
+    const sw = 7;
+    const R = r - sw / 2;
+    const cx = r;
+    const cy = -r;
+    const f = (v) => v.toFixed(2);
+    const id = "bowlingClip" + Math.random().toString(36).slice(2, 8);
+    const hole = (x, y, rr) =>
+      `<circle cx="${f(cx + x * R)}" cy="${f(cy + y * R)}" r="${f(rr * R)}" fill="#0B1022"/>` +
+      `<path d="M${f(cx + x * R - rr * R * 0.8)} ${f(cy + y * R + rr * R * 0.45)}A${f(rr * R)} ${f(rr * R)} 0 0 0 ${f(cx + x * R + rr * R * 0.8)} ${f(cy + y * R + rr * R * 0.45)}" stroke="#5B6FAE" stroke-width="${f(R * 0.03)}" fill="none" stroke-linecap="round"/>`;
+    return `
+<defs><clipPath id="${id}"><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}"/></clipPath></defs>
+<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}" fill="#2C3E7A"/>
+<g clip-path="url(#${id})">
+  <path d="M${f(cx - R)} ${f(cy + 0.1 * R)}C${f(cx - 0.4 * R)} ${f(cy - 0.35 * R)} ${f(cx + 0.1 * R)} ${f(cy + 0.45 * R)} ${f(cx + R)} ${f(cy - 0.05 * R)}" stroke="#4A63B0" stroke-width="${f(R * 0.12)}" fill="none" opacity="0.45"/>
+  <path d="M${f(cx - R)} ${f(cy + 0.6 * R)}C${f(cx - 0.3 * R)} ${f(cy + 0.25 * R)} ${f(cx + 0.3 * R)} ${f(cy + 0.9 * R)} ${f(cx + R)} ${f(cy + 0.5 * R)}" stroke="#4A63B0" stroke-width="${f(R * 0.08)}" fill="none" opacity="0.35"/>
+  <circle cx="${f(cx + 0.4 * R)}" cy="${f(cy + 0.45 * R)}" r="${f(R)}" fill="#0B1022" opacity="0.28"/>
+</g>
+${hole(-0.2, -0.28, 0.13)}
+${hole(0.18, -0.34, 0.13)}
+${hole(-0.02, 0.12, 0.16)}
+<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}" fill="none" stroke="#141C3A" stroke-width="${sw}"/>
+<path d="M${f(cx - 0.78 * R)} ${f(cy - 0.05 * R)}A${f(0.78 * R)} ${f(0.78 * R)} 0 0 1 ${f(cx - 0.1 * R)} ${f(cy - 0.77 * R)}" stroke="white" stroke-width="${f(R * 0.08)}" stroke-linecap="round" fill="none" opacity="0.75"/>`;
+  }
+
   /** Pěnový míč podle dodaného SVG (66 × 66), zvětšený na zadaný poloměr. */
   function foamMarkup(r) {
     const k = (2 * r) / 66;
@@ -124,12 +150,12 @@ ${wheelMarkup(178)}`;
   const OBJECTS = [
     {
       id: "koule",
-      name: "Koule",
+      name: "Bowlingová koule",
       mass: 1,
       volume: 500,
       width: 2 * KOULE_R + 7.05,
       height: 2 * KOULE_R + 7.05,
-      markup: () => ballMarkup(KOULE_R, "#EF3A50", "#813A50", "1 kg", 46),
+      markup: () => bowlingMarkup(KOULE_R),
     },
     {
       id: "tenisak",
