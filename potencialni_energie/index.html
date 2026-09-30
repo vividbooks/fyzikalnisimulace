@@ -454,6 +454,22 @@
       paint-order: stroke fill;
     }
 
+    /* Stupnice měřiče na tmavém vesmírném pozadí (Měsíc, stav beztíže). */
+    body.env-moon #energyScale text,
+    body.env-weightless #energyScale text {
+      fill: #fff;
+    }
+
+    body.env-moon #energyScale line,
+    body.env-weightless #energyScale line {
+      stroke: #fff;
+    }
+
+    body.env-moon #peakMarks text,
+    body.env-weightless #peakMarks text {
+      fill: #fff;
+    }
+
     .ball-picker {
       display: grid;
       grid-template-columns: 1fr 1fr;
