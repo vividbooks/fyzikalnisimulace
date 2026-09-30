@@ -80,14 +80,27 @@ ${wheelMarkup(178)}`;
   }
 
   /** width/height = obrys tělesa v jednotkách scény; počátek vlevo dole (na podlaze). */
-  /** Tenisák podle dodaného SVG (6 × 6), zvětšený na zadaný poloměr. */
+  /** Tenisák ve stylu ostatních těles: žlutozelená plsť, tmavší obrys, dva bílé švy a odlesk. */
   function tennisMarkup(r) {
-    const k = (2 * r) / 5.3;
+    const sw = 6;
+    const R = r - sw / 2;
+    const cx = r;
+    const cy = -r;
+    const id = "tenisakClip" + Math.random().toString(36).slice(2, 8);
+    const f = (v) => v.toFixed(2);
+    /* Švy: dva protilehlé oblouky, které se k okrajům stáčejí jako u skutečného míčku. */
+    const seamL = `M${f(cx - 0.62 * R)} ${f(cy - 0.78 * R)}C${f(cx - 0.12 * R)} ${f(cy - 0.35 * R)} ${f(cx - 0.12 * R)} ${f(cy + 0.35 * R)} ${f(cx - 0.62 * R)} ${f(cy + 0.78 * R)}`;
+    const seamR = `M${f(cx + 0.62 * R)} ${f(cy - 0.78 * R)}C${f(cx + 0.12 * R)} ${f(cy - 0.35 * R)} ${f(cx + 0.12 * R)} ${f(cy + 0.35 * R)} ${f(cx + 0.62 * R)} ${f(cy + 0.78 * R)}`;
     return `
-<g fill="none" transform="translate(0 ${-2 * r}) scale(${k})">
-<path d="M5.14615 1.76026C5.63789 3.13866 4.91922 4.65465 3.54082 5.14612C2.16269 5.63812 0.646426 4.91945 0.154693 3.54106C-0.336773 2.16266 0.381626 0.646658 1.75976 0.154659C3.13816 -0.336807 4.65442 0.381858 5.14615 1.76026Z" fill="#D1FF33"/>
-<path d="M4.41871 4.39123C3.56164 3.84563 3.60751 3.34723 3.49151 2.27896C3.36751 1.1323 2.43577 0.463233 1.48164 1.01443C0.293109 1.70083 0.370442 3.0451 0.986975 3.7323C1.60351 4.41923 1.79764 4.32563 2.60857 5.16776" stroke="white" stroke-width="0.299733" stroke-linecap="round" stroke-linejoin="round"/>
-</g>`;
+<defs><clipPath id="${id}"><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}"/></clipPath></defs>
+<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}" fill="#D1FF33"/>
+<g clip-path="url(#${id})">
+  <circle cx="${f(cx + 0.35 * R)}" cy="${f(cy + 0.4 * R)}" r="${f(R * 0.95)}" fill="#9FC21A" opacity="0.35"/>
+  <path d="${seamL}" stroke="#FFFFFF" stroke-width="${f(R * 0.11)}" stroke-linecap="round" fill="none"/>
+  <path d="${seamR}" stroke="#FFFFFF" stroke-width="${f(R * 0.11)}" stroke-linecap="round" fill="none"/>
+</g>
+<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}" fill="none" stroke="#7E9A12" stroke-width="${sw}"/>
+<path d="M${f(cx - 0.26 * R)} ${f(cy - 0.7 * R)}Q${f(cx)} ${f(cy - 0.82 * R)} ${f(cx + 0.26 * R)} ${f(cy - 0.7 * R)}" stroke="white" stroke-width="${f(R * 0.09)}" stroke-linecap="round" fill="none" opacity="0.7"/>`;
   }
 
   /** Velikost ve scéně odpovídá objemu (poloměr ~ ∛V); koule 300 cm³ má r = 70,5. */
