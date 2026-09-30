@@ -2532,12 +2532,13 @@
   const WHEEL_HUB_REAR_Y = 39.5322;
 
   const RIDER_SVG_MARKUP = `<svg xmlns="http://www.w3.org/2000/svg" width="57" height="51" viewBox="0 0 57 51" fill="none" overflow="visible">
-<defs><clipPath id="__LEG_CLIP_ID__"><rect x="-5" y="29.39" width="70" height="25"/></clipPath></defs>
-<g class="cyclist-leg-rear" transform="translate(0,0)">
-<path d="M24.1306 15.1101L31.7197 20.219C32.4877 20.7348 32.7629 21.7335 32.369 22.5707L26.306 36.7799C25.9467 37.5446 25.0601 37.9055 24.2707 37.6089C23.4845 37.3139 23.0528 36.4668 23.2785 35.6576L25.8429 23.4425L17.9587 17.508" fill="white"/>
-<path d="M24.1306 15.1101L31.7197 20.219C32.4877 20.7348 32.7629 21.7335 32.369 22.5707L26.306 36.7799C25.9467 37.5446 25.0601 37.9055 24.2707 37.6089C23.4845 37.3139 23.0528 36.4668 23.2785 35.6576L25.8429 23.4425L17.9587 17.508" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
-<path d="M29.1792 18.6056C29.1792 18.6056 28.9501 21.8126 25.7678 23.1887L29.1792 18.6056Z" fill="white"/>
-<path d="M29.1792 18.6056C29.1792 18.6056 28.9501 21.8126 25.7678 23.1887" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<g class="cyclist-leg-rear">
+<line class="cl-crank" stroke="#1D1D1B" stroke-width="1.2" stroke-linecap="round"/>
+<line class="cl-thigh-o" stroke="#1D1D1B" stroke-width="6.5" stroke-linecap="round"/>
+<line class="cl-shin-o" stroke="#1D1D1B" stroke-width="4.1" stroke-linecap="round"/>
+<line class="cl-thigh" stroke="#E3E3E3" stroke-width="5.84" stroke-linecap="round"/>
+<line class="cl-shin" stroke="#E3E3E3" stroke-width="3.44" stroke-linecap="round"/>
+<line class="cl-shoe" stroke="#1D1D1B" stroke-width="1.9" stroke-linecap="round"/>
 </g>
 <g class="cyclist-wheel-front" transform="rotate(0 ${WHEEL_HUB_FRONT_X} ${WHEEL_HUB_FRONT_Y})">
 <path d="M45.5418 48.743C50.6288 48.743 54.7526 44.6192 54.7526 39.5322C54.7526 34.4452 50.6288 30.3214 45.5418 30.3214C40.4549 30.3214 36.3311 34.4452 36.3311 39.5322C36.3311 44.6192 40.4549 48.743 45.5418 48.743Z" stroke="#B1B1B1" stroke-width="2.30723" stroke-miterlimit="10" stroke-linecap="round"/>
@@ -2582,11 +2583,15 @@
 <g class="cyclist-helmet">
 <path d="M43.7263 5.20228C43.7543 5.57143 43.4165 5.86148 43.0556 5.78073C40.9148 5.30445 34.4035 4.26785 31.2426 4.37991C28.5646 4.47385 33.3867 -0.361436 39.252 0.212074C42.9073 0.569694 43.606 3.64984 43.7263 5.20063V5.20228Z" fill="#FF184A" stroke="#FF184A" stroke-width="0.329604" stroke-miterlimit="10"/>
 </g>
-<g class="cyclist-leg-front" clip-path="url(#__LEG_CLIP_ID__)" transform="translate(0,0)">
-<path d="M31.342 24L31.66 44.25C31.69 45.02 31.12 45.68 30.35 45.77C29.5 45.86 28.78 45.28 28.68 44.48L26.8166 24Z" fill="white" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<g class="cyclist-leg-front">
+<line class="cl-crank" stroke="#1D1D1B" stroke-width="1.2" stroke-linecap="round"/>
+<line class="cl-thigh-o" stroke="#1D1D1B" stroke-width="6.5" stroke-linecap="round"/>
+<line class="cl-shin-o" stroke="#1D1D1B" stroke-width="4.1" stroke-linecap="round"/>
+<line class="cl-thigh" stroke="white" stroke-width="5.84" stroke-linecap="round"/>
+<line class="cl-shin" stroke="white" stroke-width="3.44" stroke-linecap="round"/>
+<line class="cl-shoe" stroke="#1D1D1B" stroke-width="1.9" stroke-linecap="round"/>
 </g>
-<path d="M39.5047 11.4038L40.4193 18.1706L46.8515 16.5984C47.5487 16.4352 48.254 16.8406 48.4633 17.5245C48.6792 18.2282 48.2952 18.9764 47.5981 19.2138L40.1952 21.4435C38.8603 21.8605 37.4381 21.1255 37.0063 19.7939C36.3075 17.635 35.823 16.0974 35.5181 15.1432C34.9133 13.2529 33.5257 13.6748 33.5257 13.6748C31.1542 13.7868 27.3324 14.2812 25.1125 14.6372C24.5209 14.7328 24.2605 15.4332 24.6412 15.8963C25.897 17.424 30.9976 27.5659 30.9976 27.5659C31.2102 28.1477 31.3256 28.7607 31.342 29.3804L26.8166 29.8896L17.9568 19.4181C17.9568 19.4181 15.1783 17.2592 15.7254 13.8C16.0896 11.5043 16.2132 10.2387 20.6794 8.31706C23.4777 7.11401 27.929 5.41161 33.0082 4.80184C35.8807 4.45575 39.3135 9.92882 39.5014 11.4054L39.5047 11.4038Z" fill="white" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
-<path d="M23.8462 26.3958C23.8462 26.3958 27.602 27.4555 28.9073 23.4211" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
+<path d="M39.5047 11.4038L40.4193 18.1706L46.8515 16.5984C47.5487 16.4352 48.254 16.8406 48.4633 17.5245C48.6792 18.2282 48.2952 18.9764 47.5981 19.2138L40.1952 21.4435C38.8603 21.8605 37.4381 21.1255 37.0063 19.7939C36.3075 17.635 35.823 16.0974 35.5181 15.1432C34.9133 13.2529 33.5257 13.6748 33.5257 13.6748C31.1542 13.7868 27.3324 14.2812 25.1125 14.6372C24.5209 14.7328 24.2605 15.4332 24.6412 15.8963C25.7 17.3 25.5 19.7 23.7 20.7C21.9 21.7 19.3 20.9 17.9568 19.4181C17.9568 19.4181 15.1783 17.2592 15.7254 13.8C16.0896 11.5043 16.2132 10.2387 20.6794 8.31706C23.4777 7.11401 27.929 5.41161 33.0082 4.80184C35.8807 4.45575 39.3135 9.92882 39.5014 11.4054L39.5047 11.4038Z" fill="white" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
 <path d="M35.52 15.1447C36.8104 15.3524 38.3019 15.5188 39.8411 13.7307L35.52 15.1447Z" fill="white"/>
 <path d="M35.52 15.1447C36.8104 15.3524 38.3019 15.5188 39.8411 13.7307" stroke="#1D1D1B" stroke-width="0.329604" stroke-miterlimit="10"/>
 <path d="M18.9447 9.15588C18.9447 9.15588 17.9114 12.7716 24.6847 14.7229L18.9447 9.15588Z" fill="white"/>
@@ -2631,48 +2636,74 @@
       applyCyclistWheelTransforms(trackRider2, trackWheelPhaseDeg2);
   }
 
-  /** Houpání noh — pouze svislý translate. Front a Rear v opačné fázi (jako pedálování). */
+  /**
+   * Šlapání: kliky se otáčejí kolem středu převodníku, chodidlo sleduje pedál
+   * a koleno se dopočítá inverzní kinematikou (stehno + lýtko, kyčel pevně na sedle).
+   * Kolo se otočí RIDER_LEG_GEAR_RATIO× za jednu otáčku klik.
+   */
   const RIDER_LEG_GEAR_RATIO = 1.8;
-  const RIDER_LEG_AMPLITUDE = 2.4;
-  /** Při šlapání dolů se přední noha jinak posune moc níž — zde omezíme jen kladný translate (směr +Y). */
-  const RIDER_FRONT_LEG_DOWN_SCALE = 0.35;
-  /** Rotace siluety přední nohy kolem kyčle — plná sinusoida, koleno „jde“ nahoru i dolů v každém cyklu. */
-  const RIDER_FRONT_HIP_X = 31.342;
-  const RIDER_FRONT_HIP_Y = 24;
-  /** Max. úhel (°) kolem kyčle; skutečný průběh ±tato hodnota (ohýbání / natažení v rytmu šlapání). */
-  const RIDER_FRONT_KNEE_SWING_DEG = 14;
+  const RIDER_BB_X = 26.968;
+  const RIDER_BB_Y = 40.778;
+  const RIDER_CRANK_LEN = 4.6;
+  const RIDER_HIP_X = 21.4;
+  const RIDER_HIP_Y = 17.6;
+  const RIDER_THIGH_LEN = 13.4;
+  const RIDER_SHIN_LEN = 14.4;
+
+  function setLine(el, x1, y1, x2, y2) {
+    if (!el) return;
+    el.setAttribute("x1", x1.toFixed(3));
+    el.setAttribute("y1", y1.toFixed(3));
+    el.setAttribute("x2", x2.toFixed(3));
+    el.setAttribute("y2", y2.toFixed(3));
+  }
+
+  function poseCyclistLeg(g, crankRad) {
+    if (!g) return;
+    const px = RIDER_BB_X + RIDER_CRANK_LEN * Math.cos(crankRad);
+    const py = RIDER_BB_Y + RIDER_CRANK_LEN * Math.sin(crankRad);
+    /* Mírné „ankling“ — špička bot trochu kopíruje fázi šlapání. */
+    const tilt = (8 * Math.sin(crankRad) - 4) * Math.PI / 180;
+    const ct = Math.cos(tilt);
+    const st = Math.sin(tilt);
+    const ax = px - 1.1 * ct + 1.3 * st;
+    const ay = py - 1.1 * st - 1.3 * ct;
+    const toeX = px + 2.6 * ct;
+    const toeY = py + 2.6 * st;
+    const heelX = px - 1.4 * ct;
+    const heelY = py - 1.4 * st;
+
+    const dx = ax - RIDER_HIP_X;
+    const dy = ay - RIDER_HIP_Y;
+    let d = Math.hypot(dx, dy);
+    const T = RIDER_THIGH_LEN;
+    const S = RIDER_SHIN_LEN;
+    d = Math.min(Math.max(d, Math.abs(T - S) + 0.01), T + S - 0.01);
+    const cosA = (T * T + d * d - S * S) / (2 * T * d);
+    const ang = Math.acos(Math.max(-1, Math.min(1, cosA)));
+    const base = Math.atan2(dy, dx);
+    /* Koleno vždy vpřed (směr jízdy +x) → v SVG (y dolů) odečíst úhel. */
+    const kx = RIDER_HIP_X + T * Math.cos(base - ang);
+    const ky = RIDER_HIP_Y + T * Math.sin(base - ang);
+
+    const q = (c) => g.getElementsByClassName(c)[0];
+    setLine(q("cl-crank"), RIDER_BB_X, RIDER_BB_Y, px, py);
+    setLine(q("cl-thigh-o"), RIDER_HIP_X, RIDER_HIP_Y, kx, ky);
+    setLine(q("cl-thigh"), RIDER_HIP_X, RIDER_HIP_Y, kx, ky);
+    setLine(q("cl-shin-o"), kx, ky, ax, ay);
+    setLine(q("cl-shin"), kx, ky, ax, ay);
+    setLine(q("cl-shoe"), heelX, heelY, toeX, toeY);
+  }
 
   function applyCyclistLegMotion(riderOuterG, phaseDeg) {
     const sprite = riderOuterG && riderOuterG.querySelector("svg");
     if (!sprite) return;
     const safe = typeof phaseDeg === "number" && phaseDeg === phaseDeg ? phaseDeg : 0;
-    const legPhaseRad = ((safe / RIDER_LEG_GEAR_RATIO) * Math.PI) / 180;
-    const legOsc = Math.sin(legPhaseRad);
-    const dyFront =
-      RIDER_LEG_AMPLITUDE *
-      legOsc *
-      (legOsc > 0 ? RIDER_FRONT_LEG_DOWN_SCALE : 1);
-    const dyRear = -RIDER_LEG_AMPLITUDE * legOsc;
-    const kneeDeg = legOsc * RIDER_FRONT_KNEE_SWING_DEG;
+    const crank = ((safe / RIDER_LEG_GEAR_RATIO) * Math.PI) / 180 - Math.PI / 4;
     const fronts = sprite.getElementsByClassName("cyclist-leg-front");
     const rears = sprite.getElementsByClassName("cyclist-leg-rear");
-    for (let i = 0; i < fronts.length; i++) {
-      fronts[i].setAttribute(
-        "transform",
-        "translate(0," +
-          dyFront +
-          ") rotate(" +
-          kneeDeg +
-          " " +
-          RIDER_FRONT_HIP_X +
-          " " +
-          RIDER_FRONT_HIP_Y +
-          ")"
-      );
-    }
-    for (let i = 0; i < rears.length; i++) {
-      rears[i].setAttribute("transform", "translate(0," + dyRear + ")");
-    }
+    for (let i = 0; i < fronts.length; i++) poseCyclistLeg(fronts[i], crank);
+    for (let i = 0; i < rears.length; i++) poseCyclistLeg(rears[i], crank + Math.PI);
   }
 
   function refreshTrackRiderLegPhases() {
