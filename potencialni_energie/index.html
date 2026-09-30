@@ -640,7 +640,7 @@
     .device-stage.env-weightless .ground-weightless { display: none; }
 
     .device-stage {
-      --scene-content-width: 345px;
+      --scene-content-width: 367px;
       --scene-label-pad: 55px;
       --scene-stage-width: calc(var(--scene-content-width) + var(--scene-label-pad));
       --grass-scale: 0.56;
@@ -663,7 +663,7 @@
       overflow: visible;
       display: flex;
       flex-direction: column;
-      aspect-ratio: 400 / 750;
+      aspect-ratio: 422 / 800;
     }
 
     /* Pevná šířka slotu = nejširší popisek; přístroj se při přepnutí neposune. */
@@ -904,7 +904,7 @@
         <svg
           id="scene"
           class="scene-svg idle-ball"
-          viewBox="-55 0 400 750"
+          viewBox="-55 -50 422 800"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           aria-label="Potenciální energie — nádrž Archimed"
@@ -924,12 +924,12 @@
           <circle cx="227" cy="736" r="3.5" fill="#8A94A3"/>
           <circle cx="12" cy="671" r="3.5" fill="#8A94A3"/>
           <circle cx="227" cy="671" r="3.5" fill="#8A94A3"/>
-          <rect x="177" y="0" width="168" height="71" rx="12" fill="#3E3E3E"/>
-          <rect x="185" y="7" width="152" height="57" rx="7" fill="#1B2A22"/>
-          <text id="headerDots" x="261" y="44" text-anchor="middle" fill="#6FE3A3" font-size="22" font-weight="600" opacity="0.55">– – J</text>
-          <text id="headerEnergy" x="261" y="25" text-anchor="middle" fill="#6FE3A3" font-size="11" font-weight="600" visibility="hidden">Energie dopadu</text>
-          <text id="headerEnergyValue" x="261" y="52" text-anchor="middle" fill="#6FE3A3" font-size="22" font-weight="700" visibility="hidden">—</text>
-          <path d="M261 71V63" stroke="#3E3E3E" stroke-width="6"/>
+          <!-- Větší digitální displej měřiče (sahá nad y = 0, viewBox je proto posunutý nahoru). -->
+          <rect x="159" y="-46" width="204" height="112" rx="16" fill="#3E3E3E"/>
+          <rect x="169" y="-36" width="184" height="92" rx="10" fill="#1B2A22"/>
+          <text id="headerDots" x="261" y="22" text-anchor="middle" fill="#6FE3A3" font-size="34" font-weight="600" opacity="0.55">– – J</text>
+          <text id="headerEnergy" x="261" y="-9" text-anchor="middle" fill="#6FE3A3" font-size="17" font-weight="600" visibility="hidden">Energie dopadu</text>
+          <text id="headerEnergyValue" x="261" y="36" text-anchor="middle" fill="#6FE3A3" font-size="34" font-weight="700" visibility="hidden">—</text>
           <g id="peakMarks"></g>
           <circle id="launcher" cx="261.5" cy="731.5" r="9.5" fill="black"/>
           <g id="ball" transform="translate(124.5 113) scale(1.0137)">
@@ -1923,8 +1923,17 @@
   }
 
   function pointerToHeightM(clientY) {
-    const rect = scene.getBoundingClientRect();
-    const y = ((clientY - rect.top) / rect.height) * H;
+    const ctm = scene.getScreenCTM();
+    let y;
+    if (ctm) {
+      const pt = scene.createSVGPoint();
+      pt.x = 0;
+      pt.y = clientY;
+      y = pt.matrixTransform(ctm.inverse()).y;
+    } else {
+      const rect = scene.getBoundingClientRect();
+      y = -50 + ((clientY - rect.top) / rect.height) * 800; /* viewBox výška */
+    }
     const bottomY = y + state.radius;
     const hPx = PLATFORM_Y_UP - bottomY;
     return clampHeightM(hPx / HEIGHT_PX_PER_M);
