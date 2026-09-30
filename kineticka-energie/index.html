@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Kinetická energie</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <main class="scene" aria-label="Simulace kinetické energie">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Kinetická energie</h1>
+      </div>
+
+      <section class="panel-section" aria-label="Výběr tělesa">
+        <span class="panel-label">Těleso</span>
+        <div class="object-picker" id="objectPicker" role="radiogroup" aria-label="Těleso"></div>
+      </section>
+
+      <section class="panel-section" aria-label="Rychlost tělesa">
+        <label class="panel-label" for="speedSlider">Rychlost</label>
+        <div class="speed-control">
+          <input
+            type="range"
+            id="speedSlider"
+            class="speed-control__slider"
+            min="1"
+            max="10"
+            step="1"
+            value="5"
+          />
+          <output class="speed-control__value" id="speedValue" for="speedSlider">5 m/s</output>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <div class="actions-row" aria-label="Akce simulace">
+          <button type="button" id="btnRun" class="action-btn action-btn--run">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+            </svg>
+            Pustit
+          </button>
+          <button type="button" id="btnReset" class="action-btn action-btn--reset">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Znovu
+          </button>
+        </div>
+      </section>
+
+      <div class="stats-panel" aria-live="polite">
+        <p class="stats-panel__item">
+          <span class="panel-label">Hmotnost</span>
+          <span class="stats-panel__row">m = <span class="stats-panel__value" id="massValue">2</span> kg</span>
+        </p>
+        <p class="stats-panel__item stats-panel__item--energy" id="energyStatItem">
+          <span class="panel-label">Energie nárazu</span>
+          <span class="stats-panel__row">E = <span class="stats-panel__value" id="energyValue">?</span> J</span>
+        </p>
+      </div>
+    </aside>
+
+    <div class="scene-workspace" id="workspace">
+      <p class="sim-empty-hint" id="hintEl">Vyber těleso, nastav rychlost a&nbsp;stiskni Pustit.</p>
+      <svg
+        class="stage"
+        id="stage"
+        viewBox="0 0 1110 520"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Těleso narážející do desky s pružinou"
+      ></svg>
+    </div>
+  </main>
+
+  <script src="main.js?v=1"></script>
+</body>
+</html>

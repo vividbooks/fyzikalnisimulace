@@ -1194,6 +1194,12 @@
             hash: "#/sim/tepelna_kapacita_puvodni",
             previewColor: "#fff3e6",
           },
+          {
+            id: "kineticka_energie",
+            title: "Kinetická energie",
+            hash: "#/sim/kineticka_energie",
+            previewColor: "#ffe8ec",
+          },
         ],
       },
     ];
@@ -1224,6 +1230,7 @@
       mereni_hmotnost: "zaklady",
       mereni_casu: "zaklady",
       tepelna_kapacita_puvodni: "energie",
+      kineticka_energie: "energie",
       skutecny_obraz: "optika",
       cocky: "optika",
       videni: "optika",
@@ -2204,6 +2211,25 @@
       </svg>`;
     }
 
+    function KinetickaEnergieCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="kineticka-energie/card-kineticka-energie.svg"
+          x="4"
+          y="4"
+          width="124"
+          height="80"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
       if (tileId === "kladkostroj") return html`<${KladkostrojCardIllustration} />`;
@@ -2234,6 +2260,7 @@
       if (tileId === "mereni_hmotnost") return html`<${MereniHmotnostiCardIllustration} />`;
       if (tileId === "mereni_casu") return html`<${MereniCasuCardIllustration} />`;
       if (tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
+      if (tileId === "kineticka_energie") return html`<${KinetickaEnergieCardIllustration} />`;
       return null;
     }
 
@@ -2586,6 +2613,14 @@
           }
           return;
         }
+        if (simId === "kineticka_energie") {
+          try {
+            window.location.replace(new URL("kineticka-energie/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("kineticka-energie/");
+          }
+          return;
+        }
       }, [simId]);
 
       const goToHub = useCallback(() => {
@@ -2815,6 +2850,13 @@
         `;
       }
       if (simId === "tepelna_kapacita_puvodni") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "kineticka_energie") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
