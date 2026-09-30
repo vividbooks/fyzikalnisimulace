@@ -7,7 +7,7 @@
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
   <title>Kinetická energie</title>
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace kinetické energie">
@@ -62,23 +62,14 @@
         </div>
       </section>
 
-      <div class="stats-panel" aria-live="polite">
-        <p class="stats-panel__item">
-          <span class="panel-label">Objem</span>
-          <span class="stats-panel__row">V = <span class="stats-panel__value" id="volumeValue">500</span> cm³</span>
-        </p>
-        <p class="stats-panel__item">
-          <span class="panel-label">Hmotnost</span>
-          <span class="stats-panel__row">m = <span class="stats-panel__value" id="massValue">1 kg</span></span>
-        </p>
-        <p class="stats-panel__item stats-panel__item--energy" id="energyStatItem">
-          <span class="panel-label">Energie nárazu</span>
-          <span class="stats-panel__row">E = <span class="stats-panel__value" id="energyValue">?</span> J</span>
-        </p>
-      </div>
     </aside>
 
     <div class="scene-workspace" id="workspace">
+      <div class="body-info" id="bodyInfo" aria-live="polite">
+        <span class="body-info__name" id="bodyInfoName">Bowlingová koule</span>
+        <span class="body-info__row">V = <span class="body-info__value" id="volumeValue">500</span> cm³</span>
+        <span class="body-info__row">m = <span class="body-info__value" id="massValue">1 kg</span></span>
+      </div>
       <p class="sim-empty-hint" id="hintEl">Vyber těleso, nastav rychlost a&nbsp;stiskni Pustit.</p>
       <svg
         class="stage"
@@ -91,6 +82,6 @@
     </div>
   </main>
 
-  <script src="main.js?v=9"></script>
+  <script src="main.js?v=11"></script>
 </body>
 </html>

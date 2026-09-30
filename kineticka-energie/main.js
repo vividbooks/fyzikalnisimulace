@@ -194,8 +194,7 @@ ${hole(-0.02, 0.12, 0.16)}
   const hintEl = document.getElementById("hintEl");
   const massValueEl = document.getElementById("massValue");
   const volumeValueEl = document.getElementById("volumeValue");
-  const energyValueEl = document.getElementById("energyValue");
-  const energyStatItem = document.getElementById("energyStatItem");
+  const bodyInfoNameEl = document.getElementById("bodyInfoName");
 
   function el(name, attrs, parent) {
     const node = document.createElementNS(NS, name);
@@ -359,7 +358,7 @@ ${hole(-0.02, 0.12, 0.16)}
   function mountObject() {
     const obj = currentObject();
     objectGroup.innerHTML = "";
-    const inner = el("g", null, objectGroup);
+    const inner = el("g", { class: "object-spin" }, objectGroup);
     inner.innerHTML = obj.markup();
     state.wheelAngle = 0;
   }
@@ -373,12 +372,11 @@ ${hole(-0.02, 0.12, 0.16)}
       "transform",
       `translate(${state.x} ${SPRING_CY + obj.height / 2})`
     );
-    if (obj.wheelR && obj.rolls) {
+    /* Míče se kutálejí: otočení odpovídá ujeté dráze (úhel = dráha / poloměr). */
+    const spin = objectGroup.querySelector(".object-spin");
+    if (spin) {
       const deg = (state.wheelAngle * 180) / Math.PI;
-      objectGroup.querySelectorAll(".wheel").forEach((w) => {
-        const spokes = w.querySelector(".wheel__spokes");
-        spokes.setAttribute("transform", `rotate(${deg} ${w.dataset.cx} ${w.dataset.cy})`);
-      });
+      spin.setAttribute("transform", `rotate(${deg.toFixed(2)} ${obj.width / 2} ${-obj.height / 2})`);
     }
   }
 
@@ -386,16 +384,12 @@ ${hole(-0.02, 0.12, 0.16)}
     if (energy == null) {
       readoutValue.textContent = "? J";
       readoutValue.setAttribute("fill", "#94A3B8");
-      energyValueEl.textContent = "?";
-      energyStatItem.classList.remove("is-fresh");
       readout.classList.remove("is-pop");
       return;
     }
     const txt = formatNumber(energy);
     readoutValue.textContent = `${txt} J`;
     readoutValue.setAttribute("fill", "#EF3A50");
-    energyValueEl.textContent = txt;
-    energyStatItem.classList.add("is-fresh");
     readout.classList.remove("is-pop");
     void readout.getBoundingClientRect();
     readout.classList.add("is-pop");
@@ -404,6 +398,7 @@ ${hole(-0.02, 0.12, 0.16)}
   function updateStats() {
     const obj = currentObject();
     massValueEl.textContent = formatMass(obj.mass);
+    if (bodyInfoNameEl) bodyInfoNameEl.textContent = obj.name;
     if (volumeValueEl) volumeValueEl.textContent = formatNumber(obj.volume);
     speedValueEl.innerHTML = `${formatNumber(state.speed)} <span class="unit-frac" aria-label="metrů za sekundu"><span class="unit-frac__num">m</span><span class="unit-frac__den">s</span></span>`;
     const fill = ((state.speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100;
@@ -493,7 +488,7 @@ ${hole(-0.02, 0.12, 0.16)}
   function roll(dx) {
     const obj = currentObject();
     state.x += dx;
-    if (obj.wheelR && obj.rolls) state.wheelAngle += dx / obj.wheelR;
+    state.wheelAngle += dx / (obj.height / 2);
   }
 
   function tick(ts) {
@@ -519,7 +514,7 @@ ${hole(-0.02, 0.12, 0.16)}
       const t = Math.min(state.contactT, halfPeriod);
       state.compression = state.amplitude * Math.sin(state.omega * t);
       const newX = contactX() + state.compression - obj.width;
-      if (obj.wheelR && obj.rolls) state.wheelAngle += (newX - state.x) / obj.wheelR;
+      state.wheelAngle += (newX - state.x) / (obj.height / 2);
       state.x = newX;
       if (!state.energyShown && t >= halfPeriod / 2) {
         state.energyShown = true;
@@ -569,6 +564,11 @@ ${hole(-0.02, 0.12, 0.16)}
   }
 
   btnRun.addEventListener("click", launch);
+
+  /* Nápověda zmizí po první interakci se simulací. */
+  ["pointerdown", "keydown", "input"].forEach((type) =>
+    document.addEventListener(type, hideHint, { capture: true, once: true })
+  );
   btnReset.addEventListener("click", resetToStart);
 
   /* ---------- Start ---------- */
