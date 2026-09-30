@@ -5,6 +5,7 @@
 
   /* ---------- Geometrie scény (jednotky viewBoxu 1110 × 520) ---------- */
   const VIEW_W = 1110;
+  /** Pomocná výška pro rozměry desky (podlaha už se nekreslí — těleso letí prázdnem). */
   const FLOOR_Y = 440;
   const START_X = 70;
   /** Svislá deska — stejné rozměry jako v podkladovém SVG (délka 266, tloušťka 14,12). */
@@ -142,26 +143,21 @@ ${wheelMarkup(178)}`;
   }
 
   /* ---------- Stavba scény ---------- */
-  el("rect", { x: -400, y: FLOOR_Y, width: VIEW_W + 800, height: 1200, fill: "#F3F1CF" }, stage);
-  el(
-    "line",
-    { x1: -400, y1: FLOOR_Y, x2: VIEW_W + 400, y2: FLOOR_Y, stroke: "#3B3B3A", "stroke-width": 5, "stroke-linecap": "round" },
-    stage
-  );
-
-  /* Stěna, na které je pružina uchycená. */
+  /* Těleso letí prázdnem (bez podlahy) přímo na střed měřiče.
+     Měřič: deska s pružinou uchycenou na pevném bloku. */
   const wallTop = PLATE_TOP - 20;
+  const wallBottom = PLATE_BOTTOM + 20;
   const wallW = 40;
   const clip = el("clipPath", { id: "wallClip" }, el("defs", null, stage));
-  el("rect", { x: WALL_X, y: wallTop, width: wallW, height: FLOOR_Y - wallTop }, clip);
-  el("rect", { x: WALL_X, y: wallTop, width: wallW, height: FLOOR_Y - wallTop, fill: "#D6D3B8" }, stage);
+  el("rect", { x: WALL_X, y: wallTop, width: wallW, height: wallBottom - wallTop, rx: 8 }, clip);
+  el("rect", { x: WALL_X, y: wallTop, width: wallW, height: wallBottom - wallTop, rx: 8, fill: "#D6D3B8" }, stage);
   const hatch = el("g", { "clip-path": "url(#wallClip)", stroke: "#A9A690", "stroke-width": 3 }, stage);
-  for (let y = wallTop - wallW; y < FLOOR_Y + wallW; y += 18) {
+  for (let y = wallTop - wallW; y < wallBottom + wallW; y += 18) {
     el("line", { x1: WALL_X, y1: y + wallW, x2: WALL_X + wallW, y2: y }, hatch);
   }
   el(
-    "line",
-    { x1: WALL_X, y1: wallTop, x2: WALL_X, y2: FLOOR_Y, stroke: "#3B3B3A", "stroke-width": 5, "stroke-linecap": "round" },
+    "rect",
+    { x: WALL_X, y: wallTop, width: wallW, height: wallBottom - wallTop, rx: 8, fill: "none", stroke: "#3B3B3A", "stroke-width": 5 },
     stage
   );
 
@@ -306,8 +302,11 @@ ${wheelMarkup(178)}`;
     const plateX = PLATE_REST_X + state.compression;
     plateGroup.setAttribute("transform", `translate(${state.compression} 0)`);
     drawSpring(plateX + SPRING_GAP, WALL_X);
-    objectGroup.setAttribute("transform", `translate(${state.x} ${FLOOR_Y})`);
-    if (obj.wheelR) {
+    objectGroup.setAttribute(
+      "transform",
+      `translate(${state.x} ${SPRING_CY + obj.height / 2})`
+    );
+    if (obj.wheelR && obj.rolls) {
       const deg = (state.wheelAngle * 180) / Math.PI;
       objectGroup.querySelectorAll(".wheel").forEach((w) => {
         const spokes = w.querySelector(".wheel__spokes");
@@ -426,7 +425,7 @@ ${wheelMarkup(178)}`;
   function roll(dx) {
     const obj = currentObject();
     state.x += dx;
-    if (obj.wheelR) state.wheelAngle += dx / obj.wheelR;
+    if (obj.wheelR && obj.rolls) state.wheelAngle += dx / obj.wheelR;
   }
 
   function tick(ts) {
@@ -452,7 +451,7 @@ ${wheelMarkup(178)}`;
       const t = Math.min(state.contactT, halfPeriod);
       state.compression = state.amplitude * Math.sin(state.omega * t);
       const newX = contactX() + state.compression - obj.width;
-      if (obj.wheelR) state.wheelAngle += (newX - state.x) / obj.wheelR;
+      if (obj.wheelR && obj.rolls) state.wheelAngle += (newX - state.x) / obj.wheelR;
       state.x = newX;
       if (!state.energyShown && t >= halfPeriod / 2) {
         state.energyShown = true;
