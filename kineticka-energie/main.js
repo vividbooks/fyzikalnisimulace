@@ -7,7 +7,7 @@
   const VIEW_W = 1110;
   /** Pomocná výška pro rozměry desky (podlaha už se nekreslí — těleso letí prázdnem). */
   const FLOOR_Y = 440;
-  const START_X = 70;
+  const START_X = 150;
   /** Svislá deska — stejné rozměry jako v podkladovém SVG (délka 266, tloušťka 14,12). */
   const PLATE_W = 14.12;
   const PLATE_REST_X = 930;
@@ -210,10 +210,28 @@ ${hole(-0.02, 0.12, 0.16)}
   }
 
   /* ---------- Stavba scény ---------- */
-  /* Těleso letí prázdnem (bez podlahy) přímo na střed měřiče.
-     Měřič: deska s pružinou uchycenou na pevném bloku. */
+  /* Tělesa se kutálejí po zemi (tráva jako v Potenciální energii) a narazí do desky s pružinou.
+     Země: zelený pás přes celou šířku + tráva se stromem vlevo. */
+  const GRASS_W = 700;
+  const GRASS_H = (GRASS_W * 415) / 990;
+  const GRASS_TOP_Y = FLOOR_Y - (GRASS_W * 332) / 990;
+  el("rect", { x: -2000, y: FLOOR_Y, width: 5000, height: 1200, fill: "#57D976" }, stage);
+  el(
+    "image",
+    {
+      href: "assets/travnik-siroky.svg",
+      x: -120,
+      y: GRASS_TOP_Y,
+      width: GRASS_W,
+      height: GRASS_H,
+      preserveAspectRatio: "none",
+    },
+    stage
+  );
+
+  /* Měřič: deska s pružinou uchycenou na pevném bloku, který stojí na zemi. */
   const wallTop = PLATE_TOP - 20;
-  const wallBottom = PLATE_BOTTOM + 20;
+  const wallBottom = FLOOR_Y;
   const wallW = 40;
   const clip = el("clipPath", { id: "wallClip" }, el("defs", null, stage));
   el("rect", { x: WALL_X, y: wallTop, width: wallW, height: wallBottom - wallTop, rx: 8 }, clip);
@@ -371,7 +389,7 @@ ${hole(-0.02, 0.12, 0.16)}
     drawSpring(plateX + SPRING_GAP, WALL_X);
     objectGroup.setAttribute(
       "transform",
-      `translate(${state.x} ${SPRING_CY + obj.height / 2})`
+      `translate(${state.x} ${FLOOR_Y})`
     );
     /* Míče se kutálejí: otočení odpovídá ujeté dráze (úhel = dráha / poloměr). */
     const spin = objectGroup.querySelector(".object-spin");
