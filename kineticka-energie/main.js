@@ -103,9 +103,22 @@ ${wheelMarkup(178)}`;
 <path d="M${f(cx - 0.26 * R)} ${f(cy - 0.7 * R)}Q${f(cx)} ${f(cy - 0.82 * R)} ${f(cx + 0.26 * R)} ${f(cy - 0.7 * R)}" stroke="white" stroke-width="${f(R * 0.09)}" stroke-linecap="round" fill="none" opacity="0.7"/>`;
   }
 
+  /** Pěnový míč podle dodaného SVG (66 × 66), zvětšený na zadaný poloměr. */
+  function foamMarkup(r) {
+    const k = (2 * r) / 66;
+    return `
+<g fill="none" transform="translate(0 ${-2 * r}) scale(${k})">
+<path d="M0.0118035 32.212L33.7903 65.9905C42.5018 65.7852 50.377 62.2042 56.1602 56.5053L9.49485 9.83997C3.79595 15.6232 0.214951 23.4983 0.00964355 32.2098L0.0118035 32.212Z" fill="#F03B50"/>
+<path d="M0 33.0004C0 51.2252 14.7735 66.0008 33.0005 66.0008C33.2641 66.0008 33.5278 65.9965 33.7893 65.99L0.0108063 32.2115C0.00432292 32.473 0 32.7367 0 33.0004Z" fill="#AD0404"/>
+<path d="M33.0008 0.00012207C23.8009 0.00012207 15.4805 3.76697 9.49634 9.83975L56.1617 56.5051C62.2344 50.5209 66.0013 42.2005 66.0013 33.0006C66.0013 14.7758 51.2278 0.00012207 33.0008 0.00012207Z" fill="#FF8158"/>
+<path opacity="0.75" d="M33.0038 3.80225C49.1301 3.80225 62.2028 16.8749 62.2028 33.0013" stroke="#F2F2F2" stroke-width="2.59336" stroke-linecap="round" stroke-linejoin="round"/>
+</g>`;
+  }
+
   /** Velikost ve scéně odpovídá objemu (poloměr ~ ∛V); koule 300 cm³ má r = 70,5. */
   const KOULE_R = 70.5;
   const TENISAK_R = KOULE_R * Math.cbrt(150 / 300);
+  const PENOVY_R = KOULE_R * Math.cbrt(500 / 300);
 
   const OBJECTS = [
     {
@@ -125,6 +138,15 @@ ${wheelMarkup(178)}`;
       width: 2 * TENISAK_R,
       height: 2 * TENISAK_R,
       markup: () => tennisMarkup(TENISAK_R),
+    },
+    {
+      id: "penovy",
+      name: "Pěnový míč",
+      mass: 0.06,
+      volume: 500,
+      width: 2 * PENOVY_R,
+      height: 2 * PENOVY_R,
+      markup: () => foamMarkup(PENOVY_R),
     },
   ];
 
@@ -386,7 +408,7 @@ ${wheelMarkup(178)}`;
     name.textContent = obj.name;
     const mass = document.createElement("span");
     mass.className = "object-btn__mass";
-    mass.textContent = `${formatNumber(obj.volume)} cm³ · ${formatMass(obj.mass)}`;
+    mass.textContent = `${formatNumber(obj.volume)} cm³\n${formatMass(obj.mass)}`;
     btn.append(name, mass);
     btn.addEventListener("click", () => selectObject(i));
     picker.appendChild(btn);

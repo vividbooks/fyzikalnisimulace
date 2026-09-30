@@ -179,7 +179,7 @@ output {
 
 .object-picker {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -209,6 +209,8 @@ output {
 }
 
 .object-btn__mass {
+  white-space: pre-line;
+  text-align: center;
   color: var(--muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
@@ -555,7 +557,7 @@ output {
   }
 
   .object-picker {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .scene-workspace {
