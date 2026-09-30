@@ -80,17 +80,45 @@ ${wheelMarkup(178)}`;
   }
 
   /** width/height = obrys tělesa v jednotkách scény; počátek vlevo dole (na podlaze). */
-  /** Jediné těleso: koule 1 kg (styl podle podkladového SVG koule). */
+  /** Tenisák podle dodaného SVG (6 × 6), zvětšený na zadaný poloměr. */
+  function tennisMarkup(r) {
+    const k = (2 * r) / 5.3;
+    return `
+<g fill="none" transform="translate(0 ${-2 * r}) scale(${k})">
+<path d="M5.14615 1.76026C5.63789 3.13866 4.91922 4.65465 3.54082 5.14612C2.16269 5.63812 0.646426 4.91945 0.154693 3.54106C-0.336773 2.16266 0.381626 0.646658 1.75976 0.154659C3.13816 -0.336807 4.65442 0.381858 5.14615 1.76026Z" fill="#D1FF33"/>
+<path d="M4.41871 4.39123C3.56164 3.84563 3.60751 3.34723 3.49151 2.27896C3.36751 1.1323 2.43577 0.463233 1.48164 1.01443C0.293109 1.70083 0.370442 3.0451 0.986975 3.7323C1.60351 4.41923 1.79764 4.32563 2.60857 5.16776" stroke="white" stroke-width="0.299733" stroke-linecap="round" stroke-linejoin="round"/>
+</g>`;
+  }
+
+  /** Velikost ve scéně odpovídá objemu (poloměr ~ ∛V); koule 300 cm³ má r = 70,5. */
+  const KOULE_R = 70.5;
+  const TENISAK_R = KOULE_R * Math.cbrt(150 / 300);
+
   const OBJECTS = [
     {
       id: "koule",
       name: "Koule",
       mass: 1,
-      width: 141 + 7.05,
-      height: 141 + 7.05,
-      markup: () => ballMarkup(70.5, "#EF3A50", "#813A50", "1 kg", 40),
+      volume: 300,
+      width: 2 * KOULE_R + 7.05,
+      height: 2 * KOULE_R + 7.05,
+      markup: () => ballMarkup(KOULE_R, "#EF3A50", "#813A50", "1 kg", 40),
+    },
+    {
+      id: "tenisak",
+      name: "Tenisák",
+      mass: 0.06,
+      volume: 150,
+      width: 2 * TENISAK_R,
+      height: 2 * TENISAK_R,
+      markup: () => tennisMarkup(TENISAK_R),
     },
   ];
+
+  /** Hmotnost pro zobrazení: pod 0,1 kg v gramech. */
+  function formatMass(m) {
+    return m < 0.1 ? `${formatNumber(m * 1000)} g` : `${formatNumber(m)} kg`;
+  }
 
   const MAX_ENERGY = 0.5 * Math.max(...OBJECTS.map((o) => o.mass)) * SPEED_MAX * SPEED_MAX;
 
@@ -103,6 +131,7 @@ ${wheelMarkup(178)}`;
   const btnReset = document.getElementById("btnReset");
   const hintEl = document.getElementById("hintEl");
   const massValueEl = document.getElementById("massValue");
+  const volumeValueEl = document.getElementById("volumeValue");
   const energyValueEl = document.getElementById("energyValue");
   const energyStatItem = document.getElementById("energyStatItem");
 
@@ -312,7 +341,8 @@ ${wheelMarkup(178)}`;
 
   function updateStats() {
     const obj = currentObject();
-    massValueEl.textContent = formatNumber(obj.mass);
+    massValueEl.textContent = formatMass(obj.mass);
+    if (volumeValueEl) volumeValueEl.textContent = formatNumber(obj.volume);
     speedValueEl.textContent = `${formatNumber(state.speed)} m/s`;
     const fill = ((state.speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100;
     slider.style.setProperty("--fill", `${fill}%`);
@@ -343,7 +373,7 @@ ${wheelMarkup(178)}`;
     name.textContent = obj.name;
     const mass = document.createElement("span");
     mass.className = "object-btn__mass";
-    mass.textContent = `${formatNumber(obj.mass)} kg`;
+    mass.textContent = `${formatNumber(obj.volume)} cm³ · ${formatMass(obj.mass)}`;
     btn.append(name, mass);
     btn.addEventListener("click", () => selectObject(i));
     picker.appendChild(btn);

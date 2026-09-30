@@ -23,6 +23,11 @@
       </div>
 
 
+      <section class="panel-section" aria-label="Výběr tělesa">
+        <span class="panel-label">Těleso</span>
+        <div class="object-picker" id="objectPicker" role="radiogroup" aria-label="Těleso"></div>
+      </section>
+
       <section class="panel-section" aria-label="Rychlost tělesa">
         <label class="panel-label" for="speedSlider">Rychlost</label>
         <div class="speed-control">
@@ -59,8 +64,12 @@
 
       <div class="stats-panel" aria-live="polite">
         <p class="stats-panel__item">
+          <span class="panel-label">Objem</span>
+          <span class="stats-panel__row">V = <span class="stats-panel__value" id="volumeValue">300</span> cm³</span>
+        </p>
+        <p class="stats-panel__item">
           <span class="panel-label">Hmotnost</span>
-          <span class="stats-panel__row">m = <span class="stats-panel__value" id="massValue">1</span> kg</span>
+          <span class="stats-panel__row">m = <span class="stats-panel__value" id="massValue">1 kg</span></span>
         </p>
         <p class="stats-panel__item stats-panel__item--energy" id="energyStatItem">
           <span class="panel-label">Energie nárazu</span>
@@ -70,7 +79,7 @@
     </aside>
 
     <div class="scene-workspace" id="workspace">
-      <p class="sim-empty-hint" id="hintEl">Nastav rychlost koule a&nbsp;stiskni Pustit.</p>
+      <p class="sim-empty-hint" id="hintEl">Vyber těleso, nastav rychlost a&nbsp;stiskni Pustit.</p>
       <svg
         class="stage"
         id="stage"
@@ -82,6 +91,6 @@
     </div>
   </main>
 
-  <script src="main.js?v=3"></script>
+  <script src="main.js?v=4"></script>
 </body>
 </html>
