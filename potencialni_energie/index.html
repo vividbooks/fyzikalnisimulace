@@ -837,7 +837,6 @@
       <section class="panel-section" aria-label="Prostředí">
         <span class="panel-label">Prostředí</span>
         <div class="env-toggle" id="envToggle" role="radiogroup" aria-label="Prostředí simulace"></div>
-        <span class="panel-note">Tíhové zrychlení <i class="qty">g</i> = <span id="valGravity">—</span></span>
       </section>
 
       <section class="panel-section" aria-label="Těleso">
@@ -1316,7 +1315,7 @@
     deviceStageEl.classList.add(envClass);
     vizPresentationEl.classList.remove(...envClasses);
     vizPresentationEl.classList.add(envClass);
-    valGravity.textContent = `${formatNum(getGravity(), 1)} N/kg`;
+    if (valGravity) valGravity.textContent = `${formatNum(getGravity(), 1)} N/kg`;
     renderEnvToggle();
     fitVizToScreen();
   }
