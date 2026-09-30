@@ -49,7 +49,7 @@
       --danger: #ef4444;
       --radius: 12px;
       --radius-canvas: 24px;
-      --panel-w: min(300px, 34vw);
+      --panel-w: min(370px, 40vw);
     }
 
     * { box-sizing: border-box; }
@@ -211,7 +211,7 @@
 
     .ball-picker {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
     }
 
@@ -277,6 +277,7 @@
 
     .ball-option-specs {
       display: block;
+      white-space: pre-line;
       color: var(--muted);
       font-variant-numeric: tabular-nums;
     }
@@ -1437,12 +1438,12 @@
         nameEl.textContent = preset.name;
         const specsEl = document.createElement("span");
         specsEl.className = "ball-option-specs";
-        specsEl.textContent = `${formatNum(preset.volumeCm3, 0)} cm³ · ${formatPresetMass(preset)}`;
+        specsEl.textContent = `${formatNum(preset.volumeCm3, 0)} cm³\n${formatPresetMass(preset)}`;
         label.append(nameEl, specsEl);
       } else {
         const specsEl = document.createElement("span");
         specsEl.className = "ball-option-specs";
-        specsEl.textContent = `${formatNum(preset.volumeCm3, 0)} cm³ · ${formatPresetMass(preset)}`;
+        specsEl.textContent = `${formatNum(preset.volumeCm3, 0)} cm³\n${formatPresetMass(preset)}`;
         label.appendChild(specsEl);
       }
 
