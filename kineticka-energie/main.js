@@ -80,39 +80,15 @@ ${wheelMarkup(178)}`;
   }
 
   /** width/height = obrys tělesa v jednotkách scény; počátek vlevo dole (na podlaze). */
+  /** Jediné těleso: koule 1 kg (styl podle podkladového SVG koule). */
   const OBJECTS = [
-    {
-      id: "mic",
-      name: "Míč",
-      mass: 0.5,
-      width: 76 + 7.05,
-      height: 76 + 7.05,
-      markup: () => ballMarkup(38, "#F5B82E", "#A86B00", "0,5 kg", 21),
-    },
     {
       id: "koule",
       name: "Koule",
-      mass: 2,
-      width: 148.14,
-      height: 148.14,
-      markup: () => KOULE_2KG,
-    },
-    {
-      id: "kvadr",
-      name: "Kvádr",
-      mass: 5,
-      width: 150,
-      height: 137,
-      markup: boxMarkup,
-    },
-    {
-      id: "vozik",
-      name: "Vozík",
-      mass: 10,
-      width: 230,
-      height: 154,
-      markup: cartMarkup,
-      wheelR: 26,
+      mass: 1,
+      width: 141 + 7.05,
+      height: 141 + 7.05,
+      markup: () => ballMarkup(70.5, "#EF3A50", "#813A50", "1 kg", 40),
     },
   ];
 
@@ -255,7 +231,7 @@ ${wheelMarkup(178)}`;
 
   /* ---------- Stav ---------- */
   const state = {
-    objectIndex: 1,
+    objectIndex: 0,
     speed: 5,
     phase: "idle", // idle | approach | contact | rebound | respawn
     x: START_X,
@@ -345,11 +321,11 @@ ${wheelMarkup(178)}`;
   function setBusy(busy) {
     btnRun.disabled = busy;
     slider.disabled = busy;
-    picker.querySelectorAll("button").forEach((b) => (b.disabled = busy));
+    if (picker) picker.querySelectorAll("button").forEach((b) => (b.disabled = busy));
   }
 
   /* ---------- Výběr tělesa ---------- */
-  OBJECTS.forEach((obj, i) => {
+  if (picker) OBJECTS.forEach((obj, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "object-btn";
@@ -374,7 +350,7 @@ ${wheelMarkup(178)}`;
   });
 
   function syncPicker() {
-    picker.querySelectorAll(".object-btn").forEach((b, i) => {
+    if (picker) picker.querySelectorAll(".object-btn").forEach((b, i) => {
       const on = i === state.objectIndex;
       b.classList.toggle("is-active", on);
       b.setAttribute("aria-checked", on ? "true" : "false");
