@@ -405,7 +405,7 @@ ${hole(-0.02, 0.12, 0.16)}
     const obj = currentObject();
     massValueEl.textContent = formatMass(obj.mass);
     if (volumeValueEl) volumeValueEl.textContent = formatNumber(obj.volume);
-    speedValueEl.textContent = `${formatNumber(state.speed)} m/s`;
+    speedValueEl.innerHTML = `${formatNumber(state.speed)} <span class="unit-frac" aria-label="metrů za sekundu"><span class="unit-frac__num">m</span><span class="unit-frac__den">s</span></span>`;
     const fill = ((state.speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100;
     slider.style.setProperty("--fill", `${fill}%`);
   }
