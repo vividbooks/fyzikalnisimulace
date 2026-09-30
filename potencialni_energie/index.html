@@ -415,50 +415,6 @@
     .action-btn--reset { background: #ef4444; color: #fff; }
     .action-btn--reset:hover:not(:disabled) { background: #dc2626; }
 
-    /* ---------- Statistiky ---------- */
-
-    .stats-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .stats-panel__item {
-      margin: 0;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--card-bg);
-      color: var(--text);
-      font-size: 1.45rem;
-      line-height: 1.35;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .stats-panel .panel-label {
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-
-    .stats-panel__row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .stats-panel__value {
-      color: var(--accent);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .stats-panel__item--energy.is-fresh {
-      border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-    }
-
-    .stats-panel__item--energy.is-fresh .stats-panel__value { color: #f87171; }
-
     /* ---------- Plátno ---------- */
 
     .viz-column {
@@ -886,16 +842,6 @@
         </div>
       </section>
 
-      <div class="stats-panel" aria-live="polite">
-        <p class="stats-panel__item">
-          <span class="panel-label">Hmotnost</span>
-          <span class="stats-panel__row">m = <span class="stats-panel__value" id="statMass">—</span> kg</span>
-        </p>
-        <p class="stats-panel__item stats-panel__item--energy" id="statEnergyItem">
-          <span class="panel-label">Energie dopadu</span>
-          <span class="stats-panel__row">E = <span class="stats-panel__value" id="statEnergy">?</span> J</span>
-        </p>
-      </div>
     </aside>
 
     <div class="viz-column" id="vizColumn" aria-label="Simulace">
@@ -1663,9 +1609,6 @@
     });
   }
 
-  const statMassEl = document.getElementById("statMass");
-  const statEnergyEl = document.getElementById("statEnergy");
-  const statEnergyItemEl = document.getElementById("statEnergyItem");
   const heightValueEl = document.getElementById("heightValue");
   const hintEl = document.getElementById("hintEl");
 
@@ -1681,15 +1624,8 @@
     if (bodyInfoMassEl) bodyInfoMassEl.textContent = formatPresetMass(preset);
   }
 
-  function updatePanelStats(showEnergy) {
+  function updatePanelStats() {
     updateBodyInfo();
-    if (statMassEl) statMassEl.textContent = formatNum(state.mass, 2);
-    if (statEnergyEl) {
-      statEnergyEl.textContent = showEnergy
-        ? formatNum(state.showZeroEnergy ? 0 : state.lastEnergy, 2)
-        : "?";
-    }
-    if (statEnergyItemEl) statEnergyItemEl.classList.toggle("is-fresh", !!showEnergy);
     if (sliderHeight) {
       const min = Number(sliderHeight.min);
       const max = Number(sliderHeight.max);
@@ -1725,7 +1661,7 @@
     const showEnergyOnHeader =
       state.showHeaderEnergy && (state.lastEnergy > 0 || state.showZeroEnergy);
     headerDotsEl.setAttribute("visibility", showEnergyOnHeader ? "hidden" : "visible");
-    updatePanelStats(showEnergyOnHeader);
+    updatePanelStats();
     headerEnergyEl.setAttribute("visibility", showEnergyOnHeader ? "visible" : "hidden");
     headerEnergyValueEl.setAttribute("visibility", showEnergyOnHeader ? "visible" : "hidden");
     if (showEnergyOnHeader) {
