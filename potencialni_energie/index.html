@@ -7,53 +7,520 @@
   <style>
     @font-face {
       font-family: "Fenomen Sans";
-      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
-        format("opentype");
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
 
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Cooper Light";
+      src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+
     :root {
-      --bg: #fff;
-      --panel: #fff;
-      --border: #e8eaef;
-      --text: #171923;
-      --muted: #6b7280;
-      --accent: #3d5a9a;
-      --accent-hover: #334b81;
+      --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      --page-bg: #1e2533;
+      --card-bg: #2a3344;
+      --idle-bg: #334155;
+      --idle-text: #cbd5e1;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-on: #ffffff;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #475569;
+      --focus: #3b82f6;
+      --readout-bg: #1e293b;
+      --canvas-bg: #ffffe6;
+      --space-bg: #020208;
+      --success: #4ade80;
+      --danger: #ef4444;
+      --radius: 12px;
+      --radius-canvas: 24px;
+      --panel-w: min(300px, 34vw);
     }
 
     * { box-sizing: border-box; }
 
     html, body {
       margin: 0;
-      min-height: 100dvh;
-      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
     }
 
+    body {
+      min-height: 100dvh;
+      background: var(--page-bg);
+      color: var(--text);
+      font-family: var(--font-app);
+      font-weight: 400;
+      color-scheme: dark;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button, input, label, output { font-family: inherit; }
+
+    .hidden { display: none !important; }
+
+    /* ---------- Rozložení ---------- */
+
+    .app {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+      padding: max(16px, env(safe-area-inset-top, 0px))
+        max(16px, env(safe-area-inset-right, 0px))
+        max(16px, env(safe-area-inset-bottom, 0px))
+        max(16px, env(safe-area-inset-left, 0px));
+      overflow: hidden;
+    }
+
+    /* ---------- Panel ---------- */
+
+    .setup-panel {
+      flex: 0 0 var(--panel-w);
+      width: var(--panel-w);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      min-width: 0;
+      overflow: auto;
+      padding: 8px 8px 16px;
+      scrollbar-gutter: stable;
+    }
+
+    .panel-copy {
+      display: grid;
+      gap: 10px;
+    }
+
+    .hub-back-to-sims {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      justify-self: start;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #1e293b;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.2;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .hub-back-to-sims svg { display: block; flex: 0 0 auto; }
+    .hub-back-to-sims:hover { color: #fff; }
+    .hub-back-to-sims:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+    .panel-title {
+      margin: 0;
+      color: var(--text);
+      font-family: "Cooper Light", serif;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+    }
+
+    .panel-section {
+      display: grid;
+      gap: 8px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: var(--card-bg);
+    }
+
+    .panel-label {
+      display: block;
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .panel-label--sub { margin-top: 6px; }
+
+    .panel-note {
+      color: var(--muted);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- Přepínače (prostředí, typ tělesa) ---------- */
+
+    .env-toggle,
+    .body-kind-toggle {
+      display: grid;
+      gap: 8px;
+    }
+
+    .env-toggle { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .body-kind-toggle { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .env-option,
+    .body-kind-option {
+      appearance: none;
+      min-height: 40px;
+      min-width: 0;
+      padding: 8px 6px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.15;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .env-option:hover:not(:disabled),
+    .body-kind-option:hover:not(:disabled) { color: var(--text); }
+
+    .env-option.selected,
+    .body-kind-option.selected {
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    /* ---------- Výběr tělesa ---------- */
+
+    .ball-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      gap: 8px;
+    }
+
+    .ball-option {
+      appearance: none;
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 4px;
+      min-width: 0;
+      padding: 8px 4px 7px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: var(--idle-bg);
+      color: var(--idle-text);
+      font: inherit;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .ball-option:hover:not(:disabled) { color: var(--text); }
+
+    .ball-option.selected {
+      background: var(--accent);
+      color: var(--accent-on);
+    }
+
+    .ball-swatch-wrap {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ball-swatch {
+      display: block;
+      box-sizing: border-box;
+      border-radius: 50%;
+      flex-shrink: 0;
+      aspect-ratio: 1;
+    }
+
+    .object-swatch {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .ball-option-label {
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .ball-option-name {
+      display: block;
+      font-size: 14px;
+    }
+
+    .ball-option-specs {
+      display: block;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ball-option.selected .ball-option-specs { color: rgba(255, 255, 255, 0.85); }
+
+    .env-option:disabled,
+    .body-kind-option:disabled,
+    .ball-option:disabled,
+    .action-btn:disabled,
+    .range-slider:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .env-option:focus-visible,
+    .body-kind-option:focus-visible,
+    .ball-option:focus-visible,
+    .action-btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Výška ---------- */
+
+    .range-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .range-slider {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 28px;
+      margin: 0;
+      background: transparent;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      touch-action: none;
+    }
+
+    .range-slider::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(
+        to right,
+        var(--accent) 0%,
+        var(--accent) var(--fill, 50%),
+        var(--idle-bg) var(--fill, 50%),
+        var(--idle-bg) 100%
+      );
+    }
+
+    .range-slider::-moz-range-track {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--idle-bg);
+    }
+
+    .range-slider::-moz-range-progress {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      margin-top: -9px;
+      border: 3px solid var(--accent);
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+    }
+
+    .range-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 3px solid var(--accent);
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .range-slider:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 4px;
+      border-radius: 6px;
+    }
+
+    .range-value {
+      flex: 0 0 auto;
+      min-width: 72px;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      color: var(--text);
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    /* ---------- Akce ---------- */
+
+    .actions-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      padding: 10px 8px;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .action-btn svg { display: block; flex: 0 0 auto; }
+
+    .action-btn--run { background: #4ade80; color: #14532d; }
+    .action-btn--run:hover:not(:disabled) { background: #86efac; color: #052e16; }
+    .action-btn--reset { background: #ef4444; color: #fff; }
+    .action-btn--reset:hover:not(:disabled) { background: #dc2626; }
+
+    /* ---------- Statistiky ---------- */
+
+    .stats-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stats-panel__item {
+      margin: 0;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      color: var(--text);
+      font-size: 1.45rem;
+      line-height: 1.35;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .stats-panel .panel-label {
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .stats-panel__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stats-panel__value {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stats-panel__item--energy.is-fresh {
+      border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .stats-panel__item--energy.is-fresh .stats-panel__value { color: #f87171; }
+
+    /* ---------- Plátno ---------- */
+
+    .viz-column {
+      flex: 1 1 0;
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 88px 16px 16px;
+      border-radius: var(--radius-canvas);
+      background: var(--canvas-bg);
+      isolation: isolate;
+      transition: background-color 320ms ease;
+    }
+
+    body.env-moon .viz-column,
+    body.env-weightless .viz-column {
+      background: var(--space-bg);
+    }
+
+    .sim-empty-hint {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      z-index: 8;
+      width: max-content;
+      max-width: min(720px, calc(100% - 48px));
+      margin: 0;
+      padding: 12px 28px;
+      border: 2px solid #cbd5e1;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      pointer-events: none;
+      text-align: center;
+      font-size: 28px;
+      line-height: 1.35;
+      color: #334155;
+      transform: translateX(-50%);
+    }
+
+    .sim-empty-hint.is-hidden { display: none; }
+
     .space-backdrop {
-      position: fixed;
+      position: absolute;
       inset: 0;
       z-index: 0;
       pointer-events: none;
       opacity: 0;
-      background: #020208 url("assets/space-stars.svg") center / cover no-repeat;
+      background: var(--space-bg) url("assets/space-stars.svg") center / cover no-repeat;
       transition: opacity 320ms ease;
     }
 
     body.env-moon .space-backdrop,
-    body.env-weightless .space-backdrop {
-      opacity: 1;
-    }
+    body.env-weightless .space-backdrop { opacity: 1; }
 
     .moon-surface {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      position: absolute;
+      inset: 0;
       z-index: 0;
       pointer-events: none;
       line-height: 0;
@@ -62,9 +529,9 @@
     }
 
     .moon-surface img {
-      position: fixed;
+      position: absolute;
       left: var(--ground-surface-center-x, 50%);
-      bottom: 0;
+      bottom: var(--ground-surface-bottom, 0px);
       display: block;
       width: var(--ground-surface-width, min(52vw, 480px));
       max-width: none;
@@ -73,281 +540,11 @@
       transform: translateX(-50%);
     }
 
-    body.env-moon .moon-surface {
-      opacity: 1;
-    }
-
-    body.env-moon,
-    body.env-weightless {
-      background-color: #020208;
-    }
-
-    body.env-moon .setup-panel,
-    body.env-weightless .setup-panel {
-      background: var(--panel);
-      box-shadow: 0 0 0 1px var(--border);
-    }
-
-    button, input, label { font-family: inherit; }
-
-    .app {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: min(380px, 100%) minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
-      gap: clamp(10px, 1.8vw, 20px);
-      padding: clamp(8px, 1.2vw, 14px);
-      height: 100dvh;
-      overflow: hidden;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    @media (max-width: 680px) {
-      .app {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto minmax(0, 1fr);
-      }
-
-      .setup-panel {
-        max-height: min(42dvh, calc(100dvh - 240px));
-        overflow: auto;
-      }
-    }
-
-    .setup-panel {
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      border-radius: 22px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      min-height: 0;
-      max-height: 100%;
-      overflow: hidden;
-    }
-
-    .hub-back-to-sims {
-      display: inline-block;
-      margin-bottom: 6px;
-      font-size: 0.8rem;
-      color: var(--accent);
-      text-decoration: none;
-      flex-shrink: 0;
-    }
-    .hub-back-to-sims:hover { text-decoration: underline; }
-
-    .panel-title {
-      margin: 0 0 10px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex: 1 1 auto;
-      min-height: 0;
-    }
-
-    .row {
-      display: grid;
-      gap: 5px;
-      flex-shrink: 0;
-    }
-
-    .row-picker {
-      flex: 1 1 auto;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .row-label {
-      font-weight: 650;
-      font-size: 0.75rem;
-    }
-
-    .row-value {
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--accent);
-    }
-
-    .hidden { display: none !important; }
-
-    .actions-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .env-toggle {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .env-option {
-      flex: 1 1 calc(33.333% - 4px);
-      min-width: 5.5rem;
-      padding: 6px 4px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #fff;
-      cursor: pointer;
-      text-align: center;
-      font: inherit;
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: inherit;
-    }
-
-    .env-option:hover:not(:disabled) {
-      border-color: #c5cde0;
-      background: #f8f9fc;
-    }
-
-    .env-option.selected {
-      border-color: var(--accent);
-      background: #eef2fa;
-      color: var(--accent);
-    }
-
-    .env-option:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .body-kind-toggle {
-      display: flex;
-      gap: 6px;
-    }
-
-    .body-kind-option {
-      flex: 1 1 50%;
-      padding: 6px 8px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #fff;
-      cursor: pointer;
-      text-align: center;
-      font: inherit;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: inherit;
-    }
-
-    .body-kind-option:hover:not(:disabled) {
-      border-color: #c5cde0;
-      background: #f8f9fc;
-    }
-
-    .body-kind-option.selected {
-      border-color: var(--accent);
-      background: #eef2fa;
-      color: var(--accent);
-    }
-
-    .body-kind-option:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .object-swatch {
-      display: block;
-      width: auto;
-      height: auto;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      pointer-events: none;
-    }
-
-    .ball-visual.is-hidden {
-      display: none;
-    }
-
-    .ground-art {
-      position: absolute;
-      bottom: 0;
-      left: calc(var(--scene-label-pad) + var(--scene-content-width) * 0.5);
-      z-index: 0;
-      display: block;
-      width: calc(990 / 345 * var(--scene-content-width) * var(--grass-scale));
-      max-width: none;
-      height: auto;
-      transform: translateX(-50%);
-      pointer-events: none;
-      user-select: none;
-    }
-
-    .ground-grass {
-      opacity: 1;
-    }
-
-    .ground-weightless {
-      display: none;
-      opacity: 0.85;
-    }
-
-    .device-stage.env-moon .ground-grass,
-    .device-stage.env-weightless .ground-grass {
-      display: none;
-    }
-
-    .device-stage.env-weightless .ground-weightless {
-      display: none;
-    }
-
-    button {
-      padding: 7px 14px;
-      border-radius: 10px;
-      border: none;
-      background: var(--accent);
-      color: #fff;
-      font-weight: 600;
-      font-size: 0.82rem;
-      cursor: pointer;
-    }
-    button:hover { background: var(--accent-hover); }
-    button.secondary {
-      background: #eef1f7;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    button.secondary:hover { background: #e4e8f0; }
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .viz-column {
-      min-width: 0;
-      min-height: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: transparent;
-    }
-
-    body.env-moon .viz-column,
-    body.env-moon .viz-presentation,
-    body.env-weightless .viz-column,
-    body.env-weightless .viz-presentation {
-      background: transparent;
-    }
+    body.env-moon .moon-surface { opacity: 1; }
 
     .viz-fit {
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -370,6 +567,33 @@
       gap: clamp(14px, 3.5vw, 28px);
       transform-origin: 0 0;
     }
+
+    .ball-visual.is-hidden { display: none; }
+
+    .ground-art {
+      position: absolute;
+      bottom: 0;
+      left: calc(var(--scene-label-pad) + var(--scene-content-width) * 0.5);
+      z-index: 0;
+      display: block;
+      width: calc(990 / 345 * var(--scene-content-width) * var(--grass-scale));
+      max-width: none;
+      height: auto;
+      transform: translateX(-50%);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .ground-grass { opacity: 1; }
+
+    .ground-weightless {
+      display: none;
+      opacity: 0.85;
+    }
+
+    .device-stage.env-moon .ground-grass,
+    .device-stage.env-weightless .ground-grass,
+    .device-stage.env-weightless .ground-weightless { display: none; }
 
     .device-stage {
       --scene-content-width: 345px;
@@ -417,9 +641,7 @@
 
     .viz-presentation.env-earth .sim-label-earth,
     .viz-presentation.env-moon .sim-label-moon,
-    .viz-presentation.env-weightless .sim-label-weightless {
-      display: block;
-    }
+    .viz-presentation.env-weightless .sim-label-weightless { display: block; }
 
     .scene-svg {
       display: block;
@@ -442,8 +664,8 @@
 
     .scene-height-label text {
       font-size: 18px;
-      font-weight: 700;
-      fill: #171923;
+      font-weight: 600;
+      fill: #334155;
     }
 
     body.env-moon .scene-height-label text,
@@ -456,139 +678,129 @@
 
     /* Stupnice měřiče na tmavém vesmírném pozadí (Měsíc, stav beztíže). */
     body.env-moon #energyScale text,
-    body.env-weightless #energyScale text {
-      fill: #fff;
-    }
+    body.env-weightless #energyScale text,
+    body.env-moon #peakMarks text,
+    body.env-weightless #peakMarks text { fill: #fff; }
 
     body.env-moon #energyScale line,
-    body.env-weightless #energyScale line {
-      stroke: #fff;
-    }
+    body.env-weightless #energyScale line { stroke: #fff; }
 
-    body.env-moon #peakMarks text,
-    body.env-weightless #peakMarks text {
-      fill: #fff;
-    }
+    /* ---------- Mobil ---------- */
 
-    .ball-picker {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-auto-rows: minmax(0, 1fr);
-      gap: 5px;
-      flex: 1 1 auto;
-      min-height: 0;
-    }
+    @media (max-width: 760px) {
+      html, body {
+        height: auto;
+        overflow: auto;
+      }
 
-    .ball-option {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      width: 100%;
-      min-height: 0;
-      padding: 6px 6px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #fff;
-      cursor: pointer;
-      text-align: center;
-      font: inherit;
-      color: inherit;
-    }
+      .app {
+        flex-direction: column;
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+        padding-left: max(10px, env(safe-area-inset-left, 0px));
+        padding-right: max(10px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+        padding-top: max(8px, env(safe-area-inset-top, 0px));
+        gap: 12px;
+      }
 
-    .ball-option:hover:not(:disabled) {
-      border-color: #c5cde0;
-      background: #f8f9fc;
-    }
+      .setup-panel {
+        order: 2;
+        flex: 0 1 auto;
+        width: 100%;
+        overflow: visible;
+      }
 
-    .ball-option.selected {
-      border-color: var(--accent);
-      background: #eef2fa;
-    }
+      .viz-column {
+        order: 1;
+        flex: 0 0 auto;
+        height: min(70dvh, 560px);
+        width: 100%;
+        padding: 56px 8px 0;
+      }
 
-    .ball-option:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
+      .panel-title { font-size: 28px; }
 
-    .ball-swatch-wrap {
-      width: 32px;
-      height: 32px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .ball-swatch {
-      display: block;
-      box-sizing: border-box;
-      border-radius: 50%;
-      flex-shrink: 0;
-      aspect-ratio: 1;
-    }
-
-    .ball-option-label {
-      font-size: 0.68rem;
-      line-height: 1.2;
-    }
-
-    .ball-option-name {
-      display: block;
-      font-weight: 650;
-    }
-
-    .ball-option-specs {
-      display: block;
-      color: var(--muted);
-      font-weight: 500;
+      .sim-empty-hint {
+        top: 10px;
+        font-size: 16px;
+        padding: 8px 16px;
+        max-width: calc(100% - 24px);
+      }
     }
   </style>
 </head>
 <body>
-  <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
-  <div id="moon-surface" class="moon-surface" aria-hidden="true">
-    <img src="assets/mesic-povrch.svg" alt="" width="535" height="533" decoding="async" />
-  </div>
   <div class="app">
-    <aside class="setup-panel" aria-label="Nastavení">
-      <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
-      <h1 class="panel-title">Potenciální energie</h1>
+    <aside class="setup-panel" aria-label="Ovládání simulace">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Potenciální energie</h1>
+      </div>
 
-      <div class="controls">
-        <div class="row">
-          <span class="row-label">Prostředí</span>
-          <div class="env-toggle" id="envToggle" role="radiogroup" aria-label="Prostředí simulace"></div>
-          <span class="row-value" id="valGravity">—</span>
-        </div>
+      <section class="panel-section" aria-label="Prostředí">
+        <span class="panel-label">Prostředí</span>
+        <div class="env-toggle" id="envToggle" role="radiogroup" aria-label="Prostředí simulace"></div>
+        <span class="panel-note">Tíhové zrychlení g = <span id="valGravity">—</span></span>
+      </section>
 
-        <div class="row">
-          <span class="row-label">Akce</span>
-          <div class="actions-row">
-            <button type="button" id="btnRun">Spustit pád</button>
-            <button type="button" id="btnReset" class="secondary">Reset</button>
-          </div>
-        </div>
+      <section class="panel-section" aria-label="Těleso">
+        <span class="panel-label">Typ tělesa</span>
+        <div class="body-kind-toggle" id="bodyKindToggle" role="radiogroup" aria-label="Typ tělesa"></div>
+        <span class="panel-label panel-label--sub" id="itemPickerLabel">Koule</span>
+        <div class="ball-picker" id="ballPicker" role="radiogroup" aria-label="Výběr tělesa"></div>
+      </section>
 
-        <div class="row">
-          <span class="row-label">Typ tělesa</span>
-          <div class="body-kind-toggle" id="bodyKindToggle" role="radiogroup" aria-label="Typ tělesa"></div>
+      <section class="panel-section" aria-label="Výška tělesa">
+        <label class="panel-label" id="heightSliderLabel" for="sliderHeight">Výška koule</label>
+        <div class="range-control">
+          <input type="range" id="sliderHeight" class="range-slider" min="0" max="2" step="0.01" value="1" />
+          <output class="range-value" id="heightValue" for="sliderHeight">1 m</output>
         </div>
+      </section>
 
-        <div class="row row-picker">
-          <span class="row-label" id="itemPickerLabel">Koule</span>
-          <div class="ball-picker" id="ballPicker" role="radiogroup" aria-label="Výběr tělesa"></div>
+      <section class="panel-section">
+        <div class="actions-row" aria-label="Akce simulace">
+          <button type="button" id="btnRun" class="action-btn action-btn--run">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+            </svg>
+            Spustit pád
+          </button>
+          <button type="button" id="btnReset" class="action-btn action-btn--reset">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Reset
+          </button>
         </div>
+      </section>
 
-        <div class="row">
-          <label class="row-label" id="heightSliderLabel" for="sliderHeight">Výška koule</label>
-          <input type="range" id="sliderHeight" min="0" max="2" step="0.01" value="1" />
-        </div>
+      <div class="stats-panel" aria-live="polite">
+        <p class="stats-panel__item">
+          <span class="panel-label">Hmotnost</span>
+          <span class="stats-panel__row">m = <span class="stats-panel__value" id="statMass">—</span> kg</span>
+        </p>
+        <p class="stats-panel__item stats-panel__item--energy" id="statEnergyItem">
+          <span class="panel-label">Energie dopadu</span>
+          <span class="stats-panel__row">E = <span class="stats-panel__value" id="statEnergy">?</span> J</span>
+        </p>
       </div>
     </aside>
 
-    <div class="viz-column" aria-label="Simulace">
+    <div class="viz-column" id="vizColumn" aria-label="Simulace">
+      <p class="sim-empty-hint" id="hintEl">Nastav výšku tělesa a&nbsp;stiskni Spustit pád.</p>
+      <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
+      <div id="moon-surface" class="moon-surface" aria-hidden="true">
+        <img src="assets/mesic-povrch.svg" alt="" width="535" height="533" decoding="async" />
+      </div>
       <div class="viz-fit" id="vizFit">
         <div class="viz-scale-box" id="vizScaleBox">
       <div class="viz-presentation env-earth" id="vizPresentation">
@@ -1030,7 +1242,15 @@
     if (!(stageNaturalW > 0) || !(stageRect.width > 0)) return;
 
     const scale = stageRect.width / stageNaturalW;
-    const centerX = stageRect.left + (labelPad + contentW * 0.5) * scale;
+    const colEl = document.getElementById("vizColumn");
+    const originX = colEl ? colEl.getBoundingClientRect().left : 0;
+    const centerX = stageRect.left - originX + (labelPad + contentW * 0.5) * scale;
+    const originBottom = colEl ? colEl.getBoundingClientRect().bottom : stageRect.bottom;
+    /* Povrch Měsíce sedí pod přístrojem stejně jako tráva na Zemi. */
+    document.documentElement.style.setProperty(
+      "--ground-surface-bottom",
+      `${Math.max(0, originBottom - stageRect.bottom)}px`
+    );
     const width = (990 / 345) * contentW * grassScale * scale;
 
     document.documentElement.style.setProperty(
@@ -1304,6 +1524,29 @@
     });
   }
 
+  const statMassEl = document.getElementById("statMass");
+  const statEnergyEl = document.getElementById("statEnergy");
+  const statEnergyItemEl = document.getElementById("statEnergyItem");
+  const heightValueEl = document.getElementById("heightValue");
+  const hintEl = document.getElementById("hintEl");
+
+  function updatePanelStats(showEnergy) {
+    if (statMassEl) statMassEl.textContent = formatNum(state.mass, 2);
+    if (statEnergyEl) {
+      statEnergyEl.textContent = showEnergy
+        ? formatNum(state.showZeroEnergy ? 0 : state.lastEnergy, 2)
+        : "?";
+    }
+    if (statEnergyItemEl) statEnergyItemEl.classList.toggle("is-fresh", !!showEnergy);
+    if (sliderHeight) {
+      const min = Number(sliderHeight.min);
+      const max = Number(sliderHeight.max);
+      const v = Number(sliderHeight.value);
+      sliderHeight.style.setProperty("--fill", `${((v - min) / (max - min)) * 100}%`);
+      if (heightValueEl) heightValueEl.textContent = `${formatNum(v, 2)} m`;
+    }
+  }
+
   function updateSceneVisuals() {
     const platformY = state.platformSunk ? PLATFORM_Y_DOWN : PLATFORM_Y_UP;
     const stemTop = state.platformSunk
@@ -1330,6 +1573,7 @@
     const showEnergyOnHeader =
       state.showHeaderEnergy && (state.lastEnergy > 0 || state.showZeroEnergy);
     headerDotsEl.setAttribute("visibility", showEnergyOnHeader ? "hidden" : "visible");
+    updatePanelStats(showEnergyOnHeader);
     headerEnergyEl.setAttribute("visibility", showEnergyOnHeader ? "visible" : "hidden");
     headerEnergyValueEl.setAttribute("visibility", showEnergyOnHeader ? "visible" : "hidden");
     if (showEnergyOnHeader) {
@@ -1626,7 +1870,10 @@
     updateLabels();
   });
 
-  btnRun.addEventListener("click", startFall);
+  btnRun.addEventListener("click", () => {
+    if (hintEl) hintEl.classList.add("is-hidden");
+    startFall();
+  });
   btnReset.addEventListener("click", resetSimulation);
 
   applyEnvironmentUI();
