@@ -7,7 +7,7 @@
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
   <title>Kinetická energie</title>
-  <link rel="stylesheet" href="style.css?v=6" />
+  <link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace kinetické energie">
@@ -22,6 +22,12 @@
         <h1 class="panel-title">Kinetická energie</h1>
       </div>
 
+
+      <section class="panel-section" aria-label="Prostředí">
+        <span class="panel-label">Prostředí</span>
+        <div class="env-toggle" id="envToggle" role="radiogroup" aria-label="Prostředí simulace"></div>
+        <span class="panel-note">Tíhové zrychlení g = <span id="gravityValue">10</span> N/kg</span>
+      </section>
 
       <section class="panel-section" aria-label="Výběr tělesa">
         <span class="panel-label">Těleso</span>
@@ -65,10 +71,17 @@
     </aside>
 
     <div class="scene-workspace" id="workspace">
-      <div class="body-info" id="bodyInfo" aria-live="polite">
-        <span class="body-info__name" id="bodyInfoName">Bowlingová koule</span>
-        <span class="body-info__row">V = <span class="body-info__value" id="volumeValue">500</span> cm³</span>
-        <span class="body-info__row">m = <span class="body-info__value" id="massValue">1 kg</span></span>
+      <div class="viz-side">
+        <div class="body-info" id="bodyInfo" aria-live="polite">
+          <span class="body-info__name" id="bodyInfoName">Bowlingová koule</span>
+          <span class="body-info__row">V = <span class="body-info__value" id="volumeValue">500</span> cm³</span>
+          <span class="body-info__row">m = <span class="body-info__value" id="massValue">1 kg</span></span>
+        </div>
+        <div class="sim-label-slot">
+          <img class="sim-label sim-label-earth" src="assets/sim-label.svg" width="66" height="53" alt="Země, g = 10 N/kg" />
+          <img class="sim-label sim-label-moon" src="assets/sim-label-moon.svg" width="69" height="53" alt="Měsíc, g = 1,6 N/kg" />
+          <img class="sim-label sim-label-weightless" src="assets/sim-label-weightless.svg" width="115" height="53" alt="Stav beztíže, g = 0 N/kg" />
+        </div>
       </div>
       <p class="sim-empty-hint" id="hintEl">Vyber těleso, nastav rychlost a&nbsp;stiskni Pustit.</p>
       <svg
@@ -82,6 +95,6 @@
     </div>
   </main>
 
-  <script src="main.js?v=13"></script>
+  <script src="main.js?v=14"></script>
 </body>
 </html>

@@ -380,11 +380,31 @@ output {
 
 /* ---------- Údaje o tělese (levý horní roh plátna) ---------- */
 
-.body-info {
+/* Levý horní roh plátna: údaje o tělese a pod nimi prostředí (g). */
+.viz-side {
   position: absolute;
   top: 16px;
   left: 16px;
   z-index: 7;
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.sim-label-slot { padding-left: 4px; }
+
+.sim-label-slot .sim-label {
+  display: none;
+  width: auto;
+  height: 72px;
+}
+
+body.env-earth .sim-label-earth,
+body.env-moon .sim-label-moon,
+body.env-weightless .sim-label-weightless { display: block; }
+
+.body-info {
   display: grid;
   gap: 2px;
   width: max-content;
@@ -572,8 +592,6 @@ output {
   }
 
   .body-info {
-    top: 10px;
-    left: 10px;
     min-width: 0;
     padding: 6px 10px 8px;
     font-size: 15px;
@@ -607,4 +625,62 @@ output {
 
 .unit-frac__den {
   padding-top: 1px;
+}
+
+/* ---------- Prostředí ---------- */
+
+.env-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.env-btn {
+  appearance: none;
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.15;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.env-btn:hover:not(:disabled) { color: var(--text); }
+.env-btn.is-active { background: var(--accent); color: var(--accent-on); }
+.env-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.env-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.panel-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ground { transition: opacity 320ms ease; }
+.ground--moon { opacity: 0; }
+body.env-moon .ground--earth,
+body.env-weightless .ground--earth { opacity: 0; }
+body.env-moon .ground--moon { opacity: 1; }
+
+.scene-workspace { transition: background-color 320ms ease; }
+
+body.env-moon .scene-workspace,
+body.env-weightless .scene-workspace {
+  background: #020208 url("assets/space-stars.svg") center / cover no-repeat;
+}
+
+/* Měřič a pružina světlejší na tmavém vesmírném pozadí. */
+body.env-moon .stage .meter-outline,
+body.env-weightless .stage .meter-outline { stroke: #A3ACB9; }
+body.env-moon .stage .spring-dark,
+body.env-weightless .stage .spring-dark { stroke: #B8BEC8; }
+
+@media (max-width: 760px) {
+  .viz-side { top: 10px; left: 10px; gap: 6px; }
+  .sim-label-slot .sim-label { height: 44px; }
 }

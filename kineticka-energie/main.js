@@ -215,7 +215,8 @@ ${hole(-0.02, 0.12, 0.16)}
   const GRASS_W = 700;
   const GRASS_H = (GRASS_W * 415) / 990;
   const GRASS_TOP_Y = FLOOR_Y - (GRASS_W * 332) / 990;
-  el("rect", { x: -2000, y: FLOOR_Y, width: 5000, height: 1200, fill: "#57D976" }, stage);
+  const earthGround = el("g", { class: "ground ground--earth" }, stage);
+  el("rect", { x: -2000, y: FLOOR_Y, width: 5000, height: 1200, fill: "#57D976" }, earthGround);
   el(
     "image",
     {
@@ -226,8 +227,22 @@ ${hole(-0.02, 0.12, 0.16)}
       height: GRASS_H,
       preserveAspectRatio: "none",
     },
-    stage
+    earthGround
   );
+
+  /* Měsíc: Země nad obzorem + nízký šedý pás povrchu (vrchol oblouku = FLOOR_Y). */
+  const moonGround = el("g", { class: "ground ground--moon" }, stage);
+  el(
+    "image",
+    { href: "assets/mesic-zeme.svg", x: 560, y: FLOOR_Y - 118, width: 190, height: 127, preserveAspectRatio: "xMidYMax meet" },
+    moonGround
+  );
+  el(
+    "image",
+    { href: "assets/mesic-povrch-pas.svg", x: -2000, y: FLOOR_Y - 20, width: 5000, height: 120, preserveAspectRatio: "none" },
+    moonGround
+  );
+  el("rect", { x: -2000, y: FLOOR_Y + 99, width: 5000, height: 1200, fill: "#C5C5C5" }, moonGround);
 
   /* Měřič: deska s pružinou uchycenou na pevném bloku, který stojí na zemi. */
   const wallTop = PLATE_TOP - 20;
@@ -242,14 +257,14 @@ ${hole(-0.02, 0.12, 0.16)}
   }
   el(
     "rect",
-    { x: WALL_X, y: wallTop, width: wallW, height: wallBottom - wallTop, rx: 8, fill: "none", stroke: "#3B3B3A", "stroke-width": 5 },
+    { class: "meter-outline", x: WALL_X, y: wallTop, width: wallW, height: wallBottom - wallTop, rx: 8, fill: "none", stroke: "#3B3B3A", "stroke-width": 5 },
     stage
   );
 
   /* Pružina: světlá celá dráha + tmavé zadní oblouky (jako v podkladu). */
   const springGroup = el("g", { fill: "none", "stroke-width": 4.94, "stroke-linecap": "round", "stroke-linejoin": "round" }, stage);
   const springLight = el("path", { stroke: "#858585" }, springGroup);
-  const springDark = el("path", { stroke: "#565655" }, springGroup);
+  const springDark = el("path", { class: "spring-dark", stroke: "#565655" }, springGroup);
 
   function drawSpring(x0, x1) {
     const w = (x1 - x0) / SPRING_SEGMENTS;
@@ -280,6 +295,7 @@ ${hole(-0.02, 0.12, 0.16)}
       y1: PLATE_TOP,
       x2: PLATE_REST_X,
       y2: PLATE_BOTTOM,
+      class: "meter-outline",
       stroke: "#3B3B3A",
       "stroke-width": PLATE_W,
       "stroke-linecap": "round",
@@ -292,7 +308,7 @@ ${hole(-0.02, 0.12, 0.16)}
   const RD_Y = PLATE_TOP - 34 - RD_H;
   el(
     "line",
-    { x1: PLATE_REST_X, y1: RD_Y + RD_H, x2: PLATE_REST_X, y2: PLATE_TOP, stroke: "#3B3B3A", "stroke-width": 5 },
+    { class: "meter-outline", x1: PLATE_REST_X, y1: RD_Y + RD_H, x2: PLATE_REST_X, y2: PLATE_TOP, stroke: "#3B3B3A", "stroke-width": 5 },
     plateGroup
   );
   const readout = el("g", { class: "readout" }, plateGroup);
@@ -424,9 +440,51 @@ ${hole(-0.02, 0.12, 0.16)}
     slider.style.setProperty("--fill", `${fill}%`);
   }
 
+  /* ---------- Prostředí (jen vzhled — kinetická energie na g nezávisí) ---------- */
+  const ENVIRONMENTS = {
+    earth: { label: "Země", g: "10" },
+    moon: { label: "Měsíc", g: "1,6" },
+    weightless: { label: "Stav beztíže", g: "0" },
+  };
+  const envToggleEl = document.getElementById("envToggle");
+  const gravityValueEl = document.getElementById("gravityValue");
+  let environment = "earth";
+
+  function applyEnvironment(id) {
+    environment = id;
+    Object.keys(ENVIRONMENTS).forEach((k) => document.body.classList.toggle("env-" + k, k === id));
+    if (gravityValueEl) gravityValueEl.textContent = ENVIRONMENTS[id].g;
+    if (envToggleEl) {
+      envToggleEl.querySelectorAll(".env-btn").forEach((b) => {
+        const on = b.dataset.env === id;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-checked", on ? "true" : "false");
+      });
+    }
+  }
+
+  if (envToggleEl) {
+    Object.entries(ENVIRONMENTS).forEach(([id, env]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "env-btn";
+      b.dataset.env = id;
+      b.setAttribute("role", "radio");
+      b.textContent = env.label;
+      b.addEventListener("click", () => {
+        if (state.phase !== "idle" || id === environment) return;
+        applyEnvironment(id);
+        resetToStart();
+      });
+      envToggleEl.appendChild(b);
+    });
+  }
+  applyEnvironment("earth");
+
   function setBusy(busy) {
     btnRun.disabled = busy;
     slider.disabled = busy;
+    if (envToggleEl) envToggleEl.querySelectorAll("button").forEach((b) => (b.disabled = busy));
     if (picker) picker.querySelectorAll("button").forEach((b) => (b.disabled = busy));
   }
 
