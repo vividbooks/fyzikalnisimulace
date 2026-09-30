@@ -586,25 +586,27 @@
           xmlns="http://www.w3.org/2000/svg"
           aria-label="Potenciální energie — nádrž Archimed"
         >
-          <rect x="283" y="749" width="44" height="686" rx="10" transform="rotate(-180 283 749)" fill="#C7E19C"/>
-          <rect id="railFill" x="283" y="749" width="44" height="18" rx="9" transform="rotate(-180 283 749)" fill="#588B00"/>
+          <!-- Měřič energie: skleněná trubice se stupnicí v J, digitální displej, základna s plíškem. -->
+          <rect id="tubeBody" x="239" y="63" width="44" height="686" rx="10" fill="#EEF2F6" stroke="#3E3E3E" stroke-width="3"/>
+          <rect id="railFill" x="283" y="749" width="44" height="18" rx="9" transform="rotate(-180 283 749)" fill="#EF3A50"/>
+          <path d="M248 80V735" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.75"/>
+          <g id="energyScale" aria-hidden="true"></g>
           <rect id="platform" x="64" y="623" width="121" height="13" rx="6.5" fill="#3E3E3E"/>
           <path id="platformStem" d="M125.5 630.5V652" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/>
-          <rect y="645" width="239" height="104" rx="10" fill="#3E9DFF"/>
-          <rect x="25" y="668" width="193" height="67" rx="10" fill="#0956CA"/>
-          <text x="113" y="709" text-anchor="middle" fill="white" font-size="21" font-weight="600">Uhoď a vyhraj!</text>
-          <path d="M28 657L30.4697 664.601H38.4616L31.996 669.298L34.4656 676.899L28 672.202L21.5344 676.899L24.004 669.298L17.5384 664.601H25.5303L28 657Z" fill="#FFDB00"/>
-                    <path d="M190.54 647.975L190.862 655.961L198.556 658.122L191.061 660.896L191.383 668.881L186.429 662.61L178.933 665.384L183.367 658.734L178.413 652.463L186.107 654.625L190.54 647.975Z" fill="#FFDB00"/>
-          <path d="M211.836 698.895L215.578 705.957L223.45 704.58L217.891 710.321L221.633 717.383L214.455 713.87L208.895 719.611L210.018 711.698L202.84 708.185L210.712 706.808L211.836 698.895Z" fill="#FFDB00"/>
-          <path d="M141.331 725.04L146.793 730.874L154.03 727.482L150.169 734.479L155.632 740.313L147.784 738.804L143.924 745.802L142.933 737.872L135.085 736.363L142.321 732.971L141.331 725.04Z" fill="#FFDB00"/>
-          <path d="M11.3335 722.328L15.5721 729.104L23.3257 727.166L18.1916 733.291L22.4302 740.066L15.0186 737.076L9.88461 743.201L10.438 735.228L3.0265 732.238L10.7801 730.301L11.3335 722.328Z" fill="#FFDB00"/>
-          <rect x="177" width="168" height="71" rx="10" fill="#0F0E0E"/>
-          <circle class="header-bulb" cx="187.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="205.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="224.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="242.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="261.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="279.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="298.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="316.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="335.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="187.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="205.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="224.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="242.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="261.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="279.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="298.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="316.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="335.0" cy="63" r="3.2" fill="#FFDB00"/>
-          <rect x="189" y="16" width="144" height="39" rx="6" fill="#1F1F1F"/>
-          <text id="headerDots" x="261" y="43" text-anchor="middle" fill="white" font-size="20" font-weight="600" opacity="0.6">– – J</text>
-          <text id="headerEnergy" x="261" y="30" text-anchor="middle" fill="#FFDB00" font-size="10.5" font-weight="600" visibility="hidden">Energie dopadu</text>
-          <text id="headerEnergyValue" x="261" y="50" text-anchor="middle" fill="white" font-size="18" font-weight="700" visibility="hidden">—</text>
-          <g id="energyScale" aria-hidden="true"></g>
+          <rect x="1.5" y="646.5" width="236" height="101" rx="10" fill="#D6DCE4" stroke="#3E3E3E" stroke-width="3"/>
+          <rect x="1.5" y="646.5" width="236" height="14" rx="7" fill="#B9C2CE"/>
+          <rect x="22" y="672" width="195" height="54" rx="8" fill="#3E3E3E"/>
+          <text x="119.5" y="706" text-anchor="middle" fill="white" font-size="19" font-weight="600" letter-spacing="1.5">MĚŘIČ ENERGIE</text>
+          <circle cx="12" cy="736" r="3.5" fill="#8A94A3"/>
+          <circle cx="227" cy="736" r="3.5" fill="#8A94A3"/>
+          <circle cx="12" cy="671" r="3.5" fill="#8A94A3"/>
+          <circle cx="227" cy="671" r="3.5" fill="#8A94A3"/>
+          <rect x="177" y="0" width="168" height="71" rx="12" fill="#3E3E3E"/>
+          <rect x="185" y="7" width="152" height="57" rx="7" fill="#1B2A22"/>
+          <text id="headerDots" x="261" y="44" text-anchor="middle" fill="#6FE3A3" font-size="22" font-weight="600" opacity="0.55">– – J</text>
+          <text id="headerEnergy" x="261" y="25" text-anchor="middle" fill="#6FE3A3" font-size="11" font-weight="600" visibility="hidden">Energie dopadu</text>
+          <text id="headerEnergyValue" x="261" y="52" text-anchor="middle" fill="#6FE3A3" font-size="22" font-weight="700" visibility="hidden">—</text>
+          <path d="M261 71V63" stroke="#3E3E3E" stroke-width="6"/>
           <g id="peakMarks"></g>
           <circle id="launcher" cx="261.5" cy="731.5" r="9.5" fill="black"/>
           <g id="ball" transform="translate(124.5 113) scale(1.0137)">
@@ -689,7 +691,7 @@
   const MAX_ENERGY_J = 60;
   const REF_ENERGY_J = MAX_ENERGY_J / 2;
   const PEAK_MARK_RX = 22;
-  const PEAK_MARK_COLOR = "#588B00";
+  const PEAK_MARK_COLOR = "#9F1239";
   const ENVIRONMENT_IDS = ["earth", "moon", "weightless"];
   const ENVIRONMENTS = {
     earth: { label: "Země", g: 10 },
@@ -1227,7 +1229,7 @@
     return formatNum(energyJ, 2) + " J";
   }
 
-  /** Stupnice na tyči: dílky po 5 J, popisky po 10 J (vlevo od tyče). */
+  /** Stupnice měřiče: dílky po 5 J, popisky po 10 J (vlevo od trubice). */
   function drawEnergyScale() {
     const g = document.getElementById("energyScale");
     if (!g) return;
@@ -1236,22 +1238,21 @@
       const y = ELLIPSE_REST_CY - e * ENERGY_TO_HEIGHT;
       const major = e % 10 === 0;
       const tick = document.createElementNS(SVG_NS, "line");
-      tick.setAttribute("x1", String(x + 2));
-      tick.setAttribute("x2", String(x + (major ? 14 : 9)));
+      tick.setAttribute("x1", String(x - (major ? 12 : 7)));
+      tick.setAttribute("x2", String(x));
       tick.setAttribute("y1", String(y));
       tick.setAttribute("y2", String(y));
-      tick.setAttribute("stroke", "#2F5200");
+      tick.setAttribute("stroke", "#3E3E3E");
       tick.setAttribute("stroke-width", major ? "2.5" : "1.5");
       tick.setAttribute("stroke-linecap", "round");
       g.appendChild(tick);
-      if (major && e > 0) {
+      if (major) {
         const t = document.createElementNS(SVG_NS, "text");
-        t.setAttribute("x", String(x - 6));
+        t.setAttribute("x", String(x - 16));
         t.setAttribute("y", String(y + 5));
         t.setAttribute("text-anchor", "end");
         t.setAttribute("font-size", "14");
-        t.setAttribute("font-weight", "600");
-        t.setAttribute("fill", "#2F5200");
+        t.setAttribute("fill", "#3E3E3E");
         t.textContent = e + " J";
         g.appendChild(t);
       }
