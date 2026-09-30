@@ -571,7 +571,8 @@ ${hole(-0.02, 0.12, 0.16)}
   function roll(dx) {
     const obj = currentObject();
     state.x += dx;
-    state.wheelAngle += dx / (obj.height / 2);
+    /* Ve stavu beztíže nic netlačí míč k zemi → neotáčí se, jen plave. */
+    if (environment !== "weightless") state.wheelAngle += dx / (obj.height / 2);
   }
 
   function tick(ts) {
@@ -597,7 +598,7 @@ ${hole(-0.02, 0.12, 0.16)}
       const t = Math.min(state.contactT, halfPeriod);
       state.compression = state.amplitude * Math.sin(state.omega * t);
       const newX = contactX() + state.compression - obj.width;
-      state.wheelAngle += (newX - state.x) / (obj.height / 2);
+      if (environment !== "weightless") state.wheelAngle += (newX - state.x) / (obj.height / 2);
       state.x = newX;
       if (!state.energyShown && t >= halfPeriod / 2) {
         state.energyShown = true;
