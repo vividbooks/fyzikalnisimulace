@@ -1200,6 +1200,12 @@
             hash: "#/sim/kineticka_energie",
             previewColor: "#ffe8ec",
           },
+          {
+            id: "potencialni_energie",
+            title: "Potenciální energie",
+            hash: "#/sim/potencialni_energie",
+            previewColor: "#e8f5d8",
+          },
         ],
       },
     ];
@@ -1231,6 +1237,7 @@
       mereni_casu: "zaklady",
       tepelna_kapacita_puvodni: "energie",
       kineticka_energie: "energie",
+      potencialni_energie: "energie",
       skutecny_obraz: "optika",
       cocky: "optika",
       videni: "optika",
@@ -2230,6 +2237,25 @@
       </svg>`;
     }
 
+    function PotencialniEnergieCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="potencialni_energie/assets/meloun.svg"
+          x="20"
+          y="8"
+          width="92"
+          height="72"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
       if (tileId === "kladkostroj") return html`<${KladkostrojCardIllustration} />`;
@@ -2261,6 +2287,7 @@
       if (tileId === "mereni_casu") return html`<${MereniCasuCardIllustration} />`;
       if (tileId === "tepelna_kapacita_puvodni") return html`<${TepelnaKapacitaCardIllustration} />`;
       if (tileId === "kineticka_energie") return html`<${KinetickaEnergieCardIllustration} />`;
+      if (tileId === "potencialni_energie") return html`<${PotencialniEnergieCardIllustration} />`;
       return null;
     }
 
@@ -2621,6 +2648,14 @@
           }
           return;
         }
+        if (simId === "potencialni_energie") {
+          try {
+            window.location.replace(new URL("potencialni_energie/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("potencialni_energie/");
+          }
+          return;
+        }
       }, [simId]);
 
       const goToHub = useCallback(() => {
@@ -2857,6 +2892,13 @@
         `;
       }
       if (simId === "kineticka_energie") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "potencialni_energie") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

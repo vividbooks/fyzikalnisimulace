@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Potenciální energie</title>
+  <style>
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("https://jjpiguuubvmiobmixwgh.supabase.co/storage/v1/object/public/Admin%20math/Fenomen%20Sans%20Book.otf")
+        format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #fff;
+      --panel: #fff;
+      --border: #e8eaef;
+      --text: #171923;
+      --muted: #6b7280;
+      --accent: #3d5a9a;
+      --accent-hover: #334b81;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .space-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: #020208 url("assets/space-stars.svg") center / cover no-repeat;
+      transition: opacity 320ms ease;
+    }
+
+    body.env-moon .space-backdrop,
+    body.env-weightless .space-backdrop {
+      opacity: 1;
+    }
+
+    .moon-surface {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 0;
+      pointer-events: none;
+      line-height: 0;
+      opacity: 0;
+      transition: opacity 320ms ease;
+    }
+
+    .moon-surface img {
+      position: fixed;
+      left: var(--ground-surface-center-x, 50%);
+      bottom: 0;
+      display: block;
+      width: var(--ground-surface-width, min(52vw, 480px));
+      max-width: none;
+      margin: 0;
+      height: auto;
+      transform: translateX(-50%);
+    }
+
+    body.env-moon .moon-surface {
+      opacity: 1;
+    }
+
+    body.env-moon,
+    body.env-weightless {
+      background-color: #020208;
+    }
+
+    body.env-moon .setup-panel,
+    body.env-weightless .setup-panel {
+      background: var(--panel);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+
+    button, input, label { font-family: inherit; }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: min(380px, 100%) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: clamp(10px, 1.8vw, 20px);
+      padding: clamp(8px, 1.2vw, 14px);
+      height: 100dvh;
+      overflow: hidden;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 680px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .setup-panel {
+        max-height: min(42dvh, calc(100dvh - 240px));
+        overflow: auto;
+      }
+    }
+
+    .setup-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      min-height: 0;
+      max-height: 100%;
+      overflow: hidden;
+    }
+
+    .hub-back-to-sims {
+      display: inline-block;
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .hub-back-to-sims:hover { text-decoration: underline; }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .row {
+      display: grid;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .row-picker {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .row-label {
+      font-weight: 650;
+      font-size: 0.75rem;
+    }
+
+    .row-value {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .hidden { display: none !important; }
+
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .env-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .env-option {
+      flex: 1 1 calc(33.333% - 4px);
+      min-width: 5.5rem;
+      padding: 6px 4px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      font: inherit;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: inherit;
+    }
+
+    .env-option:hover:not(:disabled) {
+      border-color: #c5cde0;
+      background: #f8f9fc;
+    }
+
+    .env-option.selected {
+      border-color: var(--accent);
+      background: #eef2fa;
+      color: var(--accent);
+    }
+
+    .env-option:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .body-kind-toggle {
+      display: flex;
+      gap: 6px;
+    }
+
+    .body-kind-option {
+      flex: 1 1 50%;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: inherit;
+    }
+
+    .body-kind-option:hover:not(:disabled) {
+      border-color: #c5cde0;
+      background: #f8f9fc;
+    }
+
+    .body-kind-option.selected {
+      border-color: var(--accent);
+      background: #eef2fa;
+      color: var(--accent);
+    }
+
+    .body-kind-option:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .object-swatch {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .ball-visual.is-hidden {
+      display: none;
+    }
+
+    .ground-art {
+      position: absolute;
+      bottom: 0;
+      left: calc(var(--scene-label-pad) + var(--scene-content-width) * 0.5);
+      z-index: 0;
+      display: block;
+      width: calc(990 / 345 * var(--scene-content-width) * var(--grass-scale));
+      max-width: none;
+      height: auto;
+      transform: translateX(-50%);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .ground-grass {
+      opacity: 1;
+    }
+
+    .ground-weightless {
+      display: none;
+      opacity: 0.85;
+    }
+
+    .device-stage.env-moon .ground-grass,
+    .device-stage.env-weightless .ground-grass {
+      display: none;
+    }
+
+    .device-stage.env-weightless .ground-weightless {
+      display: none;
+    }
+
+    button {
+      padding: 7px 14px;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    button:hover { background: var(--accent-hover); }
+    button.secondary {
+      background: #eef1f7;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.secondary:hover { background: #e4e8f0; }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .viz-column {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    body.env-moon .viz-column,
+    body.env-moon .viz-presentation,
+    body.env-weightless .viz-column,
+    body.env-weightless .viz-presentation {
+      background: transparent;
+    }
+
+    .viz-fit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .viz-scale-box {
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .viz-presentation {
+      display: flex;
+      align-items: center;
+      gap: clamp(14px, 3.5vw, 28px);
+      transform-origin: 0 0;
+    }
+
+    .device-stage {
+      --scene-content-width: 345px;
+      --scene-label-pad: 55px;
+      --scene-stage-width: calc(var(--scene-content-width) + var(--scene-label-pad));
+      --grass-scale: 0.56;
+      /* Spodek povrchu (y≈415) → horní hrana zeleného valu (y≈332.5) */
+      --grass-ground-lift: calc(82.529 / 345 * var(--scene-content-width) * var(--grass-scale));
+      flex: 0 0 auto;
+      position: relative;
+      width: var(--scene-stage-width);
+      max-width: 100%;
+      min-height: 0;
+    }
+
+    .scene-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 0;
+      margin-bottom: var(--grass-ground-lift);
+      overflow: visible;
+      display: flex;
+      flex-direction: column;
+      aspect-ratio: 400 / 750;
+    }
+
+    /* Pevná šířka slotu = nejširší popisek; přístroj se při přepnutí neposune. */
+    .sim-label-slot {
+      flex: 0 0 clamp(52px, 12vw, 115px);
+      width: clamp(52px, 12vw, 115px);
+      align-self: center;
+      position: relative;
+      min-height: 53px;
+    }
+
+    .sim-label-slot .sim-label {
+      display: none;
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .viz-presentation.env-earth .sim-label-earth,
+    .viz-presentation.env-moon .sim-label-moon,
+    .viz-presentation.env-weightless .sim-label-weightless {
+      display: block;
+    }
+
+    .scene-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      flex: 0 0 auto;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: default;
+    }
+
+    .scene-svg.idle-ball #ball .ball-body,
+    .scene-svg.idle-ball #ballObject { cursor: ns-resize; }
+
+    .scene-height-label {
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .scene-height-label text {
+      font-size: 18px;
+      font-weight: 700;
+      fill: #171923;
+    }
+
+    body.env-moon .scene-height-label text,
+    body.env-weightless .scene-height-label text {
+      fill: #fff;
+      stroke: rgba(0, 0, 0, 0.45);
+      stroke-width: 4px;
+      paint-order: stroke fill;
+    }
+
+    .ball-picker {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: minmax(0, 1fr);
+      gap: 5px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .ball-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      min-height: 0;
+      padding: 6px 6px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      font: inherit;
+      color: inherit;
+    }
+
+    .ball-option:hover:not(:disabled) {
+      border-color: #c5cde0;
+      background: #f8f9fc;
+    }
+
+    .ball-option.selected {
+      border-color: var(--accent);
+      background: #eef2fa;
+    }
+
+    .ball-option:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .ball-swatch-wrap {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ball-swatch {
+      display: block;
+      box-sizing: border-box;
+      border-radius: 50%;
+      flex-shrink: 0;
+      aspect-ratio: 1;
+    }
+
+    .ball-option-label {
+      font-size: 0.68rem;
+      line-height: 1.2;
+    }
+
+    .ball-option-name {
+      display: block;
+      font-weight: 650;
+    }
+
+    .ball-option-specs {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div id="space-backdrop" class="space-backdrop" aria-hidden="true"></div>
+  <div id="moon-surface" class="moon-surface" aria-hidden="true">
+    <img src="assets/mesic-povrch.svg" alt="" width="535" height="533" decoding="async" />
+  </div>
+  <div class="app">
+    <aside class="setup-panel" aria-label="Nastavení">
+      <a href="../index.html" class="hub-back-to-sims">← Přehled simulací</a>
+      <h1 class="panel-title">Potenciální energie</h1>
+
+      <div class="controls">
+        <div class="row">
+          <span class="row-label">Prostředí</span>
+          <div class="env-toggle" id="envToggle" role="radiogroup" aria-label="Prostředí simulace"></div>
+          <span class="row-value" id="valGravity">—</span>
+        </div>
+
+        <div class="row">
+          <span class="row-label">Akce</span>
+          <div class="actions-row">
+            <button type="button" id="btnRun">Spustit pád</button>
+            <button type="button" id="btnReset" class="secondary">Reset</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <span class="row-label">Typ tělesa</span>
+          <div class="body-kind-toggle" id="bodyKindToggle" role="radiogroup" aria-label="Typ tělesa"></div>
+        </div>
+
+        <div class="row row-picker">
+          <span class="row-label" id="itemPickerLabel">Koule</span>
+          <div class="ball-picker" id="ballPicker" role="radiogroup" aria-label="Výběr tělesa"></div>
+        </div>
+
+        <div class="row">
+          <label class="row-label" id="heightSliderLabel" for="sliderHeight">Výška koule</label>
+          <input type="range" id="sliderHeight" min="0" max="2" step="0.01" value="1" />
+        </div>
+      </div>
+    </aside>
+
+    <div class="viz-column" aria-label="Simulace">
+      <div class="viz-fit" id="vizFit">
+        <div class="viz-scale-box" id="vizScaleBox">
+      <div class="viz-presentation env-earth" id="vizPresentation">
+        <div class="device-stage env-earth" id="deviceStage">
+          <div class="scene-wrap">
+        <svg
+          id="scene"
+          class="scene-svg idle-ball"
+          viewBox="-55 0 400 750"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-label="Potenciální energie — nádrž Archimed"
+        >
+          <rect x="283" y="749" width="44" height="686" rx="10" transform="rotate(-180 283 749)" fill="#C7E19C"/>
+          <rect id="railFill" x="283" y="749" width="44" height="18" rx="9" transform="rotate(-180 283 749)" fill="#588B00"/>
+          <rect id="platform" x="64" y="623" width="121" height="13" rx="6.5" fill="#3E3E3E"/>
+          <path id="platformStem" d="M125.5 630.5V652" stroke="#3E3E3E" stroke-width="10" stroke-linecap="round"/>
+          <rect y="645" width="239" height="104" rx="10" fill="#3E9DFF"/>
+          <rect x="25" y="668" width="193" height="67" rx="10" fill="#0956CA"/>
+          <text x="113" y="709" text-anchor="middle" fill="white" font-size="21" font-weight="600">Uhoď a vyhraj!</text>
+          <path d="M28 657L30.4697 664.601H38.4616L31.996 669.298L34.4656 676.899L28 672.202L21.5344 676.899L24.004 669.298L17.5384 664.601H25.5303L28 657Z" fill="#FFDB00"/>
+                    <path d="M190.54 647.975L190.862 655.961L198.556 658.122L191.061 660.896L191.383 668.881L186.429 662.61L178.933 665.384L183.367 658.734L178.413 652.463L186.107 654.625L190.54 647.975Z" fill="#FFDB00"/>
+          <path d="M211.836 698.895L215.578 705.957L223.45 704.58L217.891 710.321L221.633 717.383L214.455 713.87L208.895 719.611L210.018 711.698L202.84 708.185L210.712 706.808L211.836 698.895Z" fill="#FFDB00"/>
+          <path d="M141.331 725.04L146.793 730.874L154.03 727.482L150.169 734.479L155.632 740.313L147.784 738.804L143.924 745.802L142.933 737.872L135.085 736.363L142.321 732.971L141.331 725.04Z" fill="#FFDB00"/>
+          <path d="M11.3335 722.328L15.5721 729.104L23.3257 727.166L18.1916 733.291L22.4302 740.066L15.0186 737.076L9.88461 743.201L10.438 735.228L3.0265 732.238L10.7801 730.301L11.3335 722.328Z" fill="#FFDB00"/>
+          <rect x="177" width="168" height="71" rx="10" fill="#0F0E0E"/>
+          <circle class="header-bulb" cx="187.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="205.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="224.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="242.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="261.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="279.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="298.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="316.5" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="335.0" cy="8" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="187.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="205.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="224.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="242.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="261.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="279.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="298.0" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="316.5" cy="63" r="3.2" fill="#FFDB00"/><circle class="header-bulb" cx="335.0" cy="63" r="3.2" fill="#FFDB00"/>
+          <rect x="189" y="16" width="144" height="39" rx="6" fill="#1F1F1F"/>
+          <text id="headerDots" x="261" y="43" text-anchor="middle" fill="white" font-size="20" font-weight="600" opacity="0.6">– – J</text>
+          <text id="headerEnergy" x="261" y="30" text-anchor="middle" fill="#FFDB00" font-size="10.5" font-weight="600" visibility="hidden">Energie dopadu</text>
+          <text id="headerEnergyValue" x="261" y="50" text-anchor="middle" fill="white" font-size="18" font-weight="700" visibility="hidden">—</text>
+          <g id="energyScale" aria-hidden="true"></g>
+          <g id="peakMarks"></g>
+          <circle id="launcher" cx="261.5" cy="731.5" r="9.5" fill="black"/>
+          <g id="ball" transform="translate(124.5 113) scale(1.0137)">
+            <g id="ballSphere" class="ball-visual">
+              <circle class="ball-body" cx="0" cy="0" r="54.75" fill="#00805B" stroke="#101F00" stroke-width="1.5"/>
+              <path class="ball-stripe" d="M56 8.5C49.8279 8.5 43.7162 9.71569 38.0139 12.0777C32.3116 14.4396 27.1303 17.9016 22.766 22.266C18.4016 26.6303 14.9396 31.8116 12.5777 37.5139C10.2157 43.2162 9 49.3279 9 55.5" stroke="white" stroke-width="4" stroke-linecap="round" transform="translate(-55.5 -55.5)"/>
+            </g>
+            <g id="ballObject" class="ball-visual is-hidden"></g>
+          </g>
+          <g id="objectHeightLabel" class="scene-height-label" aria-hidden="true">
+            <text id="objectHeightText" x="0" y="0">—</text>
+          </g>
+        </svg>
+          </div>
+          <img
+            class="ground-art ground-grass"
+            src="assets/travnik.svg"
+            width="990"
+            height="415"
+            alt=""
+            decoding="async"
+          />
+          <img
+            class="ground-art ground-weightless"
+            src="assets/beztize.svg"
+            width="667"
+            height="159"
+            alt=""
+            decoding="async"
+          />
+        </div>
+        <div class="sim-label-slot">
+          <img
+            class="sim-label sim-label-earth"
+            src="assets/sim-label.svg"
+            width="66"
+            height="53"
+            alt="Země, g = 10 N/kg"
+            decoding="async"
+          />
+          <img
+            class="sim-label sim-label-moon"
+            src="assets/sim-label-moon.svg"
+            width="69"
+            height="53"
+            alt="Měsíc, g = 1,6 N/kg"
+            decoding="async"
+          />
+          <img
+            class="sim-label sim-label-weightless"
+            src="assets/sim-label-weightless.svg"
+            width="115"
+            height="53"
+            alt="Stav beztíže, g = 0 N/kg"
+            decoding="async"
+          />
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(function () {
+  const W = 345;
+  const H = 750;
+  /** Spodek koule při 0 m = horní hrana plošiny. */
+  const PLATFORM_Y_UP = 623;
+  const PLATFORM_Y_DOWN = 632;
+  const PLATFORM_SINK = PLATFORM_Y_DOWN - PLATFORM_Y_UP;
+  const BALL_X = 124.5;
+  const LAUNCHER_CX = 261.5;
+  const LAUNCHER_R = 9.5;
+  const ELLIPSE_REST_CY = 731.5;
+  const RAIL_CAP_MIN = 18;
+  const PLATFORM_STEM_TOP_UP = 630.5;
+  const PLATFORM_STEM_TOP_DOWN = 639.5;
+  const PLATFORM_STEM_BOTTOM_UP = 652;
+  const PLATFORM_STEM_BOTTOM_DOWN = 661;
+  /** Maximum energie = horní okraj tyče; polovina tyče = MAX/2. */
+  const MAX_ENERGY_J = 60;
+  const REF_ENERGY_J = MAX_ENERGY_J / 2;
+  const PEAK_MARK_RX = 22;
+  const PEAK_MARK_COLOR = "#588B00";
+  const ENVIRONMENT_IDS = ["earth", "moon", "weightless"];
+  const ENVIRONMENTS = {
+    earth: { label: "Země", g: 10 },
+    moon: { label: "Měsíc", g: 1.6 },
+    weightless: { label: "Stav beztíže", g: 0 },
+  };
+  /** "Gravitace" elipsy ve scéně (px/s²) – čistě vizuální. */
+  const G_ELLIPSE = 1200;
+  const BODY_KIND_IDS = ["objects", "balls"];
+  const BODY_KINDS = {
+    balls: { label: "Koule", pickerLabel: "Koule", heightLabel: "Výška koule" },
+    objects: { label: "Předměty", pickerLabel: "Předmět", heightLabel: "Výška předmětu" },
+  };
+  const BALL_PRESETS = [
+    { volumeCm3: 1000, mass: 1, color: "#00805B", stroke: "#101F00" },
+    { volumeCm3: 2000, mass: 1, color: "#3CB078", stroke: "#0F3320" },
+    { volumeCm3: 100, mass: 1, color: "#005A40", stroke: "#101F00" },
+    { volumeCm3: 1000, mass: 2, color: "#006F52", stroke: "#101F00" },
+    { volumeCm3: 2000, mass: 2, color: "#1E8A62", stroke: "#0F2A18" },
+    { volumeCm3: 100, mass: 2, color: "#004530", stroke: "#101F00" },
+    { volumeCm3: 1000, mass: 0.5, color: "#52B890", stroke: "#1A4030" },
+    { volumeCm3: 2000, mass: 0.5, color: "#7DC9A8", stroke: "#204530" },
+    { volumeCm3: 100, mass: 0.5, color: "#2A8060", stroke: "#101F00" },
+  ];
+  const OBJECT_PRESETS = [
+    {
+      id: "melon",
+      name: "Meloun",
+      volumeCm3: 2500,
+      mass: 2.5,
+      asset: "assets/meloun.svg",
+      viewW: 122,
+      viewH: 100,
+    },
+    {
+      id: "goldBar",
+      name: "Zlatá cihla",
+      volumeCm3: 150,
+      mass: 3,
+      asset: "assets/zlata-cihla.svg",
+      viewW: 148,
+      viewH: 88,
+      displayScale: 0.9,
+    },
+    {
+      id: "bottle",
+      name: "Láhev",
+      volumeCm3: 1000,
+      mass: 1,
+      asset: "assets/lahev.svg",
+      viewW: 255,
+      viewH: 87,
+      displayScale: 0.7,
+    },
+    {
+      id: "ball",
+      name: "Míč",
+      volumeCm3: 2500,
+      mass: 0.2,
+      asset: "assets/mic.svg",
+      viewW: 66,
+      viewH: 66,
+    },
+    {
+      id: "stone",
+      name: "Kámen",
+      volumeCm3: 400,
+      mass: 1,
+      asset: "assets/kamen.svg",
+      viewW: 90,
+      viewH: 48,
+      displayScale: 0.81,
+    },
+  ];
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const objectSpriteCache = new Map();
+  const objectSpritesReady = Promise.all(
+    OBJECT_PRESETS.map((preset) => {
+      return fetch(preset.asset)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Nelze načíst ${preset.asset}`);
+          return res.text();
+        })
+        .then((svgText) => {
+          const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+          const root = doc.documentElement;
+          const wrap = document.createElementNS(SVG_NS, "g");
+          wrap.setAttribute("class", "object-sprite-inner");
+          wrap.setAttribute(
+            "transform",
+            `translate(${-preset.viewW / 2} ${-preset.viewH})`
+          );
+          Array.from(root.childNodes).forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              wrap.appendChild(node.cloneNode(true));
+            }
+          });
+          objectSpriteCache.set(preset.id, wrap);
+        });
+    })
+  );
+  const DEFAULT_BALL_INDEX = 0;
+  const DEFAULT_OBJECT_INDEX = 0;
+  const MAX_BALL_RADIUS_PX = 55.5;
+  const BALL_SHAPE_R = 54.75;
+  /** 2000 cm³ = největší koule ve scéně. */
+  const PX_PER_CM =
+    MAX_BALL_RADIUS_PX /
+    Math.cbrt((3 * 2000) / (4 * Math.PI));
+  const HEIGHT_M_MIN = 0;
+  const HEIGHT_M_MAX = 2;
+  /** Horní okraj koule při 2 m (menší y = výš ve scéně). */
+  const BALL_TOP_AT_2M_PX = 58;
+  const DEFAULT_VOLUME_CM3 = BALL_PRESETS[DEFAULT_BALL_INDEX].volumeCm3;
+  const SWATCH_MAX_DIAM_PX = 28;
+  const MIN_ELLIPSE_PEAK_PX = 10;
+  const ELLIPSE_TOP_MARGIN_PX = 8;
+  const RAIL_TOP_Y = 63;
+
+  function maxEllipsePeakPx() {
+    const minCenterY = RAIL_TOP_Y + LAUNCHER_R + ELLIPSE_TOP_MARGIN_PX;
+    return Math.max(0, ELLIPSE_REST_CY - minCenterY);
+  }
+
+  /** E [J] → výška značky [px]: 30 J = polovina tyče, 60 J = maximum. */
+  const ENERGY_TO_HEIGHT = maxEllipsePeakPx() / MAX_ENERGY_J;
+
+  const scene = document.getElementById("scene");
+  const ballEl = document.getElementById("ball");
+  const ballSphereEl = document.getElementById("ballSphere");
+  const ballObjectEl = document.getElementById("ballObject");
+  const ballBodyEl = document.querySelector("#ball .ball-body");
+  const launcherEl = document.getElementById("launcher");
+  const railFillEl = document.getElementById("railFill");
+  const platformEl = document.getElementById("platform");
+  const platformStemEl = document.getElementById("platformStem");
+  const headerDotsEl = document.getElementById("headerDots");
+  const headerEnergyEl = document.getElementById("headerEnergy");
+  const headerEnergyValueEl = document.getElementById("headerEnergyValue");
+  const peakMarksEl = document.getElementById("peakMarks");
+  const ballPickerEl = document.getElementById("ballPicker");
+  const bodyKindToggleEl = document.getElementById("bodyKindToggle");
+  const itemPickerLabelEl = document.getElementById("itemPickerLabel");
+  const heightSliderLabelEl = document.getElementById("heightSliderLabel");
+  const envToggleEl = document.getElementById("envToggle");
+  const deviceStageEl = document.getElementById("deviceStage");
+  const vizPresentationEl = document.getElementById("vizPresentation");
+  const vizFitEl = document.getElementById("vizFit");
+  const vizScaleBoxEl = document.getElementById("vizScaleBox");
+  const objectHeightTextEl = document.getElementById("objectHeightText");
+  const valGravity = document.getElementById("valGravity");
+  const btnRun = document.getElementById("btnRun");
+  const btnReset = document.getElementById("btnReset");
+  const sliderHeight = document.getElementById("sliderHeight");
+  // Pozn.: výšku elipsy už nezobrazujeme, proto tu není readHeight.
+
+  const state = {
+    environment: "earth",
+    bodyKind: "objects",
+    itemIndex: DEFAULT_OBJECT_INDEX,
+    volumeCm3: OBJECT_PRESETS[DEFAULT_OBJECT_INDEX].volumeCm3,
+    radius: 0,
+    mass: OBJECT_PRESETS[DEFAULT_OBJECT_INDEX].mass,
+    ballHeightM: 0,
+    fallStartHeightM: 0,
+    ballVy: 0,
+    ballY: 0,
+    ellipseY: ELLIPSE_REST_CY,
+    ellipseVy: 0,
+    mode: "idle",
+    impactHandled: false,
+    currentPeak: 0,
+    lastPeak: 0,
+    peakMarks: [],
+    platformSunk: false,
+    showHeaderEnergy: false,
+    showZeroEnergy: false,
+    ellipseWasAscending: false,
+    dragging: false,
+  };
+
+  let rafId = 0;
+  let lastTs = 0;
+
+  function restBottomY() {
+    return PLATFORM_Y_UP;
+  }
+
+  function fallLandBallY(r) {
+    return PLATFORM_Y_DOWN - r;
+  }
+
+  function restorePlatformUp() {
+    if (!state.platformSunk) return;
+    state.platformSunk = false;
+    state.ballY = heightMToBallY(state.ballHeightM, state.radius);
+  }
+
+  function volumeCm3ToRadiusPx(volumeCm3) {
+    const rCm = Math.cbrt((3 * volumeCm3) / (4 * Math.PI));
+    return rCm * PX_PER_CM;
+  }
+
+  function presetSwatchDiameterPx(volumeCm3) {
+    const maxR = volumeCm3ToRadiusPx(2000);
+    const r = volumeCm3ToRadiusPx(volumeCm3);
+    return Math.max(10, (r / maxR) * SWATCH_MAX_DIAM_PX);
+  }
+
+  function getGravity() {
+    return ENVIRONMENTS[state.environment].g;
+  }
+
+  function getPresets() {
+    return state.bodyKind === "objects" ? OBJECT_PRESETS : BALL_PRESETS;
+  }
+
+  function getCurrentPreset() {
+    return getPresets()[state.itemIndex];
+  }
+
+  function formatPresetMass(preset) {
+    if (preset.mass < 0.1) {
+      return `${formatNum(preset.mass * 1000, 1)} g`;
+    }
+    return `${formatNum(preset.mass, 1)} kg`;
+  }
+
+  function itemPresetLabel(preset) {
+    const specs = `${formatNum(preset.volumeCm3, 0)} cm³ ${formatPresetMass(preset)}`;
+    return preset.name ? `${preset.name} · ${specs}` : specs;
+  }
+
+  function applyBodyKindUI() {
+    const kind = BODY_KINDS[state.bodyKind];
+    itemPickerLabelEl.textContent = kind.pickerLabel;
+    heightSliderLabelEl.textContent = kind.heightLabel;
+    ballPickerEl.setAttribute(
+      "aria-label",
+      state.bodyKind === "objects" ? "Výběr předmětu" : "Výběr koule"
+    );
+    renderBodyKindToggle();
+    renderItemPicker();
+  }
+
+  function renderBodyKindToggle() {
+    bodyKindToggleEl.innerHTML = "";
+    BODY_KIND_IDS.forEach((id) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className =
+        "body-kind-option" + (id === state.bodyKind ? " selected" : "");
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-checked", id === state.bodyKind ? "true" : "false");
+      btn.textContent = BODY_KINDS[id].label;
+      btn.disabled = state.mode !== "idle";
+      btn.addEventListener("click", () => {
+        if (state.mode !== "idle" || id === state.bodyKind) return;
+        state.bodyKind = id;
+        state.itemIndex = 0;
+        applyBodyKindUI();
+        const finishBodyKindSwitch = () => {
+          applyItemPreset(0);
+          resetSimulation();
+        };
+        if (id === "objects") {
+          objectSpritesReady.then(finishBodyKindSwitch);
+        } else {
+          finishBodyKindSwitch();
+        }
+      });
+      bodyKindToggleEl.appendChild(btn);
+    });
+  }
+
+  function renderEnvToggle() {
+    envToggleEl.innerHTML = "";
+    Object.entries(ENVIRONMENTS).forEach(([id, env]) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className =
+        "env-option" + (id === state.environment ? " selected" : "");
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-checked", id === state.environment ? "true" : "false");
+      btn.textContent = env.label;
+      btn.disabled = state.mode !== "idle";
+      btn.addEventListener("click", () => {
+        if (state.mode !== "idle" || id === state.environment) return;
+        state.environment = id;
+        applyEnvironmentUI();
+        resetSimulation({ keepHeight: true });
+      });
+      envToggleEl.appendChild(btn);
+    });
+  }
+
+  function applyEnvironmentUI() {
+    const envClass = "env-" + state.environment;
+    const envClasses = ENVIRONMENT_IDS.map((id) => "env-" + id);
+    document.body.classList.remove(...envClasses);
+    document.body.classList.add(envClass);
+    deviceStageEl.classList.remove(...envClasses);
+    deviceStageEl.classList.add(envClass);
+    vizPresentationEl.classList.remove(...envClasses);
+    vizPresentationEl.classList.add(envClass);
+    valGravity.textContent = `${formatNum(getGravity(), 1)} N/kg`;
+    renderEnvToggle();
+    fitVizToScreen();
+  }
+
+  function layoutMoonSurface() {
+    if (!deviceStageEl) return;
+
+    const stageRect = deviceStageEl.getBoundingClientRect();
+    const cs = getComputedStyle(deviceStageEl);
+    const contentW = parseFloat(cs.getPropertyValue("--scene-content-width"));
+    const labelPad = parseFloat(cs.getPropertyValue("--scene-label-pad"));
+    const grassScale = parseFloat(cs.getPropertyValue("--grass-scale"));
+    const stageNaturalW = contentW + labelPad;
+    if (!(stageNaturalW > 0) || !(stageRect.width > 0)) return;
+
+    const scale = stageRect.width / stageNaturalW;
+    const centerX = stageRect.left + (labelPad + contentW * 0.5) * scale;
+    const width = (990 / 345) * contentW * grassScale * scale;
+
+    document.documentElement.style.setProperty(
+      "--ground-surface-center-x",
+      `${centerX}px`
+    );
+    document.documentElement.style.setProperty(
+      "--ground-surface-width",
+      `${width}px`
+    );
+  }
+
+  function fitVizToScreen() {
+    if (!vizFitEl || !vizScaleBoxEl || !vizPresentationEl) return;
+
+    const availW = vizFitEl.clientWidth;
+    const availH = vizFitEl.clientHeight;
+    if (availW <= 0 || availH <= 0) return;
+
+    vizPresentationEl.style.transform = "none";
+    vizScaleBoxEl.style.width = "";
+    vizScaleBoxEl.style.height = "";
+
+    const naturalW = vizPresentationEl.offsetWidth;
+    const naturalH = vizPresentationEl.offsetHeight;
+    if (naturalW <= 0 || naturalH <= 0) return;
+
+    const scale = Math.min(availW / naturalW, availH / naturalH, 1);
+    vizScaleBoxEl.style.width = `${naturalW * scale}px`;
+    vizScaleBoxEl.style.height = `${naturalH * scale}px`;
+    vizPresentationEl.style.transform = `scale(${scale})`;
+    layoutMoonSurface();
+  }
+
+  let fitVizFrame = 0;
+  function scheduleFitVizToScreen() {
+    cancelAnimationFrame(fitVizFrame);
+    fitVizFrame = requestAnimationFrame(fitVizToScreen);
+  }
+
+  if (vizFitEl) {
+    new ResizeObserver(scheduleFitVizToScreen).observe(vizFitEl);
+    const appEl = document.querySelector(".app");
+    if (appEl) new ResizeObserver(scheduleFitVizToScreen).observe(appEl);
+    window.addEventListener("load", scheduleFitVizToScreen);
+    window.addEventListener("resize", scheduleFitVizToScreen);
+  }
+
+  function renderItemPicker() {
+    ballPickerEl.innerHTML = "";
+    getPresets().forEach((preset, index) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ball-option" + (index === state.itemIndex ? " selected" : "");
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-checked", index === state.itemIndex ? "true" : "false");
+      btn.disabled = state.mode !== "idle";
+
+      const swatchWrap = document.createElement("span");
+      swatchWrap.className = "ball-swatch-wrap";
+
+      if (state.bodyKind === "objects") {
+        const swatch = document.createElement("img");
+        swatch.className = "object-swatch";
+        swatch.src = preset.asset;
+        swatch.width = preset.viewW;
+        swatch.height = preset.viewH;
+        swatch.alt = "";
+        const displayScale = preset.displayScale ?? 1;
+        const scale =
+          (presetSwatchDiameterPx(preset.volumeCm3) / preset.viewH) * displayScale;
+        swatch.style.width = `${Math.round(preset.viewW * scale)}px`;
+        swatch.style.height = `${Math.round(preset.viewH * scale)}px`;
+        swatchWrap.appendChild(swatch);
+      } else {
+        const swatch = document.createElement("span");
+        swatch.className = "ball-swatch";
+        const diam = Math.round(presetSwatchDiameterPx(preset.volumeCm3));
+        swatch.style.width = `${diam}px`;
+        swatch.style.height = `${diam}px`;
+        swatch.style.background = preset.color;
+        swatch.style.border = `1.5px solid ${preset.stroke}`;
+        swatchWrap.appendChild(swatch);
+      }
+
+      const label = document.createElement("span");
+      label.className = "ball-option-label";
+      if (preset.name) {
+        const nameEl = document.createElement("span");
+        nameEl.className = "ball-option-name";
+        nameEl.textContent = preset.name;
+        const specsEl = document.createElement("span");
+        specsEl.className = "ball-option-specs";
+        specsEl.textContent = `${formatNum(preset.volumeCm3, 0)} cm³ · ${formatPresetMass(preset)}`;
+        label.append(nameEl, specsEl);
+      } else {
+        const specsEl = document.createElement("span");
+        specsEl.className = "ball-option-specs";
+        specsEl.textContent = `${formatNum(preset.volumeCm3, 0)} cm³ · ${formatPresetMass(preset)}`;
+        label.appendChild(specsEl);
+      }
+
+      btn.append(swatchWrap, label);
+      btn.addEventListener("click", () => {
+        if (state.mode !== "idle") return;
+        const applySelection = () => {
+          if (index !== state.itemIndex) {
+            applyItemPreset(index);
+            setBallHeightM(heightFromHeightSlider());
+          }
+          updateLabels();
+        };
+        if (state.bodyKind === "objects") {
+          objectSpritesReady.then(applySelection);
+        } else if (index === state.itemIndex) {
+          return;
+        } else {
+          applyItemPreset(index);
+          setBallHeightM(heightFromHeightSlider());
+          updateLabels();
+        }
+      });
+      ballPickerEl.appendChild(btn);
+    });
+  }
+
+  function setBodyVisualKind() {
+    const showObject = state.bodyKind === "objects";
+    ballSphereEl.classList.toggle("is-hidden", showObject);
+    ballObjectEl.classList.toggle("is-hidden", !showObject);
+  }
+
+  function mountObjectSprite(preset) {
+    const cached = objectSpriteCache.get(preset.id);
+    if (cached) {
+      ballObjectEl.replaceChildren(cached.cloneNode(true));
+    }
+  }
+
+  function applyItemPreset(index) {
+    const preset = getPresets()[index];
+    state.itemIndex = index;
+    state.volumeCm3 = preset.volumeCm3;
+    state.mass = preset.mass;
+    state.radius =
+      volumeCm3ToRadiusPx(preset.volumeCm3) * (preset.displayScale ?? 1);
+    if (state.bodyKind === "objects") {
+      mountObjectSprite(preset);
+    }
+  }
+
+  function heightFromHeightSlider() {
+    return parseFloat(sliderHeight.value);
+  }
+
+  // 0 m = plošina, 2 m = horní okraj koule v BALL_TOP_AT_2M_PX.
+  const refStartRadius = volumeCm3ToRadiusPx(DEFAULT_VOLUME_CM3);
+  const INITIAL_BALL_Y_PX = BALL_TOP_AT_2M_PX + refStartRadius;
+  const HEIGHT_PX_PER_M =
+    (PLATFORM_Y_UP - (INITIAL_BALL_Y_PX + refStartRadius)) / HEIGHT_M_MAX;
+
+  function heightAboveFloorPx(ballY, r) {
+    return PLATFORM_Y_UP - (ballY + r);
+  }
+
+  function heightMToBallY(heightM, r) {
+    const h = clampHeightM(heightM);
+    const bottomY = PLATFORM_Y_UP - h * HEIGHT_PX_PER_M;
+    return bottomY - r;
+  }
+
+  function ballYToHeightM(ballY, r) {
+    const hPx = heightAboveFloorPx(ballY, r);
+    return clampHeightM(hPx / HEIGHT_PX_PER_M);
+  }
+
+  const INITIAL_HEIGHT_M = 1;
+
+  function clampBallYPx(y, r) {
+    // Ořez dle nejnižšího bodu: spodek nesmí jít nad margin ani pod podlahu.
+    const minBottomY = PLATFORM_Y_UP - HEIGHT_M_MAX * HEIGHT_PX_PER_M;
+    const maxBottomY = PLATFORM_Y_UP;
+    const bottomY = Math.min(maxBottomY, Math.max(minBottomY, y + r));
+    return bottomY - r;
+  }
+
+  function clampHeightM(heightM) {
+    return Math.min(HEIGHT_M_MAX, Math.max(HEIGHT_M_MIN, heightM));
+  }
+
+  // (původní mapování závislé na poloměru odstraněno)
+
+  function setBallHeightM(heightM) {
+    if (state.mode === "idle") {
+      restorePlatformUp();
+    }
+    const h = clampHeightM(heightM);
+    state.ballHeightM = h;
+    state.ballY = heightMToBallY(h, state.radius);
+    sliderHeight.value = String(h);
+    return h;
+  }
+
+  function formatNum(n, digits) {
+    return n.toLocaleString("cs-CZ", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
+  }
+
+  function formatEnergyDisplay(energyJ) {
+    return formatNum(energyJ, 2) + " J";
+  }
+
+  /** Stupnice na tyči: dílky po 5 J, popisky po 10 J (vlevo od tyče). */
+  function drawEnergyScale() {
+    const g = document.getElementById("energyScale");
+    if (!g) return;
+    const x = 239;
+    for (let e = 0; e <= MAX_ENERGY_J; e += 5) {
+      const y = ELLIPSE_REST_CY - e * ENERGY_TO_HEIGHT;
+      const major = e % 10 === 0;
+      const tick = document.createElementNS(SVG_NS, "line");
+      tick.setAttribute("x1", String(x + 2));
+      tick.setAttribute("x2", String(x + (major ? 14 : 9)));
+      tick.setAttribute("y1", String(y));
+      tick.setAttribute("y2", String(y));
+      tick.setAttribute("stroke", "#2F5200");
+      tick.setAttribute("stroke-width", major ? "2.5" : "1.5");
+      tick.setAttribute("stroke-linecap", "round");
+      g.appendChild(tick);
+      if (major && e > 0) {
+        const t = document.createElementNS(SVG_NS, "text");
+        t.setAttribute("x", String(x - 6));
+        t.setAttribute("y", String(y + 5));
+        t.setAttribute("text-anchor", "end");
+        t.setAttribute("font-size", "14");
+        t.setAttribute("font-weight", "600");
+        t.setAttribute("fill", "#2F5200");
+        t.textContent = e + " J";
+        g.appendChild(t);
+      }
+    }
+  }
+  drawEnergyScale();
+
+  function updatePeakMarks() {
+    while (peakMarksEl.firstChild) {
+      peakMarksEl.removeChild(peakMarksEl.firstChild);
+    }
+    state.peakMarks.forEach((peakPx, index) => {
+      const y = ELLIPSE_REST_CY - peakPx;
+      const lineEl = document.createElementNS(SVG_NS, "line");
+      lineEl.setAttribute("x1", String(LAUNCHER_CX - PEAK_MARK_RX));
+      lineEl.setAttribute("y1", String(y));
+      lineEl.setAttribute("x2", String(LAUNCHER_CX + PEAK_MARK_RX));
+      lineEl.setAttribute("y2", String(y));
+      lineEl.setAttribute("stroke", PEAK_MARK_COLOR);
+      lineEl.setAttribute("stroke-width", "3");
+      lineEl.setAttribute("stroke-linecap", "round");
+      peakMarksEl.appendChild(lineEl);
+
+      const numberEl = document.createElementNS(SVG_NS, "text");
+      numberEl.setAttribute("x", String(LAUNCHER_CX + PEAK_MARK_RX + 4));
+      numberEl.setAttribute("y", String(y + 4));
+      numberEl.setAttribute("text-anchor", "start");
+      numberEl.setAttribute("font-size", "11");
+      numberEl.setAttribute("font-weight", "700");
+      numberEl.setAttribute("fill", PEAK_MARK_COLOR);
+      numberEl.textContent = String(index + 1);
+      peakMarksEl.appendChild(numberEl);
+    });
+  }
+
+  function updateSceneVisuals() {
+    const platformY = state.platformSunk ? PLATFORM_Y_DOWN : PLATFORM_Y_UP;
+    const stemTop = state.platformSunk
+      ? PLATFORM_STEM_TOP_DOWN
+      : PLATFORM_STEM_TOP_UP;
+    const stemBottom = state.platformSunk
+      ? PLATFORM_STEM_BOTTOM_DOWN
+      : PLATFORM_STEM_BOTTOM_UP;
+
+    platformEl.setAttribute("y", String(platformY));
+    platformStemEl.setAttribute(
+      "d",
+      `M125.5 ${stemTop}V${stemBottom}`
+    );
+
+    const railFillPx = Math.max(
+      0,
+      ELLIPSE_REST_CY - state.ellipseY
+    );
+    const fillH = RAIL_CAP_MIN + railFillPx;
+    railFillEl.setAttribute("height", String(fillH));
+    railFillEl.setAttribute("rx", fillH <= 20 ? "9" : "10");
+
+    const showEnergyOnHeader =
+      state.showHeaderEnergy && (state.lastEnergy > 0 || state.showZeroEnergy);
+    headerDotsEl.setAttribute("visibility", showEnergyOnHeader ? "hidden" : "visible");
+    headerEnergyEl.setAttribute("visibility", showEnergyOnHeader ? "visible" : "hidden");
+    headerEnergyValueEl.setAttribute("visibility", showEnergyOnHeader ? "visible" : "hidden");
+    if (showEnergyOnHeader) {
+      headerEnergyValueEl.textContent = formatEnergyDisplay(
+        state.showZeroEnergy ? 0 : state.lastEnergy
+      );
+    } else {
+      headerEnergyValueEl.textContent = "—";
+    }
+  }
+
+  function objectHalfWidthPx() {
+    const preset = getCurrentPreset();
+    if (state.bodyKind === "objects") {
+      return state.radius * (preset.viewW / preset.viewH);
+    }
+    return state.radius;
+  }
+
+  function formatHeightDisplay(heightM) {
+    const rounded = Math.round(heightM * 100) / 100;
+    if (rounded <= 0) return "0 m";
+    return `${formatNum(rounded, 2)} m`;
+  }
+
+  function updateObjectHeightLabel() {
+    if (!objectHeightTextEl) return;
+
+    const heightM = ballYToHeightM(state.ballY, state.radius);
+    objectHeightTextEl.textContent = formatHeightDisplay(heightM);
+    objectHeightTextEl.setAttribute("x", String(BALL_X - objectHalfWidthPx() - 10));
+    objectHeightTextEl.setAttribute("y", String(state.ballY));
+    objectHeightTextEl.setAttribute("text-anchor", "end");
+    objectHeightTextEl.setAttribute("dominant-baseline", "middle");
+  }
+
+  function updateLabels() {
+    updateObjectHeightLabel();
+    const preset = getCurrentPreset();
+    setBodyVisualKind();
+    if (state.bodyKind === "objects") {
+      mountObjectSprite(preset);
+      const scale = (2 * state.radius) / preset.viewH;
+      ballEl.setAttribute(
+        "transform",
+        `translate(${BALL_X} ${state.ballY + state.radius}) scale(${scale})`
+      );
+    } else {
+      ballEl.setAttribute(
+        "transform",
+        `translate(${BALL_X} ${state.ballY}) scale(${state.radius / BALL_SHAPE_R})`
+      );
+      ballBodyEl.setAttribute("fill", preset.color);
+      ballBodyEl.setAttribute("stroke", preset.stroke);
+    }
+    launcherEl.setAttribute("cx", String(LAUNCHER_CX));
+    launcherEl.setAttribute("cy", state.ellipseY);
+    launcherEl.setAttribute("r", String(LAUNCHER_R));
+    updatePeakMarks();
+    updateSceneVisuals();
+  }
+
+  function setControlsEnabled(on) {
+    sliderHeight.disabled = !on;
+    btnRun.disabled = !on;
+    envToggleEl.querySelectorAll(".env-option").forEach((btn) => {
+      btn.disabled = !on;
+    });
+    bodyKindToggleEl.querySelectorAll(".body-kind-option").forEach((btn) => {
+      btn.disabled = !on;
+    });
+    ballPickerEl.querySelectorAll(".ball-option").forEach((btn) => {
+      btn.disabled = !on;
+    });
+    scene.classList.toggle("idle-ball", on);
+  }
+
+  function resetSimulation(options = {}) {
+    const keepHeight = options.keepHeight === true;
+    const heightM = keepHeight
+      ? clampHeightM(heightFromHeightSlider())
+      : INITIAL_HEIGHT_M;
+    cancelAnimationFrame(rafId);
+    applyItemPreset(state.itemIndex);
+    state.ballVy = 0;
+    state.ballHeightM = 0;
+    state.fallStartHeightM = 0;
+    state.ellipseY = ELLIPSE_REST_CY;
+    state.ellipseVy = 0;
+    state.mode = "idle";
+    state.impactHandled = false;
+    state.currentPeak = 0;
+    state.lastPeak = 0;
+    state.lastEnergy = 0;
+    state.peakMarks = [];
+    state.platformSunk = false;
+    state.showHeaderEnergy = false;
+    state.showZeroEnergy = false;
+    state.ellipseWasAscending = false;
+    setBallHeightM(heightM);
+    renderItemPicker();
+    renderEnvToggle();
+    renderBodyKindToggle();
+    setControlsEnabled(true);
+    updateLabels();
+  }
+
+  function launchEllipse(impactEnergy) {
+    state.lastEnergy = impactEnergy;
+    if (impactEnergy <= 0) return;
+    const peakPx = Math.min(
+      maxEllipsePeakPx(),
+      Math.max(MIN_ELLIPSE_PEAK_PX, impactEnergy * ENERGY_TO_HEIGHT)
+    );
+    state.currentPeak = 0;
+    state.targetPeak = peakPx;
+    state.ellipseWasAscending = false;
+    const v0 = Math.sqrt(2 * G_ELLIPSE * peakPx);
+    state.ellipseVy = -v0;
+  }
+
+  function onImpact() {
+    if (state.impactHandled) return false;
+    state.impactHandled = true;
+    const energy = state.mass * getGravity() * state.fallStartHeightM;
+    state.showHeaderEnergy = true;
+    if (energy <= 0) {
+      state.lastEnergy = 0;
+      state.showZeroEnergy = true;
+      updateLabels();
+      return false;
+    }
+    state.showZeroEnergy = false;
+    state.platformSunk = true;
+    launchEllipse(energy);
+    updateLabels();
+    return true;
+  }
+
+  function step(dt) {
+    const r = state.radius;
+
+    if (state.mode === "falling" || state.mode === "idle") {
+      if (state.mode === "falling") {
+        state.ballVy += getGravity() * dt; // m/s
+        state.ballHeightM -= state.ballVy * dt; // m (dolů)
+        if (state.ballHeightM <= 0) {
+          state.ballHeightM = 0;
+          state.ballVy = 0;
+          const ellipseLaunched = onImpact();
+          if (state.fallStartHeightM > 0) {
+            state.platformSunk = true;
+            state.ballY = fallLandBallY(r);
+          }
+          state.mode = ellipseLaunched ? "resting" : "idle";
+        } else {
+          state.ballY = heightMToBallY(state.ballHeightM, r);
+        }
+      }
+    }
+
+    if (state.ellipseVy !== 0 || state.ellipseY < ELLIPSE_REST_CY - 0.01) {
+      state.ellipseVy += G_ELLIPSE * dt;
+      state.ellipseY += state.ellipseVy * dt;
+
+      const peak = ELLIPSE_REST_CY - state.ellipseY;
+      if (state.ellipseVy < 0) {
+        if (peak > state.currentPeak) {
+          state.currentPeak = peak;
+        }
+        state.ellipseWasAscending = true;
+      } else if (state.ellipseWasAscending && state.currentPeak > 0) {
+        /* Diskrétní krok vrchol mírně podstřelí — značka musí sedět na stupnici (E · ENERGY_TO_HEIGHT). */
+        if (state.targetPeak > 0) state.currentPeak = state.targetPeak;
+        state.lastPeak = state.currentPeak;
+        state.peakMarks.push(state.currentPeak);
+        state.ellipseWasAscending = false;
+      }
+
+      if (state.ellipseY >= ELLIPSE_REST_CY) {
+        state.ellipseY = ELLIPSE_REST_CY;
+        state.ellipseVy = 0;
+      }
+    }
+  }
+
+  function tick(ts) {
+    if (!lastTs) lastTs = ts;
+    let dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    if (dt > 0.05) dt = 0.05;
+
+    step(dt);
+    updateLabels();
+
+    if (
+      state.mode === "falling" ||
+      state.ellipseVy !== 0 ||
+      state.ellipseY < ELLIPSE_REST_CY - 0.01
+    ) {
+      rafId = requestAnimationFrame(tick);
+    } else {
+      // Po úplném doznění animace umožni další spuštění bez resetu.
+      state.mode = "idle";
+      lastTs = 0;
+      setControlsEnabled(true);
+    }
+  }
+
+  function isEllipseAnimating() {
+    return (
+      state.ellipseVy !== 0 ||
+      state.ellipseY < ELLIPSE_REST_CY - 0.01
+    );
+  }
+
+  function recoverStuckSimulation() {
+    if (state.mode === "falling" || state.mode === "resting") {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+      lastTs = 0;
+      state.mode = "idle";
+      state.ballVy = 0;
+      setControlsEnabled(true);
+    }
+  }
+
+  function startFall() {
+    if (isEllipseAnimating()) return;
+    if (state.mode !== "idle") recoverStuckSimulation();
+    if (state.mode !== "idle") return;
+
+    state.ballHeightM = ballYToHeightM(state.ballY, state.radius);
+    state.fallStartHeightM = state.ballHeightM;
+    if (state.fallStartHeightM <= 0 || getGravity() === 0) {
+      state.lastEnergy = 0;
+      state.showZeroEnergy = true;
+      state.showHeaderEnergy = true;
+      updateLabels();
+      return;
+    }
+    state.showZeroEnergy = false;
+    state.mode = "falling";
+    state.ballVy = 0;
+    state.impactHandled = false;
+    setControlsEnabled(false);
+    lastTs = 0;
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function pointerToHeightM(clientY) {
+    const rect = scene.getBoundingClientRect();
+    const y = ((clientY - rect.top) / rect.height) * H;
+    const bottomY = y + state.radius;
+    const hPx = PLATFORM_Y_UP - bottomY;
+    return clampHeightM(hPx / HEIGHT_PX_PER_M);
+  }
+
+  scene.addEventListener("pointerdown", (e) => {
+    if (state.mode !== "idle") return;
+    const pt = scene.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const ctm = scene.getScreenCTM();
+    if (!ctm) return;
+    const svgPt = pt.matrixTransform(ctm.inverse());
+    const dx = svgPt.x - BALL_X;
+    const dy = svgPt.y - state.ballY;
+    if (dx * dx + dy * dy > (state.radius + 14) * (state.radius + 14)) return;
+    restorePlatformUp();
+    updateLabels();
+    state.dragging = true;
+    scene.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  scene.addEventListener("pointermove", (e) => {
+    if (!state.dragging) return;
+    setBallHeightM(pointerToHeightM(e.clientY));
+    updateLabels();
+  });
+
+  function endDrag(e) {
+    if (!state.dragging) return;
+    state.dragging = false;
+    try { scene.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+  }
+  scene.addEventListener("pointerup", endDrag);
+  scene.addEventListener("pointercancel", endDrag);
+
+  sliderHeight.addEventListener("input", () => {
+    setBallHeightM(heightFromHeightSlider());
+    updateLabels();
+  });
+
+  btnRun.addEventListener("click", startFall);
+  btnReset.addEventListener("click", resetSimulation);
+
+  applyEnvironmentUI();
+  applyBodyKindUI();
+  objectSpritesReady
+    .then(() => {
+      resetSimulation();
+      scheduleFitVizToScreen();
+    })
+    .catch((err) => console.error(err));
+  scheduleFitVizToScreen();
+})();
+  </script>
+</body>
+</html>
