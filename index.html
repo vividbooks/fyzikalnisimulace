@@ -1158,6 +1158,12 @@
             hash: "#/sim/hydraulicke_zarizeni",
             previewColor: "#e6f2ff",
           },
+          {
+            id: "plavani_potapeni",
+            title: "Plavání a potápění",
+            hash: "#/sim/plavani_potapeni",
+            previewColor: "#e6f2ff",
+          },
         ],
       },
       {
@@ -1236,6 +1242,7 @@
       vztlakova: "kapaliny",
       pascaluv_zakon: "kapaliny",
       hydraulicke_zarizeni: "kapaliny",
+      plavani_potapeni: "kapaliny",
       graf_pohyb: "zaklady",
       obsah: "zaklady",
       objem: "zaklady",
@@ -2308,6 +2315,25 @@
       </svg>`;
     }
 
+    function PlavaniPotapeniCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="plavani-a-potapeni/card-plavani-a-potapeni.svg"
+          x="4"
+          y="4"
+          width="124"
+          height="80"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
       if (tileId === "kladkostroj") return html`<${KladkostrojCardIllustration} />`;
@@ -2321,6 +2347,7 @@
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
       if (tileId === "pascaluv_zakon") return html`<${PascaluvZakonCardIllustration} />`;
       if (tileId === "hydraulicke_zarizeni") return html`<${HydraulickeZarizeniCardIllustration} />`;
+      if (tileId === "plavani_potapeni") return html`<${PlavaniPotapeniCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
       if (tileId === "videni") return html`<${BarevneVideniCardIllustration} />`;
       if (tileId === "skutecny_obraz") return html`<${SkutecnyObrazCardIllustration} />`;
@@ -2710,6 +2737,14 @@
           }
           return;
         }
+        if (simId === "plavani_potapeni") {
+          try {
+            window.location.replace(new URL("plavani-a-potapeni/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("plavani-a-potapeni/");
+          }
+          return;
+        }
         if (simId === "kineticka_energie") {
           try {
             window.location.replace(new URL("kineticka-energie/", window.location.href).href);
@@ -2961,7 +2996,7 @@
           </div>
         `;
       }
-      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni") {
+      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni" || simId === "plavani_potapeni") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

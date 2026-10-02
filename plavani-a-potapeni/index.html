@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Plavání a potápění</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <main class="scene" aria-label="Simulace plavání a potápění těles">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Plavání a potápění</h1>
+      </div>
+
+      <section class="panel-section" aria-label="Vybraný předmět">
+        <span class="panel-label">Předmět</span>
+        <div class="obj-card obj-card--empty" id="objCard" aria-live="polite">
+          <span class="obj-card__name" id="objName">Vyber předmět na poličce</span>
+          <span class="obj-card__row"><i class="qty">m</i> = <span class="obj-card__value" id="objMass"></span> g</span>
+          <span class="obj-card__row"><i class="qty">V</i> = <span class="obj-card__value" id="objVol"></span> cm³</span>
+          <span class="obj-card__row"><i class="qty">ρ</i> = <span class="obj-card__value" id="objRho"></span> kg/m³</span>
+          <span class="obj-card__verdict" id="objVerdict" hidden></span>
+        </div>
+        <span class="water-note">Hustota vody: <i class="qty">ρ</i><sub>v</sub> = 1&nbsp;000 kg/m³</span>
+      </section>
+
+      <section class="panel-section">
+        <button type="button" id="btnReset" class="action-btn action-btn--reset reset-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Vylovit předměty
+        </button>
+        <span class="panel-note">Předmět přetáhni do akvária, nebo na něj jen klepni. Z&nbsp;akvária ho můžeš zase vytáhnout.</span>
+      </section>
+    </aside>
+
+    <div class="scene-workspace" id="workspace">
+      <p class="sim-empty-hint" id="hintEl">Hoď předmět z&nbsp;poličky do akvária.</p>
+      <svg class="stage" id="stage" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" role="img"
+        aria-label="Akvárium s vodou a polička s předměty, které lze házet do vody"></svg>
+    </div>
+  </main>
+
+  <script src="main.js?v=1"></script>
+</body>
+</html>
