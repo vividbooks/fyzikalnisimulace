@@ -3,11 +3,11 @@
 
   const NS = "http://www.w3.org/2000/svg";
 
-  /* ---------- Geometrie (jednotky viewBoxu 1100 × 640) ---------- */
+  /* ---------- Geometrie (jednotky viewBoxu 1100 × 780) ---------- */
   /** Láhev z podkladového SVG (255 × 87) zvětšená S×, levý horní roh v (BX, BY). */
   const S = 3.4;
   const BX = 130;
-  const BY = 300;
+  const BY = 330;
   /** Dírky v horní hraně láhve (souřadnice podkladového SVG). */
   const HOLES_BX = [100, 150, 200];
   const HOLE_BY = 2.6;

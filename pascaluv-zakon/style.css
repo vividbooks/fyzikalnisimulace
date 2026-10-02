@@ -722,3 +722,7 @@ i.qty { font-style: italic; }
 @media (max-width: 760px) {
   .sim-empty-hint { top: 10px; }
 }
+
+/* Šipka síly a popisek pod láhví nesmí přesahovat spodní okraj plátna. */
+.scene-workspace { padding-bottom: 16px; }
+.stage { overflow: hidden; }
