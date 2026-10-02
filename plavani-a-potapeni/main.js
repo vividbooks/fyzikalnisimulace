@@ -183,12 +183,6 @@
     a.innerHTML = it.svg;
     const b = el('g', { 'clip-path': `url(#cb-${it.id})`, filter: 'url(#underwater)' }, it.g);
     b.innerHTML = it.svg;
-    // vodní linka kolem předmětu (jen přední polovina)
-    it.ring = el('ellipse', {
-      cx: 0, cy: 0, rx: it.w * 0.34, ry: it.w * 0.34, fill: 'none', stroke: '#E4F0FF',
-      'stroke-width': 2.5, 'vector-effect': 'non-scaling-stroke', opacity: 0,
-      'clip-path': `url(#cb-${it.id})`,
-    }, it.g);
 
     it.phase = 'shelf';
     it.x = it.slot.x;
@@ -207,9 +201,6 @@
     it.clipA.setAttribute('height', Math.max(0, wl + 600));
     it.clipB.setAttribute('y', wl);
     it.clipB.setAttribute('height', 600);
-    const sub = wl < 0 && wl > -(it.h + 40);
-    it.ring.setAttribute('opacity', sub ? 0.6 : 0);
-    if (sub) it.ring.setAttribute('transform', `matrix(0.982 -0.19 -0.74 -0.42 0 ${wl.toFixed(2)})`);
   }
 
   /* ---------- Karta předmětu ---------- */
