@@ -21,7 +21,7 @@
   /** Výška proudu při největší síle (jednotky scény) a „tíhové zrychlení“ kapek ve scéně. */
   const JET_H_MAX = 290;
   const G = 1500;
-  const DROPS_PER_SEC = 26;
+  const DROPS_PER_SEC = 34;
 
   const toX = (bx) => BX + bx * S;
   const toY = (by) => BY + by * S;
@@ -104,7 +104,7 @@
     const x = toX(pressBx());
     const squeeze = state.pressure * (state.force / F_MAX);
     const tipY = toY(BOTTOM_BY) + 6 - squeeze * 14;
-    const len = 60 + (state.force / F_MAX) * 90;
+    const len = 55 + (state.force / F_MAX) * 55;
     arrowG.setAttribute("transform", `translate(${x} 0)`);
     arrowShaft.setAttribute("y", String(tipY + 22));
     arrowShaft.setAttribute("height", String(len - 22));
@@ -124,37 +124,82 @@
     bottleWrap.setAttribute("transform", `translate(0 ${cy * (1 - k)}) scale(1 ${k})`);
   }
 
-  /* Souvislý proud z každé dírky (dvě čáry: sytější obrys + světlejší jádro). */
+  /* ---------- Vodotrysk ----------
+     Každá dírka: zužující se proud (výplň s přechodem), nahoře „koruna“, ze které voda
+     padá ve dvou obloucích zpět na láhev, a kapky s drobným odstřikem při dopadu. */
+  const defs = el("defs", null, stage);
+  const grad = el("linearGradient", { id: "jetGrad", x1: 0, y1: 1, x2: 0, y2: 0 }, defs);
+  el("stop", { offset: "0", "stop-color": "#2F7BEF" }, grad);
+  el("stop", { offset: "0.7", "stop-color": "#59A2FF" }, grad);
+  el("stop", { offset: "1", "stop-color": "#A9D0FF" }, grad);
+
   const streams = HOLES_BX.map((bx) => {
     const x = toX(bx);
-    const outer = el("path", { stroke: "#3B82F6", "stroke-width": 16, "stroke-linecap": "round", fill: "none", opacity: 0 }, jetsEl);
-    const inner = el("path", { stroke: "#9CC8FF", "stroke-width": 7, "stroke-linecap": "round", fill: "none", opacity: 0 }, jetsEl);
-    return { x, outer, inner, phase: Math.random() * 6 };
+    const g = el("g", { opacity: 0 }, jetsEl);
+    const arcs = [-1, 1].map((side) =>
+      el("path", { stroke: "#6FAEFF", "stroke-width": 5, "stroke-linecap": "round", "stroke-dasharray": "16 9", fill: "none", opacity: 0.8, "data-side": side }, g)
+    );
+    const body = el("path", { fill: "url(#jetGrad)" }, g);
+    const shine = el("path", { stroke: "#FFFFFF", "stroke-width": 2.6, "stroke-linecap": "round", "stroke-dasharray": "22 14", fill: "none", opacity: 0.75 }, g);
+    const crown = el("ellipse", { fill: "#A9D0FF", opacity: 0.9 }, g);
+    return { x, g, arcs, body, shine, crown, phase: Math.random() * 6 };
   });
+
+  /** Vodorovná rychlost vody v koruně (jednotky/s) — určuje šířku „deštníku“. */
+  const CROWN_VX = 95;
 
   function renderStreams(t) {
     const h = jetHeight();
     streams.forEach((st) => {
       if (h < 6) {
-        st.outer.setAttribute("opacity", "0");
-        st.inner.setAttribute("opacity", "0");
+        st.g.setAttribute("opacity", "0");
         return;
       }
-      const top = HOLE_Y - h + 6;
-      const w = 2.2 * Math.sin(t * 9 + st.phase);
-      const d = `M${st.x} ${HOLE_Y - 2}C${st.x + w} ${HOLE_Y - h * 0.35} ${st.x - w} ${HOLE_Y - h * 0.7} ${st.x} ${top}`;
-      st.outer.setAttribute("d", d);
-      st.inner.setAttribute("d", d);
-      const op = Math.min(1, state.pressure * 1.2).toFixed(2);
-      st.outer.setAttribute("opacity", op);
-      st.inner.setAttribute("opacity", op);
+      st.g.setAttribute("opacity", Math.min(1, state.pressure * 1.3).toFixed(2));
+      const x = st.x;
+      const top = HOLE_Y - h;
+      const w = 1.8 * Math.sin(t * 11 + st.phase);
+      const wb = 9; // poloviční šířka u dírky
+      const wt = 4.5; // poloviční šířka nahoře
+      /* Zužující se proud s lehkým chvěním. */
+      st.body.setAttribute(
+        "d",
+        `M${x - wb} ${HOLE_Y}` +
+          `C${x - wb + w} ${HOLE_Y - h * 0.4} ${x - wt + w} ${top + h * 0.25} ${x - wt} ${top + 4}` +
+          `Q${x} ${top - 3} ${x + wt} ${top + 4}` +
+          `C${x + wt - w} ${top + h * 0.25} ${x + wb - w} ${HOLE_Y - h * 0.4} ${x + wb} ${HOLE_Y}Z`
+      );
+      st.shine.setAttribute("d", `M${x - 3 + w * 0.5} ${HOLE_Y - 8}L${x - 2} ${top + 14}`);
+      /* Pohyb vody: čárkování proudu „teče“ nahoru, oblouky dolů. */
+      const speed = Math.sqrt(2 * G * h) * 0.35;
+      st.shine.setAttribute("stroke-dashoffset", ((t * speed) % 36).toFixed(1));
+      st.crown.setAttribute("cx", x);
+      st.crown.setAttribute("cy", top + 3);
+      st.crown.setAttribute("rx", 7 + 2 * Math.sin(t * 14 + st.phase));
+      st.crown.setAttribute("ry", 4.5);
+      /* Padající oblouky: vrh vodorovný z vrcholu, dopad na horní hranu láhve. */
+      const fallT = Math.sqrt((2 * (HOLE_Y - top)) / G);
+      st.arcs.forEach((arc) => {
+        const side = Number(arc.getAttribute("data-side"));
+        let d = "";
+        const n = 12;
+        for (let i = 0; i <= n; i++) {
+          const tt = (fallT * i) / n;
+          const px = x + side * (6 + CROWN_VX * tt);
+          const py = top + 3 + 0.5 * G * tt * tt;
+          d += (i ? "L" : "M") + px.toFixed(1) + " " + Math.min(py, HOLE_Y).toFixed(1);
+        }
+        arc.setAttribute("d", d);
+        arc.setAttribute("stroke-dashoffset", (-(t * 140) % 25).toFixed(1));
+        arc.setAttribute("stroke-width", (2 + 3 * Math.min(1, h / 120)).toFixed(1));
+      });
     });
   }
 
   const dropPool = [];
   function dropEl(i) {
     if (!dropPool[i]) {
-      dropPool[i] = el("circle", { fill: "#59A2FF", stroke: "#2F6FD1", "stroke-width": 1.2 }, jetsEl);
+      dropPool[i] = el("circle", { fill: "#59A2FF", stroke: "#2F6FD1", "stroke-width": 0.8, "fill-opacity": 0.9 }, jetsEl);
     }
     return dropPool[i];
   }
@@ -202,26 +247,44 @@
         state.emitAcc[k] += DROPS_PER_SEC * dt;
         while (state.emitAcc[k] >= 1) {
           state.emitAcc[k] -= 1;
-          /* Kapka startuje u vrcholu proudu a padá dolů do stran (koruna fontány). */
-          const up = Math.sqrt(2 * G * Math.min(h, 18));
+          /* Kapka se oddělí v koruně a padá do strany po oblouku (s rozptylem). */
+          const side = Math.random() < 0.5 ? -1 : 1;
           state.drops.push({
-            x: toX(bx) + (Math.random() - 0.5) * 6,
-            y: HOLE_Y - h + 8,
-            vx: (Math.random() - 0.5) * 120,
-            vy: -up * Math.random(),
-            r: 3 + Math.random() * 2.4,
+            x: toX(bx) + side * (4 + Math.random() * 6),
+            y: HOLE_Y - h + 4 + Math.random() * 6,
+            vx: side * (CROWN_VX * (0.6 + Math.random() * 0.8)),
+            vy: -Math.random() * 90,
+            r: 2.4 + Math.random() * 2.6,
+            splash: true,
           });
         }
       });
     }
 
-    const topY = HOLE_Y + 4;
+    const topY = HOLE_Y + 2;
+    const splashes = [];
     state.drops = state.drops.filter((d) => {
       d.vy += G * dt;
       d.x += d.vx * dt;
       d.y += d.vy * dt;
-      return !(d.vy > 0 && d.y > topY) && d.y < 700;
+      const landed = d.vy > 0 && d.y > topY;
+      if (landed && d.splash && Math.random() < 0.6) {
+        /* Drobný odstřik po dopadu na láhev. */
+        for (let i = 0; i < 2; i++) {
+          splashes.push({
+            x: d.x,
+            y: topY - 1,
+            vx: (Math.random() - 0.5) * 160,
+            vy: -(60 + Math.random() * 110),
+            r: 1.3 + Math.random() * 1.3,
+            splash: false,
+          });
+        }
+      }
+      return !landed && d.y < 700;
     });
+    if (splashes.length) state.drops.push(...splashes);
+    if (state.drops.length > 900) state.drops.splice(0, state.drops.length - 900);
 
     renderMarker();
     renderStreams(ts / 1000);
