@@ -656,9 +656,9 @@
     stage.querySelector('.liq-edge').setAttribute('stroke', L2.edge);
     document.getElementById('uwSurfaceMx').setAttribute('values', mixMatrix(L2.surface, 0.45));
     document.getElementById('uwFrontMx').setAttribute('values', mixMatrix(L2.volume, 0.38));
-    const txt = `hustota ${L2.gen}: <i class="qty">ρ</i> = ${fmt(L2.rho)} kg/m³`;
+    const txt = `hustota ${L2.gen}: <i class="qty">ρ</i> = ${fmt(L2.rho)} <span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span>`;
     densityEl.innerHTML = txt;
-    densityNote.innerHTML = `Hustota ${L2.gen}: <i class="qty">ρ</i><sub>k</sub> = ${fmt(L2.rho)}&nbsp;kg/m³`;
+    densityNote.innerHTML = `Hustota ${L2.gen}: <i class="qty">ρ</i><sub>k</sub> = ${fmt(L2.rho)}&nbsp;<span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span>`;
     document.querySelectorAll('button[data-liquid]').forEach((btn) => {
       const on = btn.dataset.liquid === next;
       btn.classList.toggle('is-active', on);
