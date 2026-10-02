@@ -16,7 +16,14 @@
   const WO = 317 * S;   // hladina pod horním okrajem
   const FO = 945 * S;   // dno pod horním okrajem
 
-  const RHO_W = 1000;
+  // kapaliny stejné jako v simulaci Hydrostatická tlaková síla
+  const LIQUIDS = {
+    water: { rho: 1000, gen: 'vody', volume: '#58A1FF', volOp: 0.7, surface: '#206CE8', edge: '#163C78' },
+    gasoline: { rho: 700, gen: 'benzínu', volume: '#F6EA9A', volOp: 0.85, surface: '#E0CC5A', edge: '#7A6A1E' },
+    glycerol: { rho: 1300, gen: 'glycerolu', volume: '#8EBEFF', volOp: 0.8, surface: '#5B9AF0', edge: '#22508F' },
+  };
+  let liquid = 'water';
+  let RHO_W = LIQUIDS.water.rho;
   const G = 1500;       // px/s²
   const C1 = 1.6;       // lineární odpor vody
   const CA = 0.3;       // součinitel přidané hmotnosti
@@ -97,11 +104,14 @@
         '<path d="M-16 -22Q0 -32 14 -20Q0 -12 -16 -22Z" fill="#F2B90F"/>',
     },
   ];
-  ITEMS.forEach((it) => {
-    it.rho = (it.m / it.V) * 1000;
-    // plovoucí předměty tlumíme skoro kriticky, aby se jen pohoupaly a nevyskakovaly
-    it.cLin = it.rho < RHO_W ? Math.max(C1, 1.5 * Math.sqrt((G * RHO_W) / (it.rho * it.h))) : C1;
-  });
+  function updateDamping() {
+    ITEMS.forEach((it) => {
+      // plovoucí předměty tlumíme skoro kriticky, aby se jen pohoupaly a nevyskakovaly
+      it.cLin = it.rho < RHO_W ? Math.max(C1, 1.5 * Math.sqrt((G * RHO_W) / (it.rho * it.h))) : C1;
+    });
+  }
+  ITEMS.forEach((it) => { it.rho = (it.m / it.V) * 1000; });
+  updateDamping();
 
   /* ---------- Polička ---------- */
   const SHELF_X = [95, 255];
@@ -140,11 +150,11 @@
   defs.innerHTML =
     // pod vodou: viděno skrz hladinu (tmavší modrá #206CE8) …
     '<filter id="uw-surface" color-interpolation-filters="sRGB">' +
-    '<feColorMatrix type="matrix" values="0.55 0 0 0 0.056  0 0.55 0 0 0.19  0 0 0.55 0 0.41  0 0 0 1 0"/>' +
+    '<feColorMatrix id="uwSurfaceMx" type="matrix" values="0.55 0 0 0 0.056  0 0.55 0 0 0.19  0 0 0.55 0 0.41  0 0 0 1 0"/>' +
     '</filter>' +
     // … nebo skrz přední stěnu (světlejší modrá #58A1FF)
     '<filter id="uw-front" color-interpolation-filters="sRGB">' +
-    '<feColorMatrix type="matrix" values="0.62 0 0 0 0.13  0 0.62 0 0 0.24  0 0 0.62 0 0.38  0 0 0 1 0"/>' +
+    '<feColorMatrix id="uwFrontMx" type="matrix" values="0.62 0 0 0 0.13  0 0.62 0 0 0.24  0 0 0.62 0 0.38  0 0 0 1 0"/>' +
     '</filter>' +
     // světlá linka hladiny přesně ve tvaru předmětu
     '<filter id="waterline" color-interpolation-filters="sRGB">' +
@@ -164,10 +174,10 @@
   L.back.innerHTML =
     `<g transform="${T}">` +
     '<path d="M2384.54 349.119L1811.54 10.6191L619.662 244.009M1811.54 10.6191V329.119" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-    '<path d="M619.666 560.694V1199.01C619.666 1199.01 629.351 1256.41 661.353 1280.9C693.355 1305.4 1097.77 1540.77 1097.77 1540.77C1097.77 1540.77 1157.57 1602.39 1310.6 1573.1C1463.63 1543.81 2343.54 1373.52 2343.54 1373.52L2385.88 1341.76L2391.45 1290.57V663.483C2391.45 663.483 2365.19 653.621 2302.5 615.818C2286.33 606.066 2266.18 594.618 2220.42 564.22C2188.43 542.982 2135.08 512.512 2095.25 489.228C2027.12 449.407 1956.91 413.638 1904.71 382.418C1855.23 352.826 1815.93 331.712 1815.93 331.712L619.666 560.694Z" fill="#58A1FF" fill-opacity="0.7"/>' +
-    '<path d="M618.664 561.076L774.633 646.195L977.489 758.506L1203.4 882.801L1428.42 841.369L1751.95 782.919L2105.2 717.459L2392.45 663.865L2229.53 569.483L2004.39 439.325L1816.32 330.094L1559.88 378.822L1146.28 457.919L810.037 524.168L618.664 561.076Z" fill="#206CE8" fill-opacity="0.8"/>' +
+    '<path d="M619.666 560.694V1199.01C619.666 1199.01 629.351 1256.41 661.353 1280.9C693.355 1305.4 1097.77 1540.77 1097.77 1540.77C1097.77 1540.77 1157.57 1602.39 1310.6 1573.1C1463.63 1543.81 2343.54 1373.52 2343.54 1373.52L2385.88 1341.76L2391.45 1290.57V663.483C2391.45 663.483 2365.19 653.621 2302.5 615.818C2286.33 606.066 2266.18 594.618 2220.42 564.22C2188.43 542.982 2135.08 512.512 2095.25 489.228C2027.12 449.407 1956.91 413.638 1904.71 382.418C1855.23 352.826 1815.93 331.712 1815.93 331.712L619.666 560.694Z" class="liq-volume" fill="#58A1FF" fill-opacity="0.7"/>' +
+    '<path d="M618.664 561.076L774.633 646.195L977.489 758.506L1203.4 882.801L1428.42 841.369L1751.95 782.919L2105.2 717.459L2392.45 663.865L2229.53 569.483L2004.39 439.325L1816.32 330.094L1559.88 378.822L1146.28 457.919L810.037 524.168L618.664 561.076Z" class="liq-surface" fill="#206CE8" fill-opacity="0.8"/>' +
     // zadní hrany pod hladinou – prosvítají vodou
-    '<path d="M1811.5 335V965.6M622 1199L1811.5 965.6L2389 1300" stroke="#163C78" stroke-opacity="0.55" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+    '<path d="M1811.5 335V965.6M622 1199L1811.5 965.6L2389 1300" class="liq-edge" stroke="#163C78" stroke-opacity="0.55" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
     '</g>';
   L.front.innerHTML =
     `<g transform="${T}" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round" fill="none">` +
@@ -348,7 +358,7 @@
   function splash(x, y, strength) {
     const n = Math.round(6 + strength * 10);
     for (let i = 0; i < n; i++) {
-      const c = el('circle', { r: (2.5 + Math.random() * 3.5).toFixed(1), fill: '#58A1FF' }, L.drops);
+      const c = el('circle', { r: (2.5 + Math.random() * 3.5).toFixed(1), fill: LIQUIDS[liquid].volume }, L.drops);
       drops.push({ c, x: x + (Math.random() - 0.5) * 30, y, vx: (Math.random() - 0.5) * 260 * (0.5 + strength),
         vy: -(140 + Math.random() * 300 * (0.4 + strength)), y0: y });
     }
@@ -515,5 +525,44 @@
     }
   });
 
-  window.__plavaniSim = { ITEMS, throwTo, columnFor };
+  /* ---------- Kapalina ---------- */
+  const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const mixMatrix = (color, k) => {
+    const c = hex(color);
+    const a = (1 - k).toFixed(3);
+    return `${a} 0 0 0 ${(c[0] * k).toFixed(3)}  0 ${a} 0 0 ${(c[1] * k).toFixed(3)}  0 0 ${a} 0 ${(c[2] * k).toFixed(3)}  0 0 0 1 0`;
+  };
+  const densityEl = document.getElementById('liquidDensity');
+  const densityNote = document.getElementById('liquidNote');
+
+  function setLiquid(next) {
+    if (!LIQUIDS[next]) return;
+    liquid = next;
+    const L2 = LIQUIDS[next];
+    RHO_W = L2.rho;
+    updateDamping();
+    stage.querySelector('.liq-volume').setAttribute('fill', L2.volume);
+    stage.querySelector('.liq-volume').setAttribute('fill-opacity', L2.volOp);
+    stage.querySelector('.liq-surface').setAttribute('fill', L2.surface);
+    stage.querySelector('.liq-edge').setAttribute('stroke', L2.edge);
+    document.getElementById('uwSurfaceMx').setAttribute('values', mixMatrix(L2.surface, 0.45));
+    document.getElementById('uwFrontMx').setAttribute('values', mixMatrix(L2.volume, 0.38));
+    const txt = `hustota ${L2.gen}: <i class="qty">ρ</i> = ${fmt(L2.rho)} kg/m³`;
+    densityEl.innerHTML = txt;
+    densityNote.innerHTML = `Hustota ${L2.gen}: <i class="qty">ρ</i><sub>k</sub> = ${fmt(L2.rho)}&nbsp;kg/m³`;
+    document.querySelectorAll('button[data-liquid]').forEach((btn) => {
+      const on = btn.dataset.liquid === next;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    // předměty ve vodě se podle nové kapaliny znovu rozhodnou, jestli plavou
+    ITEMS.forEach((it) => { if (it.phase === 'water') it.phase = 'water'; });
+    if (selected) showCard(selected);
+  }
+  document.querySelectorAll('button[data-liquid]').forEach((btn) => {
+    btn.addEventListener('click', () => { hideHint(); setLiquid(btn.dataset.liquid); });
+  });
+  setLiquid('water');
+
+  window.__plavaniSim = { setLiquid, ITEMS, throwTo, columnFor };
 })();

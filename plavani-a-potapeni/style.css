@@ -749,3 +749,60 @@ i.qty { font-style: italic; }
 @media (max-width: 760px) {
   .sim-empty-hint { top: 10px; }
 }
+
+/* ---------- Výběr kapaliny ---------- */
+
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.mode-switch__btn {
+  appearance: none;
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mode-switch__btn:hover { color: var(--text); }
+
+.mode-switch__btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.mode-switch__btn.is-active {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+/* Hustota kapaliny v plátně (vpravo dole, pod akváriem). */
+.liquid-readout {
+  position: absolute;
+  bottom: 16px;
+  right: 24px;
+  z-index: 6;
+  margin: 0;
+  padding: 8px 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 22px;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .liquid-readout { bottom: 10px; right: 10px; font-size: 15px; padding: 4px 10px; }
+}
