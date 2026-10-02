@@ -248,28 +248,22 @@
   /* ---------- Šipky sil ---------- */
   function makeArrow(parent, color, sub) {
     const g = el('g', {}, parent);
-    const halo = el('path', { fill: 'none', stroke: '#ffffff', 'stroke-width': 10, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.85 }, g);
-    const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
-    const head = el('path', { fill: color, stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round' }, g);
-    const text = el('text', {
-      'font-size': 22, 'font-weight': 600, fill: color, stroke: '#ffffff', 'stroke-width': 5,
-      'paint-order': 'stroke', 'stroke-linejoin': 'round',
-    }, g);
-    text.innerHTML = `<tspan font-style="italic">F</tspan><tspan font-size="15" dy="5">${sub}</tspan>`;
-    return { g, halo, shaft, head, text };
+    const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 4 }, g);
+    const head = el('path', { fill: color }, g);
+    const text = el('text', { 'font-size': 20, fill: color }, g);
+    text.innerHTML = `<tspan font-style="italic">F</tspan><tspan font-size="14" dy="5">${sub}</tspan>`;
+    return { g, shaft, head, text };
   }
 
   function setArrow(a, x, y, len, dir) {
     if (len < 3) { a.g.setAttribute('opacity', 0); return; }
     a.g.setAttribute('opacity', 1);
-    const hl = Math.min(16, len * 0.6);
+    const hl = Math.min(12, len * 0.6);
     const yEnd = y + dir * len;
     const yShaft = y + dir * (len - hl);
     a.shaft.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yShaft.toFixed(1)}`);
-    const head = `M${(x - 9).toFixed(1)} ${yShaft.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + 9).toFixed(1)} ${yShaft.toFixed(1)}Z`;
-    a.head.setAttribute('d', head);
-    a.halo.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yShaft.toFixed(1)}${head}`);
-    a.text.setAttribute('x', (x + 12).toFixed(1));
+    a.head.setAttribute('d', `M${(x - 7).toFixed(1)} ${yShaft.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + 7).toFixed(1)} ${yShaft.toFixed(1)}Z`);
+    a.text.setAttribute('x', (x + 9).toFixed(1));
     a.text.setAttribute('y', (yEnd + (dir > 0 ? -2 : 14)).toFixed(1));
   }
 
