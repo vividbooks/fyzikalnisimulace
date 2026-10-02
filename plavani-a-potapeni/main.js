@@ -268,8 +268,10 @@
     return best;
   }
 
+  // předmět spadne do vody jen tehdy, když je puštěn nad otvorem akvária
+  // (nad horní hranou přední stěny); jinak se vrátí na poličku
   function overAquarium(x, y) {
-    return x > C_L.x + 10 && x < C_R.x - 10 && y < yBot(x) + FO + 20;
+    return x > C_L.x + 10 && x < C_R.x - 10 && y <= yBot(x);
   }
 
   function moveToLayer(it, layer) {
