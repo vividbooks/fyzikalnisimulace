@@ -132,8 +132,13 @@
   /* ---------- Sestavení scény ---------- */
   const defs = el('defs', {}, stage);
   defs.innerHTML =
-    '<filter id="underwater" color-interpolation-filters="sRGB">' +
-    '<feColorMatrix type="matrix" values="0.7 0 0 0 0.1  0 0.7 0 0 0.19  0 0 0.7 0 0.3  0 0 0 1 0"/>' +
+    // pod vodou: viděno skrz hladinu (tmavší modrá #206CE8) …
+    '<filter id="uw-surface" color-interpolation-filters="sRGB">' +
+    '<feColorMatrix type="matrix" values="0.55 0 0 0 0.056  0 0.55 0 0 0.19  0 0 0.55 0 0.41  0 0 0 1 0"/>' +
+    '</filter>' +
+    // … nebo skrz přední stěnu (světlejší modrá #58A1FF)
+    '<filter id="uw-front" color-interpolation-filters="sRGB">' +
+    '<feColorMatrix type="matrix" values="0.62 0 0 0 0.13  0 0.62 0 0 0.24  0 0 0.62 0 0.38  0 0 0 1 0"/>' +
     '</filter>' +
     // světlá linka hladiny přesně ve tvaru předmětu
     '<filter id="waterline" color-interpolation-filters="sRGB">' +
@@ -180,6 +185,10 @@
     it.clipA = el('path', {}, ca);
     const cb = el('clipPath', { id: `cb-${it.id}`, clipPathUnits: 'userSpaceOnUse' }, defs);
     it.clipB = el('path', {}, cb);
+    const cs = el('clipPath', { id: `cs-${it.id}`, clipPathUnits: 'userSpaceOnUse' }, defs);
+    it.clipS = el('path', {}, cs);
+    const cf = el('clipPath', { id: `cf-${it.id}`, clipPathUnits: 'userSpaceOnUse' }, defs);
+    it.clipF = el('path', {}, cf);
     const cl = el('clipPath', { id: `cl-${it.id}`, clipPathUnits: 'userSpaceOnUse' }, defs);
     it.clipL = el('path', {}, cl);
 
@@ -187,8 +196,9 @@
     el('rect', { x: -it.w / 2 - 8, y: -it.h - 30, width: it.w + 16, height: it.h + 36, fill: 'transparent' }, it.g);
     const a = el('g', { 'clip-path': `url(#ca-${it.id})` }, it.g);
     a.innerHTML = it.svg;
-    const b = el('g', { 'clip-path': `url(#cb-${it.id})`, filter: 'url(#underwater)' }, it.g);
-    b.innerHTML = it.svg;
+    const b = el('g', { 'clip-path': `url(#cb-${it.id})` }, it.g);
+    el('g', { 'clip-path': `url(#cs-${it.id})`, filter: 'url(#uw-surface)' }, b).innerHTML = it.svg;
+    el('g', { 'clip-path': `url(#cf-${it.id})`, filter: 'url(#uw-front)' }, b).innerHTML = it.svg;
     const l = el('g', { 'clip-path': `url(#cl-${it.id})`, filter: 'url(#waterline)', opacity: 0.85 }, it.g);
     l.innerHTML = it.svg;
 
@@ -207,11 +217,19 @@
     if (it.phase === 'water' || it.phase === 'fall') wl = it.y0 + WO - it.y;
     // hladina protíná předmět v elipse (pohled shora šikmo) – vidíme její přední oblouk
     const W = it.w / 2 + 8;
-    const ry = (W * 0.3).toFixed(2);
+    // oblouk nesmí klesnout pod ponořenou část (jinak u mělce ponořených předmětů zmizí)
+    const ry = Math.max(1, Math.min(W * 0.3, Math.max(0, -wl) * 0.55)).toFixed(2);
     const y1 = wl.toFixed(2);
     const y2 = (wl + 3).toFixed(2);
     it.clipA.setAttribute('d', `M${-W} -600H${W}V${y1}A${W} ${ry} 0 0 1 ${-W} ${y1}Z`);
     it.clipB.setAttribute('d', `M${-W} ${y1}A${W} ${ry} 0 0 0 ${W} ${y1}V600H${-W}Z`);
+    // hranice mezi pohledem skrz hladinu a skrz přední stěnu = přední hrana hladiny
+    const e = (lx) => (yBot(it.x + lx) + WO - it.y).toFixed(2);
+    const fx = C_F.x - it.x;
+    const mid = fx > -W && fx < W ? `L${fx.toFixed(2)} ${e(fx)}` : '';
+    const midRev = mid;
+    it.clipS.setAttribute('d', `M${-W} -600H${W}V${e(W)}${midRev}L${-W} ${e(-W)}Z`);
+    it.clipF.setAttribute('d', `M${-W} ${e(-W)}${mid}L${W} ${e(W)}V600H${-W}Z`);
     it.clipL.setAttribute('d', `M${-W} ${y1}A${W} ${ry} 0 0 0 ${W} ${y1}V${y2}A${W} ${ry} 0 0 1 ${-W} ${y2}Z`);
   }
 
