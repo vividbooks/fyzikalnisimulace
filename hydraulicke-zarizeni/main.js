@@ -59,6 +59,8 @@
     s += hatRed
       ? `<path d="${WORKER_HAT}" fill="#F03B50" stroke="#F03B50"/>`
       : `<path d="${WORKER_HAT}" fill="white"/>`;
+    // nápis na montérkách (zrcadlený dělník má text otočený zpět, aby byl čitelný)
+    s += `<text x="${mirror ? -927 : 927}" y="561" transform="${mirror ? 'scale(-1 1)' : ''}" text-anchor="middle" font-size="29" font-weight="600" fill="#1D1D1B" stroke="none">100 kg</text>`;
     s += '</g>';
     return s;
   }
