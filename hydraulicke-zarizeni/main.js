@@ -237,6 +237,12 @@
     outputs.areaR.textContent = `${state.S.R} m²`;
     outputs.workersL.textContent = String(state.n.L);
     outputs.workersR.textContent = String(state.n.R);
+    // modrý pruh slideru musí končit u jezdce
+    for (const inp of Object.values(inputs)) {
+      const min = Number(inp.min), max = Number(inp.max);
+      const fill = ((Number(inp.value) - min) / (max - min)) * 100;
+      inp.style.setProperty('--fill', `${fill}%`);
+    }
   }
 
   function setWinner(side) {
