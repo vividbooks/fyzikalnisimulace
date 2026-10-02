@@ -1146,6 +1146,12 @@
             hash: "#/sim/vztlakova",
             previewColor: "#ffffe6",
           },
+          {
+            id: "pascaluv_zakon",
+            title: "Pascalův zákon",
+            hash: "#/sim/pascaluv_zakon",
+            previewColor: "#e6f2ff",
+          },
         ],
       },
       {
@@ -1222,6 +1228,7 @@
       hra_newton: "sily",
       hydrostatika: "kapaliny",
       vztlakova: "kapaliny",
+      pascaluv_zakon: "kapaliny",
       graf_pohyb: "zaklady",
       obsah: "zaklady",
       objem: "zaklady",
@@ -2256,6 +2263,25 @@
       </svg>`;
     }
 
+    function PascaluvZakonCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="pascaluv-zakon/card-pascaluv-zakon.svg"
+          x="4"
+          y="4"
+          width="124"
+          height="80"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HubCardIllustration({ tileId }) {
       if (tileId === "paka") return html`<${LeverCardIllustration} />`;
       if (tileId === "kladkostroj") return html`<${KladkostrojCardIllustration} />`;
@@ -2267,6 +2293,7 @@
       if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
       if (tileId === "hydrostatika") return html`<${HydrostatikaCardIllustration} />`;
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
+      if (tileId === "pascaluv_zakon") return html`<${PascaluvZakonCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
       if (tileId === "videni") return html`<${BarevneVideniCardIllustration} />`;
       if (tileId === "skutecny_obraz") return html`<${SkutecnyObrazCardIllustration} />`;
@@ -2640,6 +2667,14 @@
           }
           return;
         }
+        if (simId === "pascaluv_zakon") {
+          try {
+            window.location.replace(new URL("pascaluv-zakon/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("pascaluv-zakon/");
+          }
+          return;
+        }
         if (simId === "kineticka_energie") {
           try {
             window.location.replace(new URL("kineticka-energie/", window.location.href).href);
@@ -2885,6 +2920,13 @@
         `;
       }
       if (simId === "tepelna_kapacita_puvodni") {
+        return html`
+          <div class="app">
+            <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
+          </div>
+        `;
+      }
+      if (simId === "pascaluv_zakon") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
