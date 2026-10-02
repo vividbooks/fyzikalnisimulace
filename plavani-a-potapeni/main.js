@@ -133,7 +133,11 @@
   const defs = el('defs', {}, stage);
   defs.innerHTML =
     '<filter id="underwater" color-interpolation-filters="sRGB">' +
-    '<feColorMatrix type="matrix" values="0.58 0 0 0 0.12  0 0.58 0 0 0.25  0 0 0.6 0 0.4  0 0 0 1 0"/>' +
+    '<feColorMatrix type="matrix" values="0.7 0 0 0 0.1  0 0.7 0 0 0.19  0 0 0.7 0 0.3  0 0 0 1 0"/>' +
+    '</filter>' +
+    // světlá linka hladiny přesně ve tvaru předmětu
+    '<filter id="waterline" color-interpolation-filters="sRGB">' +
+    '<feFlood flood-color="#EEF6FF"/><feComposite in2="SourceAlpha" operator="in"/>' +
     '</filter>';
 
   const L = {};
@@ -173,9 +177,11 @@
   // předměty
   for (const it of ITEMS) {
     const ca = el('clipPath', { id: `ca-${it.id}`, clipPathUnits: 'userSpaceOnUse' }, defs);
-    it.clipA = el('rect', { x: -300, width: 600, y: -600, height: 1200 }, ca);
+    it.clipA = el('path', {}, ca);
     const cb = el('clipPath', { id: `cb-${it.id}`, clipPathUnits: 'userSpaceOnUse' }, defs);
-    it.clipB = el('rect', { x: -300, width: 600, y: 600, height: 0 }, cb);
+    it.clipB = el('path', {}, cb);
+    const cl = el('clipPath', { id: `cl-${it.id}`, clipPathUnits: 'userSpaceOnUse' }, defs);
+    it.clipL = el('path', {}, cl);
 
     it.g = el('g', { class: 'item', 'data-id': it.id }, L.top);
     el('rect', { x: -it.w / 2 - 8, y: -it.h - 30, width: it.w + 16, height: it.h + 36, fill: 'transparent' }, it.g);
@@ -183,6 +189,8 @@
     a.innerHTML = it.svg;
     const b = el('g', { 'clip-path': `url(#cb-${it.id})`, filter: 'url(#underwater)' }, it.g);
     b.innerHTML = it.svg;
+    const l = el('g', { 'clip-path': `url(#cl-${it.id})`, filter: 'url(#waterline)', opacity: 0.85 }, it.g);
+    l.innerHTML = it.svg;
 
     it.phase = 'shelf';
     it.x = it.slot.x;
@@ -197,10 +205,14 @@
     it.g.setAttribute('transform', `translate(${it.x.toFixed(2)} ${it.y.toFixed(2)})`);
     let wl = 1000;
     if (it.phase === 'water' || it.phase === 'fall') wl = it.y0 + WO - it.y;
-    it.clipA.setAttribute('y', -600);
-    it.clipA.setAttribute('height', Math.max(0, wl + 600));
-    it.clipB.setAttribute('y', wl);
-    it.clipB.setAttribute('height', 600);
+    // hladina protíná předmět v elipse (pohled shora šikmo) – vidíme její přední oblouk
+    const W = it.w / 2 + 8;
+    const ry = (W * 0.3).toFixed(2);
+    const y1 = wl.toFixed(2);
+    const y2 = (wl + 3).toFixed(2);
+    it.clipA.setAttribute('d', `M${-W} -600H${W}V${y1}A${W} ${ry} 0 0 1 ${-W} ${y1}Z`);
+    it.clipB.setAttribute('d', `M${-W} ${y1}A${W} ${ry} 0 0 0 ${W} ${y1}V600H${-W}Z`);
+    it.clipL.setAttribute('d', `M${-W} ${y1}A${W} ${ry} 0 0 0 ${W} ${y1}V${y2}A${W} ${ry} 0 0 1 ${-W} ${y2}Z`);
   }
 
   /* ---------- Karta předmětu ---------- */
