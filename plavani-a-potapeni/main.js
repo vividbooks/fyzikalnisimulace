@@ -248,7 +248,7 @@
     if (top > bot) { const mid = (top + bot) / 2; top = mid; bot = mid; }
     let y0;
     if (ry >= top && ry <= bot) y0 = ry;
-    else if (ry > bot) y0 = Math.min(bot, Math.max(top, ry - WO));
+    else if (ry > bot) y0 = bot;
     else y0 = (top + bot) / 2;
     return { x, y0 };
   }
@@ -281,8 +281,10 @@
   function throwTo(it, col, arc) {
     it.y0 = col.y0;
     const startY = col.y0 - 70;
-    if (!arc && it.y < startY && Math.abs(it.x - col.x) < 1) {
-      startFall(it, 0);
+    if (!arc) {
+      // puštěný předmět jen padá dolů (případně se trochu posune do strany, aby se vešel do akvária)
+      if (Math.abs(it.x - col.x) < 1) startFall(it, 0);
+      else tween(it, { x: col.x, y: it.y }, 160, 0, () => startFall(it, 0));
       return;
     }
     tween(it, { x: col.x, y: Math.min(startY, it.y < startY ? it.y : startY) }, arc ? 620 : 260, arc ? 110 : 0, () => startFall(it, arc ? 180 : 0));
