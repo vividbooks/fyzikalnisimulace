@@ -273,7 +273,7 @@
 
   function updateForces() {
     for (const it of ITEMS) {
-      const show = forcesOn && (it.phase === 'water' || it.phase === 'fall');
+      const show = forcesOn && inLiquid(it);
       it.arrows.g.setAttribute('opacity', show ? 1 : 0);
       if (!show) continue;
       const cx = it.x;
@@ -283,7 +283,7 @@
       setArrow(it.arrows.fg, cx, cy, ARROW_G, 1);
       setArrow(it.arrows.fvz, cx, cy, Math.min(ARROW_MAX, (ARROW_G * fvz) / fg), -1);
     }
-    if (selected && forcesOn && (selected.phase === 'water' || selected.phase === 'fall')) {
+    if (selected && forcesOn && inLiquid(selected)) {
       card.forces.hidden = false;
       card.fg.textContent = fmtN(forceFG(selected));
       card.fvz.textContent = fmtN(forceFvz(selected));
@@ -292,10 +292,12 @@
     }
   }
 
+  function inLiquid(it) { return it.phase === 'water' || it.phase === 'fall' || it.phase === 'hold'; }
+
   function placeItem(it) {
     it.g.setAttribute('transform', `translate(${it.x.toFixed(2)} ${it.y.toFixed(2)})`);
     let wl = 1000;
-    if (it.phase === 'water' || it.phase === 'fall') wl = it.y0 + WO - it.y;
+    if (inLiquid(it)) wl = it.y0 + WO - it.y;
     // hladina protíná předmět v elipse (pohled shora šikmo) – vidíme její přední oblouk
     const W = it.w / 2 + 8;
     // oblouk nesmí klesnout pod ponořenou část (jinak u mělce ponořených předmětů zmizí)
@@ -534,10 +536,19 @@
     hideHint();
     e.preventDefault();
     const p = toSvg(e);
-    drag = { it, dx: it.x - p.x, dy: it.y - p.y, sx: p.x, sy: p.y, moved: false, from: it.phase };
-    it.phase = 'drag';
-    it.wet = false;
-    moveToLayer(it, L.top);
+    const from = it.phase;
+    drag = { it, dx: it.x - p.x, dy: it.y - p.y, sx: p.x, sy: p.y, moved: false, from,
+      mode: 'free', lastY: it.y, lastT: performance.now(), vy: 0 };
+    if (from === 'water' || from === 'fall') {
+      // předmět v kapalině držíme v akváriu – jde ho ponořit pod hladinu
+      drag.mode = 'aq';
+      it.phase = 'hold';
+      it.vy = 0;
+    } else {
+      it.phase = 'drag';
+      it.wet = false;
+      moveToLayer(it, L.top);
+    }
     g.classList.add('is-dragging');
     stage.setPointerCapture(e.pointerId);
     showCard(it);
@@ -548,18 +559,50 @@
     if (!drag) return;
     const p = toSvg(e);
     if (Math.hypot(p.x - drag.sx, p.y - drag.sy) > 6) drag.moved = true;
-    drag.it.x = p.x + drag.dx;
-    drag.it.y = p.y + drag.dy;
-    placeItem(drag.it);
+    const it = drag.it;
+    let x = p.x + drag.dx;
+    let y = p.y + drag.dy;
+    if (drag.mode === 'aq') {
+      if (y < it.y0 - 40) {
+        // vytažen nad akvárium → volné přenášení
+        drag.mode = 'free';
+        it.phase = 'drag';
+        it.wet = false;
+        moveToLayer(it, L.top);
+      } else {
+        const col = columnFor(it, x, it.y0);
+        x = col.x;
+        it.y0 = col.y0;
+        y = Math.min(y, it.y0 + FO - 6);
+        it.sub = Math.max(0, Math.min(1, (y - (it.y0 + WO)) / it.h));
+        const now = performance.now();
+        const dt = Math.max(0.008, (now - drag.lastT) / 1000);
+        drag.vy = (y - drag.lastY) / dt;
+        drag.lastY = y;
+        drag.lastT = now;
+      }
+    }
+    it.x = x;
+    it.y = y;
+    placeItem(it);
   });
 
   function endDrag(e) {
     if (!drag) return;
     const { it, moved, from } = drag;
+    const lastVy = drag.vy || 0;
     drag = null;
     it.g.classList.remove('is-dragging');
     try { stage.releasePointerCapture(e.pointerId); } catch (_) { /* nic */ }
 
+    if (it.phase === 'hold') {
+      // puštění v akváriu – dál už jen fyzika (lehké vyplavou, těžké klesnou)
+      it.vy = Math.max(-500, Math.min(500, lastVy));
+      it.phase = it.y >= it.y0 + WO ? 'water' : 'fall';
+      it.wet = it.phase === 'water';
+      sortWater();
+      return;
+    }
     if (!moved) {
       if (from === 'shelf') {
         // klepnutí → hoď do náhodného místa akvária
