@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hydraulické zařízení</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <main class="scene" aria-label="Simulace hydraulického zařízení">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Hydraulické zařízení</h1>
+      </div>
+
+      <section class="panel-section panel-section--piston" aria-label="Levý píst">
+        <span class="panel-group-title">Levý píst</span>
+        <div class="slider-row">
+          <label class="panel-label" for="areaL">Plocha pístu</label>
+          <div class="speed-control">
+            <input type="range" id="areaL" class="speed-control__slider" min="1" max="5" step="1" value="4" />
+            <output class="speed-control__value" id="areaLValue" for="areaL">4 m²</output>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label class="panel-label" for="workersL">Počet dělníků</label>
+          <div class="speed-control">
+            <input type="range" id="workersL" class="speed-control__slider" min="1" max="6" step="1" value="3" />
+            <output class="speed-control__value" id="workersLValue" for="workersL">3</output>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-section panel-section--piston" aria-label="Pravý píst">
+        <span class="panel-group-title">Pravý píst</span>
+        <div class="slider-row">
+          <label class="panel-label" for="areaR">Plocha pístu</label>
+          <div class="speed-control">
+            <input type="range" id="areaR" class="speed-control__slider" min="1" max="5" step="1" value="1" />
+            <output class="speed-control__value" id="areaRValue" for="areaR">1 m²</output>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label class="panel-label" for="workersR">Počet dělníků</label>
+          <div class="speed-control">
+            <input type="range" id="workersR" class="speed-control__slider" min="1" max="6" step="1" value="1" />
+            <output class="speed-control__value" id="workersRValue" for="workersR">1</output>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <div class="actions-row" aria-label="Akce simulace">
+          <button type="button" id="btnRun" class="action-btn action-btn--run">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12 8 5.14z"/>
+            </svg>
+            Spustit
+          </button>
+          <button type="button" id="btnReset" class="action-btn action-btn--reset">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Znovu
+          </button>
+        </div>
+        <span class="panel-note">Každý dělník má hmotnost 100&nbsp;kg, působí tedy na píst silou 1&nbsp;000&nbsp;N.</span>
+      </section>
+    </aside>
+
+    <div class="scene-workspace" id="workspace">
+      <div class="piston-info piston-info--left" id="infoL" aria-live="polite">
+        <span class="piston-info__name">Levý píst</span>
+        <span class="piston-info__row"><i class="qty">S</i><sub>1</sub> = <span class="piston-info__value" data-k="S">4</span> m²</span>
+        <span class="piston-info__row"><i class="qty">F</i><sub>1</sub> = <span class="piston-info__value" data-k="F">3 000</span> N</span>
+        <span class="piston-info__row piston-info__row--p"><i class="qty">p</i><sub>1</sub> = <span class="piston-info__value" data-k="p">?</span> Pa</span>
+      </div>
+      <div class="piston-info piston-info--right" id="infoR" aria-live="polite">
+        <span class="piston-info__name">Pravý píst</span>
+        <span class="piston-info__row"><i class="qty">S</i><sub>2</sub> = <span class="piston-info__value" data-k="S">1</span> m²</span>
+        <span class="piston-info__row"><i class="qty">F</i><sub>2</sub> = <span class="piston-info__value" data-k="F">1 000</span> N</span>
+        <span class="piston-info__row piston-info__row--p"><i class="qty">p</i><sub>2</sub> = <span class="piston-info__value" data-k="p">?</span> Pa</span>
+      </div>
+
+      <p class="sim-empty-hint" id="hintEl">Nastav písty a&nbsp;dělníky, pak stiskni Spustit.</p>
+      <p class="result-banner" id="resultEl" hidden></p>
+
+      <svg class="stage" id="stage" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" role="img"
+        aria-label="Hydraulický lis se dvěma písty spojenými kapalinou; na pístech stojí dělníci"></svg>
+    </div>
+  </main>
+
+  <script src="main.js?v=1"></script>
+</body>
+</html>
