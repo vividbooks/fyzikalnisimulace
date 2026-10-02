@@ -834,7 +834,7 @@ i.qty { font-style: italic; }
 }
 
 .force-legend__swatch--fg { background: #E11D48; }
-.force-legend__swatch--fvz { background: #16A34A; }
+.force-legend__swatch--fvz { background: #22C55E; }
 
 .obj-card__forces {
   display: grid;

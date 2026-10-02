@@ -31,9 +31,9 @@
   const C2 = 0.012;
   const G_REAL = 10;    // N/kg pro výpočet sil
   const COL_FG = '#E11D48';
-  const COL_FVZ = '#16A34A';
-  const ARROW_G = 60;   // délka šipky tíhové síly (px)
-  const ARROW_MAX = 170;
+  const COL_FVZ = '#0B6B2E';
+  const ARROW_G = 95;   // délka šipky tíhové síly (px)
+  const ARROW_MAX = 240;
   let forcesOn = false;     // kvadratický odpor vody
 
   const lerpY = (P, Q, x) => P.y + ((x - P.x) / (Q.x - P.x)) * (Q.y - P.y);
@@ -248,7 +248,7 @@
   /* ---------- Šipky sil ---------- */
   function makeArrow(parent, color, sub) {
     const g = el('g', {}, parent);
-    const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 4 }, g);
+    const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 5 }, g);
     const head = el('path', { fill: color }, g);
     const text = el('text', { 'font-size': 20, fill: color }, g);
     text.innerHTML = `<tspan font-style="italic">F</tspan><tspan font-size="14" dy="5">${sub}</tspan>`;
@@ -258,11 +258,11 @@
   function setArrow(a, x, y, len, dir) {
     if (len < 3) { a.g.setAttribute('opacity', 0); return; }
     a.g.setAttribute('opacity', 1);
-    const hl = Math.min(12, len * 0.6);
+    const hl = Math.min(15, len * 0.6);
     const yEnd = y + dir * len;
     const yShaft = y + dir * (len - hl);
     a.shaft.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yShaft.toFixed(1)}`);
-    a.head.setAttribute('d', `M${(x - 7).toFixed(1)} ${yShaft.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + 7).toFixed(1)} ${yShaft.toFixed(1)}Z`);
+    a.head.setAttribute('d', `M${(x - 8).toFixed(1)} ${yShaft.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + 8).toFixed(1)} ${yShaft.toFixed(1)}Z`);
     a.text.setAttribute('x', (x + 9).toFixed(1));
     a.text.setAttribute('y', (yEnd + (dir > 0 ? -2 : 14)).toFixed(1));
   }
