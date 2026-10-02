@@ -806,3 +806,47 @@ i.qty { font-style: italic; }
 @media (max-width: 760px) {
   .liquid-readout { bottom: 10px; right: 10px; font-size: 15px; padding: 4px 10px; }
 }
+
+/* ---------- Síly ---------- */
+
+.mode-switch--2 { grid-template-columns: 1fr 1fr; }
+
+.force-legend {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--idle-text);
+  font-size: 14px;
+}
+
+.force-legend[hidden] { display: none; }
+
+.force-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.force-legend__swatch {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.force-legend__swatch--fg { background: #E11D48; }
+.force-legend__swatch--fvz { background: #16A34A; }
+
+.obj-card__forces {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.obj-card__forces[hidden] { display: none; }
+.obj-card__row--fg span { color: #fb7185; }
+.obj-card__row--fvz span { color: #4ade80; }
+
+.stage .forces { pointer-events: none; }
+
+.panel-label--spaced { margin-top: 10px; }
+.water-note[hidden] { display: none; }

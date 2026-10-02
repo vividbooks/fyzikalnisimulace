@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Plavání a potápění</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace plavání a potápění těles">
@@ -26,6 +26,15 @@
           <button class="mode-switch__btn" type="button" data-liquid="gasoline" aria-pressed="false">benzín</button>
           <button class="mode-switch__btn" type="button" data-liquid="glycerol" aria-pressed="false">glycerol</button>
         </div>
+        <span class="panel-label panel-label--spaced">Síly</span>
+        <div class="mode-switch mode-switch--2" role="group" aria-label="Zobrazit síly">
+          <button class="mode-switch__btn is-active" type="button" data-forces="off" aria-pressed="true">skrýt</button>
+          <button class="mode-switch__btn" type="button" data-forces="on" aria-pressed="false">zobrazit</button>
+        </div>
+        <div class="force-legend" id="forceLegend" hidden>
+          <span class="force-legend__item"><span class="force-legend__swatch force-legend__swatch--fg"></span><span><i class="qty">F</i><sub>G</sub> tíhová síla</span></span>
+          <span class="force-legend__item"><span class="force-legend__swatch force-legend__swatch--fvz"></span><span><i class="qty">F</i><sub>vz</sub> vztlaková síla</span></span>
+        </div>
       </section>
 
       <section class="panel-section" aria-label="Vybraný předmět">
@@ -35,9 +44,13 @@
           <span class="obj-card__row"><i class="qty">m</i> = <span class="obj-card__value" id="objMass"></span> g</span>
           <span class="obj-card__row"><i class="qty">V</i> = <span class="obj-card__value" id="objVol"></span> cm³</span>
           <span class="obj-card__row"><i class="qty">ρ</i> = <span class="obj-card__value" id="objRho"></span> kg/m³</span>
+          <span class="obj-card__forces" id="objForces" hidden>
+            <span class="obj-card__row obj-card__row--fg"><i class="qty">F</i><sub>G</sub> = <span id="objFG"></span> N</span>
+            <span class="obj-card__row obj-card__row--fvz"><i class="qty">F</i><sub>vz</sub> = <span id="objFvz"></span> N</span>
+          </span>
           <span class="obj-card__verdict" id="objVerdict" hidden></span>
         </div>
-        <span class="water-note" id="liquidNote">Hustota vody: <i class="qty">ρ</i><sub>k</sub> = 1&nbsp;000&nbsp;kg/m³</span>
+        <span class="water-note" id="liquidNote" hidden>Hustota vody: <i class="qty">ρ</i><sub>k</sub> = 1&nbsp;000&nbsp;kg/m³</span>
       </section>
 
       <section class="panel-section">
@@ -60,6 +73,6 @@
     </div>
   </main>
 
-  <script src="main.js?v=11"></script>
+  <script src="main.js?v=12"></script>
 </body>
 </html>

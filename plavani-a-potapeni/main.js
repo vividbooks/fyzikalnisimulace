@@ -28,7 +28,13 @@
   const C1 = 1.6;       // lineární odpor vody
   const CA = 0.3;       // součinitel přidané hmotnosti
   const ENTRY_LOSS = 0.4; // část rychlosti, která zůstane po dopadu na hladinu
-  const C2 = 0.012;     // kvadratický odpor vody
+  const C2 = 0.012;
+  const G_REAL = 10;    // N/kg pro výpočet sil
+  const COL_FG = '#E11D48';
+  const COL_FVZ = '#16A34A';
+  const ARROW_G = 60;   // délka šipky tíhové síly (px)
+  const ARROW_MAX = 170;
+  let forcesOn = false;     // kvadratický odpor vody
 
   const lerpY = (P, Q, x) => P.y + ((x - P.x) / (Q.x - P.x)) * (Q.y - P.y);
   const yTop = (x) => (x <= C_B.x ? lerpY(C_L, C_B, x) : lerpY(C_B, C_R, x));
@@ -131,6 +137,9 @@
     V: document.getElementById('objVol'),
     rho: document.getElementById('objRho'),
     verdict: document.getElementById('objVerdict'),
+    forces: document.getElementById('objForces'),
+    fg: document.getElementById('objFG'),
+    fvz: document.getElementById('objFvz'),
   };
 
   function el(name, attrs, parent) {
@@ -168,6 +177,7 @@
   L.water = el('g', {}, stage);
   L.front = el('g', {}, stage);
   L.top = el('g', {}, stage);
+  L.forces = el('g', { class: 'forces' }, stage);
   L.drops = el('g', {}, stage);
 
   const T = `translate(${OX} ${OY}) scale(${S})`;
@@ -226,7 +236,66 @@
     it.vy = 0;
     it.y0 = 0;
     it.wet = false;
+    it.sub = 0;
+    it.arrows = {
+      g: el('g', { opacity: 0 }, L.forces),
+    };
+    it.arrows.fg = makeArrow(it.arrows.g, COL_FG, 'G');
+    it.arrows.fvz = makeArrow(it.arrows.g, COL_FVZ, 'vz');
     placeItem(it);
+  }
+
+  /* ---------- Šipky sil ---------- */
+  function makeArrow(parent, color, sub) {
+    const g = el('g', {}, parent);
+    const halo = el('path', { fill: 'none', stroke: '#ffffff', 'stroke-width': 10, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.85 }, g);
+    const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
+    const head = el('path', { fill: color, stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round' }, g);
+    const text = el('text', {
+      'font-size': 22, 'font-weight': 600, fill: color, stroke: '#ffffff', 'stroke-width': 5,
+      'paint-order': 'stroke', 'stroke-linejoin': 'round',
+    }, g);
+    text.innerHTML = `<tspan font-style="italic">F</tspan><tspan font-size="15" dy="5">${sub}</tspan>`;
+    return { g, halo, shaft, head, text };
+  }
+
+  function setArrow(a, x, y, len, dir) {
+    if (len < 3) { a.g.setAttribute('opacity', 0); return; }
+    a.g.setAttribute('opacity', 1);
+    const hl = Math.min(16, len * 0.6);
+    const yEnd = y + dir * len;
+    const yShaft = y + dir * (len - hl);
+    a.shaft.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yShaft.toFixed(1)}`);
+    const head = `M${(x - 9).toFixed(1)} ${yShaft.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + 9).toFixed(1)} ${yShaft.toFixed(1)}Z`;
+    a.head.setAttribute('d', head);
+    a.halo.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yShaft.toFixed(1)}${head}`);
+    a.text.setAttribute('x', (x + 12).toFixed(1));
+    a.text.setAttribute('y', (yEnd + (dir > 0 ? -2 : 14)).toFixed(1));
+  }
+
+  const forceFG = (it) => (it.m / 1000) * G_REAL;
+  const forceFvz = (it) => RHO_W * (it.V * 1e-6) * it.sub * G_REAL;
+  const fmtN = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1)).replace('.', ',');
+
+  function updateForces() {
+    for (const it of ITEMS) {
+      const show = forcesOn && (it.phase === 'water' || it.phase === 'fall');
+      it.arrows.g.setAttribute('opacity', show ? 1 : 0);
+      if (!show) continue;
+      const cx = it.x;
+      const cy = it.y - it.h / 2;
+      const fg = forceFG(it);
+      const fvz = forceFvz(it);
+      setArrow(it.arrows.fg, cx, cy, ARROW_G, 1);
+      setArrow(it.arrows.fvz, cx, cy, Math.min(ARROW_MAX, (ARROW_G * fvz) / fg), -1);
+    }
+    if (selected && forcesOn && (selected.phase === 'water' || selected.phase === 'fall')) {
+      card.forces.hidden = false;
+      card.fg.textContent = fmtN(forceFG(selected));
+      card.fvz.textContent = fmtN(forceFvz(selected));
+    } else {
+      card.forces.hidden = true;
+    }
   }
 
   function placeItem(it) {
@@ -394,6 +463,7 @@
         const fl = it.y0 + FO - 6;
         const prev = it.y;
         const s = Math.max(0, Math.min(1, (it.y - sY) / it.h));
+        it.sub = s;
         let a = G * (1 - (s * RHO_W) / it.rho);
         if (s > 0) a -= (it.cLin * it.vy + C2 * it.vy * Math.abs(it.vy)) * s;
         // přidaná hmotnost strhávané vody – lehké předměty se nevymrští nad hladinu
@@ -416,6 +486,8 @@
         placeItem(it);
       }
     }
+
+    updateForces();
 
     for (let i = drops.length - 1; i >= 0; i--) {
       const d = drops[i];
@@ -563,6 +635,19 @@
     btn.addEventListener('click', () => { hideHint(); setLiquid(btn.dataset.liquid); });
   });
   setLiquid('water');
+
+  document.querySelectorAll('button[data-forces]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      hideHint();
+      forcesOn = btn.dataset.forces === 'on';
+      document.querySelectorAll('button[data-forces]').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      document.getElementById('forceLegend').hidden = !forcesOn;
+    });
+  });
 
   window.__plavaniSim = { setLiquid, ITEMS, throwTo, columnFor };
 })();
