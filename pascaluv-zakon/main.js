@@ -56,13 +56,6 @@
     el("ellipse", { cx: toX(bx), cy: HOLE_Y - 0.8, rx: 9, ry: 4, fill: "none", stroke: "#515151", "stroke-width": 2 }, holesEl);
   });
 
-  /* Čárkovaná čára výšky proudů — ukazuje, že všechny proudy vystříknou stejně vysoko. */
-  const levelLine = el(
-    "line",
-    { x1: toX(80), x2: toX(220), y1: 0, y2: 0, stroke: "#3B82F6", "stroke-width": 3, "stroke-dasharray": "10 9", opacity: 0, "stroke-linecap": "round" },
-    jetsEl.parentNode
-  );
-  jetsEl.parentNode.insertBefore(levelLine, jetsEl);
 
   /* Šipka síly zdola (stisk láhve) + popisek. */
   const arrowG = el("g", { class: "press-arrow" }, markerEl);
@@ -219,15 +212,6 @@
     }
     for (; i < dropPool.length; i++) dropPool[i].style.display = "none";
 
-    const h = jetHeight();
-    if (h > 8) {
-      const y = HOLE_Y - h;
-      levelLine.setAttribute("y1", y.toFixed(1));
-      levelLine.setAttribute("y2", y.toFixed(1));
-      levelLine.setAttribute("opacity", String(Math.min(0.85, state.pressure)));
-    } else {
-      levelLine.setAttribute("opacity", "0");
-    }
   }
 
   /* ---------- Simulace kapek ---------- */
