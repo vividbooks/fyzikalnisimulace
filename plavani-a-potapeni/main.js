@@ -18,7 +18,9 @@
 
   const RHO_W = 1000;
   const G = 1500;       // px/s²
-  const C1 = 0.8;       // lineární odpor vody
+  const C1 = 1.6;       // lineární odpor vody
+  const CA = 0.3;       // součinitel přidané hmotnosti
+  const ENTRY_LOSS = 0.4; // část rychlosti, která zůstane po dopadu na hladinu
   const C2 = 0.012;     // kvadratický odpor vody
 
   const lerpY = (P, Q, x) => P.y + ((x - P.x) / (Q.x - P.x)) * (Q.y - P.y);
@@ -95,7 +97,11 @@
         '<path d="M-16 -22Q0 -32 14 -20Q0 -12 -16 -22Z" fill="#F2B90F"/>',
     },
   ];
-  ITEMS.forEach((it) => { it.rho = (it.m / it.V) * 1000; });
+  ITEMS.forEach((it) => {
+    it.rho = (it.m / it.V) * 1000;
+    // plovoucí předměty tlumíme skoro kriticky, aby se jen pohoupaly a nevyskakovaly
+    it.cLin = it.rho < RHO_W ? Math.max(C1, 1.5 * Math.sqrt((G * RHO_W) / (it.rho * it.h))) : C1;
+  });
 
   /* ---------- Polička ---------- */
   const SHELF_X = [95, 255];
@@ -377,15 +383,18 @@
         const prev = it.y;
         const s = Math.max(0, Math.min(1, (it.y - sY) / it.h));
         let a = G * (1 - (s * RHO_W) / it.rho);
-        if (s > 0) a -= (C1 * it.vy + C2 * it.vy * Math.abs(it.vy)) * s;
+        if (s > 0) a -= (it.cLin * it.vy + C2 * it.vy * Math.abs(it.vy)) * s;
+        // přidaná hmotnost strhávané vody – lehké předměty se nevymrští nad hladinu
+        a /= 1 + CA * s * (RHO_W / it.rho);
         it.vy += a * dt;
         it.y += it.vy * dt;
         if (it.y > fl) {
           it.y = fl;
           it.vy = it.vy > 50 ? -it.vy * 0.2 : 0;
         }
-        if (prev < sY && it.y >= sY && it.vy > 80) {
-          splash(it.x, sY, Math.min(1, it.vy / 600) * Math.min(1.2, it.m / 200 + 0.4));
+        if (prev < sY && it.y >= sY) it.vy *= ENTRY_LOSS;
+        if (prev < sY && it.y >= sY && it.vy > 40) {
+          splash(it.x, sY, Math.min(1, it.vy / 330) * Math.min(1.2, it.m / 200 + 0.4));
         }
         if (!it.wet && it.y >= sY) {
           it.wet = true;
