@@ -84,7 +84,7 @@
   }
 
   function updatePanel() {
-    posValueEl.textContent = `${Math.round(state.pos * 100)} %`;
+    if (posValueEl) posValueEl.textContent = `${Math.round(state.pos * 100)} %`;
     forceValueEl.textContent = `${formatNumber(state.force)} N`;
     const fp = (state.pos * 100).toFixed(1);
     posSlider.style.setProperty("--fill", `${fp}%`);
