@@ -37,10 +37,10 @@
   const COL_FG = '#E11D48';
   const COL_FVZ = '#0B6B2E';
   // společné měřítko pro všechny předměty, aby délky šipek odpovídaly velikosti sil
-  const PX_PER_N_ISO = 20;  // px na 1 N
-  const ARROW_MIN = 7;  // i malá nenulová síla musí být vidět
-  const ARROW_MAX = 240;
-  const arrowLen = (f) => (f <= 0.0005 ? 0 : Math.min(ARROW_MAX, Math.max(ARROW_MIN, f * (FLAT ? 15 : PX_PER_N_ISO))));
+  const PX_PER_N_ISO = 40;  // px na 1 N
+  const ARROW_MIN = 14;  // i malá nenulová síla musí být vidět
+  const ARROW_MAX = 600;
+  const arrowLen = (f) => (f <= 0.0005 ? 0 : Math.min(ARROW_MAX, Math.max(ARROW_MIN, f * (FLAT ? 30 : PX_PER_N_ISO))));
   let forcesOn = false;     // kvadratický odpor vody
 
   const lerpY = (P, Q, x) => P.y + ((x - P.x) / (Q.x - P.x)) * (Q.y - P.y);
