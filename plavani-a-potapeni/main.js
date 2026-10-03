@@ -304,21 +304,22 @@
 
   function updateForces() {
     for (const it of ITEMS) {
-      const show = forcesOn && inLiquid(it);
+      // tíhová síla je vidět všude (i na poličce), vztlaková jen v kapalině
+      const show = forcesOn;
       it.arrows.g.setAttribute('opacity', show ? 1 : 0);
       if (!show) continue;
       const cx = it.x;
       const cy = it.y - it.h / 2;
       const fg = forceFG(it);
-      const fvz = forceFvz(it);
+      const fvz = inLiquid(it) ? forceFvz(it) : 0;
       const [lg, lv] = arrowLens(fg, fvz);
       setArrow(it.arrows.fg, cx, cy, lg, 1);
       setArrow(it.arrows.fvz, cx, cy, lv, -1);
     }
-    if (selected && forcesOn && inLiquid(selected)) {
+    if (selected && forcesOn) {
       card.forces.hidden = false;
       card.fg.textContent = fmtN(forceFG(selected));
-      card.fvz.textContent = fmtN(forceFvz(selected));
+      card.fvz.textContent = fmtN(inLiquid(selected) ? forceFvz(selected) : 0);
     } else {
       card.forces.hidden = true;
     }
