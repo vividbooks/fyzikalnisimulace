@@ -40,7 +40,21 @@
   const PX_PER_N_ISO = 40;  // px na 1 N
   const ARROW_MIN = 14;  // i malá nenulová síla musí být vidět
   const ARROW_MAX = 600;
-  const arrowLen = (f) => (f <= 0.0005 ? 0 : Math.min(ARROW_MAX, Math.max(ARROW_MIN, f * (FLAT ? 30 : PX_PER_N_ISO))));
+  const PX_PER_N = FLAT ? 30 : PX_PER_N_ISO;
+  // délky obou šipek jednoho předmětu; u velmi malých sil se zvětší obě stejným poměrem,
+  // aby byla vidět, ale zůstal zachovaný poměr F_G : F_vz
+  function arrowLens(fg, fvz) {
+    let lg = fg * PX_PER_N;
+    let lv = fvz * PX_PER_N;
+    const m = Math.max(lg, lv);
+    if (m > 0 && m < ARROW_MIN) {
+      const k = ARROW_MIN / m;
+      lg *= k;
+      lv *= k;
+    }
+    const fix = (l) => (l <= 0.05 ? 0 : Math.min(ARROW_MAX, Math.max(5, l)));
+    return [fix(lg), fix(lv)];
+  }
   let forcesOn = false;     // kvadratický odpor vody
 
   const lerpY = (P, Q, x) => P.y + ((x - P.x) / (Q.x - P.x)) * (Q.y - P.y);
@@ -297,8 +311,9 @@
       const cy = it.y - it.h / 2;
       const fg = forceFG(it);
       const fvz = forceFvz(it);
-      setArrow(it.arrows.fg, cx, cy, arrowLen(fg), 1);
-      setArrow(it.arrows.fvz, cx, cy, arrowLen(fvz), -1);
+      const [lg, lv] = arrowLens(fg, fvz);
+      setArrow(it.arrows.fg, cx, cy, lg, 1);
+      setArrow(it.arrows.fvz, cx, cy, lv, -1);
     }
     if (selected && forcesOn && inLiquid(selected)) {
       card.forces.hidden = false;
