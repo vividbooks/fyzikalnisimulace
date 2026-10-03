@@ -336,6 +336,11 @@
       setArrow(it.arrows.fg, cx, cy, lg, 1);
       setArrow(it.arrows.fvz, cx, cy, lv, -1);
     }
+    // výsledek (plave / klesne) jen když je vybraný předmět v kapalině
+    if (selected) {
+      const want = !!(selected.revealed && inLiquid(selected));
+      if (want === card.verdict.hidden) showCard(selected);
+    }
     if (selected && forcesOn) {
       card.forces.hidden = false;
       card.fg.textContent = fmtN(forceFG(selected));
@@ -398,7 +403,7 @@
       volOut.textContent = `${fmt(it.V)} cm³`;
       [massSlider, volSlider].forEach(setFill);
     }
-    if (it.revealed) {
+    if (it.revealed && inLiquid(it)) {
       const floats = it.rho < RHO_W;
       card.verdict.hidden = false;
       card.verdict.className = `obj-card__verdict ${floats ? 'obj-card__verdict--float' : 'obj-card__verdict--sink'}`;
@@ -703,13 +708,11 @@
       return;
     }
     if (!moved) {
-      if (from === 'shelf' && it.custom) {
-        // klepnutím na neznámý předmět ho jen vybereš (a nastavíš mu hmotnost a objem)
+      if (from === 'shelf') {
+        // klepnutím na předmět na poličce se jen zobrazí informace o něm
         it.phase = 'shelf';
         moveToLayer(it, L.top);
-      } else if (from === 'shelf') {
-        // klepnutí → hoď do náhodného místa akvária
-        throwTo(it, freeSpot(it), true);
+        placeItem(it);
       } else {
         // klepnutí na předmět ve vodě → nech ho být
         it.wet = true;
