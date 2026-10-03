@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Plavání a potápění</title>
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace plavání a potápění těles">
@@ -44,6 +44,18 @@
           <span class="obj-card__row"><i class="qty">m</i> = <span class="obj-card__value" id="objMass"></span> g</span>
           <span class="obj-card__row"><i class="qty">V</i> = <span class="obj-card__value" id="objVol"></span> cm³</span>
           <span class="obj-card__row"><i class="qty">ρ</i> = <span class="obj-card__value" id="objRho"></span> <span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span></span>
+          <div class="obj-card__custom" id="customCtrl" hidden>
+            <label class="panel-label" for="customMass">Hmotnost</label>
+            <div class="speed-control">
+              <input type="range" id="customMass" class="speed-control__slider" min="10" max="1500" step="10" value="400" />
+              <output class="speed-control__value" id="customMassValue" for="customMass">400 g</output>
+            </div>
+            <label class="panel-label" for="customVol">Objem</label>
+            <div class="speed-control">
+              <input type="range" id="customVol" class="speed-control__slider" min="50" max="1000" step="10" value="500" />
+              <output class="speed-control__value" id="customVolValue" for="customVol">500 cm³</output>
+            </div>
+          </div>
           <span class="obj-card__forces" id="objForces" hidden>
             <span class="obj-card__row obj-card__row--fg"><i class="qty">F</i><sub>G</sub> = <span id="objFG"></span> N</span>
             <span class="obj-card__row obj-card__row--fvz"><i class="qty">F</i><sub>vz</sub> = <span id="objFvz"></span> N</span>
@@ -73,6 +85,6 @@
     </div>
   </main>
 
-  <script src="main.js?v=26"></script>
+  <script src="main.js?v=28"></script>
 </body>
 </html>

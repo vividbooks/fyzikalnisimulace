@@ -854,3 +854,15 @@ i.qty { font-style: italic; }
 /* ---------- Varianta 2D (polička nahoře) ---------- */
 body[data-layout="flat"] .liquid-readout { display: none; }
 body[data-layout="flat"] .sim-empty-hint { top: 58%; }
+
+/* ---------- Neznámý předmět ---------- */
+.obj-card__custom {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 4px;
+}
+.obj-card__custom[hidden] { display: none; }
+.obj-card__custom .panel-label { margin: 4px 0 0; }
+.obj-card__custom .speed-control { min-width: 0; gap: 8px; }
+.obj-card__custom .speed-control__value { min-width: 78px; padding: 6px 4px; font-size: 14px; }
+.obj-card { min-width: 0; }

@@ -112,14 +112,18 @@
         '<ellipse cx="-10" cy="-32" rx="10" ry="5" fill="#ffffff" opacity="0.6" transform="rotate(-18 -10 -32)"/>',
     },
     {
-      id: 'korek', name: 'Korková zátka', m: 6, V: 25, w: 38, h: 44,
+      id: 'korek', name: 'Korková zátka', short: 'Korek', m: 6, V: 25, w: 38, h: 44,
       svg: '<path d="M-17 -40V-5A17 5 0 0 0 17 -5V-40Z" fill="#C68F52"/>' +
         '<ellipse cx="0" cy="-40" rx="17" ry="5" fill="#DDAE74"/>' +
         '<circle cx="-7" cy="-26" r="2" fill="#9C6B37"/><circle cx="6" cy="-16" r="2.2" fill="#9C6B37"/><circle cx="8" cy="-31" r="1.6" fill="#9C6B37"/><circle cx="-4" cy="-11" r="1.5" fill="#9C6B37"/>',
     },
     {
-      id: 'kachna', name: 'Gumová kachnička', m: 25, V: 125, w: 82, h: 80,
+      id: 'kachna', name: 'Gumová kachnička', short: 'Kachnička', m: 25, V: 125, w: 82, h: 80,
       svg: '<g transform="scale(0.18) translate(-224 -482)"><path d="M85.9434 163.046C71.1916 157.059 35.3232 149.502 22.5552 216.787C9.79074 284.069 -47.1799 476.344 223.659 473.33C483.432 470.439 477.166 258.967 367.521 226.152C323.272 212.911 322.295 177.219 322.295 177.219L177.66 186.478C160.306 187.59 142.921 184.936 126.69 178.702L85.9434 163.046Z" fill="#FFDD00" stroke="#FF8157" stroke-width="17.65" stroke-miterlimit="10"/><path d="M226.638 320.879C142.55 311.344 12.9463 250.173 48.8675 352.091" fill="#FFDD00" stroke="#FF8157" stroke-width="17.65" stroke-miterlimit="10" stroke-linecap="round"/><path opacity="0.2" d="M351.257 223.706C372.444 231.814 382.946 267.213 259.463 276.772C135.976 286.328 26.91 170.628 159.003 186.549C291.092 202.466 351.257 223.706 351.257 223.706Z" fill="#1D1D1B"/><path d="M397.81 107.389C410.381 173.188 367.223 236.717 301.424 249.284C235.624 261.851 172.095 218.7 159.528 152.901C146.958 87.0981 190.112 23.5687 255.915 11.0019C321.711 -1.56487 385.24 41.5859 397.81 107.389Z" fill="#FFDD00" stroke="#FF8157" stroke-width="17.65" stroke-miterlimit="10"/><path d="M412.781 145.163C412.781 145.163 425.002 135.441 421.37 116.422C417.737 97.4022 384.495 91.0764 366.146 103.731C366.146 103.731 347.201 91.1611 328.863 94.6629C310.517 98.1682 255.364 163.258 264.278 191.48C273.187 219.699 390.278 167.413 390.278 167.413L412.781 145.163Z" fill="#EF3A50"/><path d="M264.07 192.224C270.276 211.809 298.795 222.904 332.658 212.215C366.521 201.522 434.59 180.074 414.498 143.076C414.498 143.076 388.016 138.981 364.089 153.762C340.159 168.542 302.794 199.613 276.461 194.434L264.07 192.224Z" fill="#813A50"/><path d="M361.363 53.2057C367.219 65.243 365.666 78.0675 357.893 81.8481C350.117 85.6323 339.068 78.9394 333.211 66.9021C327.355 54.8648 328.912 42.0403 336.685 38.2597C344.458 34.4755 355.51 41.1684 361.363 53.2057Z" fill="#1D1D1B"/><path d="M270.915 91.0475C276.772 103.085 275.218 115.909 267.445 119.693C259.665 123.474 248.62 116.781 242.76 104.744C236.904 92.7066 238.46 79.8821 246.237 76.1015C254.01 72.3173 265.059 79.0102 270.915 91.0475Z" fill="#1D1D1B"/></g>',
+    },
+    {
+      // neznámý předmět – černá koule, hmotnost a objem si nastaví uživatel
+      id: 'neznamy', name: 'Neznámý předmět', short: 'Neznámý', m: 400, V: 500, w: 60, h: 60, custom: true, svg: '',
     },
   ];
   function updateDamping() {
@@ -128,15 +132,28 @@
       it.cLin = it.rho < RHO_W ? Math.max(C1, 1.5 * Math.sqrt((G * RHO_W) / (it.rho * it.h))) : C1;
     });
   }
-  ITEMS.forEach((it) => { it.rho = (it.m / it.V) * 1000; });
+  // tvar neznámé koule podle objemu (poloměr roste s třetí odmocninou)
+  function sphereShape(it) {
+    const r = 4.2 * Math.cbrt(it.V);
+    it.w = 2 * r;
+    it.h = 2 * r;
+    it.svg = `<circle cx="0" cy="${(-r).toFixed(1)}" r="${r.toFixed(1)}" fill="#1D1D1B"/>` +
+      `<ellipse cx="${(-r * 0.38).toFixed(1)}" cy="${(-r * 1.42).toFixed(1)}" rx="${(r * 0.3).toFixed(1)}" ry="${(r * 0.17).toFixed(1)}" ` +
+      `fill="#ffffff" opacity="0.35" transform="rotate(-35 ${(-r * 0.38).toFixed(1)} ${(-r * 1.42).toFixed(1)})"/>` +
+      `<text x="0" y="${(-r * 0.62).toFixed(1)}" text-anchor="middle" font-size="${(r * 1.05).toFixed(1)}" font-weight="600" fill="#ffffff" opacity="0.85">?</text>`;
+  }
+  ITEMS.forEach((it) => {
+    it.rho = (it.m / it.V) * 1000;
+    if (it.custom) sphereShape(it);
+  });
   updateDamping();
 
   /* ---------- Polička ---------- */
   const SHELF_X = [95, 255];
-  const SHELF_Y = FLAT ? [150] : [205, 385, 565, 745];
+  const SHELF_Y = FLAT ? [150] : [150, 300, 450, 600, 750];
   ITEMS.forEach((it, i) => {
     it.slot = FLAT
-      ? { x: 105 + i * (990 / 7), y: SHELF_Y[0] - 1 }
+      ? { x: 95 + i * (1010 / (ITEMS.length - 1)), y: SHELF_Y[0] - 1 }
       : { x: SHELF_X[i % 2], y: SHELF_Y[Math.floor(i / 2)] - 1 };
   });
 
@@ -232,7 +249,8 @@
     shelfHtml += `<rect x="${shelfX}" y="${y + 10}" width="${shelfW}" height="4" rx="2" fill="#A47F4A"/>`;
   }
   ITEMS.forEach((it) => {
-    shelfHtml += `<text x="${it.slot.x}" y="${it.slot.y + 40}" text-anchor="middle" font-size="${FLAT ? 15 : 18}" fill="#475569">${it.name}</text>`;
+    const label = FLAT && it.short ? it.short : it.name;
+    shelfHtml += `<text x="${it.slot.x}" y="${it.slot.y + 40}" text-anchor="middle" font-size="${FLAT ? 15 : 18}" fill="#475569">${label}</text>`;
   });
   L.shelf.innerHTML = shelfHtml;
 
@@ -250,14 +268,14 @@
     it.clipL = el('path', {}, cl);
 
     it.g = el('g', { class: 'item', 'data-id': it.id }, L.top);
-    el('rect', { x: -it.w / 2 - 8, y: -it.h - 30, width: it.w + 16, height: it.h + 36, fill: 'transparent' }, it.g);
+    it.hit = el('rect', { fill: 'transparent' }, it.g);
     const a = el('g', { 'clip-path': `url(#ca-${it.id})` }, it.g);
-    a.innerHTML = it.svg;
     const b = el('g', { 'clip-path': `url(#cb-${it.id})` }, it.g);
-    el('g', { 'clip-path': `url(#cs-${it.id})`, filter: 'url(#uw-surface)' }, b).innerHTML = it.svg;
-    el('g', { 'clip-path': `url(#cf-${it.id})`, filter: 'url(#uw-front)' }, b).innerHTML = it.svg;
+    const b1 = el('g', { 'clip-path': `url(#cs-${it.id})`, filter: 'url(#uw-surface)' }, b);
+    const b2 = el('g', { 'clip-path': `url(#cf-${it.id})`, filter: 'url(#uw-front)' }, b);
     const l = el('g', { 'clip-path': `url(#cl-${it.id})`, filter: 'url(#waterline)', opacity: 0.85 }, it.g);
-    l.innerHTML = it.svg;
+    it.layers = [a, b1, b2, l];
+    applyShape(it);
 
     it.phase = 'shelf';
     it.x = it.slot.x;
@@ -327,6 +345,14 @@
 
   function inLiquid(it) { return it.phase === 'water' || it.phase === 'fall' || it.phase === 'hold'; }
 
+  function applyShape(it) {
+    it.layers.forEach((g) => { g.innerHTML = it.svg; });
+    it.hit.setAttribute('x', -it.w / 2 - 8);
+    it.hit.setAttribute('y', -it.h - 30);
+    it.hit.setAttribute('width', it.w + 16);
+    it.hit.setAttribute('height', it.h + 36);
+  }
+
   function placeItem(it) {
     it.g.setAttribute('transform', `translate(${it.x.toFixed(2)} ${it.y.toFixed(2)})`);
     let wl = 1000;
@@ -362,6 +388,14 @@
     card.m.textContent = fmt(it.m);
     card.V.textContent = fmt(it.V);
     card.rho.textContent = fmt(Math.round(it.rho / 10) * 10);
+    customCtrl.hidden = !it.custom;
+    if (it.custom) {
+      massSlider.value = it.m;
+      volSlider.value = it.V;
+      massOut.textContent = `${fmt(it.m)} g`;
+      volOut.textContent = `${fmt(it.V)} cm³`;
+      [massSlider, volSlider].forEach(setFill);
+    }
     if (it.revealed) {
       const floats = it.rho < RHO_W;
       card.verdict.hidden = false;
@@ -373,6 +407,31 @@
       card.verdict.hidden = true;
     }
   }
+
+  /* ---------- Neznámý předmět: nastavení hmotnosti a objemu ---------- */
+  const customCtrl = document.getElementById('customCtrl');
+  const massSlider = document.getElementById('customMass');
+  const volSlider = document.getElementById('customVol');
+  const massOut = document.getElementById('customMassValue');
+  const volOut = document.getElementById('customVolValue');
+  function setFill(inp) {
+    const min = Number(inp.min), max = Number(inp.max);
+    inp.style.setProperty('--fill', `${((Number(inp.value) - min) / (max - min)) * 100}%`);
+  }
+  function onCustomInput() {
+    const it = ITEMS.find((i) => i.custom);
+    it.m = Number(massSlider.value);
+    it.V = Number(volSlider.value);
+    it.rho = (it.m / it.V) * 1000;
+    sphereShape(it);
+    applyShape(it);
+    updateDamping();
+    if (it.phase === 'water' && !drag) it.phase = 'water';
+    placeItem(it);
+    showCard(it);
+  }
+  massSlider.addEventListener('input', onCustomInput);
+  volSlider.addEventListener('input', onCustomInput);
 
   /* ---------- Hod do vody ---------- */
   function columnFor(it, rx, ry) {
@@ -642,7 +701,11 @@
       return;
     }
     if (!moved) {
-      if (from === 'shelf') {
+      if (from === 'shelf' && it.custom) {
+        // klepnutím na neznámý předmět ho jen vybereš (a nastavíš mu hmotnost a objem)
+        it.phase = 'shelf';
+        moveToLayer(it, L.top);
+      } else if (from === 'shelf') {
         // klepnutí → hoď do náhodného místa akvária
         throwTo(it, freeSpot(it), true);
       } else {
