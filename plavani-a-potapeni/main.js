@@ -338,7 +338,7 @@
     }
     // výsledek (plave / klesne) jen když je vybraný předmět v kapalině
     if (selected) {
-      const want = !!(selected.revealed && inLiquid(selected));
+      const want = isSettled(selected);
       if (want === card.verdict.hidden) showCard(selected);
     }
     if (selected && forcesOn) {
@@ -349,6 +349,9 @@
       card.forces.hidden = true;
     }
   }
+
+  // výsledek (plave / klesne) ukazujeme až po ustálení předmětu v kapalině
+  function isSettled(it) { return it.phase === 'water' && (it.calm || 0) > 0.4; }
 
   function inLiquid(it) { return it.phase === 'water' || it.phase === 'fall' || it.phase === 'hold'; }
 
@@ -403,7 +406,7 @@
       volOut.textContent = `${fmt(it.V)} cm³`;
       [massSlider, volSlider].forEach(setFill);
     }
-    if (it.revealed && inLiquid(it)) {
+    if (isSettled(it)) {
       const floats = it.rho < RHO_W;
       card.verdict.hidden = false;
       card.verdict.className = `obj-card__verdict ${floats ? 'obj-card__verdict--float' : 'obj-card__verdict--sink'}`;
@@ -430,6 +433,7 @@
     it.m = Number(massSlider.value);
     it.V = Number(volSlider.value);
     it.rho = (it.m / it.V) * 1000;
+    it.calm = 0;
     sphereShape(it);
     applyShape(it);
     updateDamping();
@@ -579,8 +583,10 @@
         if (!it.wet && it.y >= sY) {
           it.wet = true;
           it.phase = 'water';
-          if (!it.revealed) setTimeout(() => { it.revealed = true; if (selected === it) showCard(it); }, 900);
         }
+        // ustálení: předmět v kapalině se skoro nehýbe aspoň 0,4 s
+        if (it.phase === 'water' && Math.abs(it.vy) < 6) it.calm = (it.calm || 0) + dt;
+        else it.calm = 0;
         placeItem(it);
       }
     }
@@ -641,6 +647,7 @@
     e.preventDefault();
     const p = toSvg(e);
     const from = it.phase;
+    it.calm = 0;
     drag = { it, dx: it.x - p.x, dy: it.y - p.y, sx: p.x, sy: p.y, moved: false, from,
       mode: 'free', lastY: it.y, lastT: performance.now(), vy: 0 };
     if (from === 'water' || from === 'fall') {
@@ -791,7 +798,7 @@
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     // předměty ve vodě se podle nové kapaliny znovu rozhodnou, jestli plavou
-    ITEMS.forEach((it) => { if (it.phase === 'water') it.phase = 'water'; });
+    ITEMS.forEach((it) => { it.calm = 0; });
     if (selected) showCard(selected);
   }
   document.querySelectorAll('button[data-liquid]').forEach((btn) => {
