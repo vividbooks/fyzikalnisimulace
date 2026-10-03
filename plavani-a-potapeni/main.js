@@ -169,6 +169,7 @@
     m: document.getElementById('objMass'),
     V: document.getElementById('objVol'),
     rho: document.getElementById('objRho'),
+    rhoG: document.getElementById('objRhoG'),
     verdict: document.getElementById('objVerdict'),
     forces: document.getElementById('objForces'),
     fg: document.getElementById('objFG'),
@@ -181,6 +182,9 @@
     if (parent) parent.appendChild(e);
     return e;
   }
+
+  // hustota v g/cm³ (max. 2 desetinná místa, bez zbytečných nul)
+  const fmtGcm = (rhoKg) => String(Math.round(rhoKg / 10) / 100).replace('.', ',');
 
   const fmt = (v) => {
     const r = Math.round(v);
@@ -400,6 +404,7 @@
     card.m.textContent = fmt(it.m);
     card.V.textContent = fmt(it.V);
     card.rho.textContent = fmt(Math.round(it.rho / 10) * 10);
+    card.rhoG.textContent = fmtGcm(it.rho);
     customCtrl.hidden = !it.custom;
     if (it.custom) {
       massSlider.value = it.m;
@@ -766,16 +771,27 @@
     const cx = (AQ2.x1 + AQ2.x2) / 2;
     const y = AQ2.top - 22;
     g.innerHTML = '';
-    const t = el('text', { x: cx, y, 'text-anchor': 'start' }, g);
-    t.innerHTML = `hustota ${L2.gen}: <tspan font-style="italic">ρ</tspan> = ${fmt(L2.rho)}`;
-    const w = t.getComputedTextLength();
-    const fw = 30;
-    const x0 = cx - (w + 8 + fw) / 2;
-    t.setAttribute('x', x0);
-    const fx = x0 + w + 8 + fw / 2;
-    el('text', { x: fx, y: y - 13, 'font-size': 17, 'text-anchor': 'middle' }, g).textContent = 'kg';
-    el('line', { x1: fx - fw / 2, x2: fx + fw / 2, y1: y - 8, y2: y - 8, stroke: '#334155', 'stroke-width': 1.6 }, g);
-    el('text', { x: fx, y: y + 9, 'font-size': 17, 'text-anchor': 'middle' }, g).textContent = 'm³';
+    // text + zlomek kg/m³ + „= … “ + zlomek g/cm³, celé vycentrované
+    const parts = [];
+    const t1 = el('text', { x: 0, y, 'text-anchor': 'start' }, g);
+    t1.innerHTML = `hustota ${L2.gen}: <tspan font-style="italic">ρ</tspan> = ${fmt(L2.rho)}`;
+    const t2 = el('text', { x: 0, y, 'text-anchor': 'start' }, g);
+    t2.textContent = `= ${fmtGcm(L2.rho)}`;
+    const w1 = t1.getComputedTextLength();
+    const w2 = t2.getComputedTextLength();
+    const fw1 = 30, fw2 = 34, gap = 8;
+    const total = w1 + gap + fw1 + gap + w2 + gap + fw2;
+    let x = cx - total / 2;
+    t1.setAttribute('x', x); x += w1 + gap;
+    const frac = (fx, fw, num, den) => {
+      el('text', { x: fx, y: y - 13, 'font-size': 17, 'text-anchor': 'middle' }, g).textContent = num;
+      el('line', { x1: fx - fw / 2, x2: fx + fw / 2, y1: y - 8, y2: y - 8, stroke: '#334155', 'stroke-width': 1.6 }, g);
+      el('text', { x: fx, y: y + 9, 'font-size': 17, 'text-anchor': 'middle' }, g).textContent = den;
+    };
+    frac(x + fw1 / 2, fw1, 'kg', 'm³'); x += fw1 + gap;
+    t2.setAttribute('x', x); x += w2 + gap;
+    frac(x + fw2 / 2, fw2, 'g', 'cm³');
+    void parts;
   }
 
   function setLiquid(next) {
@@ -790,10 +806,10 @@
     stage.querySelector('.liq-edge').setAttribute('stroke', L2.edge);
     document.getElementById('uwSurfaceMx').setAttribute('values', mixMatrix(L2.surface, 0.45));
     document.getElementById('uwFrontMx').setAttribute('values', mixMatrix(L2.volume, 0.38));
-    const txt = `hustota ${L2.gen}: <i class="qty">ρ</i> = ${fmt(L2.rho)} <span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span>`;
+    const txt = `hustota ${L2.gen}: <i class="qty">ρ</i> = ${fmt(L2.rho)} <span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span> = ${fmtGcm(L2.rho)} <span class="unit-frac" aria-label="gramů na centimetr krychlový"><span class="unit-frac__num">g</span><span class="unit-frac__den">cm³</span></span>`;
     densityEl.innerHTML = txt;
     if (FLAT) drawDensityLabel(L2);
-    densityNote.innerHTML = `Hustota ${L2.gen}: <i class="qty">ρ</i><sub>k</sub> = ${fmt(L2.rho)}&nbsp;<span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span>`;
+    densityNote.innerHTML = `Hustota ${L2.gen}: <i class="qty">ρ</i><sub>k</sub> = ${fmt(L2.rho)}&nbsp;<span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span> = ${fmtGcm(L2.rho)}&nbsp;<span class="unit-frac" aria-label="gramů na centimetr krychlový"><span class="unit-frac__num">g</span><span class="unit-frac__den">cm³</span></span>`;
     document.querySelectorAll('button[data-liquid]').forEach((btn) => {
       const on = btn.dataset.liquid === next;
       btn.classList.toggle('is-active', on);
