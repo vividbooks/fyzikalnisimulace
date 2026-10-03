@@ -392,6 +392,9 @@
   // předmět spadne do vody jen tehdy, když je puštěn nad otvorem akvária
   // (nad horní hranou přední stěny); jinak se vrátí na poličku
   function overAquarium(x, y) {
+    // 2D: kdekoli nad akváriem i v něm (předmět spadne / vyplave z místa puštění)
+    // (puštění zpátky na poličku – pás u poličky – vrací předmět na místo)
+    if (FLAT) return x > AQ2.x1 && x < AQ2.x2 && y > SHELF_Y[0] + 45 && y <= AQ2.bottom;
     return x > C_L.x + 10 && x < C_R.x - 10 && y <= yBot(x);
   }
 
