@@ -304,7 +304,8 @@
     const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 4, 'stroke-linecap': 'round' }, g);
     // otevřený hrot (dvě čárky)
     const head = el('path', { fill: 'none', stroke: color, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
-    const text = el('text', { 'font-size': 20, fill: color }, g);
+    // popisky F_G / F_vz u šipek nezobrazujeme (barvy vysvětluje legenda v panelu)
+    const text = el('text', { 'font-size': 20, fill: color, display: 'none' }, g);
     text.innerHTML = `<tspan font-style="italic">F</tspan><tspan font-size="14" dy="5">${sub}</tspan>`;
     return { g, shaft, head, text };
   }
