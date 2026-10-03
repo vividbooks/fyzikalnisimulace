@@ -850,3 +850,7 @@ i.qty { font-style: italic; }
 
 .panel-label--spaced { margin-top: 10px; }
 .water-note[hidden] { display: none; }
+
+/* ---------- Varianta 2D (polička nahoře) ---------- */
+body[data-layout="flat"] .liquid-readout { display: none; }
+body[data-layout="flat"] .sim-empty-hint { top: 58%; }

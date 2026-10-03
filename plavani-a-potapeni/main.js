@@ -9,12 +9,16 @@
   const OY = 35;
   const A = (px, py) => ({ x: OX + S * px, y: OY + S * py });
 
-  const C_L = A(619.7, 244.0);
-  const C_F = A(1203.4, 576.7);
-  const C_R = A(2391.5, 346.8);
-  const C_B = A(1811.5, 10.6);
-  const WO = 317 * S;   // hladina pod horním okrajem
-  const FO = 945 * S;   // dno pod horním okrajem
+  // Rozvržení: 'iso' (akvárium v perspektivě, polička vlevo) nebo 'flat' (2D akvárium, polička nahoře)
+  const FLAT = document.body.dataset.layout === 'flat';
+  const AQ2 = { x1: 80, x2: 1120, top: 290, surface: 390, bottom: 690, r: 26 };
+
+  const C_L = FLAT ? { x: AQ2.x1, y: AQ2.top } : A(619.7, 244.0);
+  const C_F = FLAT ? { x: (AQ2.x1 + AQ2.x2) / 2, y: AQ2.top } : A(1203.4, 576.7);
+  const C_R = FLAT ? { x: AQ2.x2, y: AQ2.top } : A(2391.5, 346.8);
+  const C_B = FLAT ? { x: (AQ2.x1 + AQ2.x2) / 2 + 1, y: AQ2.top } : A(1811.5, 10.6);
+  const WO = FLAT ? AQ2.surface - AQ2.top : 317 * S;   // hladina pod horním okrajem
+  const FO = FLAT ? AQ2.bottom - AQ2.top - 4 : 945 * S;   // dno pod horním okrajem
 
   // kapaliny stejné jako v simulaci Hydrostatická tlaková síla
   const LIQUIDS = {
@@ -33,10 +37,10 @@
   const COL_FG = '#E11D48';
   const COL_FVZ = '#0B6B2E';
   // společné měřítko pro všechny předměty, aby délky šipek odpovídaly velikosti sil
-  const PX_PER_N = 20;  // px na 1 N
+  const PX_PER_N_ISO = 20;  // px na 1 N
   const ARROW_MIN = 7;  // i malá nenulová síla musí být vidět
   const ARROW_MAX = 240;
-  const arrowLen = (f) => (f <= 0.0005 ? 0 : Math.min(ARROW_MAX, Math.max(ARROW_MIN, f * PX_PER_N)));
+  const arrowLen = (f) => (f <= 0.0005 ? 0 : Math.min(ARROW_MAX, Math.max(ARROW_MIN, f * (FLAT ? 15 : PX_PER_N_ISO))));
   let forcesOn = false;     // kvadratický odpor vody
 
   const lerpY = (P, Q, x) => P.y + ((x - P.x) / (Q.x - P.x)) * (Q.y - P.y);
@@ -115,9 +119,11 @@
 
   /* ---------- Polička ---------- */
   const SHELF_X = [95, 255];
-  const SHELF_Y = [205, 385, 565, 745];
+  const SHELF_Y = FLAT ? [150] : [205, 385, 565, 745];
   ITEMS.forEach((it, i) => {
-    it.slot = { x: SHELF_X[i % 2], y: SHELF_Y[Math.floor(i / 2)] - 1 };
+    it.slot = FLAT
+      ? { x: 105 + i * (990 / 7), y: SHELF_Y[0] - 1 }
+      : { x: SHELF_X[i % 2], y: SHELF_Y[Math.floor(i / 2)] - 1 };
   });
 
   /* ---------- DOM ---------- */
@@ -175,6 +181,18 @@
   L.drops = el('g', {}, stage);
 
   const T = `translate(${OX} ${OY}) scale(${S})`;
+  if (FLAT) {
+    const { x1, x2, top, surface, bottom, r } = AQ2;
+    const wet = `M${x1} ${surface}H${x2}V${bottom - r}Q${x2} ${bottom} ${x2 - r} ${bottom}H${x1 + r}Q${x1} ${bottom} ${x1} ${bottom - r}Z`;
+    L.back.innerHTML =
+      `<path d="${wet}" class="liq-volume" fill="#58A1FF" fill-opacity="0.7"/>` +
+      `<rect x="${x1}" y="${surface}" width="${x2 - x1}" height="7" class="liq-surface" fill="#206CE8" fill-opacity="0.8"/>` +
+      '<path class="liq-edge" d="" fill="none"/>' +
+      `<g id="densityLabel" font-size="26" fill="#334155" text-anchor="middle"></g>`;
+    L.front.innerHTML =
+      `<path d="M${x1} ${top}V${bottom - r}Q${x1} ${bottom} ${x1 + r} ${bottom}H${x2 - r}Q${x2} ${bottom} ${x2} ${bottom - r}V${top}" ` +
+      'fill="none" stroke="#0D0C0D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>';
+  } else {
   L.back.innerHTML =
     `<g transform="${T}">` +
     '<path d="M2384.54 349.119L1811.54 10.6191L619.662 244.009M1811.54 10.6191V329.119" stroke="#0D0C0D" stroke-width="21.2381" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
@@ -189,15 +207,18 @@
     '<path d="M1114.06 1551.52C1145.92 1567.01 1183.61 1599.24 1272.09 1580.47"/>' +
     '<path d="M619.662 244.009L1203.4 576.736V1503.69C1203.4 1545.81 1159.25 1573.36 1121.42 1554.85L676.442 1289.99C641.697 1272.99 619.662 1237.7 619.662 1199.02V244.009Z"/>' +
     '</g>';
+  }
 
   // polička
   let shelfHtml = '';
+  const shelfX = FLAT ? 30 : 22;
+  const shelfW = FLAT ? 1140 : 306;
   for (const y of SHELF_Y) {
-    shelfHtml += `<rect x="22" y="${y}" width="306" height="14" rx="4" fill="#C9A36B"/>`;
-    shelfHtml += `<rect x="22" y="${y + 10}" width="306" height="4" rx="2" fill="#A47F4A"/>`;
+    shelfHtml += `<rect x="${shelfX}" y="${y}" width="${shelfW}" height="14" rx="4" fill="#C9A36B"/>`;
+    shelfHtml += `<rect x="${shelfX}" y="${y + 10}" width="${shelfW}" height="4" rx="2" fill="#A47F4A"/>`;
   }
   ITEMS.forEach((it) => {
-    shelfHtml += `<text x="${it.slot.x}" y="${it.slot.y + 40}" text-anchor="middle" font-size="18" fill="#475569">${it.name}</text>`;
+    shelfHtml += `<text x="${it.slot.x}" y="${it.slot.y + 40}" text-anchor="middle" font-size="${FLAT ? 15 : 18}" fill="#475569">${it.name}</text>`;
   });
   L.shelf.innerHTML = shelfHtml;
 
@@ -297,7 +318,7 @@
     // hladina protíná předmět v elipse (pohled shora šikmo) – vidíme její přední oblouk
     const W = it.w / 2 + 8;
     // oblouk nesmí klesnout pod ponořenou část (jinak u mělce ponořených předmětů zmizí)
-    const ry = Math.max(1, Math.min(W * 0.3, Math.max(0, -wl) * 0.55)).toFixed(2);
+    const ry = FLAT ? '0' : Math.max(1, Math.min(W * 0.3, Math.max(0, -wl) * 0.55)).toFixed(2);
     const y1 = wl.toFixed(2);
     const y2 = (wl + 3).toFixed(2);
     it.clipA.setAttribute('d', `M${-W} -600H${W}V${y1}A${W} ${ry} 0 0 1 ${-W} ${y1}Z`);
@@ -498,7 +519,9 @@
       const life = 1.1;
       if (r.t > life) { r.r.remove(); ripples.splice(i, 1); continue; }
       const rad = 10 + r.t * 70 * r.k;
-      r.r.setAttribute('transform', `matrix(0.982 -0.19 -0.74 -0.42 ${r.x.toFixed(1)} ${r.y.toFixed(1)})`);
+      r.r.setAttribute('transform', FLAT
+        ? `matrix(1 0 0 0.16 ${r.x.toFixed(1)} ${r.y.toFixed(1)})`
+        : `matrix(0.982 -0.19 -0.74 -0.42 ${r.x.toFixed(1)} ${r.y.toFixed(1)})`);
       r.r.setAttribute('rx', rad.toFixed(1));
       r.r.setAttribute('ry', rad.toFixed(1));
       r.r.setAttribute('opacity', (0.9 * (1 - r.t / life)).toFixed(2));
@@ -640,6 +663,25 @@
   const densityEl = document.getElementById('liquidDensity');
   const densityNote = document.getElementById('liquidNote');
 
+  // ve 2D je hustota kapaliny přímo nad akváriem (SVG text se zlomkem)
+  function drawDensityLabel(L2) {
+    const g = document.getElementById('densityLabel');
+    if (!g) return;
+    const cx = (AQ2.x1 + AQ2.x2) / 2;
+    const y = AQ2.top - 22;
+    g.innerHTML = '';
+    const t = el('text', { x: cx, y, 'text-anchor': 'start' }, g);
+    t.innerHTML = `hustota ${L2.gen}: <tspan font-style="italic">ρ</tspan> = ${fmt(L2.rho)}`;
+    const w = t.getComputedTextLength();
+    const fw = 30;
+    const x0 = cx - (w + 8 + fw) / 2;
+    t.setAttribute('x', x0);
+    const fx = x0 + w + 8 + fw / 2;
+    el('text', { x: fx, y: y - 13, 'font-size': 17, 'text-anchor': 'middle' }, g).textContent = 'kg';
+    el('line', { x1: fx - fw / 2, x2: fx + fw / 2, y1: y - 8, y2: y - 8, stroke: '#334155', 'stroke-width': 1.6 }, g);
+    el('text', { x: fx, y: y + 9, 'font-size': 17, 'text-anchor': 'middle' }, g).textContent = 'm³';
+  }
+
   function setLiquid(next) {
     if (!LIQUIDS[next]) return;
     liquid = next;
@@ -654,6 +696,7 @@
     document.getElementById('uwFrontMx').setAttribute('values', mixMatrix(L2.volume, 0.38));
     const txt = `hustota ${L2.gen}: <i class="qty">ρ</i> = ${fmt(L2.rho)} <span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span>`;
     densityEl.innerHTML = txt;
+    if (FLAT) drawDensityLabel(L2);
     densityNote.innerHTML = `Hustota ${L2.gen}: <i class="qty">ρ</i><sub>k</sub> = ${fmt(L2.rho)}&nbsp;<span class="unit-frac" aria-label="kilogramů na metr krychlový"><span class="unit-frac__num">kg</span><span class="unit-frac__den">m³</span></span>`;
     document.querySelectorAll('button[data-liquid]').forEach((btn) => {
       const on = btn.dataset.liquid === next;
@@ -668,6 +711,10 @@
     btn.addEventListener('click', () => { hideHint(); setLiquid(btn.dataset.liquid); });
   });
   setLiquid('water');
+  // šířka textu se změní po načtení písma – popisek hustoty překresli
+  if (FLAT && document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => drawDensityLabel(LIQUIDS[liquid]));
+  }
 
   document.querySelectorAll('button[data-forces]').forEach((btn) => {
     btn.addEventListener('click', () => {
