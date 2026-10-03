@@ -295,8 +295,9 @@
   /* ---------- Šipky sil ---------- */
   function makeArrow(parent, color, sub) {
     const g = el('g', {}, parent);
-    const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 5 }, g);
-    const head = el('path', { fill: color }, g);
+    const shaft = el('path', { fill: 'none', stroke: color, 'stroke-width': 4, 'stroke-linecap': 'round' }, g);
+    // otevřený hrot (dvě čárky)
+    const head = el('path', { fill: 'none', stroke: color, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
     const text = el('text', { 'font-size': 20, fill: color }, g);
     text.innerHTML = `<tspan font-style="italic">F</tspan><tspan font-size="14" dy="5">${sub}</tspan>`;
     return { g, shaft, head, text };
@@ -305,11 +306,12 @@
   function setArrow(a, x, y, len, dir) {
     if (len <= 0) { a.g.setAttribute('opacity', 0); return; }
     a.g.setAttribute('opacity', 1);
-    const hl = Math.min(15, len * 0.6);
+    const hl = Math.min(11, len * 0.6);
+    const hw = Math.min(8, hl * 0.8);
     const yEnd = y + dir * len;
-    const yShaft = y + dir * (len - hl);
-    a.shaft.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yShaft.toFixed(1)}`);
-    a.head.setAttribute('d', `M${(x - 8).toFixed(1)} ${yShaft.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + 8).toFixed(1)} ${yShaft.toFixed(1)}Z`);
+    const yBack = y + dir * (len - hl);
+    a.shaft.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yEnd.toFixed(1)}`);
+    a.head.setAttribute('d', `M${(x - hw).toFixed(1)} ${yBack.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + hw).toFixed(1)} ${yBack.toFixed(1)}`);
     a.text.setAttribute('x', (x + 9).toFixed(1));
     // u krátkých šipek drž popisky od sebe (F_vz nad středem, F_G pod ním)
     const ty = dir > 0 ? Math.max(yEnd - 2, y + 26) : Math.min(yEnd + 14, y - 10);
