@@ -32,8 +32,11 @@
   const G_REAL = 10;    // N/kg pro výpočet sil
   const COL_FG = '#E11D48';
   const COL_FVZ = '#0B6B2E';
-  const ARROW_G = 95;   // délka šipky tíhové síly (px)
+  // společné měřítko pro všechny předměty, aby délky šipek odpovídaly velikosti sil
+  const PX_PER_N = 20;  // px na 1 N
+  const ARROW_MIN = 7;  // i malá nenulová síla musí být vidět
   const ARROW_MAX = 240;
+  const arrowLen = (f) => (f <= 0.0005 ? 0 : Math.min(ARROW_MAX, Math.max(ARROW_MIN, f * PX_PER_N)));
   let forcesOn = false;     // kvadratický odpor vody
 
   const lerpY = (P, Q, x) => P.y + ((x - P.x) / (Q.x - P.x)) * (Q.y - P.y);
@@ -247,7 +250,7 @@
   }
 
   function setArrow(a, x, y, len, dir) {
-    if (len < 3) { a.g.setAttribute('opacity', 0); return; }
+    if (len <= 0) { a.g.setAttribute('opacity', 0); return; }
     a.g.setAttribute('opacity', 1);
     const hl = Math.min(15, len * 0.6);
     const yEnd = y + dir * len;
@@ -255,7 +258,9 @@
     a.shaft.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)}V${yShaft.toFixed(1)}`);
     a.head.setAttribute('d', `M${(x - 8).toFixed(1)} ${yShaft.toFixed(1)}L${x.toFixed(1)} ${yEnd.toFixed(1)}L${(x + 8).toFixed(1)} ${yShaft.toFixed(1)}Z`);
     a.text.setAttribute('x', (x + 9).toFixed(1));
-    a.text.setAttribute('y', (yEnd + (dir > 0 ? -2 : 14)).toFixed(1));
+    // u krátkých šipek drž popisky od sebe (F_vz nad středem, F_G pod ním)
+    const ty = dir > 0 ? Math.max(yEnd - 2, y + 26) : Math.min(yEnd + 14, y - 10);
+    a.text.setAttribute('y', ty.toFixed(1));
   }
 
   const forceFG = (it) => (it.m / 1000) * G_REAL;
@@ -271,8 +276,8 @@
       const cy = it.y - it.h / 2;
       const fg = forceFG(it);
       const fvz = forceFvz(it);
-      setArrow(it.arrows.fg, cx, cy, ARROW_G, 1);
-      setArrow(it.arrows.fvz, cx, cy, Math.min(ARROW_MAX, (ARROW_G * fvz) / fg), -1);
+      setArrow(it.arrows.fg, cx, cy, arrowLen(fg), 1);
+      setArrow(it.arrows.fvz, cx, cy, arrowLen(fvz), -1);
     }
     if (selected && forcesOn && inLiquid(selected)) {
       card.forces.hidden = false;
