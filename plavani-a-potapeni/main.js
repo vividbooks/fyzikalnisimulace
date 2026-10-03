@@ -85,11 +85,11 @@
         '</g>',
     },
     {
-      id: 'kamen', name: 'Kámen', m: 310, V: 120, w: 94, h: 50,
-      svg: '<path d="M-44 -6C-50 -22 -36 -44 -14 -48C6 -52 30 -46 40 -32C50 -18 44 -2 28 0C8 2 -30 4 -44 -6Z" fill="#8E9196"/>' +
+      id: 'kamen', name: 'Kámen', m: 440, V: 200, w: 112, h: 60,
+      svg: '<g transform="scale(1.19)"><path d="M-44 -6C-50 -22 -36 -44 -14 -48C6 -52 30 -46 40 -32C50 -18 44 -2 28 0C8 2 -30 4 -44 -6Z" fill="#8E9196"/>' +
         '<path d="M-40 -10C-20 -2 14 -2 40 -14C44 -4 36 0 28 0C8 2 -30 4 -44 -6Z" fill="#6E7176"/>' +
         '<path d="M-28 -34C-18 -42 0 -44 12 -40" stroke="#B9BCC1" stroke-width="6" stroke-linecap="round" fill="none"/>' +
-        '<circle cx="18" cy="-24" r="3" fill="#74777C"/><circle cx="-12" cy="-20" r="2.5" fill="#74777C"/>',
+        '<circle cx="18" cy="-24" r="3" fill="#74777C"/><circle cx="-12" cy="-20" r="2.5" fill="#74777C"/></g>',
     },
     {
       id: 'drevo', name: 'Dřevěná kostka', m: 75, V: 125, w: 74, h: 60,
