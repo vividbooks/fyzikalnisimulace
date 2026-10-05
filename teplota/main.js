@@ -25,6 +25,7 @@ const coolingChartFitModePolylineBtn = document.getElementById('cooling-chart-fi
 const coolingChartWrap = document.getElementById('cooling-chart-wrap');
 const coolingChartEl = document.getElementById('cooling-chart');
 const coolingChartCursorEl = document.getElementById('cooling-chart-cursor');
+const coolingChartCursorLabelEl = document.getElementById('cooling-chart-cursor-label');
 const coolingStopwatchEl = document.getElementById('cooling-stopwatch');
 const tempReadout = document.getElementById('temp-readout');
 const mercuryColumn = document.getElementById('mercury-column');
@@ -1834,6 +1835,7 @@ function chartCommitHold() {
   }
 
   coolingChartPoints.sort((a, b) => a.t - b.t);
+  hideChartCoordLabel();
   redrawCoolingChart();
 }
 
@@ -1852,6 +1854,7 @@ function onChartHoldMove(ev) {
   coolingChartHold.t = coords.t;
   coolingChartHold.y = coords.y;
   redrawCoolingChart();
+  positionChartCoordLabel(ev.clientX, ev.clientY, coords.t, coords.y);
 }
 
 function onChartHoldUp(ev) {
@@ -1898,27 +1901,80 @@ function chartMarkerFromTarget(target) {
   return null;
 }
 
+function hideChartCoordLabel() {
+  if (coolingChartCursorLabelEl) coolingChartCursorLabelEl.hidden = true;
+}
+
 function hideChartCursor() {
   if (coolingChartCursorEl) coolingChartCursorEl.hidden = true;
+  hideChartCoordLabel();
+}
+
+function chartFormatCoords(t, y) {
+  return `(${chartFormatTick(t, 's')}; ${chartFormatTick(y, '°C')})`;
+}
+
+function positionChartCoordLabel(clientX, clientY, t, y) {
+  if (!coolingChartCursorLabelEl || !coolingChartWrap) return;
+
+  coolingChartCursorLabelEl.textContent = chartFormatCoords(t, y);
+  coolingChartCursorLabelEl.hidden = false;
+
+  const rect = coolingChartWrap.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const py = clientY - rect.top;
+  const labelW = coolingChartCursorLabelEl.offsetWidth || 110;
+  const labelH = coolingChartCursorLabelEl.offsetHeight || 22;
+  let ox = 18;
+  let oy = -28;
+  if (x + ox + labelW > rect.width - 8) ox = -18 - labelW;
+  if (py + oy < 8) oy = 16;
+  if (py + oy + labelH > rect.height - 8) oy = -16 - labelH;
+  coolingChartCursorLabelEl.style.transform = `translate(${x + ox}px, ${py + oy}px)`;
 }
 
 function updateChartCursor(ev) {
-  if (!coolingChartCursorEl || !coolingChartWrap || !coolingGraphVisible) {
+  if (!coolingChartWrap || !coolingGraphVisible) {
     hideChartCursor();
     return;
   }
-  if (coolingChartHold || ev.pointerType === 'touch') {
-    hideChartCursor();
+  if (coolingChartHold) {
+    if (coolingChartCursorEl) coolingChartCursorEl.hidden = true;
     return;
   }
-  if (chartMarkerFromTarget(ev.target)) {
+  if (ev.pointerType === 'touch') {
     hideChartCursor();
     return;
   }
 
-  const rect = coolingChartWrap.getBoundingClientRect();
-  coolingChartCursorEl.style.transform = `translate(${ev.clientX - rect.left}px, ${ev.clientY - rect.top}px)`;
-  coolingChartCursorEl.hidden = false;
+  const marker = chartMarkerFromTarget(ev.target);
+  if (coolingChartCursorEl) {
+    if (marker) {
+      coolingChartCursorEl.hidden = true;
+    } else {
+      const rect = coolingChartWrap.getBoundingClientRect();
+      coolingChartCursorEl.style.transform = `translate(${ev.clientX - rect.left}px, ${ev.clientY - rect.top}px)`;
+      coolingChartCursorEl.hidden = false;
+    }
+  }
+
+  if (marker) {
+    const idx = parseInt(marker.getAttribute('data-index'), 10);
+    const point = Number.isFinite(idx) ? coolingChartPoints[idx] : null;
+    if (!point) {
+      hideChartCoordLabel();
+      return;
+    }
+    positionChartCoordLabel(ev.clientX, ev.clientY, point.t, point.y);
+    return;
+  }
+
+  const coords = chartPlotCoordsFromEvent(ev);
+  if (!coords) {
+    hideChartCoordLabel();
+    return;
+  }
+  positionChartCoordLabel(ev.clientX, ev.clientY, coords.t, coords.y);
 }
 
 function onChartPointerDown(ev) {
@@ -1954,7 +2010,8 @@ function onChartPointerDown(ev) {
   ev.preventDefault();
   coolingChartHold = hold;
   coolingChartDragUndoSnapshot = captureChartSnapshot();
-  hideChartCursor();
+  if (coolingChartCursorEl) coolingChartCursorEl.hidden = true;
+  positionChartCoordLabel(ev.clientX, ev.clientY, hold.t, hold.y);
   coolingChartEl.classList.add('is-holding-point');
   if (typeof ev.pointerId === 'number' && coolingChartEl.setPointerCapture) {
     try {
@@ -2247,7 +2304,10 @@ if (coolingChartEl) {
 }
 if (coolingChartWrap) {
   coolingChartWrap.addEventListener('pointermove', updateChartCursor);
-  coolingChartWrap.addEventListener('pointerleave', hideChartCursor);
+  coolingChartWrap.addEventListener('pointerleave', () => {
+    if (coolingChartHold) return;
+    hideChartCursor();
+  });
 }
 if (coolingChartSaveBtn) {
   coolingChartSaveBtn.addEventListener('click', saveCoolingChartAsImage);
