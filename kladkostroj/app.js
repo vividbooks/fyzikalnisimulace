@@ -11204,7 +11204,11 @@
     historySuspended = false;
     activePresetId = id;
     lastGalleryPresetId = id;
-    if (panelModeTitle) panelModeTitle.textContent = preset.title;
+    if (panelModeTitle) {
+      panelModeTitle.textContent = preset.id.startsWith("kladkostroj")
+        ? "Kladkostroj"
+        : preset.title;
+    }
     syncGalleryPresetButtons();
     updateHistoryButtons();
   }

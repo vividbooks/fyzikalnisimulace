@@ -1,0 +1,132 @@
+.sim-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sim-qr-under-back {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  color: var(--text, #f8fafc);
+}
+
+.sim-qr-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.72;
+  cursor: pointer;
+}
+
+.sim-qr-btn svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.sim-qr-btn:hover,
+.sim-qr-btn:focus-visible {
+  opacity: 1;
+  background: rgba(59, 130, 246, 0.16);
+  color: #3b82f6;
+}
+
+.sim-qr-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.global-actions > .sim-title-row {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.global-actions > .sim-title-row .hub-back-to-sims {
+  position: static;
+  transform: none;
+  top: auto;
+  left: auto;
+}
+
+#optika-hub-nav .sim-title-row {
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-qr-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.sim-qr-dialog {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 22px 20px 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #1e2533;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.35);
+}
+
+.sim-qr-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #334155;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sim-qr-close:hover,
+.sim-qr-close:focus-visible {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sim-qr-code {
+  display: flex;
+  justify-content: center;
+}
+
+.sim-qr-code svg {
+  width: min(320px, 72vw);
+  height: auto;
+  display: block;
+}
+
+.sim-qr-url {
+  margin: 12px 0 0;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  word-break: break-all;
+  color: #334155;
+}
