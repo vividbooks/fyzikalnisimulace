@@ -1087,6 +1087,12 @@
             previewColor: "#eef7ff",
           },
           {
+            id: "decimalka",
+            title: "Decimálka",
+            hash: "#/sim/decimalka",
+            previewColor: "#fff1e0",
+          },
+          {
             id: "skladani_sil",
             title: "Skládání sil",
             hash: "#/sim/skladani_sil",
@@ -1235,6 +1241,7 @@
       teziste: "sily",
       skladani_sil: "sily",
       silomer_2: "sily",
+      decimalka: "sily",
       tlak: "sily",
       treni: "sily",
       hra_newton: "sily",
@@ -2296,6 +2303,25 @@
       </svg>`;
     }
 
+    function DecimalkaCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="decimalka/card-decimalka.svg"
+          x="4"
+          y="4"
+          width="124"
+          height="80"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HydraulickeZarizeniCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -2340,6 +2366,7 @@
       if (tileId === "teziste") return html`<${TezisteCardIllustration} />`;
       if (tileId === "skladani_sil") return html`<${SkladaniSilCardIllustration} />`;
       if (tileId === "silomer_2") return html`<${SilomerCardIllustration} />`;
+      if (tileId === "decimalka") return html`<${DecimalkaCardIllustration} />`;
       if (tileId === "tlak") return html`<${TlakCardIllustration} />`;
       if (tileId === "treni") return html`<${TreniCardIllustration} />`;
       if (tileId === "hra_newton") return html`<${HraNewtonCardIllustration} />`;
@@ -2729,6 +2756,14 @@
           }
           return;
         }
+        if (simId === "decimalka") {
+          try {
+            window.location.replace(new URL("decimalka/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("decimalka/");
+          }
+          return;
+        }
         if (simId === "hydraulicke_zarizeni") {
           try {
             window.location.replace(new URL("hydraulicke-zarizeni/", window.location.href).href);
@@ -2996,7 +3031,7 @@
           </div>
         `;
       }
-      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni" || simId === "plavani_potapeni") {
+      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni" || simId === "plavani_potapeni" || simId === "decimalka") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

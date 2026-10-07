@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="180 100 710 485" width="710" height="485">
+<defs><symbol id="sym-meloun" viewBox="0 0 110 80">
+            <ellipse cx="55" cy="43" rx="52" ry="35" fill="#4f9d3f" stroke="#2c5e25" stroke-width="3"/>
+            <path d="M18 22c-8 14-8 30 0 44M36 11c-7 18-7 46 0 64M55 8c-4 20-4 50 0 70M74 11c7 18 7 46 0 64M92 22c8 14 8 30 0 44"
+              stroke="#2f6a28" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="38" cy="26" rx="16" ry="7" fill="#fff" opacity="0.22" transform="rotate(-18 38 26)"/>
+            <path d="M55 9c1-4 4-7 8-8" stroke="#6b4a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </symbol></defs>
+<g id="scale-back">
+          <!-- sloupek -->
+          <rect x="622" y="168" width="36" height="372" rx="6" fill="#FF8158" stroke="#803B50" stroke-width="3"/>
+          <!-- zarážka vahadla s pevným jazýčkem -->
+          <rect x="846" y="118" width="16" height="422" rx="5" fill="#FF8158" stroke="#803B50" stroke-width="3"/>
+          <path d="M846 170l-14 -7v14Z" fill="#803B50"/>
+        </g>
+<line x1="602" y1="170" x2="602" y2="502" stroke="#575756" stroke-width="5" stroke-linecap="round"/>
+<g id="platform-g">
+          <rect x="212" y="500" width="390" height="16" rx="3" fill="#9D9D9C" stroke="#575756" stroke-width="3"/>
+          <rect x="222" y="503" width="370" height="4" rx="2" fill="#c8c8c6"/>
+        </g>
+<g id="scale-base">
+          <path d="M196 520h680l-8 34H204Z" fill="#C19E6E" stroke="#9B6E42" stroke-width="3" stroke-linejoin="round"/>
+          <rect x="204" y="554" width="664" height="16" fill="#9B6E42"/>
+          <circle cx="238" cy="574" r="12" fill="#575756"/><circle cx="238" cy="574" r="4.5" fill="#9D9D9C"/>
+          <circle cx="834" cy="574" r="12" fill="#575756"/><circle cx="834" cy="574" r="4.5" fill="#9D9D9C"/>
+          
+          
+        </g>
+<g id="beam" transform="rotate(0 640 170)">
+          <path d="M592 164 640 161 838 166 838 174 640 179 592 176Z" fill="#FF8158" stroke="#803B50" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M826 170 840 163 840 177Z" fill="#803B50"/>
+          <circle cx="602" cy="170" r="5" fill="#575756"/>
+          <circle cx="785" cy="170" r="5" fill="#575756"/>
+          <circle cx="640" cy="170" r="11" fill="#FF8158" stroke="#803B50" stroke-width="3"/>
+          <circle cx="640" cy="170" r="3.5" fill="#803B50"/>
+        </g>
+<path d="M785 170v10M785 180L742 320M785 180L828 320" stroke="#1D1D1C" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+<ellipse cx="785" cy="320" rx="46" ry="8" fill="#878787" stroke="#575756" stroke-width="2.5"/>
+<g transform="translate(761.0 264.6)"><svg viewBox="0 0 71 85" width="47.9" height="57.4"><path d="M70.5 27H0.5V75.5H70.5V27Z" fill="black" stroke="black"/><ellipse cx="35.5" cy="27" rx="35.5" ry="9" fill="#6F6F6F"/><ellipse cx="35.5" cy="76" rx="35.5" ry="9" fill="black"/><path d="M56.7 1.98H14.3V12.62H56.7V1.98Z" fill="black"/><ellipse cx="35.5" cy="1.98" rx="21.5" ry="1.98" fill="#6F6F6F"/><path d="M29.5 18.5C30 17.5 29.5 14.5 29.5 14.5H41.5V18.5L48.5 24.5H22.5C22.5 24.5 29 19.5 29.5 18.5Z" fill="black"/></svg></g>
+<path d="M739 320 A46 8 0 0 0 831 320 l-3 6 A43 7 0 0 1 742 326 Z" fill="#6F6F6F" stroke="#575756" stroke-width="2"/>
+<use href="#sym-meloun" x="300" y="424" width="104" height="76"/>
+</svg>

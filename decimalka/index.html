@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decimálka</title>
+  <style>
+    * { box-sizing: border-box; }
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Fenomen Sans";
+      src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    html {
+      --ui-scale: 1.2;
+      --canvas-bg: #ffffe6;
+      --canvas-text: #334155;
+      --bg: #ffffe6;
+      --panel-bg: #2a3344;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --border: #475569;
+      --area-muted: #334155;
+      --readout-bg: #1e293b;
+      --success: #4ade80;
+      --danger: #ef4444;
+      background: var(--canvas-bg);
+      font-family: "Fenomen Sans", system-ui, sans-serif;
+    }
+    /*
+      +20 % přes transform na `.app-root`; výkonové pozice (`style.left/top`) řeší skript přes --ui-scale.
+      Šířka layoutu / scale ⇒ vizuálně ~ zaplněné okno.
+    */
+    .app-root {
+      transform: scale(var(--ui-scale));
+      transform-origin: top center;
+      width: calc(100% / var(--ui-scale));
+      max-width: calc((100vw - 2rem) / var(--ui-scale));
+      margin-inline: auto;
+    }
+
+    /*
+      Bez min-height na výšku okna — dokument končí u obsahu, žádný umělý prázdný pás dole.
+    */
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0;
+      padding-top: max(0.35rem, env(safe-area-inset-top, 0px));
+      padding-bottom: calc(
+        max(0.35rem, env(safe-area-inset-bottom, 0px)) + 2.5rem +
+          (var(--ui-scale) - 1) * 28vmin
+      );
+      font-family: inherit;
+      background: var(--canvas-bg);
+      color: var(--canvas-text);
+    }
+    /*
+      Bez align-self + width táhne sloupcový flex (main) šířku jen „ke obsahu“ —
+      karta pak může být užší než obrázek vah a v náhledu/postranním panelu vypadá
+      kresba jako oříznutá na půlku.
+    */
+    main {
+      align-self: stretch;
+      width: 100%;
+      max-width: 100%;
+      margin-inline: auto;
+      margin-top: 24px;
+      padding: 0.35rem 1.5rem 0.4rem;
+      background: transparent;
+      border-radius: 0;
+      box-sizing: border-box;
+    }
+    .page-top {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: min(920px, 100%);
+      margin: 0 auto 0.7rem;
+    }
+    .hub-back-to-sims {
+      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--area-muted);
+      color: var(--text);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .hub-back-to-sims:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--readout-bg);
+    }
+    .page-title {
+      grid-column: 2;
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--canvas-text);
+      text-align: center;
+    }
+    .clear-weights-btn {
+      appearance: none;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+    }
+    .clear-weights-btn:hover {
+      border-color: var(--accent);
+    }
+    .clear-weights-btn:active {
+      transform: translateY(1px);
+    }
+    .clear-weights-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .stage {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: min(920px, 100%);
+      margin-inline: auto;
+      touch-action: pan-y;
+      padding-bottom: clamp(10px, 2.5vw, 20px);
+      /*
+        Symetrický okraj: stejně vlevo/vpravo, aby byl sloup vah uprostřed;
+        hodnota pokrývá přesah jablka i zásobníku závaží.
+      */
+      padding-inline: clamp(96px, 22vw, 280px);
+    }
+    /*
+      Geometrie vah a překryvy — `.scale-figure` je rámcová oblast kresby (pro %, drag, cíle).
+      Paleta potravin je flex sloupec vlevo od kresby (`justify-content: space-between`).
+    */
+    .scale-wrap {
+      position: relative;
+      line-height: 0;
+      max-width: min(720px, 100%);
+    }
+    .scale-figure {
+      position: relative;
+      line-height: 0;
+    }
+    .scale-art {
+      position: relative;
+      width: 100%;
+      line-height: 0;
+    }
+    .scale-wrap .scale-layer {
+      display: block;
+      width: 100%;
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+    }
+    /* Přední okraj misky nad závažími na misce (klony mají z-index 6). Paleta vlevo má vyšší vrstvu. */
+    .scale-layer--pan-rims {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      aspect-ratio: 360 / 376;
+      height: auto;
+      z-index: 7;
+      pointer-events: none;
+    }
+    /* Pozice a velikost míst pro dopínání — počítá skript z geometrie rameně v jednotkách viewBoxu. */
+    .pan-target--right,
+    .pan-target--left {
+      position: absolute;
+      inset: auto;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .pan-drag {
+      position: absolute;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+      z-index: 6;
+    }
+    /* Nad zásobníkem závaží (z-index 10), jen dokud je kus ještě u paletě. */
+    .food-palette .pan-drag:not(.on-left-pan):not(.on-right-pan) {
+      z-index: 12;
+    }
+    .pan-drag:active { cursor: grabbing; }
+    .pan-drag.is-dragging {
+      z-index: 20;
+      cursor: grabbing;
+    }
+    .apple--gfx { width: clamp(36px, 9vw, 58.5px); height: auto; }
+    .rohlik--gfx { width: clamp(62.4px, 15.6vw, 98.4px); height: auto; }
+    /* Zásobník: vzorky přebijí .pan-drag relativní pozicí v mřížce; klony mají jen .pan-drag → absolute. */
+    .sklenice-okurek--gfx { width: clamp(48px, 12vw, 76px); height: auto; }
+    .bonbon--gfx { width: clamp(28px, 7vw, 46px); height: auto; }
+    .zlata-cihla--gfx { width: clamp(52px, 13vw, 84px); height: auto; }
+    .weights-tray-wrap {
+      position: absolute;
+      left: calc(100% + 62px);
+      top: 6%;
+      width: max-content;
+      max-width: calc((100vw - 2rem - 48px) / var(--ui-scale));
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      /* Nad .scale-layer--pan-rims (7), aby šlo závaží spolehlivě „chytit“ i při překryvu. */
+      z-index: 10;
+      pointer-events: none;
+    }
+    .weights-tray {
+      width: max-content;
+      max-width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, max-content);
+      grid-auto-rows: max-content;
+      align-items: end;
+      justify-items: center;
+      gap: 12px 18px;
+      pointer-events: none;
+    }
+    .weights-tray-wrap .clear-weights-btn {
+      pointer-events: auto;
+      width: 100%;
+      white-space: nowrap;
+    }
+    .weights-tray .weight {
+      pointer-events: auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    .weights-tray .weight:not(.is-dragging) {
+      position: relative;
+      left: auto !important;
+      top: auto !important;
+      margin: 0;
+    }
+    .weight.on-right-pan,
+    .weight.on-left-pan {
+      position: absolute;
+    }
+    .weights-tray .weight svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* Paleta: 5× 1fr; pevná šířka jako rohlík (ne max-content), jinak po odebrání řádku zúží. */
+    .food-palette {
+      position: absolute;
+      right: 100%;
+      margin-right: 50px;
+      top: calc(clamp(4px, 1.5vmin, 16px) - 40px);
+      bottom: clamp(4px, 1.5vmin, 16px);
+      display: grid;
+      grid-template-rows: repeat(5, 1fr);
+      align-items: center;
+      justify-items: center;
+      row-gap: clamp(8px, 2vmin, 18px);
+      width: clamp(62.4px, 15.6vw, 98.4px);
+      max-width: min(140px, 28vw);
+      pointer-events: none;
+      z-index: 12;
+    }
+    .food-palette__slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      width: 100%;
+    }
+    /*
+      Pevná min. výška řádků = výška grafiky při stejném clamp jako u img.
+      Bez toho při přesunu prvku z palety zmizí obsah řádku → 1fr přepočítá
+      výšky a ostatní ikony vertikálně „cuknou“.
+    */
+    .food-palette__slot:nth-child(1) {
+      min-height: calc(clamp(36px, 9vw, 58.5px) * 68 / 65);
+    }
+    .food-palette__slot:nth-child(2) {
+      min-height: calc(clamp(62.4px, 15.6vw, 98.4px) * 118 / 156);
+    }
+    .food-palette__slot:nth-child(3) {
+      min-height: calc(clamp(48px, 12vw, 76px) * 106 / 78);
+    }
+    .food-palette__slot:nth-child(4) {
+      min-height: calc(clamp(28px, 7vw, 46px) * 36 / 87);
+    }
+    .food-palette__slot:nth-child(5) {
+      min-height: calc(clamp(52px, 13vw, 84px) * 99 / 174);
+    }
+    /* Drží místo přesně za staženou potravinu během pointer tažení (viz skript). */
+    .food-palette__layout-holder {
+      flex-shrink: 0;
+      box-sizing: border-box;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .food-palette .pan-drag {
+      pointer-events: auto;
+      flex-shrink: 0;
+    }
+    .food-palette .pan-drag:not(.on-left-pan):not(.on-right-pan):not(.is-dragging) {
+      position: relative;
+      left: auto !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+    }
+    .food-palette .rohlik.pan-drag:not(.on-left-pan):not(.on-right-pan):not(.is-dragging) {
+      top: -10px !important;
+    }
+    /* Trojice pod váhami — rozvržení jako SVG 498×34 (3×143 + mezery). */
+    .mass-verify {
+      margin-top: 0.4rem;
+      width: 100%;
+      max-width: 498px;
+      margin-inline: auto;
+      display: flex;
+      align-items: stretch;
+      gap: clamp(8px, 3.5vw, 28px);
+    }
+    .mass-verify-panel {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--panel-bg);
+      color: var(--text);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .mass-verify-panel.mass-verify-panel--correct {
+      border-color: #16a34a;
+      background-color: #ecfdf5;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+      color: var(--canvas-text);
+    }
+    .mass-verify-panel.mass-verify-panel--wrong {
+      border-color: #dc2626;
+      background-color: #fef2f2;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
+      color: var(--canvas-text);
+    }
+    .mass-verify-panel.mass-verify-panel--correct .mass-verify-unit,
+    .mass-verify-panel.mass-verify-panel--wrong .mass-verify-unit {
+      color: var(--canvas-text);
+    }
+    .mass-verify-object-readout {
+      width: 100%;
+      margin: 0;
+      padding: 4px 4px;
+      text-align: center;
+      font: inherit;
+      color: inherit;
+      user-select: none;
+    }
+    .mass-verify-input-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto auto 1fr;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      column-gap: 0.25em;
+    }
+    .mass-verify-input-wrap .mass-verify-input {
+      grid-column: 2;
+      width: auto;
+      min-width: 9ch;
+      max-width: min(24ch, 50vw);
+      justify-self: end;
+      text-align: right;
+    }
+    .mass-verify-input-wrap .mass-verify-input:placeholder-shown {
+      padding-inline-end: 0.55em;
+    }
+    .mass-verify-input-wrap .mass-verify-unit {
+      grid-column: 3;
+      justify-self: start;
+      padding: 4px 0;
+      font: inherit;
+      color: var(--muted);
+      user-select: none;
+    }
+    .mass-verify-input {
+      width: 100%;
+      margin: 0;
+      padding: 4px 4px;
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      outline: none;
+    }
+    .mass-verify-input::placeholder {
+      color: var(--muted);
+      opacity: 1;
+    }
+    .mass-verify-input::-webkit-outer-spin-button,
+    .mass-verify-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .mass-verify-input[type="number"] {
+      appearance: textfield;
+    }
+    .mass-verify-input.app-numeric-input[readonly] {
+      cursor: pointer;
+    }
+
+    .table-keypad-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .table-keypad-overlay[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel {
+      width: min(100%, 300px);
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 42px rgba(15, 23, 42, 0.35);
+      display: grid;
+      gap: 12px;
+    }
+
+    .table-keypad-panel__title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 650;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-keypad-panel__display {
+      box-sizing: border-box;
+      height: 64px;
+      min-height: 64px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      font-size: 1.5rem;
+      font-weight: 650;
+      line-height: 1.2;
+      text-align: center;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .table-keypad-panel__display.is-invalid {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .table-keypad-panel__error {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 650;
+      color: var(--danger);
+      text-align: center;
+    }
+
+    .table-keypad-panel__error[hidden] {
+      display: none !important;
+    }
+
+    .table-keypad-panel__actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .table-keypad-panel__action {
+      appearance: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
+      width: 56px;
+      height: 56px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .table-keypad-panel__action svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-keypad-panel__confirm {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    }
+
+    .table-keypad-panel__cancel {
+      background: var(--readout-bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .table-keypad-panel__action:hover {
+      filter: brightness(1.05);
+    }
+
+    .table-keypad-panel__cancel:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .table-keypad-panel__action:active {
+      transform: scale(0.97);
+    }
+
+    .table-math-keypad {
+      width: 100%;
+    }
+
+    .table-math-keypad__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .table-math-keypad__key {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--readout-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1.125rem;
+      font-weight: 650;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .table-math-keypad__key svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .table-math-keypad__key:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--area-muted);
+    }
+
+    .table-math-keypad__key:active:not(:disabled) {
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    .table-math-keypad__key:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .mass-verify-result {
+      margin-top: 0.4rem;
+      max-width: 498px;
+      margin-inline: auto;
+      font-size: 0.875rem;
+      text-align: center;
+      line-height: 1.35;
+      min-height: 1.35em;
+    }
+    .mass-verify-result[data-status="ok"] {
+      color: #15803d;
+    }
+    .mass-verify-result[data-status="wrong"],
+    .mass-verify-result[data-status="error"] {
+      color: #b91c1c;
+    }
+    @media (max-width: 760px) {
+      main {
+        margin-top: 12px;
+        padding: 0.35rem 0.8rem 0.4rem;
+      }
+      .page-top {
+        align-items: flex-start;
+      }
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  
+    /* ---------- Decimálka ---------- */
+    .deci-stage {
+      width: 100%;
+      max-width: min(1040px, 100%);
+      margin: 0 auto;
+    }
+    .deci-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: visible;
+    }
+    .deci-drag {
+      cursor: grab;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.14));
+    }
+    .deci-drag.is-dragging {
+      cursor: grabbing;
+      filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.22));
+    }
+    .deci-btn { cursor: pointer; }
+    .deci-btn rect {
+      fill: var(--panel-bg);
+      stroke: var(--border);
+      stroke-width: 1.5;
+      transition: stroke 0.15s;
+    }
+    .deci-btn:hover rect, .deci-btn:focus-visible rect { stroke: var(--accent); }
+    .deci-btn:focus { outline: none; }
+    .deci-btn text {
+      fill: var(--text);
+      font-family: "Fenomen Sans", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      pointer-events: none;
+    }
+    .deci-btn.is-disabled { opacity: 0.45; pointer-events: none; }
+    .deci-note {
+      margin: 0.3rem auto 0;
+      max-width: 498px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-root">
+    <main>
+    <header class="page-top">
+      <a href="../index.html" class="hub-back-to-sims">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Zpět
+      </a>
+      <h1 class="page-title">Decimálka</h1>
+    </header>
+
+    <div class="deci-stage" id="stage">
+      <svg class="deci-svg" id="scene" viewBox="0 0 1100 600" role="img"
+        aria-label="Váha decimálka: náklad se pokládá na plošinu, závaží na misku zavěšenou na vahadle">
+        <defs>
+          <!-- Předměty -->
+          <symbol id="sym-meloun" viewBox="0 0 110 80">
+            <ellipse cx="55" cy="43" rx="52" ry="35" fill="#4f9d3f" stroke="#2c5e25" stroke-width="3"/>
+            <path d="M18 22c-8 14-8 30 0 44M36 11c-7 18-7 46 0 64M55 8c-4 20-4 50 0 70M74 11c7 18 7 46 0 64M92 22c8 14 8 30 0 44"
+              stroke="#2f6a28" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="38" cy="26" rx="16" ry="7" fill="#fff" opacity="0.22" transform="rotate(-18 38 26)"/>
+            <path d="M55 9c1-4 4-7 8-8" stroke="#6b4a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </symbol>
+          <symbol id="sym-cihla" viewBox="0 0 100 48">
+            <path d="M2 12 10 2h88l-8 10Z" fill="#d9714f" stroke="#7a3226" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M90 12 98 2v34l-8 10Z" fill="#9e4430" stroke="#7a3226" stroke-width="2" stroke-linejoin="round"/>
+            <rect x="2" y="12" width="88" height="34" fill="#c2553a" stroke="#7a3226" stroke-width="2" stroke-linejoin="round"/>
+            <ellipse cx="30" cy="7" rx="7" ry="2.4" fill="#7a3226"/>
+            <ellipse cx="54" cy="7" rx="7" ry="2.4" fill="#7a3226"/>
+            <ellipse cx="78" cy="7" rx="7" ry="2.4" fill="#7a3226"/>
+            <path d="M8 22h30M50 34h32" stroke="#a9472f" stroke-width="2" stroke-linecap="round"/>
+          </symbol>
+          <symbol id="sym-bedna" viewBox="0 0 130 98">
+            <circle cx="22" cy="30" r="15" fill="#F03B50"/>
+            <circle cx="50" cy="26" r="16" fill="#e8304a"/>
+            <circle cx="80" cy="28" r="15" fill="#F03B50"/>
+            <circle cx="107" cy="30" r="15" fill="#e8304a"/>
+            <circle cx="36" cy="20" r="13" fill="#ff5a6b"/>
+            <circle cx="94" cy="20" r="13" fill="#ff5a6b"/>
+            <path d="M36 9c0-3 1-5 3-7M94 9c0-3 1-5 3-7" stroke="#6b4a2a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path d="M44 14c4-4 9-4 12-1" stroke="#4f9d3f" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <rect x="2" y="36" width="126" height="60" rx="3" fill="#C19E6E" stroke="#7d5632" stroke-width="3"/>
+            <path d="M2 56h126M2 76h126" stroke="#9B6E42" stroke-width="3"/>
+            <path d="M12 36v60M118 36v60" stroke="#9B6E42" stroke-width="5"/>
+            <rect x="50" y="42" width="30" height="8" rx="4" fill="#5d3f22"/>
+          </symbol>
+          <symbol id="sym-kufr" viewBox="0 0 120 104">
+            <path d="M42 22V10a6 6 0 0 1 6-6h24a6 6 0 0 1 6 6v12" stroke="#1d3f63" stroke-width="6" fill="none"/>
+            <rect x="2" y="20" width="116" height="82" rx="12" fill="#2f7fb5" stroke="#1d3f63" stroke-width="3"/>
+            <path d="M30 20v82M90 20v82" stroke="#1d5a87" stroke-width="10"/>
+            <path d="M30 20v82M90 20v82" stroke="#5aa3d6" stroke-width="2" opacity="0.6"/>
+            <rect x="52" y="54" width="16" height="12" rx="2" fill="#f2c94c" stroke="#1d3f63" stroke-width="2"/>
+            <circle cx="16" cy="96" r="0" fill="none"/>
+          </symbol>
+          <symbol id="sym-pytel" viewBox="0 0 110 132">
+            <path d="M40 22c-4 8-30 22-34 56-4 34 10 50 49 50s53-16 49-50C100 44 74 30 70 22Z"
+              fill="#d8b27a" stroke="#8a6238" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M38 6c6 6 28 6 34 0l-2 16H40Z" fill="#c9a067" stroke="#8a6238" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M36 22h38" stroke="#6b4a2a" stroke-width="5" stroke-linecap="round"/>
+            <path d="M20 70c10 3 22 3 30 0M58 92c12 3 22 2 32-2M24 104c8 2 16 2 24 0" stroke="#b58c55" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <text x="55" y="84" text-anchor="middle" font-family="Fenomen Sans, system-ui, sans-serif" font-weight="700" font-size="13" fill="#6b4a2a">BRAMBORY</text>
+          </symbol>
+        </defs>
+
+        <!-- Polička s předměty -->
+        <g id="shelf"></g>
+
+        <!-- Decimálka -->
+        <g id="scale-back">
+          <!-- sloupek -->
+          <rect x="622" y="168" width="36" height="372" rx="6" fill="#FF8158" stroke="#803B50" stroke-width="3"/>
+          <!-- zarážka vahadla s pevným jazýčkem -->
+          <rect x="846" y="118" width="16" height="422" rx="5" fill="#FF8158" stroke="#803B50" stroke-width="3"/>
+          <path d="M846 170l-14 -7v14Z" fill="#803B50"/>
+        </g>
+        <g id="rod-g"><line id="rod" x1="602" y1="170" x2="602" y2="505" stroke="#575756" stroke-width="5" stroke-linecap="round"/></g>
+        <!-- plošina -->
+        <g id="platform-g">
+          <rect x="212" y="500" width="390" height="16" rx="3" fill="#9D9D9C" stroke="#575756" stroke-width="3"/>
+          <rect x="222" y="503" width="370" height="4" rx="2" fill="#c8c8c6"/>
+        </g>
+        <!-- podstavec -->
+        <g id="scale-base">
+          <path d="M196 520h680l-8 34H204Z" fill="#C19E6E" stroke="#9B6E42" stroke-width="3" stroke-linejoin="round"/>
+          <rect x="204" y="554" width="664" height="16" fill="#9B6E42"/>
+          <circle cx="238" cy="574" r="12" fill="#575756"/><circle cx="238" cy="574" r="4.5" fill="#9D9D9C"/>
+          <circle cx="834" cy="574" r="12" fill="#575756"/><circle cx="834" cy="574" r="4.5" fill="#9D9D9C"/>
+          <rect x="372" y="526" width="150" height="24" rx="5" fill="#803B50"/>
+          <text x="447" y="538" text-anchor="middle" dominant-baseline="central" font-family="Fenomen Sans, system-ui, sans-serif" font-weight="700" font-size="14" fill="#fff" letter-spacing="0.5">DECIMÁLKA 1 : 10</text>
+        </g>
+        <!-- vahadlo -->
+        <g id="beam" transform="rotate(0 640 170)">
+          <path d="M592 164 640 161 838 166 838 174 640 179 592 176Z" fill="#FF8158" stroke="#803B50" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M826 170 840 163 840 177Z" fill="#803B50"/>
+          <circle cx="602" cy="170" r="5" fill="#575756"/>
+          <circle cx="785" cy="170" r="5" fill="#575756"/>
+          <circle cx="640" cy="170" r="11" fill="#FF8158" stroke="#803B50" stroke-width="3"/>
+          <circle cx="640" cy="170" r="3.5" fill="#803B50"/>
+        </g>
+        <!-- závěs s miskou -->
+        <g id="hanger-g">
+          <path id="hanger-lines" d="" stroke="#1D1D1C" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          <path id="hook" d="" stroke="#1D1D1C" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+        <g id="dish-back"></g>
+
+        <!-- předměty a závaží na váze -->
+        <g id="loaded"></g>
+
+        <g id="dish-front"></g>
+
+        <!-- zásobník závaží -->
+        <g id="tray"></g>
+        <g id="clear-btn" class="deci-btn" role="button" tabindex="0" aria-label="Sundat všechna závaží">
+          <rect x="912" y="486" width="170" height="44" rx="12"/>
+          <text x="997" y="508" text-anchor="middle" dominant-baseline="central">Sundat závaží</text>
+        </g>
+
+        <!-- tažený prvek -->
+        <g id="dragging"></g>
+      </svg>
+    </div>
+
+    <section class="mass-verify-row" aria-labelledby="mass-verify-heading">
+      <h2 id="mass-verify-heading" class="sr-only">Ověření hmotnosti předmětu</h2>
+      <div class="mass-verify">
+        <div class="mass-verify-panel">
+          <span class="sr-only" id="verify-object-caption">Vybraný předmět</span>
+          <div id="verify-object-display" class="mass-verify-object-readout" role="status" aria-live="polite"
+            aria-atomic="true" aria-labelledby="verify-object-caption">
+            <span id="verify-object-label">–</span>
+          </div>
+        </div>
+        <div class="mass-verify-panel">
+          <label class="sr-only" for="verify-mass-input">hmotnost v kilogramech</label>
+          <div class="mass-verify-input-wrap">
+            <input id="verify-mass-input" class="mass-verify-input" type="text" inputmode="decimal"
+              placeholder="hmotnost" autocomplete="off" aria-describedby="verify-mass-hint" />
+            <span class="mass-verify-unit" aria-hidden="true">kg</span>
+          </div>
+        </div>
+      </div>
+      <p id="verify-mass-hint" class="sr-only">
+        Předmět vyber kliknutím na něj nebo ho přesuň na plošinu. Hmotnost zadej v kilogramech, číslo může mít desetinnou čárku.
+      </p>
+      <div id="verify-mass-result" class="mass-verify-result" role="status" aria-live="polite"></div>
+      <p class="deci-note">Decimálka má převod 1&nbsp;:&nbsp;10.</p>
+    </section>
+    </main>
+  </div>
+
+<div id="tableKeypadOverlay" class="table-keypad-overlay" hidden>
+  <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="tableKeypadTitle">
+    <p id="tableKeypadTitle" class="table-keypad-panel__title">Hmotnost</p>
+    <div id="tableKeypadDisplay" class="table-keypad-panel__display" aria-live="polite"></div>
+    <p id="tableKeypadError" class="table-keypad-panel__error" hidden></p>
+    <div class="table-math-keypad" id="tableMathKeypad" aria-label="Matematická klávesnice">
+      <div class="table-math-keypad__grid">
+        <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+        <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+        <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+        <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+        <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+        <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+        <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+        <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+        <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+        <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+        <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+        <button class="table-math-keypad__key" type="button" data-action="clear" aria-label="Smazat vše">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path
+              d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="table-keypad-panel__actions">
+      <button type="button" id="tableKeypadCancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+      <button type="button" id="tableKeypadConfirm" class="table-keypad-panel__action table-keypad-panel__confirm" aria-label="Vložit hodnotu">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path
+            d="M5 12.5l5 5L19 7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+    <script>
+    (function () {
+      const SVGNS = "http://www.w3.org/2000/svg";
+      const scene = document.getElementById("scene");
+      const shelfG = document.getElementById("shelf");
+      const trayG = document.getElementById("tray");
+      const loadedG = document.getElementById("loaded");
+      const draggingG = document.getElementById("dragging");
+      const beamG = document.getElementById("beam");
+      const rod = document.getElementById("rod");
+      const platformG = document.getElementById("platform-g");
+      const hangerLines = document.getElementById("hanger-lines");
+      const hookPath = document.getElementById("hook");
+      const dishBack = document.getElementById("dish-back");
+      const dishFront = document.getElementById("dish-front");
+      const clearBtn = document.getElementById("clear-btn");
+
+      /* ---------- Model ---------- */
+
+      /** Převod decimálky: závaží na misce vyváží 10× těžší náklad na plošině. */
+      const RATIO = 10;
+      const PIVOT = { x: 640, y: 170 };
+      const ROD_X = 602;      // úchyt táhla plošiny na krátkém rameni
+      const HOOK_X = 785;     // závěs misky na dlouhém rameni
+      const HANG_LEN = 150;   // délka závěsu misky
+      const DISH_RX = 46;
+      const DECK = { x0: 222, x1: 592, top: 500 };
+      const MAX_TILT = 7;     // °
+
+      const OBJECTS = [
+        { id: "meloun", name: "Meloun", massKg: 4.6, w: 104, h: 76 },
+        { id: "cihla", name: "Cihla", massKg: 3.8, w: 92, h: 44 },
+        { id: "bedna", name: "Bedna jablek", massKg: 8.3, w: 126, h: 95 },
+        { id: "kufr", name: "Kufr", massKg: 13.7, w: 112, h: 97 },
+        { id: "pytel", name: "Pytel brambor", massKg: 25, w: 96, h: 115 },
+      ];
+      const WEIGHT_SET_G = [10, 20, 50, 100, 200, 500, 1000, 2000];
+
+      const weightSize = (g) => {
+        const w = 24 + 38 * Math.cbrt(g / 2000);
+        return { w, h: (w * 85) / 71 };
+      };
+      const weightLabel = (g) => (g >= 1000 ? `${g / 1000} kg` : `${g} g`);
+
+      /** položky na váze v pořadí položení: { el, kind: "obj"|"w", obj?, g?, where: "platform"|"dish", w, h } */
+      let placed = [];
+      let tilt = 0;
+      let tiltVel = 0;
+      let drag = null;
+      let selected = null;
+
+      /* ---------- Kreslení prvků ---------- */
+
+      function el(tag, attrs, parent) {
+        const n = document.createElementNS(SVGNS, tag);
+        for (const k in attrs) n.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(n);
+        return n;
+      }
+
+      function makeObjectEl(obj) {
+        const g = el("g", { class: "deci-drag", "data-obj": obj.id, role: "img", "aria-label": obj.name });
+        el("rect", { x: 0, y: 0, width: obj.w, height: obj.h, fill: "transparent" }, g);
+        el("use", { href: `#sym-${obj.id}`, x: 0, y: 0, width: obj.w, height: obj.h }, g);
+        return g;
+      }
+
+      function makeWeightEl(g) {
+        const { w, h } = weightSize(g);
+        const label = weightLabel(g);
+        const fs = g >= 1000 ? 21 : g >= 100 ? 18 : 20;
+        const wrap = el("g", { class: "deci-drag deci-weight", "data-g": g, role: "img", "aria-label": `Závaží ${label}` });
+        const svg = el("svg", { viewBox: "0 0 71 85", width: w, height: h, overflow: "visible" }, wrap);
+        svg.innerHTML =
+          `<path d="M70.5 27H0.5V75.5H70.5V27Z" fill="black" stroke="black"/>` +
+          `<ellipse cx="35.5" cy="27" rx="35.5" ry="9" fill="#6F6F6F"/>` +
+          `<path d="M51 26C51 28.76 44.06 31 35.5 31C26.94 31 20 28.76 20 26C20 23.24 26.94 21 35.5 21C44.06 21 51 23.24 51 26Z" fill="black"/>` +
+          `<ellipse cx="35.5" cy="76" rx="35.5" ry="9" fill="black"/>` +
+          `<path d="M56.7 1.98H14.3V12.62H56.7V1.98Z" fill="black" stroke="black"/>` +
+          `<ellipse cx="35.5" cy="1.98" rx="21.5" ry="1.98" fill="#6F6F6F"/>` +
+          `<ellipse cx="35.5" cy="12.73" rx="21.5" ry="1.98" fill="black"/>` +
+          `<path d="M29.5 18.5C30 17.5 29.5 14.5 29.5 14.5H41.5V18.5L48.5 24.5H22.5C22.5 24.5 29 19.5 29.5 18.5Z" fill="black" stroke="black"/>` +
+          `<text x="35.5" y="59.5" text-anchor="middle" dominant-baseline="central" font-family="Fenomen Sans, system-ui, sans-serif" font-weight="600" fill="white" font-size="${fs}">${label}</text>`;
+        return wrap;
+      }
+
+      const place = (node, x, y) => node.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+
+      /* polička s předměty */
+      const shelfPos = {};
+      (function buildShelf() {
+        let y = 34;
+        OBJECTS.forEach((obj) => {
+          shelfPos[obj.id] = { x: 92 - obj.w / 2, y };
+          y += obj.h + 22;
+          obj.el = makeObjectEl(obj);
+          shelfG.appendChild(obj.el);
+          place(obj.el, shelfPos[obj.id].x, shelfPos[obj.id].y);
+        });
+      })();
+
+      /* zásobník závaží (2 sloupce) */
+      (function buildTray() {
+        const cols = [952, 1042];
+        let bottom = 52;
+        for (let i = 0; i < WEIGHT_SET_G.length; i += 2) {
+          const pair = WEIGHT_SET_G.slice(i, i + 2);
+          const rowH = Math.max(...pair.map((g) => weightSize(g).h));
+          bottom += rowH + 22;
+          pair.forEach((g, j) => {
+            const { w, h } = weightSize(g);
+            const n = makeWeightEl(g);
+            n.classList.add("is-tray");
+            trayG.appendChild(n);
+            place(n, cols[j] - w / 2, bottom - h);
+          });
+        }
+      })();
+
+      /* ---------- Geometrie vah ---------- */
+
+      function rotAround(px, py, deg) {
+        const a = (deg * Math.PI) / 180;
+        const dx = px - PIVOT.x;
+        const dy = py - PIVOT.y;
+        return { x: PIVOT.x + dx * Math.cos(a) - dy * Math.sin(a), y: PIVOT.y + dx * Math.sin(a) + dy * Math.cos(a) };
+      }
+
+      function geometry() {
+        const hook = rotAround(HOOK_X, PIVOT.y, tilt);
+        const rodTop = rotAround(ROD_X, PIVOT.y, tilt);
+        const platDy = rodTop.y - PIVOT.y; // plošina visí na táhle krátkého ramene
+        const dish = { x: hook.x, y: hook.y + HANG_LEN };
+        return { hook, rodTop, platDy, dish };
+      }
+
+      /* rozmístění položek do řad (zleva doprava, další řada nad ní) */
+      function pack(items, x0, x1, bottom, gap) {
+        const out = [];
+        let row = [];
+        let rowW = 0;
+        let base = bottom;
+        const flush = () => {
+          if (!row.length) return;
+          let x = (x0 + x1) / 2 - rowW / 2;
+          const rowH = Math.max(...row.map((it) => it.h));
+          row.forEach((it) => {
+            out.push({ it, x, y: base - it.h });
+            x += it.w + gap;
+          });
+          base -= rowH;
+          row = [];
+          rowW = 0;
+        };
+        items.forEach((it) => {
+          const add = (row.length ? gap : 0) + it.w;
+          if (row.length && rowW + add > x1 - x0) flush();
+          rowW += (row.length ? gap : 0) + it.w;
+          row.push(it);
+        });
+        flush();
+        return out;
+      }
+
+      function massesG() {
+        let load = 0;
+        let counter = 0;
+        placed.forEach((p) => {
+          const m = p.kind === "obj" ? p.obj.massKg * 1000 : p.g;
+          if (p.where === "platform") load += m;
+          else counter += m;
+        });
+        return { load, counter };
+      }
+
+      function targetTilt() {
+        const { load, counter } = massesG();
+        const delta = counter * RATIO - load; // kladné = převáží závaží, dlouhé rameno klesne
+        if (Math.abs(delta) < 0.5) return 0;
+        return MAX_TILT * Math.tanh(delta / 400);
+      }
+
+      /* ---------- Vykreslení stavu ---------- */
+
+      function render() {
+        const { hook, rodTop, platDy, dish } = geometry();
+        beamG.setAttribute("transform", `rotate(${tilt.toFixed(3)} ${PIVOT.x} ${PIVOT.y})`);
+        platformG.setAttribute("transform", `translate(0 ${platDy.toFixed(2)})`);
+        rod.setAttribute("x1", rodTop.x.toFixed(2));
+        rod.setAttribute("y1", rodTop.y.toFixed(2));
+        rod.setAttribute("x2", ROD_X);
+        rod.setAttribute("y2", (DECK.top + 2 + platDy).toFixed(2));
+
+        hookPath.setAttribute("d", `M${hook.x} ${hook.y} v10`);
+        const k = { x: hook.x, y: hook.y + 10 };
+        hangerLines.setAttribute(
+          "d",
+          `M${k.x} ${k.y} L${dish.x - DISH_RX + 3} ${dish.y} M${k.x} ${k.y} L${dish.x + DISH_RX - 3} ${dish.y}`
+        );
+        dishBack.innerHTML =
+          `<ellipse cx="${dish.x}" cy="${dish.y}" rx="${DISH_RX}" ry="8" fill="#878787" stroke="#575756" stroke-width="2.5"/>` +
+          `<ellipse cx="${dish.x}" cy="${dish.y - 1}" rx="${DISH_RX - 8}" ry="4.5" fill="#9D9D9C"/>`;
+        dishFront.innerHTML =
+          `<path d="M${dish.x - DISH_RX} ${dish.y} A${DISH_RX} 8 0 0 0 ${dish.x + DISH_RX} ${dish.y} l-3 6 A${DISH_RX - 3} 7 0 0 1 ${dish.x - DISH_RX + 3} ${dish.y + 6} Z" fill="#6F6F6F" stroke="#575756" stroke-width="2" stroke-linejoin="round"/>`;
+
+        const onPlat = placed.filter((p) => p.where === "platform");
+        const onDish = placed.filter((p) => p.where === "dish");
+        pack(onPlat, DECK.x0, DECK.x1, DECK.top + platDy, 6).forEach(({ it, x, y }) => place(it.el, x, y));
+        pack(onDish, dish.x - DISH_RX + 4, dish.x + DISH_RX - 4, dish.y + 2, 2).forEach(({ it, x, y }) => place(it.el, x, y));
+
+        clearBtn.classList.toggle("is-disabled", !placed.some((p) => p.kind === "w"));
+      }
+
+      let lastT = null;
+      let rafId = null;
+      function tick(t) {
+        const dt = lastT == null ? 0.016 : Math.min(0.05, (t - lastT) / 1000);
+        lastT = t;
+        const target = targetTilt();
+        const acc = -55 * (tilt - target) - 8 * tiltVel;
+        tiltVel += acc * dt;
+        tilt += tiltVel * dt;
+        render();
+        if (Math.abs(tilt - target) > 0.002 || Math.abs(tiltVel) > 0.002) {
+          rafId = requestAnimationFrame(tick);
+        } else {
+          tilt = target;
+          tiltVel = 0;
+          render();
+          rafId = null;
+          lastT = null;
+        }
+      }
+      function animate() {
+        if (rafId == null) rafId = requestAnimationFrame(tick);
+      }
+
+      /* ---------- Tažení ---------- */
+
+      function svgPoint(e) {
+        const pt = scene.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        return pt.matrixTransform(scene.getScreenCTM().inverse());
+      }
+
+      function currentXY(node) {
+        const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(node.getAttribute("transform") || "");
+        return m ? { x: +m[1], y: +m[2] } : { x: 0, y: 0 };
+      }
+
+      function selectObject(obj) {
+        if (!obj) return;
+        if (selected !== obj) {
+          verifyMassInput.value = "";
+          clearMassVerifyFeedback();
+        }
+        selected = obj;
+        verifyObjectLabel.textContent = obj.name;
+      }
+
+      scene.addEventListener("pointerdown", (e) => {
+        const node = e.target.closest(".deci-drag");
+        if (!node) return;
+        e.preventDefault();
+        const p = svgPoint(e);
+        let item;
+        let target = node;
+        if (node.classList.contains("is-tray")) {
+          const g = Number(node.dataset.g);
+          const { w, h } = weightSize(g);
+          target = makeWeightEl(g);
+          item = { el: target, kind: "w", g, w, h };
+          place(target, ...Object.values(currentXY(node)));
+        } else if (node.dataset.obj) {
+          const obj = OBJECTS.find((o) => o.id === node.dataset.obj);
+          item = placed.find((q) => q.el === node) || { el: node, kind: "obj", obj, w: obj.w, h: obj.h };
+          selectObject(obj);
+        } else {
+          item = placed.find((q) => q.el === node);
+        }
+        if (!item) return;
+        const pos = currentXY(target);
+        placed = placed.filter((q) => q !== item);
+        draggingG.appendChild(target);
+        target.classList.add("is-dragging");
+        drag = { item, pid: e.pointerId, dx: p.x - pos.x, dy: p.y - pos.y, moved: false, start: p };
+        scene.setPointerCapture(e.pointerId);
+        animate();
+      });
+
+      scene.addEventListener("pointermove", (e) => {
+        if (!drag || e.pointerId !== drag.pid) return;
+        const p = svgPoint(e);
+        if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 3) drag.moved = true;
+        const { item } = drag;
+        const x = Math.max(-item.w / 2, Math.min(1100 - item.w / 2, p.x - drag.dx));
+        const y = Math.max(-item.h / 2, Math.min(600 - item.h / 2, p.y - drag.dy));
+        place(item.el, x, y);
+      });
+
+      function endDrag(e) {
+        if (!drag || e.pointerId !== drag.pid) return;
+        const { item } = drag;
+        drag = null;
+        item.el.classList.remove("is-dragging");
+        try { scene.releasePointerCapture(e.pointerId); } catch (_) { /* už uvolněno */ }
+        const p = svgPoint(e);
+        const { dish, platDy } = geometry();
+        const overDish = Math.abs(p.x - dish.x) < DISH_RX + 30 && p.y > dish.y - 190 && p.y < dish.y + 40;
+        const overPlatform = p.x > DECK.x0 - 30 && p.x < DECK.x1 + 30 && p.y > 110 && p.y < DECK.top + platDy + 40;
+
+        if (item.kind === "w" && overDish) {
+          item.where = "dish";
+        } else if (overPlatform && !overDish) {
+          item.where = "platform";
+        } else {
+          item.where = null;
+        }
+
+        if (item.where) {
+          loadedG.appendChild(item.el);
+          placed.push(item);
+        } else if (item.kind === "obj") {
+          shelfG.appendChild(item.el);
+          const s = shelfPos[item.obj.id];
+          place(item.el, s.x, s.y);
+        } else {
+          item.el.remove(); // závaží mimo váhu se vrátí do zásobníku
+        }
+        render();
+        animate();
+      }
+      scene.addEventListener("pointerup", endDrag);
+      scene.addEventListener("pointercancel", endDrag);
+
+      function clearWeights() {
+        placed = placed.filter((p) => {
+          if (p.kind !== "w") return true;
+          p.el.remove();
+          return false;
+        });
+        render();
+        animate();
+      }
+      clearBtn.addEventListener("click", clearWeights);
+      clearBtn.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); clearWeights(); }
+      });
+
+      /* ---------- Ověření hmotnosti ---------- */
+
+      const VERIFY_TOLERANCE_KG = 0.05;
+      const verifyObjectLabel = document.getElementById("verify-object-label");
+      const verifyMassInput = document.getElementById("verify-mass-input");
+      const verifyMassResult = document.getElementById("verify-mass-result");
+      const massVerifyPanels = Array.from(document.querySelectorAll(".mass-verify .mass-verify-panel"));
+
+      function applyMassVerifyPanelClasses(clsName) {
+        massVerifyPanels.forEach((panel) => {
+          panel.classList.remove("mass-verify-panel--correct", "mass-verify-panel--wrong");
+          if (clsName) panel.classList.add(clsName);
+        });
+      }
+
+      function clearMassVerifyFeedback() {
+        verifyMassResult.textContent = "";
+        verifyMassResult.removeAttribute("data-status");
+        applyMassVerifyPanelClasses(null);
+      }
+
+      function parseUserGrams(raw) {
+        const n = Number.parseFloat(String(raw).trim().replace(/\s/g, "").replace(",", "."));
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function onVerifyMass() {
+        const kg = parseUserGrams(verifyMassInput.value);
+        if (!selected) {
+          applyMassVerifyPanelClasses("mass-verify-panel--wrong");
+          verifyMassResult.dataset.status = "error";
+          verifyMassResult.textContent = "Nejdřív vyber předmět – klikni na něj nebo ho polož na plošinu.";
+          return;
+        }
+        if (!Number.isFinite(kg)) {
+          applyMassVerifyPanelClasses("mass-verify-panel--wrong");
+          verifyMassResult.dataset.status = "error";
+          verifyMassResult.textContent = "Zadej hmotnost jako číslo (např. 4,6).";
+          return;
+        }
+        const ok = Math.abs(kg - selected.massKg) <= VERIFY_TOLERANCE_KG + 1e-9;
+        applyMassVerifyPanelClasses(ok ? "mass-verify-panel--correct" : "mass-verify-panel--wrong");
+        verifyMassResult.dataset.status = ok ? "ok" : "wrong";
+        verifyMassResult.textContent = ok ? "Správně!" : ":(";
+      }
+
+      const tableKeypadOverlay = document.getElementById("tableKeypadOverlay");
+      const tableKeypadTitle = document.getElementById("tableKeypadTitle");
+      const tableKeypadDisplay = document.getElementById("tableKeypadDisplay");
+      const tableKeypadError = document.getElementById("tableKeypadError");
+      const tableKeypadConfirm = document.getElementById("tableKeypadConfirm");
+      const tableKeypadCancel = document.getElementById("tableKeypadCancel");
+      const tableMathKeypad = document.getElementById("tableMathKeypad");
+      const tableMathKeypadKeys = tableMathKeypad
+        ? tableMathKeypad.querySelectorAll(".table-math-keypad__key")
+        : [];
+
+      /** @type {HTMLInputElement | null} */
+      let tableKeypadTarget = null;
+      let tableKeypadDraft = "";
+
+      function prefersAppNumericKeypad() {
+        try {
+          if (window.matchMedia("(pointer: coarse)").matches) return true;
+          if (
+            typeof navigator.maxTouchPoints === "number" &&
+            navigator.maxTouchPoints > 0 &&
+            window.matchMedia("(hover: none)").matches
+          ) {
+            return true;
+          }
+        } catch (_err) {
+          /* ignore */
+        }
+        return false;
+      }
+
+      const useAppNumericKeypad = prefersAppNumericKeypad();
+
+      function applyNumericKeypadMode(input) {
+        if (!input) return;
+        input.classList.add("app-numeric-input");
+        /* Na tabletu/touch potlač systémovou klávesnici; desktop může psát i přes overlay. */
+        if (useAppNumericKeypad) {
+          input.readOnly = true;
+          input.setAttribute("inputmode", "none");
+        } else {
+          input.readOnly = false;
+          input.setAttribute("inputmode", "decimal");
+        }
+      }
+
+      function clearTableKeypadError() {
+        if (tableKeypadError) {
+          tableKeypadError.hidden = true;
+          tableKeypadError.textContent = "";
+        }
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.classList.remove("is-invalid");
+        }
+      }
+
+      function showTableKeypadError(message) {
+        if (tableKeypadError) {
+          tableKeypadError.hidden = false;
+          tableKeypadError.textContent = message;
+        }
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.classList.add("is-invalid");
+        }
+      }
+
+      function validateTableKeypadValue() {
+        const raw = tableKeypadDraft.trim();
+        if (raw === "") return { ok: true };
+        const n = parseUserGrams(raw);
+        if (!Number.isFinite(n)) {
+          return { ok: false, message: "Zadej platné číslo." };
+        }
+        if (n < 0) {
+          return { ok: false, message: "Hmotnost nemůže být záporná." };
+        }
+        return { ok: true };
+      }
+
+      function updateTableKeypadValidation() {
+        const result = validateTableKeypadValue();
+        if (!result.ok) {
+          showTableKeypadError(result.message);
+          return;
+        }
+        clearTableKeypadError();
+      }
+
+      function updateTableKeypadDisplay() {
+        if (tableKeypadDisplay) {
+          tableKeypadDisplay.textContent = tableKeypadDraft;
+        }
+        updateTableKeypadValidation();
+      }
+
+      function showTableMathKeypad(input) {
+        if (!tableKeypadOverlay || !input) return;
+        tableKeypadTarget = input;
+        tableKeypadDraft = input.value;
+        clearTableKeypadError();
+        if (tableKeypadTitle) {
+          tableKeypadTitle.textContent = "Hmotnost";
+        }
+        updateTableKeypadDisplay();
+        tableKeypadOverlay.hidden = false;
+        try {
+          input.blur();
+        } catch (_e) {
+          /* ignore */
+        }
+      }
+
+      function hideTableMathKeypad() {
+        tableKeypadTarget = null;
+        tableKeypadDraft = "";
+        clearTableKeypadError();
+        if (tableKeypadOverlay) tableKeypadOverlay.hidden = true;
+        if (tableKeypadDisplay) tableKeypadDisplay.textContent = "";
+      }
+
+      function insertIntoTableKeypadDraft(value) {
+        if (value === "," || value === ".") {
+          if (tableKeypadDraft.indexOf(",") !== -1 || tableKeypadDraft.indexOf(".") !== -1) {
+            return;
+          }
+        }
+        if (tableKeypadDraft.length >= 12) return;
+        tableKeypadDraft += value;
+        updateTableKeypadDisplay();
+      }
+
+      function clearTableKeypadDraft() {
+        tableKeypadDraft = "";
+        updateTableKeypadDisplay();
+      }
+
+      function backspaceTableKeypadDraft() {
+        tableKeypadDraft = tableKeypadDraft.slice(0, -1);
+        updateTableKeypadDisplay();
+      }
+
+      function cancelTableKeypad() {
+        hideTableMathKeypad();
+      }
+
+      function formatMassDraft(raw) {
+        const trimmed = String(raw || "").trim();
+        if (!trimmed) return "";
+        const n = parseUserGrams(trimmed);
+        if (!Number.isFinite(n)) return trimmed;
+        return String(n).replace(".", ",");
+      }
+
+      function confirmTableKeypad() {
+        const input = tableKeypadTarget;
+        if (!input) return;
+
+        const result = validateTableKeypadValue();
+        if (!result.ok) {
+          showTableKeypadError(result.message);
+          return;
+        }
+
+        input.value = formatMassDraft(tableKeypadDraft);
+        hideTableMathKeypad();
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        onVerifyMass();
+      }
+
+      function handleTableMathKeypadClick(event) {
+        const key = event.currentTarget;
+        if (!(key instanceof HTMLButtonElement) || key.disabled) return;
+
+        const action = key.getAttribute("data-action");
+        const value = key.getAttribute("data-value");
+
+        if (action === "clear") {
+          clearTableKeypadDraft();
+          return;
+        }
+
+        if (action === "backspace") {
+          backspaceTableKeypadDraft();
+          return;
+        }
+
+        if (value) {
+          insertIntoTableKeypadDraft(value);
+        }
+      }
+
+      if (verifyMassInput) {
+        applyNumericKeypadMode(verifyMassInput);
+        verifyMassInput.addEventListener("pointerdown", (ev) => {
+          ev.preventDefault();
+          showTableMathKeypad(verifyMassInput);
+        });
+        verifyMassInput.addEventListener("focus", () => {
+          if (useAppNumericKeypad) {
+            try {
+              verifyMassInput.blur();
+            } catch (_e) {
+              /* ignore */
+            }
+            showTableMathKeypad(verifyMassInput);
+          }
+        });
+        verifyMassInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onVerifyMass();
+          }
+        });
+      }
+
+      if (tableKeypadConfirm) {
+        tableKeypadConfirm.addEventListener("click", confirmTableKeypad);
+      }
+      if (tableKeypadCancel) {
+        tableKeypadCancel.addEventListener("click", cancelTableKeypad);
+      }
+      if (tableKeypadOverlay) {
+        tableKeypadOverlay.addEventListener("click", (ev) => {
+          if (ev.target === tableKeypadOverlay) cancelTableKeypad();
+        });
+      }
+
+      for (let ki = 0; ki < tableMathKeypadKeys.length; ki++) {
+        const keyBtn = tableMathKeypadKeys[ki];
+        keyBtn.addEventListener("mousedown", (ev) => {
+          ev.preventDefault();
+        });
+        keyBtn.addEventListener("click", handleTableMathKeypadClick);
+      }
+
+      document.addEventListener("keydown", (ev) => {
+        if (!tableKeypadTarget) return;
+        if (ev.key === "Escape") {
+          ev.preventDefault();
+          cancelTableKeypad();
+          return;
+        }
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          confirmTableKeypad();
+          return;
+        }
+        if (ev.key === "Backspace") {
+          ev.preventDefault();
+          backspaceTableKeypadDraft();
+          return;
+        }
+        if (/^[0-9]$/.test(ev.key)) {
+          ev.preventDefault();
+          insertIntoTableKeypadDraft(ev.key);
+          return;
+        }
+        if (ev.key === "," || ev.key === ".") {
+          ev.preventDefault();
+          insertIntoTableKeypadDraft(",");
+        }
+      });
+
+
+
+      render();
+      window.__deci = { massesG, get tilt() { return tilt; }, get placed() { return placed; } };
+    })();
+  </script>
+  <script src="../shared/sim-qr.js"></script>
+</body>
+</html>
