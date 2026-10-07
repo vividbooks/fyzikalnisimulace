@@ -1047,27 +1047,39 @@
         return out;
       }
 
-      /* závaží na misce vždy vedle sebe v jedné řadě; když se nevejdou, zmenší se
-         (nejvýš na MIN_DISH_SCALE), teprve potom se částečně překryjí */
-      const MIN_DISH_SCALE = 0.75;
-      function packRow(items, cx, maxW, bottom) {
+      /* závaží stojí všechna na dně misky (nikdy na sobě): rozdělí se do řad za sebou,
+         zadní řada je o kousek výš (dál od pozorovatele) a kreslí se dřív */
+      const DISH_DEPTH_STEP = 46;
+      const DISH_MAX_ROWS = 2;
+      function packDish(items, cx, maxW, frontBottom) {
         if (!items.length) return [];
-        const gap = 2;
-        const total = items.reduce((s, it) => s + it.w, 0) + gap * (items.length - 1);
-        const k = Math.max(MIN_DISH_SCALE, Math.min(1, maxW / total));
-        const scaledTotal = total * k;
-        let step = null;
-        if (scaledTotal > maxW && items.length > 1) {
-          const last = items[items.length - 1].w * k;
-          step = (maxW - last) / (items.length - 1);
-        }
-        const width = step == null ? scaledTotal : maxW;
-        let x = cx - width / 2;
-        return items.map((it) => {
-          const pos = { it, x, y: bottom - it.h * k, k };
-          x += step == null ? (it.w + gap) * k : step;
-          return pos;
+        const gap = 3;
+        const rows = [[]];
+        let rowW = 0;
+        items.forEach((it) => {
+          const add = (rows[rows.length - 1].length ? gap : 0) + it.w;
+          if (rows[rows.length - 1].length && rowW + add > maxW && rows.length < DISH_MAX_ROWS) {
+            rows.push([]);
+            rowW = 0;
+          }
+          rowW += (rows[rows.length - 1].length ? gap : 0) + it.w;
+          rows[rows.length - 1].push(it);
         });
+        const out = [];
+        // první řada (největší závaží) je vzadu
+        rows.forEach((row, r) => {
+          const depth = rows.length - 1 - r; // 0 = přední řada
+          const bottom = frontBottom - depth * DISH_DEPTH_STEP;
+          const total = row.reduce((a, it) => a + it.w, 0) + gap * (row.length - 1);
+          let step = null;
+          if (total > maxW && row.length > 1) step = (maxW - row[row.length - 1].w) / (row.length - 1);
+          let x = cx - Math.min(total, maxW) / 2;
+          row.forEach((it) => {
+            out.push({ it, x, y: bottom - it.h, depth });
+            x += step == null ? it.w + gap : step;
+          });
+        });
+        return out;
       }
 
       function massesG() {
@@ -1101,9 +1113,10 @@
         const onPlat = placed.filter((p) => p.where === "platform");
         const onDish = placed.filter((p) => p.where === "dish");
         pack(onPlat, DECK.x0, DECK.x1, DECK.top + platDy, 6).forEach(({ it, x, y }) => place(it.el, x, y));
-        const dishRow = onDish.slice().sort((a, b) => b.g - a.g); // největší vlevo, menší vpravo před nimi
-        dishRow.forEach((it) => dishItemsG.appendChild(it.el));
-        packRow(dishRow, dish.x, dish.half * 2 + 6, dish.y + 22).forEach(({ it, x, y, k }) => place(it.el, x, y, k));
+        const dishRow = onDish.slice().sort((a, b) => b.g - a.g);
+        const dishPos = packDish(dishRow, dish.x, dish.half * 2 + 6, dish.y + 50);
+        dishPos.slice().sort((a, b) => b.depth - a.depth).forEach(({ it }) => dishItemsG.appendChild(it.el));
+        dishPos.forEach(({ it, x, y }) => place(it.el, x, y));
 
         clearBtn.classList.toggle("is-disabled", !placed.some((p) => p.kind === "w"));
       }
