@@ -1275,12 +1275,22 @@
           item.where = "dish";
           const cur = currentXY(item.el);
           item.dishOffsetX = cur.x + item.w / 2 - dish.x; // zachovej místo, kam ho žák pustil
-        } else if (overPlatform && !overDish) {
-          item.where = "platform";
+        } else if (item.kind === "obj" && overPlatform && !overDish) {
+          item.where = "platform"; // na plošině smí být jen jeden předmět – předchozí se vrátí na poličku
         } else {
           item.where = null;
         }
 
+        if (item.where === "platform") {
+          placed.filter((q) => q.where === "platform").forEach((q) => {
+            placed = placed.filter((r) => r !== q);
+            if (q.kind === "obj") {
+              shelfG.appendChild(q.el);
+              const s0 = shelfPos[q.obj.id];
+              place(q.el, s0.x, s0.y);
+            } else q.el.remove();
+          });
+        }
         if (item.where) {
           (item.where === "dish" ? dishItemsG : loadedG).appendChild(item.el);
           placed.push(item);
