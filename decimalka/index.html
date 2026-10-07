@@ -1047,39 +1047,17 @@
         return out;
       }
 
-      /* závaží stojí všechna na dně misky (nikdy na sobě): rozdělí se do řad za sebou,
-         zadní řada je o kousek výš (dál od pozorovatele) a kreslí se dřív */
-      const DISH_DEPTH_STEP = 46;
-      const DISH_MAX_ROWS = 2;
-      function packDish(items, cx, maxW, frontBottom) {
-        if (!items.length) return [];
-        const gap = 3;
-        const rows = [[]];
-        let rowW = 0;
-        items.forEach((it) => {
-          const add = (rows[rows.length - 1].length ? gap : 0) + it.w;
-          if (rows[rows.length - 1].length && rowW + add > maxW && rows.length < DISH_MAX_ROWS) {
-            rows.push([]);
-            rowW = 0;
-          }
-          rowW += (rows[rows.length - 1].length ? gap : 0) + it.w;
-          rows[rows.length - 1].push(it);
+      /* závaží na misce jako v Měření hmotnosti: každé stojí na dně misky tam, kam ho žák pustil
+         (vodorovný posun od středu misky), jen se udrží uvnitř misky; pozdější je vpředu */
+      function placeOnDish(items, dish, bottom) {
+        const pad = 2;
+        return items.map((it) => {
+          let x = dish.x + (it.dishOffsetX || 0) - it.w / 2;
+          const lo = dish.x - dish.half + pad;
+          const hi = dish.x + dish.half - it.w - pad;
+          x = hi >= lo ? Math.min(hi, Math.max(lo, x)) : (lo + hi) / 2;
+          return { it, x, y: bottom - it.h };
         });
-        const out = [];
-        // první řada (největší závaží) je vzadu
-        rows.forEach((row, r) => {
-          const depth = rows.length - 1 - r; // 0 = přední řada
-          const bottom = frontBottom - depth * DISH_DEPTH_STEP;
-          const total = row.reduce((a, it) => a + it.w, 0) + gap * (row.length - 1);
-          let step = null;
-          if (total > maxW && row.length > 1) step = (maxW - row[row.length - 1].w) / (row.length - 1);
-          let x = cx - Math.min(total, maxW) / 2;
-          row.forEach((it) => {
-            out.push({ it, x, y: bottom - it.h, depth });
-            x += step == null ? it.w + gap : step;
-          });
-        });
-        return out;
       }
 
       function massesG() {
@@ -1113,10 +1091,7 @@
         const onPlat = placed.filter((p) => p.where === "platform");
         const onDish = placed.filter((p) => p.where === "dish");
         pack(onPlat, DECK.x0, DECK.x1, DECK.top + platDy, 6).forEach(({ it, x, y }) => place(it.el, x, y));
-        const dishRow = onDish.slice().sort((a, b) => b.g - a.g);
-        const dishPos = packDish(dishRow, dish.x, dish.half * 2 + 6, dish.y + 50);
-        dishPos.slice().sort((a, b) => b.depth - a.depth).forEach(({ it }) => dishItemsG.appendChild(it.el));
-        dishPos.forEach(({ it, x, y }) => place(it.el, x, y));
+        placeOnDish(onDish, dish, dish.y + 22).forEach(({ it, x, y }) => place(it.el, x, y));
 
         clearBtn.classList.toggle("is-disabled", !placed.some((p) => p.kind === "w"));
       }
@@ -1222,6 +1197,8 @@
 
         if (item.kind === "w" && overDish) {
           item.where = "dish";
+          const cur = currentXY(item.el);
+          item.dishOffsetX = cur.x + item.w / 2 - dish.x; // zachovej místo, kam ho žák pustil
         } else if (overPlatform && !overDish) {
           item.where = "platform";
         } else {
