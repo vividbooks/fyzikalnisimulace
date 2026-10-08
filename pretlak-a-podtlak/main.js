@@ -188,6 +188,39 @@
     }
   }
 
+  /* ---------- Proudění ventilem ---------- */
+
+  // Při otevřeném ventilu proudí vzduch z místa s vyšším tlakem do místa s nižším:
+  // částice u ventilu na straně vyššího tlaku se natáčejí směrem k otvoru.
+  function steerThroughValve(dt) {
+    const dp = pressureNow() - P0;
+    if (Math.abs(dp) < Math.max(6, 0.8 * kPaPerParticle())) return;
+    const tx = VALVE.diskX + VALVE.diskW / 2;
+    const ty = (VALVE.y0 + VALVE.y1) / 2;
+    // podíl natočení za snímek (slábne s vyrovnáváním); nasávání zvenku je silnější, protože venku je vzduch řidší u otvoru
+    const strength = dp > 0 ? Math.min(1, dp / 200) * 4 * dt : Math.min(1, -dp / 50) * 6 * dt;
+    const reach = dp > 0 ? 260 : 380;
+    for (const p of state.particles) {
+      const inside = isInside(p.x, p.y, state.px);
+      if (dp > 0 ? !inside : inside) continue;
+      if (dp < 0 && p.x > CYL.x0) continue; // zvenku se nasává jen z prostoru před výpustí
+      // cíl: projít otvorem na druhou stranu
+      const gx = dp > 0 ? tx - 60 : BORE.x0 + 40;
+      const dx = gx - p.x;
+      const dy = ty - p.y + (Math.random() - 0.5) * 60;
+      const d = Math.hypot(tx - p.x, ty - p.y);
+      if (d > reach) continue;
+      const len = Math.hypot(dx, dy) || 1;
+      const sp = Math.hypot(p.vx, p.vy) || p.s;
+      const f = strength * (1 - d / reach);
+      const nx = (p.vx / sp) * (1 - f) + (dx / len) * f;
+      const ny = (p.vy / sp) * (1 - f) + (dy / len) * f;
+      const nl = Math.hypot(nx, ny) || 1;
+      p.vx = (nx / nl) * sp;
+      p.vy = (ny / nl) * sp;
+    }
+  }
+
   /* ---------- Tlak ---------- */
 
   function countInside() {
@@ -202,6 +235,9 @@
     const pipe = innerVolume(BORE.x0); // objem trubky výpusti
     return BORE.x0 + (vNeeded - pipe) / (BORE.y1 - BORE.y0);
   }
+
+  // o kolik kPa se změní tlak, když přibude/ubude jedna částice uvnitř
+  const kPaPerParticle = () => P0 / (N0_DENSITY * innerVolume(state.px));
 
   function pressureNow() {
     return (P0 * countInside()) / (N0_DENSITY * innerVolume(state.px));
@@ -464,6 +500,8 @@
     }
     state.vp = (state.px - prevPx) / dt;
 
+    if (state.valveOpen) steerThroughValve(dt);
+
     const SUB = 3;
     for (let i = 0; i < SUB; i += 1) {
       const pPrev = prevPx + ((state.px - prevPx) * i) / SUB;
@@ -472,7 +510,11 @@
     state.hits = state.hits.filter((h) => state.time - h.t < 3.05);
 
     const pNow = pressureNow();
-    if (state.valveOpen) state.pShown += (pNow - state.pShown) * Math.min(1, dt / 0.5);
+    if (state.valveOpen) {
+      // malé kolísání kolem 100 kPa je jen šum (částic je málo) – po vyrovnání se ukazuje tlak okolí
+      const target = Math.abs(pNow - P0) < Math.max(12, 1.6 * kPaPerParticle()) ? P0 : pNow;
+      state.pShown += (target - state.pShown) * Math.min(1, dt / 0.4);
+    }
     else state.pShown = pNow;
 
     draw();
