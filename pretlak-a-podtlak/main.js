@@ -38,6 +38,7 @@
     px: PX0,
     pxTarget: PX0,
     vp: 0,
+    vFree: 0,
     valveOpen: false,
     particles: [],
     hits: [],     // { t, side: "in"|"out", x, y }
@@ -193,6 +194,13 @@
     let n = 0;
     for (const p of state.particles) if (isInside(p.x, p.y, state.px)) n += 1;
     return n;
+  }
+
+  // poloha pístu, při které je tlak uvnitř stejný jako venku (pro aktuální počet částic uvnitř)
+  function equilibriumX() {
+    const vNeeded = countInside() / N0_DENSITY;
+    const pipe = innerVolume(BORE.x0); // objem trubky výpusti
+    return BORE.x0 + (vNeeded - pipe) / (BORE.y1 - BORE.y0);
   }
 
   function pressureNow() {
@@ -431,11 +439,25 @@
     last = t;
     state.time += dt;
 
-    // píst se přibližuje k cíli tažení s omezenou rychlostí
     const prevPx = state.px;
-    const want = state.pxTarget - state.px;
     const maxStep = PISTON_MAX_V * dt;
-    state.px += Math.max(-maxStep, Math.min(maxStep, want));
+    if (state.drag) {
+      // píst se přibližuje k cíli tažení s omezenou rychlostí
+      const want = state.pxTarget - state.px;
+      state.px += Math.max(-maxStep, Math.min(maxStep, want));
+      state.vFree = 0;
+    } else {
+      // puštěný píst: tlaková síla zevnitř a zvenku ho posune tam, kde se tlaky vyrovnají
+      const eq = equilibriumX();
+      const acc = 14 * (eq - state.px) - 7 * state.vFree; // tlumená „pružina“ – vzduch funguje jako pružina
+      state.vFree += acc * dt;
+      state.vFree = Math.max(-PISTON_MAX_V, Math.min(PISTON_MAX_V, state.vFree));
+      let nx = state.px + state.vFree * dt;
+      if (nx < PX_MIN) { nx = PX_MIN; state.vFree = 0; }
+      if (nx > PX_MAX) { nx = PX_MAX; state.vFree = 0; }
+      state.px = nx;
+      state.pxTarget = nx;
+    }
     state.vp = (state.px - prevPx) / dt;
 
     const SUB = 3;
@@ -524,6 +546,7 @@
     state.px = PX0;
     state.pxTarget = PX0;
     state.vp = 0;
+    state.vFree = 0;
     state.hits = [];
     state.hitsSince = state.time;
     setValve(false);
