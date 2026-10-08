@@ -19,8 +19,8 @@
   const PX0 = 600;
   const ROD = { len: 262, half: 10 };
   const HANDLE = { w: 24, half: 70 };
-  const VALVE = { x0: 276, x1: 376, top: 236, diskY: 250, diskH: 8 }; // trubka s ventilem nahoře
-  const GAUGE = { x: 150, y: 400, r: 68 };
+  const VALVE = { y0: 340, y1: 460, left: 212, diskX: 224, diskW: 8 }; // trubka s ventilem vlevo (ve dně válce)
+  const GAUGE = { x: 326, y: 160, r: 68 };                                // manometr nahoře
   const R = 5;              // poloměr částice
   const SPEED = 260;        // střední rychlost částic (px/s)
   const P0 = 100;           // atmosférický tlak (kPa)
@@ -28,7 +28,7 @@
   const N_IN0 = 40;         // částic uvnitř na začátku
   const PISTON_MAX_V = 420; // nejvyšší rychlost pístu (px/s)
 
-  const innerVolume = (px) => (px - BORE.x0) * (BORE.y1 - BORE.y0) + (VALVE.x1 - VALVE.x0) * (BORE.y0 - (VALVE.diskY + VALVE.diskH));
+  const innerVolume = (px) => (px - BORE.x0) * (BORE.y1 - BORE.y0) + (BORE.x0 - (VALVE.diskX + VALVE.diskW)) * (VALVE.y1 - VALVE.y0);
   const N0_DENSITY = N_IN0 / innerVolume(PX0);
 
   /* ---------- Stav ---------- */
@@ -52,18 +52,18 @@
   function solids() {
     const px = state.px;
     const list = [
-      { x0: CYL.x0, x1: VALVE.x0, y0: CYL.y0, y1: BORE.y0 },                  // horní stěna vlevo
-      { x0: VALVE.x1, x1: CYL.x1, y0: CYL.y0, y1: BORE.y0 },                  // horní stěna vpravo
+      { x0: CYL.x0, x1: CYL.x1, y0: CYL.y0, y1: BORE.y0 },                    // horní stěna
       { x0: CYL.x0, x1: CYL.x1, y0: BORE.y1, y1: CYL.y1 },                    // dolní stěna
-      { x0: CYL.x0, x1: BORE.x0, y0: CYL.y0, y1: CYL.y1 },                    // levé dno
-      { x0: VALVE.x0 - 12, x1: VALVE.x0, y0: VALVE.top, y1: CYL.y0 },         // trubka vlevo
-      { x0: VALVE.x1, x1: VALVE.x1 + 12, y0: VALVE.top, y1: CYL.y0 },         // trubka vpravo
-      { x0: GAUGE.x + GAUGE.r - 6, x1: CYL.x0, y0: 394, y1: 406 },            // trubička manometru
+      { x0: CYL.x0, x1: BORE.x0, y0: CYL.y0, y1: VALVE.y0 },                  // dno nad výpustí
+      { x0: CYL.x0, x1: BORE.x0, y0: VALVE.y1, y1: CYL.y1 },                  // dno pod výpustí
+      { x0: VALVE.left, x1: CYL.x0, y0: VALVE.y0 - 12, y1: VALVE.y0 },        // trubka nahoře
+      { x0: VALVE.left, x1: CYL.x0, y0: VALVE.y1, y1: VALVE.y1 + 12 },        // trubka dole
+      { x0: GAUGE.x - 6, x1: GAUGE.x + 6, y0: GAUGE.y + GAUGE.r - 6, y1: CYL.y0 }, // trubička manometru
       { x0: px, x1: px + PISTON_W, y0: BORE.y0, y1: BORE.y1, piston: true },  // píst
       { x0: px + PISTON_W, x1: px + PISTON_W + ROD.len, y0: 400 - ROD.half, y1: 400 + ROD.half }, // pístnice
       { x0: px + PISTON_W + ROD.len, x1: px + PISTON_W + ROD.len + HANDLE.w, y0: 400 - HANDLE.half, y1: 400 + HANDLE.half }, // rukojeť
     ];
-    if (!state.valveOpen) list.push({ x0: VALVE.x0, x1: VALVE.x1, y0: VALVE.diskY, y1: VALVE.diskY + VALVE.diskH });
+    if (!state.valveOpen) list.push({ x0: VALVE.diskX, x1: VALVE.diskX + VALVE.diskW, y0: VALVE.y0, y1: VALVE.y1 });
     return list;
   }
 
@@ -76,7 +76,7 @@
 
   const isInside = (x, y, px) =>
     (x > BORE.x0 && x < px && y > BORE.y0 && y < BORE.y1) ||
-    (x > VALVE.x0 && x < VALVE.x1 && y > VALVE.diskY + VALVE.diskH && y <= BORE.y0);
+    (x > VALVE.diskX + VALVE.diskW && x <= BORE.x0 && y > VALVE.y0 && y < VALVE.y1);
 
   /* ---------- Částice ---------- */
 
@@ -243,7 +243,7 @@
     const { x, y, r } = GAUGE;
     // trubička
     ctx.fillStyle = "#64748b";
-    ctx.fillRect(x + r - 6, 394, CYL.x0 - (x + r - 6), 12);
+    ctx.fillRect(x - 6, y + r - 6, 12, CYL.y0 - (y + r - 6));
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
@@ -302,7 +302,7 @@
     // vnitřek válce (lehce tónovaný)
     ctx.fillStyle = "rgba(147, 197, 253, 0.18)";
     ctx.fillRect(BORE.x0, BORE.y0, px - BORE.x0, BORE.y1 - BORE.y0);
-    ctx.fillRect(VALVE.x0, VALVE.diskY + VALVE.diskH, VALVE.x1 - VALVE.x0, BORE.y0 - VALVE.diskY - VALVE.diskH);
+    ctx.fillRect(VALVE.diskX + VALVE.diskW, VALVE.y0, BORE.x0 - VALVE.diskX - VALVE.diskW, VALVE.y1 - VALVE.y0);
 
     // částice
     ctx.fillStyle = "#5b7aa8";
@@ -329,40 +329,39 @@
     ctx.strokeStyle = "#475569";
     ctx.lineWidth = 2;
     const wallRects = [
-      [CYL.x0, CYL.y0, VALVE.x0 - CYL.x0, BORE.y0 - CYL.y0],
-      [VALVE.x1, CYL.y0, CYL.x1 - VALVE.x1, BORE.y0 - CYL.y0],
+      [CYL.x0, CYL.y0, CYL.x1 - CYL.x0, BORE.y0 - CYL.y0],
       [CYL.x0, BORE.y1, CYL.x1 - CYL.x0, CYL.y1 - BORE.y1],
-      [CYL.x0, CYL.y0, BORE.x0 - CYL.x0, CYL.y1 - CYL.y0],
-      [VALVE.x0 - 12, VALVE.top, 12, CYL.y0 - VALVE.top + 12],
-      [VALVE.x1, VALVE.top, 12, CYL.y0 - VALVE.top + 12],
+      [CYL.x0, CYL.y0, BORE.x0 - CYL.x0, VALVE.y0 - CYL.y0],
+      [CYL.x0, VALVE.y1, BORE.x0 - CYL.x0, CYL.y1 - VALVE.y1],
+      [VALVE.left, VALVE.y0 - 12, CYL.x0 - VALVE.left + 12, 12],
+      [VALVE.left, VALVE.y1, CYL.x0 - VALVE.left + 12, 12],
     ];
     for (const [x, y, w, h] of wallRects) { ctx.fillRect(x, y, w, h); }
     ctx.strokeRect(CYL.x0, CYL.y0, CYL.x1 - CYL.x0, CYL.y1 - CYL.y0);
 
-    // ventil (klapka v trubce + páčka)
-    const vx = (VALVE.x0 + VALVE.x1) / 2;
-    const vy = VALVE.diskY + VALVE.diskH / 2;
+    // výpusť: klapka v trubce + páčka nad trubkou
+    const vx = VALVE.diskX + VALVE.diskW / 2;
+    const vy = (VALVE.y0 + VALVE.y1) / 2;
     ctx.save();
     ctx.lineCap = "round";
     if (state.valveOpen) {
       ctx.strokeStyle = "#334155";
       ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.moveTo(vx, vy - 14); ctx.lineTo(vx, vy + 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(vx - 16, vy); ctx.lineTo(vx + 16, vy); ctx.stroke();
     } else {
       ctx.fillStyle = "#334155";
-      ctx.fillRect(VALVE.x0, VALVE.diskY, VALVE.x1 - VALVE.x0, VALVE.diskH);
+      ctx.fillRect(VALVE.diskX, VALVE.y0, VALVE.diskW, VALVE.y1 - VALVE.y0);
     }
-    // páčka vpravo od trubky
-    const hx = VALVE.x1 + 26;
+    const hy = VALVE.y0 - 12; // osa páčky na horní stěně trubky
     ctx.strokeStyle = "#e11d48";
     ctx.lineWidth = 9;
     ctx.beginPath();
-    ctx.moveTo(VALVE.x1 + 12, vy);
-    if (state.valveOpen) ctx.lineTo(hx, vy - 34);
-    else ctx.lineTo(hx + 26, vy);
+    ctx.moveTo(vx, hy);
+    if (state.valveOpen) ctx.lineTo(vx - 46, hy);   // páčka podél trubky = otevřeno
+    else ctx.lineTo(vx, hy - 46);                   // páčka napříč trubkou = zavřeno
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(VALVE.x1 + 12, vy, 8, 0, Math.PI * 2);
+    ctx.arc(vx, hy, 8, 0, Math.PI * 2);
     ctx.fillStyle = "#e11d48";
     ctx.fill();
     ctx.restore();
@@ -471,7 +470,7 @@
   }
 
   function onValve(p) {
-    return p.x > VALVE.x0 - 14 && p.x < VALVE.x1 + 70 && p.y > VALVE.top - 20 && p.y < CYL.y0;
+    return p.x > VALVE.left - 60 && p.x < CYL.x0 && p.y > VALVE.y0 - 70 && p.y < VALVE.y1 + 14;
   }
 
   function hideHint() {
