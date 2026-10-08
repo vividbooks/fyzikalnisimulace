@@ -24,7 +24,7 @@
   const ROD = { len: 262, half: 10 };
   const HANDLE = { w: 24, half: 70 };
   const VALVE = { y0: 340, y1: 460, left: 212, diskX: 224, diskW: 8 }; // trubka s ventilem vlevo (ve dně válce)
-  const GAUGE = { x: 326, y: 160, r: 68 };
+  const GAUGE = { x: 326, y: 160, r: 82 }; // o 20 % větší než původních 68
   const GAUGE_MAX = 800; // rozsah manometru (kPa)                                // manometr nahoře
   const R = 4.5;              // poloměr částice
   const SPEED = 260;        // střední rychlost částic (px/s)
@@ -346,10 +346,17 @@
   }
 
   function drawGauge(p) {
-    const { x, y, r } = GAUGE;
+    const { x, y } = GAUGE;
     // trubička
     ctx.fillStyle = "#64748b";
-    ctx.fillRect(x - 6, y + r - 6, 12, CYL.y0 - (y + r - 6));
+    ctx.fillRect(x - 6, y + GAUGE.r - 6, 12, CYL.y0 - (y + GAUGE.r - 6));
+    // ciferník se kreslí v původní velikosti (r = 68) a celý se zvětší
+    const r = 68;
+    const S = GAUGE.r / r;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(S, S);
+    ctx.translate(-x, -y);
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
@@ -400,7 +407,7 @@
     ctx.beginPath();
     ctx.arc(x, y, 6, 0, Math.PI * 2);
     ctx.fillStyle = "#334155";
-    ctx.fill();
+    ctx.fill();    ctx.restore();
   }
 
   function draw() {
