@@ -40,6 +40,7 @@
     vp: 0,
     vFree: 0,
     nSmooth: N_IN0,
+    closedAt: -10,
     valveOpen: false,
     particles: [],
     hits: [],     // { t, side: "in"|"out", x, y }
@@ -522,7 +523,11 @@
       state.pShown += (target - state.pShown) * Math.min(1, dt / 0.6);
     }
     else {
-      state.pShown = pNow;
+      // těsně po zavření ventilu se ukazovaná hodnota k přesnému tlaku jen plynule dotáhne
+      // (při otevřeném ventilu se ukazoval průměr, skutečný počet částic se od něj o kousek liší)
+      const sinceClose = state.time - state.closedAt;
+      if (sinceClose < 1.5) state.pShown += (pNow - state.pShown) * Math.min(1, dt / 0.35);
+      else state.pShown = pNow;
       state.nSmooth = countInside();
     }
 
@@ -588,6 +593,7 @@
 
   const valveBtns = document.querySelectorAll("[data-valve]");
   function setValve(open) {
+    if (state.valveOpen && !open) state.closedAt = state.time;
     state.valveOpen = open;
     valveBtns.forEach((b) => {
       const on = (b.dataset.valve === "open") === open;
