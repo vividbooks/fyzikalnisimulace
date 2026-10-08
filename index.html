@@ -1170,6 +1170,12 @@
             hash: "#/sim/hydraulicke_zarizeni",
             previewColor: "#e8fff4",
           },
+          {
+            id: "pretlak_podtlak",
+            title: "Přetlak a podtlak",
+            hash: "#/sim/pretlak_podtlak",
+            previewColor: "#fff3e0",
+          },
         ],
       },
       {
@@ -1249,6 +1255,7 @@
       vztlakova: "kapaliny",
       pascaluv_zakon: "kapaliny",
       hydraulicke_zarizeni: "kapaliny",
+      pretlak_podtlak: "kapaliny",
       plavani_potapeni: "kapaliny",
       graf_pohyb: "zaklady",
       obsah: "zaklady",
@@ -2322,6 +2329,25 @@
       </svg>`;
     }
 
+    function PretlakPodtlakCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="pretlak-a-podtlak/card-pretlak-a-podtlak.svg?v=1"
+          x="4"
+          y="4"
+          width="124"
+          height="80"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function HydraulickeZarizeniCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -2374,6 +2400,7 @@
       if (tileId === "vztlakova") return html`<${VztlakovaCardIllustration} />`;
       if (tileId === "pascaluv_zakon") return html`<${PascaluvZakonCardIllustration} />`;
       if (tileId === "hydraulicke_zarizeni") return html`<${HydraulickeZarizeniCardIllustration} />`;
+      if (tileId === "pretlak_podtlak") return html`<${PretlakPodtlakCardIllustration} />`;
       if (tileId === "plavani_potapeni") return html`<${PlavaniPotapeniCardIllustration} />`;
       if (tileId === "optika_geometrie") return html`<${GeometricOpticsIllustration} />`;
       if (tileId === "videni") return html`<${BarevneVideniCardIllustration} />`;
@@ -2764,6 +2791,14 @@
           }
           return;
         }
+        if (simId === "pretlak_podtlak") {
+          try {
+            window.location.replace(new URL("pretlak-a-podtlak/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("pretlak-a-podtlak/");
+          }
+          return;
+        }
         if (simId === "hydraulicke_zarizeni") {
           try {
             window.location.replace(new URL("hydraulicke-zarizeni/", window.location.href).href);
@@ -3031,7 +3066,7 @@
           </div>
         `;
       }
-      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni" || simId === "plavani_potapeni" || simId === "decimalka") {
+      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni" || simId === "plavani_potapeni" || simId === "decimalka" || simId === "pretlak_podtlak") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>

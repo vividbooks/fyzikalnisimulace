@@ -1,0 +1,901 @@
+@font-face {
+  font-family: "Fenomen Sans";
+  src: url("assets/fonts/FenomenSans-Book.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fenomen Sans";
+  src: url("assets/fonts/FenomenSans-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cooper Light";
+  src: url("assets/fonts/Cooper-Light.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --font-app: "Fenomen Sans", ui-sans-serif, system-ui, sans-serif;
+  --page-bg: #1e2533;
+  --card-bg: #2a3344;
+  --idle-bg: #334155;
+  --idle-text: #cbd5e1;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-on: #ffffff;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --border: #475569;
+  --border-strong: #475569;
+  --focus: #3b82f6;
+  --readout-bg: #1e293b;
+  --canvas-bg: #ffffe6;
+  --canvas-text: #334155;
+  --success: #4ade80;
+  --danger: #ef4444;
+  --radius: 12px;
+  --radius-canvas: 24px;
+  --panel-w: min(300px, 34vw);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: var(--font-app);
+  font-weight: 400;
+  color-scheme: dark;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+output {
+  font-family: inherit;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  padding: max(16px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+  background: var(--page-bg);
+  overflow: hidden;
+}
+
+/* ---------- Panel ---------- */
+
+.setup-panel {
+  flex: 0 0 var(--panel-w);
+  width: var(--panel-w);
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 8px 8px 16px;
+  color: var(--text);
+  scrollbar-gutter: stable;
+}
+
+.panel-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.hub-back-to-sims {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #1e293b;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.hub-back-to-sims svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.hub-back-to-sims:hover {
+  color: #ffffff;
+}
+
+.hub-back-to-sims:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.panel-title {
+  margin: 0;
+  color: var(--text);
+  font-family: "Cooper Light", serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+}
+
+.panel-section {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--card-bg);
+}
+
+.panel-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* ---------- Výběr tělesa ---------- */
+
+.object-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.object-btn {
+  appearance: none;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 2px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.object-btn__icon {
+  display: block;
+  width: 52px;
+  height: 36px;
+  overflow: visible;
+}
+
+.object-btn__mass {
+  white-space: pre-line;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.object-btn:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.object-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.object-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+.object-btn.is-active .object-btn__mass {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.object-btn:disabled,
+.action-btn:disabled,
+.speed-control__slider:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- Rychlost ---------- */
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.speed-control__slider {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: none;
+}
+
+.speed-control__slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--fill, 50%),
+    var(--idle-bg) var(--fill, 50%),
+    var(--idle-bg) 100%
+  );
+}
+
+.speed-control__slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--idle-bg);
+}
+
+.speed-control__slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.speed-control__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -9px;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+}
+
+.speed-control__slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.speed-control__slider:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.speed-control__value {
+  flex: 0 0 auto;
+  min-width: 68px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--readout-bg);
+  color: var(--text);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* ---------- Akce ---------- */
+
+.actions-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.action-btn svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.action-btn--run {
+  background: #4ade80;
+  color: #14532d;
+}
+
+.action-btn--run:hover:not(:disabled) {
+  background: #86efac;
+  color: #052e16;
+}
+
+.action-btn--reset {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.action-btn--reset:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.action-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Údaje o tělese (levý horní roh plátna) ---------- */
+
+/* Levý horní roh plátna: údaje o tělese a pod nimi prostředí (g). */
+.viz-side {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 7;
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.sim-label-slot { padding-left: 4px; }
+
+.sim-label-slot .sim-label {
+  display: none;
+  width: auto;
+  height: 72px;
+}
+
+body.env-earth .sim-label-earth,
+body.env-moon .sim-label-moon,
+body.env-weightless .sim-label-weightless { display: block; }
+
+.body-info {
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  min-width: 150px;
+  padding: 10px 16px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  color: #334155;
+  font-size: 20px;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.body-info__name {
+  white-space: nowrap;
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.body-info__value {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Plátno ---------- */
+
+.scene-workspace {
+  flex: 1 1 0;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px 16px 0;
+  border-radius: var(--radius-canvas);
+  background: var(--canvas-bg);
+}
+
+.sim-empty-hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  z-index: 8;
+  width: max-content;
+  max-width: min(720px, calc(100% - 48px));
+  margin: 0;
+  padding: 12px 28px;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  pointer-events: none;
+  text-align: center;
+  font-size: 28px;
+  line-height: 1.35;
+  color: #334155;
+  transform: translateX(-50%);
+}
+
+/* Nápověda uprostřed plátna (nepřekrývá kartičku vlevo nahoře). */
+.sim-empty-hint {
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+.sim-empty-hint.is-hidden {
+  display: none;
+}
+
+.stage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stage text {
+  font-family: var(--font-app);
+}
+
+.readout {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.readout.is-pop {
+  animation: readout-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes readout-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  45% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.readout__flash {
+  opacity: 0;
+}
+
+.readout.is-pop .readout__flash {
+  animation: readout-flash 0.9s ease-out;
+}
+
+@keyframes readout-flash {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readout.is-pop,
+  .readout.is-pop .readout__flash {
+    animation: none;
+  }
+}
+
+/* ---------- Mobil ---------- */
+
+@media (max-width: 760px) {
+  html,
+  body {
+    overflow: auto;
+  }
+
+  .scene {
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    padding-left: max(10px, env(safe-area-inset-left, 0px));
+    padding-right: max(10px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    gap: 12px;
+  }
+
+  .setup-panel {
+    order: 2;
+    flex: 0 1 auto;
+    width: 100%;
+    overflow: visible;
+    padding: 8px 8px 16px;
+  }
+
+  html,
+  body {
+    height: auto;
+  }
+
+  .object-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .scene-workspace {
+    order: 1;
+    flex: 0 0 auto;
+    min-height: 260px;
+    width: 100%;
+    padding: 56px 8px 0;
+  }
+
+  .panel-title {
+    font-size: 28px;
+  }
+
+  .body-info {
+    min-width: 0;
+    padding: 6px 10px 8px;
+    font-size: 15px;
+  }
+
+  .body-info__name { font-size: 11px; }
+
+  .sim-empty-hint {
+    top: 50%;
+    font-size: 16px;
+    padding: 8px 16px;
+    max-width: calc(100% - 24px);
+  }
+}
+
+/* Jednotka jako zlomek (m nad s). */
+.unit-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 2px;
+  font-size: 0.72em;
+  line-height: 1.05;
+}
+
+.unit-frac__num {
+  padding: 0 2px 1px;
+  border-bottom: 1.5px solid currentColor;
+}
+
+.unit-frac__den {
+  padding-top: 1px;
+}
+
+/* ---------- Prostředí ---------- */
+
+.env-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.env-btn {
+  appearance: none;
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.15;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.env-btn:hover:not(:disabled) { color: var(--text); }
+.env-btn.is-active { background: var(--accent); color: var(--accent-on); }
+.env-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.env-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.panel-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ground { transition: opacity 320ms ease; }
+.ground--moon { opacity: 0; }
+body.env-moon .ground--earth,
+body.env-weightless .ground--earth { opacity: 0; }
+body.env-moon .ground--moon { opacity: 1; }
+
+.scene-workspace { transition: background-color 320ms ease; }
+
+body.env-moon .scene-workspace,
+body.env-weightless .scene-workspace {
+  background: #020208 url("assets/space-stars.svg") center / cover no-repeat;
+}
+
+/* Měřič a pružina světlejší na tmavém vesmírném pozadí. */
+body.env-moon .stage .meter-outline,
+body.env-weightless .stage .meter-outline { stroke: #A3ACB9; }
+body.env-moon .stage .spring-dark,
+body.env-weightless .stage .spring-dark { stroke: #B8BEC8; }
+
+@media (max-width: 760px) {
+  .viz-side { top: 10px; left: 10px; gap: 6px; }
+  .sim-label-slot .sim-label { height: 44px; }
+}
+
+/* Značky veličin kurzívou (m, V, g …), jednotky zůstávají stojatě. */
+i.qty { font-style: italic; }
+
+/* ---------- Plavání a potápění ---------- */
+
+.sim-empty-hint {
+  top: 16px;
+  transform: translateX(-50%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.obj-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--readout-bg);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.obj-card__name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.obj-card__row { font-variant-numeric: tabular-nums; }
+.obj-card__value { color: #93c5fd; }
+
+.obj-card__verdict {
+  justify-self: start;
+  margin-top: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.obj-card__verdict[hidden] { display: none; }
+.obj-card__verdict--float { background: #1d4ed8; color: #fff; }
+.obj-card__verdict--sink { background: #475569; color: #fff; }
+
+.obj-card--empty .obj-card__row,
+.obj-card--empty .obj-card__verdict { display: none; }
+
+.water-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.reset-btn { width: 100%; }
+
+.stage .item { cursor: grab; }
+.stage .item.is-dragging { cursor: grabbing; }
+.stage { touch-action: none; overflow: hidden; }
+.scene-workspace { padding-bottom: 16px; }
+
+@media (max-width: 760px) {
+  .sim-empty-hint { top: 10px; }
+}
+
+/* ---------- Výběr kapaliny ---------- */
+
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.mode-switch__btn {
+  appearance: none;
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--idle-bg);
+  color: var(--idle-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mode-switch__btn:hover { color: var(--text); }
+
+.mode-switch__btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.mode-switch__btn.is-active {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+/* Hustota kapaliny v plátně (vpravo dole, pod akváriem). */
+.liquid-readout {
+  position: absolute;
+  bottom: 16px;
+  right: 24px;
+  z-index: 6;
+  margin: 0;
+  padding: 8px 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 22px;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .liquid-readout { bottom: 10px; right: 10px; font-size: 15px; padding: 4px 10px; }
+}
+
+/* ---------- Síly ---------- */
+
+.mode-switch--2 { grid-template-columns: 1fr 1fr; }
+
+.force-legend {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--idle-text);
+  font-size: 14px;
+}
+
+.force-legend[hidden] { display: none; }
+
+.force-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.force-legend__swatch {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.force-legend__swatch--fg { background: #E11D48; }
+.force-legend__swatch--fvz { background: #22C55E; }
+
+.obj-card__forces {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.obj-card__forces[hidden] { display: none; }
+.obj-card__row--fg span { color: #fb7185; }
+.obj-card__row--fvz span { color: #4ade80; }
+
+.stage .forces { pointer-events: none; }
+
+.panel-label--spaced { margin-top: 10px; }
+.water-note[hidden] { display: none; }
+
+/* ---------- Varianta 2D (polička nahoře) ---------- */
+body[data-layout="flat"] .liquid-readout { display: none; }
+body[data-layout="flat"] .sim-empty-hint { top: 58%; }
+
+/* ---------- Neznámý předmět ---------- */
+.obj-card__custom {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 4px;
+}
+.obj-card__custom[hidden] { display: none; }
+.obj-card__custom .panel-label { margin: 4px 0 0; }
+.obj-card__custom .speed-control { min-width: 0; gap: 8px; }
+.obj-card__custom .speed-control__value { min-width: 78px; padding: 6px 4px; font-size: 14px; }
+.obj-card { min-width: 0; }
+
+/* ---------- Přetlak a podtlak ---------- */
+
+.pp-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+}
+.pp-canvas.is-over-piston { cursor: grab; }
+.pp-canvas.is-over-valve { cursor: pointer; }
+.pp-canvas.is-dragging { cursor: grabbing; }
+
+.pp-card { gap: 6px; }
+.pp-force { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.pp-swatch { width: 22px; height: 6px; border-radius: 3px; flex: 0 0 auto; }
+.pp-swatch--in { background: #e11d48; }
+.pp-swatch--out { background: #2563eb; }
+.pp-note { color: var(--muted); font-size: 14px; }
+
+.pp-state {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+.pp-state--over { background: #e11d48; }
+.pp-state--under { background: #2563eb; }
+.pp-state--eq { background: #475569; }

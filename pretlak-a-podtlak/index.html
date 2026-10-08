@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Přetlak a podtlak</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <main class="scene" aria-label="Simulace přetlaku a podtlaku">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Přetlak a podtlak</h1>
+      </div>
+
+      <section class="panel-section" aria-label="Ventil">
+        <span class="panel-label">Ventil</span>
+        <div class="mode-switch mode-switch--2" role="group" aria-label="Ventil">
+          <button class="mode-switch__btn is-active" type="button" data-valve="closed" aria-pressed="true">zavřený</button>
+          <button class="mode-switch__btn" type="button" data-valve="open" aria-pressed="false">otevřený</button>
+        </div>
+      </section>
+
+      <section class="panel-section" aria-label="Tlak">
+        <span class="panel-label">Tlak vzduchu</span>
+        <div class="obj-card pp-card" aria-live="polite">
+          <span class="obj-card__row">uvnitř válce: <i class="qty">p</i> = <span class="obj-card__value" id="pIn">100</span> kPa</span>
+          <span class="obj-card__row">venku: <i class="qty">p</i><sub>a</sub> = <span class="obj-card__value">100</span> kPa</span>
+          <span class="pp-state pp-state--eq" id="pState">stejný tlak</span>
+        </div>
+      </section>
+
+      <section class="panel-section" aria-label="Síly na píst">
+        <span class="panel-label">Tlakové síly na píst</span>
+        <div class="obj-card pp-card">
+          <span class="pp-force"><span class="pp-swatch pp-swatch--in"></span>zevnitř: <span class="obj-card__value" id="fIn">200</span> N</span>
+          <span class="pp-force"><span class="pp-swatch pp-swatch--out"></span>zvenku: <span class="obj-card__value" id="fOut">200</span> N</span>
+          <span class="pp-note">plocha pístu <i class="qty">S</i> = 20 cm²</span>
+        </div>
+      </section>
+
+      <section class="panel-section" aria-label="Nárazy částic">
+        <span class="panel-label">Nárazy částic do pístu za 1 s</span>
+        <div class="obj-card pp-card">
+          <span class="pp-force"><span class="pp-swatch pp-swatch--in"></span>zevnitř: <span class="obj-card__value" id="hitsIn">0</span></span>
+          <span class="pp-force"><span class="pp-swatch pp-swatch--out"></span>zvenku: <span class="obj-card__value" id="hitsOut">0</span></span>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <button type="button" id="btnReset" class="action-btn action-btn--reset reset-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Znovu
+        </button>
+      </section>
+    </aside>
+
+    <div class="scene-workspace" id="workspace">
+      <p class="sim-empty-hint" id="hintEl">Táhni za rukojeť pístu.</p>
+      <canvas class="pp-canvas" id="view" aria-label="Válec s pístem, uvnitř i venku se pohybují částice vzduchu"></canvas>
+    </div>
+  </main>
+
+  <script src="main.js?v=1"></script>
+  <script src="../shared/sim-qr.js"></script>
+</body>
+</html>
