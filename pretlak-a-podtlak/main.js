@@ -18,14 +18,14 @@
   const BORE = { x0: 262, x1: 860, y0: 282, y1: 518 };   // vnitřek válce
   const CYL = { x0: 250, x1: 860, y0: 270, y1: 530 };    // vnější obrys válce
   const PISTON_W = 28;
-  const PX_MIN = 320;
+  const PX_MIN = 296;
   const PX_MAX = 820;
   const PX0 = 600;
   const ROD = { len: 262, half: 10 };
   const HANDLE = { w: 24, half: 70 };
   const VALVE = { y0: 340, y1: 460, left: 212, diskX: 224, diskW: 8 }; // trubka s ventilem vlevo (ve dně válce)
   const GAUGE = { x: 326, y: 160, r: 68 };
-  const GAUGE_MAX = 500; // rozsah manometru (kPa)                                // manometr nahoře
+  const GAUGE_MAX = 800; const RELIEF_P = 700; // rozsah manometru (kPa)                                // manometr nahoře
   const R = 4.5;              // poloměr částice
   const SPEED = 260;        // střední rychlost částic (px/s)
   const P0 = 100;           // atmosférický tlak (kPa)
@@ -366,6 +366,12 @@
     ctx.strokeStyle = "#2563eb";
     ctx.lineWidth = 8;
     ctx.stroke();
+    // červené pole: nad 700 kPa ventil povolí
+    ctx.beginPath();
+    ctx.arc(x, y, r - 14, ang(RELIEF_P), ang(GAUGE_MAX));
+    ctx.strokeStyle = "#e11d48";
+    ctx.lineWidth = 8;
+    ctx.stroke();
     ctx.strokeStyle = "#334155";
     ctx.fillStyle = "#334155";
     ctx.font = "600 13px 'Fenomen Sans', system-ui, sans-serif";
@@ -373,7 +379,7 @@
     ctx.textBaseline = "middle";
     for (let v = 0; v <= GAUGE_MAX; v += 50) {
       const a = ang(v);
-      const big = v % 100 === 0;
+      const big = v % 200 === 0;
       ctx.lineWidth = big ? 3 : 1.6;
       ctx.beginPath();
       ctx.moveTo(x + Math.cos(a) * (r - 6), y + Math.sin(a) * (r - 6));
@@ -500,7 +506,7 @@
     }
 
     // síly na píst (zevnitř doprava, zvenku doleva)
-    const kF = 1.2; // px na kPa
+    const kF = 0.75; // px na kPa (aby se šipka vešla i při 700 kPa)
     arrow(px + PISTON_W / 2, 330, px + PISTON_W / 2 + state.pShown * kF, "#e11d48");
     arrow(px + PISTON_W / 2, 470, px + PISTON_W / 2 - P0 * kF, "#2563eb");
 
@@ -570,11 +576,11 @@
     state.hits = state.hits.filter((h) => state.time - h.t < HIT_WINDOW + 0.05);
 
     let pNow = pressureNow();
-    // pojistka: při tlaku nad 500 kPa (konec stupnice manometru) ventil povolí
-    if (!state.valveOpen && pNow > GAUGE_MAX) {
+    // pojistka: při tlaku nad 700 kPa ventil povolí
+    if (!state.valveOpen && pNow > RELIEF_P) {
       setValve(true);
-      state.pShown = Math.min(state.pShown, GAUGE_MAX);
-      showNote("Tlak přesáhl 500 kPa – ventil povolil.");
+      state.pShown = Math.min(state.pShown, RELIEF_P);
+      showNote("Tlak přesáhl 700 kPa – ventil povolil.");
     }
     if (state.valveOpen) {
       // počet částic uvnitř se průměruje (částic je málo, okamžitá hodnota by skákala)
