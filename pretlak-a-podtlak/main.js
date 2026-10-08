@@ -22,11 +22,11 @@
   const VALVE = { y0: 340, y1: 460, left: 212, diskX: 224, diskW: 8 }; // trubka s ventilem vlevo (ve dně válce)
   const GAUGE = { x: 326, y: 160, r: 68 };
   const GAUGE_MAX = 500; // rozsah manometru (kPa)                                // manometr nahoře
-  const R = 5;              // poloměr částice
+  const R = 4.5;              // poloměr částice
   const SPEED = 260;        // střední rychlost částic (px/s)
   const P0 = 100;           // atmosférický tlak (kPa)
   const AREA_CM2 = 20;      // plocha pístu
-  const N_IN0 = 40;         // částic uvnitř na začátku
+  const N_IN0 = 70;         // částic uvnitř na začátku
   const PISTON_MAX_V = 420; // nejvyšší rychlost pístu (px/s)
 
   const innerVolume = (px) => (px - BORE.x0) * (BORE.y1 - BORE.y0) + (BORE.x0 - (VALVE.diskX + VALVE.diskW)) * (VALVE.y1 - VALVE.y0);
@@ -39,6 +39,7 @@
     pxTarget: PX0,
     vp: 0,
     vFree: 0,
+    nSmooth: N_IN0,
     valveOpen: false,
     particles: [],
     hits: [],     // { t, side: "in"|"out", x, y }
@@ -193,12 +194,13 @@
   // Při otevřeném ventilu proudí vzduch z místa s vyšším tlakem do místa s nižším:
   // částice u ventilu na straně vyššího tlaku se natáčejí směrem k otvoru.
   function steerThroughValve(dt) {
-    const dp = pressureNow() - P0;
-    if (Math.abs(dp) < Math.max(6, 0.8 * kPaPerParticle())) return;
+    // řídí se průměrným tlakem, aby proudění nereagovalo na náhodné výkyvy
+    const dp = (P0 * state.nSmooth) / (N0_DENSITY * innerVolume(state.px)) - P0;
+    if (Math.abs(dp) < Math.max(5, 1.2 * kPaPerParticle())) return;
     const tx = VALVE.diskX + VALVE.diskW / 2;
     const ty = (VALVE.y0 + VALVE.y1) / 2;
     // podíl natočení za snímek (slábne s vyrovnáváním); nasávání zvenku je silnější, protože venku je vzduch řidší u otvoru
-    const strength = dp > 0 ? Math.min(1, dp / 200) * 4 * dt : Math.min(1, -dp / 50) * 6 * dt;
+    const strength = dp > 0 ? Math.min(1, dp / 100) * 6 * dt : Math.min(1, -dp / 50) * 6 * dt;
     const reach = dp > 0 ? 260 : 380;
     for (const p of state.particles) {
       const inside = isInside(p.x, p.y, state.px);
@@ -511,11 +513,18 @@
 
     const pNow = pressureNow();
     if (state.valveOpen) {
-      // malé kolísání kolem 100 kPa je jen šum (částic je málo) – po vyrovnání se ukazuje tlak okolí
-      const target = Math.abs(pNow - P0) < Math.max(12, 1.6 * kPaPerParticle()) ? P0 : pNow;
-      state.pShown += (target - state.pShown) * Math.min(1, dt / 0.4);
+      // počet částic uvnitř se průměruje (částic je málo, okamžitá hodnota by skákala)
+      const nNow = countInside();
+      state.nSmooth += (nNow - state.nSmooth) * Math.min(1, dt / 1.5);
+      const pSmooth = (P0 * state.nSmooth) / (N0_DENSITY * innerVolume(state.px));
+      // po vyrovnání je zbylé kolísání jen šum – ukazuje se tlak okolí
+      const target = Math.abs(pSmooth - P0) < Math.max(10, 2 * kPaPerParticle()) ? P0 : pSmooth;
+      state.pShown += (target - state.pShown) * Math.min(1, dt / 0.6);
     }
-    else state.pShown = pNow;
+    else {
+      state.pShown = pNow;
+      state.nSmooth = countInside();
+    }
 
     draw();
     panelTimer += dt;
