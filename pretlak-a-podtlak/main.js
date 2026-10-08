@@ -457,7 +457,6 @@
       [VALVE.left, VALVE.y1, CYL.x0 - VALVE.left + 12, 12],
     ];
     for (const [x, y, w, h] of wallRects) { ctx.fillRect(x, y, w, h); }
-    ctx.strokeRect(CYL.x0, CYL.y0, CYL.x1 - CYL.x0, CYL.y1 - CYL.y0);
 
     // výpusť: klapka v trubce + páčka nad trubkou
     const vx = VALVE.diskX + VALVE.diskW / 2;
