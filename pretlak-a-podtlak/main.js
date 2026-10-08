@@ -592,8 +592,47 @@
   canvas.addEventListener("pointercancel", endDrag);
 
   const valveBtns = document.querySelectorAll("[data-valve]");
+  // přesune několik částic mezi vnitřkem a okolím, aby byla hustota uvnitř stejná jako venku
+  function settleToAmbient() {
+    const want = Math.round(N0_DENSITY * innerVolume(state.px));
+    const list = solids();
+    let inside = state.particles.filter((p) => isInside(p.x, p.y, state.px));
+    let guard = 0;
+    while (inside.length > want && guard++ < 500) {
+      const p = inside.splice(Math.floor(Math.random() * inside.length), 1)[0];
+      // přemístit ven na náhodné volné místo daleko od válce
+      for (let k = 0; k < 200; k += 1) {
+        const x = R + Math.random() * (W - 2 * R);
+        const y = R + Math.random() * (H - 2 * R);
+        if (!inSolid(x, y, list) && !isInside(x, y, state.px) && (y < CYL.y0 - 40 || y > CYL.y1 + 40)) { p.x = x; p.y = y; break; }
+      }
+    }
+    while (inside.length < want && guard++ < 1000) {
+      const outside = state.particles.filter((p) => !isInside(p.x, p.y, state.px) && (p.y < CYL.y0 - 40 || p.y > CYL.y1 + 40));
+      if (!outside.length) break;
+      const p = outside[Math.floor(Math.random() * outside.length)];
+      for (let k = 0; k < 200; k += 1) {
+        const x = BORE.x0 + R + Math.random() * (state.px - BORE.x0 - 2 * R);
+        const y = BORE.y0 + R + Math.random() * (BORE.y1 - BORE.y0 - 2 * R);
+        if (!inSolid(x, y, list)) { p.x = x; p.y = y; inside.push(p); break; }
+      }
+    }
+    state.nSmooth = inside.length;
+    // zaokrouhlení na celé částice dorovná nepatrný (neviditelný) posun pístu
+    if (!state.drag) {
+      const eq = Math.max(PX_MIN, Math.min(PX_MAX, equilibriumX()));
+      if (Math.abs(eq - state.px) < 4) { state.px = eq; state.pxTarget = eq; state.vFree = 0; }
+    }
+    state.pShown = pressureNow();
+  }
+
   function setValve(open) {
-    if (state.valveOpen && !open) state.closedAt = state.time;
+    if (state.valveOpen && !open) {
+      state.closedAt = state.time;
+      // ručička ukazovala vyrovnaný tlak: uzavřený vzduch se srovná přesně na tlak okolí,
+      // aby se po zavření ventilu hodnota nezměnila (rozdíl je jen pár částic – náhodný šum)
+      if (Math.round(state.pShown) === P0) settleToAmbient();
+    }
     state.valveOpen = open;
     valveBtns.forEach((b) => {
       const on = (b.dataset.valve === "open") === open;
