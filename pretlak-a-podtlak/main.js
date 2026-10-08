@@ -478,16 +478,6 @@
     if (d >= 2) { st.textContent = `přetlak o ${fmt(d)} kPa`; st.classList.add("pp-state--over"); }
     else if (d <= -2) { st.textContent = `podtlak o ${fmt(-d)} kPa`; st.classList.add("pp-state--under"); }
     else { st.textContent = "stejný tlak jako venku"; st.classList.add("pp-state--eq"); }
-    let hin = 0;
-    let hout = 0;
-    // průměr za posledních HIT_WINDOW s (aby čísla tolik neskákala)
-    const span = Math.min(HIT_WINDOW, Math.max(0.5, state.time - state.hitsSince));
-    for (const h of state.hits) {
-      if (state.time - h.t > HIT_WINDOW) continue;
-      if (h.side === "in") hin += 1; else hout += 1;
-    }
-    $("hitsIn").textContent = String(Math.round(hin / span));
-    $("hitsOut").textContent = String(Math.round(hout / span));
   }
 
   /* ---------- Smyčka ---------- */
