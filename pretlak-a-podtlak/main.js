@@ -489,6 +489,15 @@
     ctx.fillStyle = state.drag ? "#2563eb" : "#3b82f6";
     rr(hx0, 400 - HANDLE.half, HANDLE.w, HANDLE.half * 2, 10);
     ctx.fill();
+    // tečky = symbol „chyť a posuň“ (jako v ostatních simulacích)
+    ctx.fillStyle = "#ffffff";
+    for (const dy of [-16, 0, 16]) {
+      for (const dx of [-5, 5]) {
+        ctx.beginPath();
+        ctx.arc(hx0 + HANDLE.w / 2 + dx, 400 + dy, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
     // síly na píst (zevnitř doprava, zvenku doleva)
     const kF = 1.2; // px na kPa
