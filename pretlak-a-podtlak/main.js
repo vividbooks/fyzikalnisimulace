@@ -441,7 +441,11 @@
 
     const prevPx = state.px;
     const maxStep = PISTON_MAX_V * dt;
-    if (state.drag) {
+    if (state.valveOpen && !state.drag) {
+      // otevřený ventil: tlaky se vyrovnají prouděním vzduchu, píst zůstane stát
+      state.vFree = 0;
+      state.pxTarget = state.px;
+    } else if (state.drag) {
       // píst se přibližuje k cíli tažení s omezenou rychlostí
       const want = state.pxTarget - state.px;
       state.px += Math.max(-maxStep, Math.min(maxStep, want));
