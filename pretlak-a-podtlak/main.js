@@ -27,9 +27,14 @@
   const P0 = 100;           // atmosférický tlak (kPa)
   const AREA_CM2 = 20;      // plocha pístu
   const N_IN0 = 70;         // částic uvnitř na začátku
+  const HIT_WINDOW = 6;    // nárazy se průměrují za posledních 6 s
   const PISTON_MAX_V = 420; // nejvyšší rychlost pístu (px/s)
 
-  const innerVolume = (px) => (px - BORE.x0) * (BORE.y1 - BORE.y0) + (BORE.x0 - (VALVE.diskX + VALVE.diskW)) * (VALVE.y1 - VALVE.y0);
+  // „objem“ = plocha, kterou mohou středy částic skutečně zaplnit (o poloměr částice dál od stěn),
+  // aby hustota uvnitř a venku byla počítána stejně
+  const innerVolume = (px) =>
+    (px - BORE.x0 - 2 * R) * (BORE.y1 - BORE.y0 - 2 * R) +
+    (BORE.x0 - (VALVE.diskX + VALVE.diskW) - R) * (VALVE.y1 - VALVE.y0 - 2 * R);
   const N0_DENSITY = N_IN0 / innerVolume(PX0);
 
   /* ---------- Stav ---------- */
@@ -64,7 +69,7 @@
       { x0: VALVE.left, x1: CYL.x0, y0: VALVE.y1, y1: VALVE.y1 + 12 },        // trubka dole
       { x0: GAUGE.x - 6, x1: GAUGE.x + 6, y0: GAUGE.y + GAUGE.r - 6, y1: CYL.y0 }, // trubička manometru
       { x0: px, x1: px + PISTON_W, y0: BORE.y0, y1: BORE.y1, piston: true },  // píst
-      { x0: px + PISTON_W, x1: px + PISTON_W + ROD.len, y0: 400 - ROD.half, y1: 400 + ROD.half }, // pístnice
+      // pístnice není překážka: je to tenká tyč v ose válce, vzduch ji obtéká (částice se kreslí za ní)
       { x0: px + PISTON_W + ROD.len, x1: px + PISTON_W + ROD.len + HANDLE.w, y0: 400 - HANDLE.half, y1: 400 + HANDLE.half }, // rukojeť
     ];
     if (!state.valveOpen) list.push({ x0: VALVE.diskX, x1: VALVE.diskX + VALVE.diskW, y0: VALVE.y0, y1: VALVE.y1 });
@@ -138,6 +143,7 @@
       }
       // rychlá částice (odražená pohybujícím se pístem) se postupně zpomalí, pomalejší se hned vrátí na svou rychlost
       if (Math.hypot(p.vx, p.vy) < p.s) renorm(p);
+      scatter(p, leftSide ? -1 : 1, 0);
       state.hits.push({ t: state.time, side: leftSide ? "in" : "out", x: leftSide ? s.x0 : s.x1, y: p.y });
       return;
     }
@@ -146,10 +152,25 @@
     const dt = p.y - (s.y0 - R);
     const db = s.y1 + R - p.y;
     const m = Math.min(dl, dr, dt, db);
-    if (m === dl) { p.x = s.x0 - R; p.vx = -Math.abs(p.vx); }
-    else if (m === dr) { p.x = s.x1 + R; p.vx = Math.abs(p.vx); }
-    else if (m === dt) { p.y = s.y0 - R; p.vy = -Math.abs(p.vy); }
-    else { p.y = s.y1 + R; p.vy = Math.abs(p.vy); }
+    if (m === dl) { p.x = s.x0 - R; p.vx = -Math.abs(p.vx); scatter(p, -1, 0); }
+    else if (m === dr) { p.x = s.x1 + R; p.vx = Math.abs(p.vx); scatter(p, 1, 0); }
+    else if (m === dt) { p.y = s.y0 - R; p.vy = -Math.abs(p.vy); scatter(p, 0, -1); }
+    else { p.y = s.y1 + R; p.vy = Math.abs(p.vy); scatter(p, 0, 1); }
+  }
+
+  // Stěny nejsou dokonale hladké: po odrazu se směr trochu náhodně pootočí.
+  // Bez toho by si každá částice navždy držela stejný sklon dráhy a uzavřený vzduch
+  // by do pístu narážel jinak často než vzduch venku, i když je tlak stejný.
+  function scatter(p, nx, ny) {
+    const a = (Math.random() - 0.5) * 0.9;
+    const c = Math.cos(a);
+    const s0 = Math.sin(a);
+    let vx = p.vx * c - p.vy * s0;
+    let vy = p.vx * s0 + p.vy * c;
+    const sp = Math.hypot(vx, vy) || 1;
+    if ((vx * nx + vy * ny) / sp < 0.15) { vx = p.vx; vy = p.vy; } // pootočení by mířilo do stěny
+    p.vx = vx;
+    p.vy = vy;
   }
 
   function renorm(p) {
@@ -171,10 +192,10 @@
       const prevX = p.x;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      if (p.x < R) { p.x = R; p.vx = Math.abs(p.vx); }
-      if (p.x > W - R) { p.x = W - R; p.vx = -Math.abs(p.vx); }
-      if (p.y < R) { p.y = R; p.vy = Math.abs(p.vy); }
-      if (p.y > H - R) { p.y = H - R; p.vy = -Math.abs(p.vy); }
+      if (p.x < R) { p.x = R; p.vx = Math.abs(p.vx); scatter(p, 1, 0); }
+      if (p.x > W - R) { p.x = W - R; p.vx = -Math.abs(p.vx); scatter(p, -1, 0); }
+      if (p.y < R) { p.y = R; p.vy = Math.abs(p.vy); scatter(p, 0, 1); }
+      if (p.y > H - R) { p.y = H - R; p.vy = -Math.abs(p.vy); scatter(p, 0, -1); }
       for (const s of list) collideRect(p, s, prevX, prevPistonX);
       const dx = p.x - GAUGE.x;
       const dy = p.y - GAUGE.y;
@@ -235,8 +256,8 @@
   // poloha pístu, při které je tlak uvnitř stejný jako venku (pro aktuální počet částic uvnitř)
   function equilibriumX() {
     const vNeeded = countInside() / N0_DENSITY;
-    const pipe = innerVolume(BORE.x0); // objem trubky výpusti
-    return BORE.x0 + (vNeeded - pipe) / (BORE.y1 - BORE.y0);
+    const pipe = innerVolume(BORE.x0 + 2 * R); // objem trubky výpusti
+    return BORE.x0 + 2 * R + (vNeeded - pipe) / (BORE.y1 - BORE.y0 - 2 * R);
   }
 
   // o kolik kPa se změní tlak, když přibude/ubude jedna částice uvnitř
@@ -459,10 +480,10 @@
     else { st.textContent = "stejný tlak jako venku"; st.classList.add("pp-state--eq"); }
     let hin = 0;
     let hout = 0;
-    // průměr za poslední 3 s (aby čísla tolik neskákala)
-    const span = Math.min(3, Math.max(0.5, state.time - state.hitsSince));
+    // průměr za posledních HIT_WINDOW s (aby čísla tolik neskákala)
+    const span = Math.min(HIT_WINDOW, Math.max(0.5, state.time - state.hitsSince));
     for (const h of state.hits) {
-      if (state.time - h.t > 3) continue;
+      if (state.time - h.t > HIT_WINDOW) continue;
       if (h.side === "in") hin += 1; else hout += 1;
     }
     $("hitsIn").textContent = String(Math.round(hin / span));
@@ -510,7 +531,7 @@
       const pPrev = prevPx + ((state.px - prevPx) * i) / SUB;
       step(dt / SUB, pPrev);
     }
-    state.hits = state.hits.filter((h) => state.time - h.t < 3.05);
+    state.hits = state.hits.filter((h) => state.time - h.t < HIT_WINDOW + 0.05);
 
     const pNow = pressureNow();
     if (state.valveOpen) {
@@ -596,6 +617,17 @@
   function settleToAmbient() {
     const want = Math.round(N0_DENSITY * innerVolume(state.px));
     const list = solids();
+    const farOutside = (p) => {
+      for (let k = 0; k < 200; k += 1) {
+        const x = R + Math.random() * (W - 2 * R);
+        const y = R + Math.random() * (H - 2 * R);
+        if (!inSolid(x, y, list) && !isInside(x, y, state.px) && (y < CYL.y0 - 40 || y > CYL.y1 + 40)) { p.x = x; p.y = y; return; }
+      }
+    };
+    // částice právě v místě klapky by ji zavřená klapka odsunula na náhodnou stranu – přesunou se pryč
+    for (const p of state.particles) {
+      if (p.x > VALVE.diskX - R - 2 && p.x < VALVE.diskX + VALVE.diskW + R + 2 && p.y > VALVE.y0 && p.y < VALVE.y1) farOutside(p);
+    }
     let inside = state.particles.filter((p) => isInside(p.x, p.y, state.px));
     let guard = 0;
     while (inside.length > want && guard++ < 500) {
@@ -621,7 +653,7 @@
     // zaokrouhlení na celé částice dorovná nepatrný (neviditelný) posun pístu
     if (!state.drag) {
       const eq = Math.max(PX_MIN, Math.min(PX_MAX, equilibriumX()));
-      if (Math.abs(eq - state.px) < 4) { state.px = eq; state.pxTarget = eq; state.vFree = 0; }
+      if (Math.abs(eq - state.px) < 6) { state.px = eq; state.pxTarget = eq; state.vFree = 0; }
     }
     state.pShown = pressureNow();
   }
