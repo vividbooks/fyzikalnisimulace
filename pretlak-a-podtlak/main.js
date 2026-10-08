@@ -24,7 +24,7 @@
   const ROD = { len: 262, half: 10 };
   const HANDLE = { w: 24, half: 70 };
   const VALVE = { y0: 340, y1: 460, left: 212, diskX: 224, diskW: 8 }; // trubka s ventilem vlevo (ve dně válce)
-  const GAUGE = { x: 326, y: 160, r: 82 }; // o 20 % větší než původních 68
+  const GAUGE = { x: 326, y: 146, r: 96 }; // větší než původních 68
   const GAUGE_MAX = 800; // rozsah manometru (kPa)                                // manometr nahoře
   const R = 4.5;              // poloměr částice
   const SPEED = 260;        // střední rychlost částic (px/s)
@@ -302,6 +302,7 @@
   /* ---------- Kreslení ---------- */
 
   let view = { k: 1, ox: 0, oy: 0 };
+  const SHIFT_Y = 56; // celé zařízení o kousek níž (víc místa pro manometr nahoře)
 
   function resize() {
     const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -310,10 +311,10 @@
     canvas.width = Math.round(cw * dpr);
     canvas.height = Math.round(ch * dpr);
     const k = Math.min(cw / W, ch / H);
-    view = { k, ox: (cw - W * k) / 2, oy: (ch - H * k) / 2, dpr };
+    view = { k, ox: (cw - W * k) / 2, oy: (ch - H * k) / 2 + SHIFT_Y * k, dpr };
     if (k > 0) {
-      WORLD.x0 = -view.ox / k; WORLD.x1 = W + view.ox / k;
-      WORLD.y0 = -view.oy / k; WORLD.y1 = H + view.oy / k;
+      WORLD.x0 = -view.ox / k; WORLD.x1 = (cw - view.ox) / k;
+      WORLD.y0 = -view.oy / k; WORLD.y1 = (ch - view.oy) / k;
     }
     if (state.particles.length) fillOutside();
   }
@@ -369,7 +370,7 @@
     const ang = (v) => a0 + sweep * Math.min(1, Math.max(0, v / GAUGE_MAX));
     // atmosférický tlak
     ctx.beginPath();
-    ctx.arc(x, y, r - 14, ang(95), ang(105));
+    ctx.arc(x, y, r - 14, ang(80), ang(120));
     ctx.strokeStyle = "#2563eb";
     ctx.lineWidth = 8;
     ctx.stroke();
