@@ -11,6 +11,10 @@
 
   const W = 1200;
   const H = 800;
+  // skutečné hranice prostoru = celé plátno (mění se podle velikosti okna)
+  const WORLD = { x0: 0, y0: 0, x1: W, y1: H };
+  const rndX = () => WORLD.x0 + R + Math.random() * (WORLD.x1 - WORLD.x0 - 2 * R);
+  const rndY = () => WORLD.y0 + R + Math.random() * (WORLD.y1 - WORLD.y0 - 2 * R);
   const BORE = { x0: 262, x1: 860, y0: 282, y1: 518 };   // vnitřek válce
   const CYL = { x0: 250, x1: 860, y0: 270, y1: 530 };    // vnější obrys válce
   const PISTON_W = 28;
@@ -106,23 +110,51 @@
       if (!inSolid(x, y, list)) state.particles.push(newParticle(x, y));
     }
     // venku – stejná hustota jako uvnitř
+    fillOutside();
+  }
+
+  // počet částic venku, aby tam byla stejná hustota jako uvnitř (pro aktuální velikost prostoru)
+  function wantOutside() {
+    const list = solids();
     let free = 0;
     let total = 0;
-    for (let x = 4; x < W; x += 8) {
-      for (let y = 4; y < H; y += 8) {
+    for (let x = WORLD.x0 + 4; x < WORLD.x1; x += 8) {
+      for (let y = WORLD.y0 + 4; y < WORLD.y1; y += 8) {
         total += 1;
         if (!inSolid(x, y, list) && !isInside(x, y, state.px)) free += 1;
       }
     }
-    const nOut = Math.round(N0_DENSITY * W * H * (free / total));
-    let placed = 0;
-    guard = 0;
-    while (placed < nOut && guard++ < 200000) {
-      const x = R + Math.random() * (W - 2 * R);
-      const y = R + Math.random() * (H - 2 * R);
+    return Math.round(N0_DENSITY * (WORLD.x1 - WORLD.x0) * (WORLD.y1 - WORLD.y0) * (free / Math.max(1, total)));
+  }
+
+  // doplní / ubere částice venku po změně velikosti prostoru
+  function fillOutside() {
+    const list = solids();
+    // částice mimo nové hranice se vrátí dovnitř prostoru
+    for (const p of state.particles) {
+      if (p.x < WORLD.x0 + R || p.x > WORLD.x1 - R || p.y < WORLD.y0 + R || p.y > WORLD.y1 - R) {
+        if (isInside(p.x, p.y, state.px)) continue;
+        for (let k = 0; k < 200; k += 1) {
+          const x = rndX(); const y = rndY();
+          if (!inSolid(x, y, list) && !isInside(x, y, state.px)) { p.x = x; p.y = y; break; }
+        }
+      }
+    }
+    const want = wantOutside();
+    const outIdx = [];
+    state.particles.forEach((p, i) => { if (!isInside(p.x, p.y, state.px)) outIdx.push(i); });
+    let have = outIdx.length;
+    if (have > want) {
+      const drop = new Set();
+      while (have > want) { drop.add(outIdx.splice(Math.floor(Math.random() * outIdx.length), 1)[0]); have -= 1; }
+      state.particles = state.particles.filter((_, i) => !drop.has(i));
+    }
+    let guard = 0;
+    while (have < want && guard++ < 200000) {
+      const x = rndX(); const y = rndY();
       if (inSolid(x, y, list) || isInside(x, y, state.px)) continue;
       state.particles.push(newParticle(x, y));
-      placed += 1;
+      have += 1;
     }
   }
 
@@ -192,10 +224,10 @@
       const prevX = p.x;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      if (p.x < R) { p.x = R; p.vx = Math.abs(p.vx); scatter(p, 1, 0); }
-      if (p.x > W - R) { p.x = W - R; p.vx = -Math.abs(p.vx); scatter(p, -1, 0); }
-      if (p.y < R) { p.y = R; p.vy = Math.abs(p.vy); scatter(p, 0, 1); }
-      if (p.y > H - R) { p.y = H - R; p.vy = -Math.abs(p.vy); scatter(p, 0, -1); }
+      if (p.x < WORLD.x0 + R) { p.x = WORLD.x0 + R; p.vx = Math.abs(p.vx); scatter(p, 1, 0); }
+      if (p.x > WORLD.x1 - R) { p.x = WORLD.x1 - R; p.vx = -Math.abs(p.vx); scatter(p, -1, 0); }
+      if (p.y < WORLD.y0 + R) { p.y = WORLD.y0 + R; p.vy = Math.abs(p.vy); scatter(p, 0, 1); }
+      if (p.y > WORLD.y1 - R) { p.y = WORLD.y1 - R; p.vy = -Math.abs(p.vy); scatter(p, 0, -1); }
       for (const s of list) collideRect(p, s, prevX, prevPistonX);
       const dx = p.x - GAUGE.x;
       const dy = p.y - GAUGE.y;
@@ -279,6 +311,11 @@
     canvas.height = Math.round(ch * dpr);
     const k = Math.min(cw / W, ch / H);
     view = { k, ox: (cw - W * k) / 2, oy: (ch - H * k) / 2, dpr };
+    if (k > 0) {
+      WORLD.x0 = -view.ox / k; WORLD.x1 = W + view.ox / k;
+      WORLD.y0 = -view.oy / k; WORLD.y1 = H + view.oy / k;
+    }
+    if (state.particles.length) fillOutside();
   }
 
   function rr(x, y, w, h, r) {
@@ -609,8 +646,8 @@
     const list = solids();
     const farOutside = (p) => {
       for (let k = 0; k < 200; k += 1) {
-        const x = R + Math.random() * (W - 2 * R);
-        const y = R + Math.random() * (H - 2 * R);
+        const x = rndX();
+        const y = rndY();
         if (!inSolid(x, y, list) && !isInside(x, y, state.px) && (y < CYL.y0 - 40 || y > CYL.y1 + 40)) { p.x = x; p.y = y; return; }
       }
     };
@@ -624,8 +661,8 @@
       const p = inside.splice(Math.floor(Math.random() * inside.length), 1)[0];
       // přemístit ven na náhodné volné místo daleko od válce
       for (let k = 0; k < 200; k += 1) {
-        const x = R + Math.random() * (W - 2 * R);
-        const y = R + Math.random() * (H - 2 * R);
+        const x = rndX();
+        const y = rndY();
         if (!inSolid(x, y, list) && !isInside(x, y, state.px) && (y < CYL.y0 - 40 || y > CYL.y1 + 40)) { p.x = x; p.y = y; break; }
       }
     }
