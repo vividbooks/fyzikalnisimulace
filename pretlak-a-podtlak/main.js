@@ -569,7 +569,13 @@
     }
     state.hits = state.hits.filter((h) => state.time - h.t < HIT_WINDOW + 0.05);
 
-    const pNow = pressureNow();
+    let pNow = pressureNow();
+    // pojistka: při tlaku nad 500 kPa (konec stupnice manometru) ventil povolí
+    if (!state.valveOpen && pNow > GAUGE_MAX) {
+      setValve(true);
+      state.pShown = Math.min(state.pShown, GAUGE_MAX);
+      showNote("Tlak přesáhl 500 kPa – ventil povolil.");
+    }
     if (state.valveOpen) {
       // počet částic uvnitř se průměruje (částic je málo, okamžitá hodnota by skákala)
       const nNow = countInside();
@@ -611,6 +617,14 @@
 
   function onValve(p) {
     return p.x > VALVE.left - 60 && p.x < CYL.x0 && p.y > VALVE.y0 - 70 && p.y < VALVE.y1 + 14;
+  }
+
+  let noteTimer = 0;
+  function showNote(text) {
+    hintEl.textContent = text;
+    hintEl.classList.remove("is-hidden");
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => hintEl.classList.add("is-hidden"), 3000);
   }
 
   function hideHint() {
