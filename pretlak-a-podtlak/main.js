@@ -25,7 +25,7 @@
   const HANDLE = { w: 24, half: 70 };
   const VALVE = { y0: 340, y1: 460, left: 212, diskX: 224, diskW: 8 }; // trubka s ventilem vlevo (ve dně válce)
   const GAUGE = { x: 326, y: 160, r: 68 };
-  const GAUGE_MAX = 500; // rozsah manometru (kPa)                                // manometr nahoře
+  const GAUGE_MAX = 800; // rozsah manometru (kPa)                                // manometr nahoře
   const R = 4.5;              // poloměr částice
   const SPEED = 260;        // střední rychlost částic (px/s)
   const P0 = 100;           // atmosférický tlak (kPa)
@@ -366,9 +366,15 @@
     ctx.strokeStyle = "#2563eb";
     ctx.lineWidth = 8;
     ctx.stroke();
+    // červený pruh od 700 kPa
+    ctx.beginPath();
+    ctx.arc(x, y, r - 14, ang(700), ang(GAUGE_MAX));
+    ctx.strokeStyle = "#e11d48";
+    ctx.lineWidth = 8;
+    ctx.stroke();
     ctx.strokeStyle = "#334155";
     ctx.fillStyle = "#334155";
-    ctx.font = "600 13px 'Fenomen Sans', system-ui, sans-serif";
+    ctx.font = "600 11px 'Fenomen Sans', system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (let v = 0; v <= GAUGE_MAX; v += 50) {
@@ -379,7 +385,7 @@
       ctx.moveTo(x + Math.cos(a) * (r - 6), y + Math.sin(a) * (r - 6));
       ctx.lineTo(x + Math.cos(a) * (r - (big ? 18 : 13)), y + Math.sin(a) * (r - (big ? 18 : 13)));
       ctx.stroke();
-      if (big) ctx.fillText(String(v), x + Math.cos(a) * (r - 32), y + Math.sin(a) * (r - 32));
+      if (big) ctx.fillText(String(v), x + Math.cos(a) * (r - 30), y + Math.sin(a) * (r - 30));
     }
     ctx.font = "600 13px 'Fenomen Sans', system-ui, sans-serif";
     ctx.fillText("kPa", x, y + 30);
