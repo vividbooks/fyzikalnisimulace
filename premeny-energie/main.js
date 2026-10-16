@@ -1,4 +1,6 @@
-/* Přeměny energie – betonová věž na ukládání energie (podle Energy Vault) */
+/* Přeměny energie – betonová věž na ukládání energie (podle Energy Vault)
+   Každý přenesený blok = jeden cyklus o 4 krocích. Energie se ukazuje jako „balíčky“,
+   které mění barvu (druh energie) přesně v místě, kde přeměna probíhá. */
 (() => {
   "use strict";
 
@@ -6,6 +8,10 @@
   const canvas = $("view");
   const ctx = canvas.getContext("2d");
   const hintEl = $("hintEl");
+  const capEl = $("caption");
+  const capStep = $("capStep");
+  const capText = $("capText");
+  const capNext = $("capNext");
 
   /* ---------- Geometrie (logické souřadnice 1200 × 800) ---------- */
   const W = 1200;
@@ -14,47 +20,62 @@
   const PX_M = 4;              // px na metr
   const LAYER_M = 12;          // výška jednoho patra věže (m)
   const LAYER = LAYER_M * PX_M;
-  const BW = 56;               // šířka bloku
-  const BH = 46;               // výška bloku (kresba)
-  const N = 10;                // počet bloků
-  const STACK_X = 520;         // střed věže z bloků
-  const MAST_X = 460;          // střed stožáru jeřábu
-  const SLOT_X = (i) => 610 + 60 * i; // místa bloků na zemi (0 = nejblíž věži)
-  const JIB_Y = G - 150 * PX_M; // výložník ve výšce 150 m
+  const BW = 56;
+  const BH = 46;
+  const N = 10;
+  const STACK_X = 520;
+  const MAST_X = 460;
+  const SLOT_X = (i) => 610 + 60 * i;
+  const JIB_Y = G - 150 * PX_M;
   const JIB_X0 = 372;
   const JIB_X1 = 1190;
-  const CABLE_Y = G + 22;      // podzemní kabel
+  const CABLE_Y = G + 22;
   const TURB_X = 70;
   const PANEL_X = 245;
   const CITY_X = 370;
+  const WINCH = { x: MAST_X, y: JIB_Y - 24 };
 
   /* ---------- Fyzika ---------- */
   const M = 35000;             // kg
   const g = 10;                // N/kg
   const ETA = 0.9;             // účinnost motoru i generátoru
-  const CARRY_V = 190;         // px/s – rychlost bloku na laně
-  const HOOK_V = 340;
-  const TROLLEY_V = 440;
+  const E_PACK = M * g * LAYER_M; // 1 balíček = energie na zvednutí o jedno patro (4,2 MJ)
+  const LIFT_V = 70;           // px/s – blok na laně (svisle)
+  const MOVE_V = 150;          // px/s – blok vodorovně
+  const HOOK_V = 300;
+  const TROLLEY_V = 380;
+  const PACK_V = 230;          // px/s – balíček energie
+  const PR = 9;                // poloměr balíčku
+
+  const COL = {
+    light: "#facc15",
+    el: "#3b82f6",
+    kin: "#22c55e",
+    pot: "#ec4899",
+    heat: "#f97316",
+  };
 
   const state = {
     mode: "pause",             // charge | pause | discharge
     lastDir: "charge",
     losses: false,
+    stepMode: false,
     blocks: [],                // { where: "ground"|"carry"|"tower", d }
-    carrying: -1,
     trolleyX: 760,
     hookY: G - 260,
+    cyc: null,                 // aktuální cyklus
+    packets: [],               // letící balíčky
+    buffer: [],                // balíčky čekající u motoru/generátoru ("el")
+    fx: [],                    // záblesky přeměn
     epPrev: 0,
     eIn: 0,
     eOut: 0,
     heat: 0,
-    power: 0,                  // vyhlazený výkon (J/s), + nabíjení, − vybíjení
-    flow: 0,                   // úroveň toku energie pro zobrazení (−1 … 1), pomalu doznívá
-    flowT: 0,
     night: 0,
     turbA: 0,
     turbV: 0,
     lit: 0,
+    litHold: 0,
     time: 0,
     done: "",
   };
@@ -63,88 +84,180 @@
   const pathLh = (i) => SLOT_X(i) - STACK_X;
   const pathLen = (i) => pathLv(i) + pathLh(i);
 
-  // poloha bloku i na dráze: nahoru u svého místa na zemi, pak vodorovně k věži
   function blockPos(i) {
     const b = state.blocks[i];
     const d = b.where === "tower" ? pathLen(i) : b.where === "ground" ? 0 : b.d;
     const lv = pathLv(i);
-    if (d <= lv) return { x: SLOT_X(i), y: G - d };          // y = spodek bloku
+    if (d <= lv) return { x: SLOT_X(i), y: G - d };
     return { x: SLOT_X(i) - (d - lv), y: G - lv };
   }
   const heightM = (y) => (G - y) / PX_M;
+  const blockEp = (i) => M * g * heightM(blockPos(i).y);
 
   function epTotal() {
     let e = 0;
-    for (let i = 0; i < N; i += 1) e += M * g * heightM(blockPos(i).y);
+    for (let i = 0; i < N; i += 1) e += blockEp(i);
     return e;
   }
 
-  function reset() {
-    state.blocks = Array.from({ length: N }, () => ({ where: "ground", d: 0 }));
-    state.carrying = -1;
-    state.trolleyX = 760;
-    state.hookY = G - 260;
-    state.epPrev = 0;
-    state.eIn = 0;
-    state.eOut = 0;
-    state.heat = 0;
-    state.power = 0;
-    state.night = 0;
-    state.lit = 0;
-    state.done = "";
-    setMode("pause");
-    state.lastDir = "charge";
-    hintEl.textContent = "Přepni věž na „nabíjet“.";
+  /* ---------- Cesty balíčků ---------- */
+  function srcPath(fromPanel) {
+    const start = fromPanel ? [PANEL_X, G - 30] : [TURB_X, G - 20];
+    return [start, [start[0], CABLE_Y], [MAST_X, CABLE_Y], [MAST_X, JIB_Y + 4], [WINCH.x, WINCH.y]];
+  }
+  function ropePath() {
+    // od motoru po výložníku ke kočce a dolů po laně k háku
+    return [[WINCH.x, WINCH.y], [WINCH.x + 30, JIB_Y + 4], [state.trolleyX, JIB_Y + 4], [state.trolleyX, state.hookY - 12]];
+  }
+  function cityPath() {
+    return [[WINCH.x, WINCH.y], [MAST_X, JIB_Y + 4], [MAST_X, CABLE_Y], [CITY_X, CABLE_Y], [CITY_X, G - 40]];
+  }
+  function polyLen(pts) {
+    let L = 0;
+    for (let k = 1; k < pts.length; k += 1) L += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+    return L;
+  }
+  function polyAt(pts, s) {
+    for (let k = 1; k < pts.length; k += 1) {
+      const [x0, y0] = pts[k - 1];
+      const [x1, y1] = pts[k];
+      const len = Math.hypot(x1 - x0, y1 - y0);
+      if (s <= len || k === pts.length - 1) {
+        const t = len ? Math.max(0, Math.min(1, s / len)) : 1;
+        return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
+      }
+      s -= len;
+    }
+    return pts[pts.length - 1];
+  }
+  const bufferPos = (j) => [WINCH.x + 44 + (j % 10) * 19, JIB_Y - 18 - Math.floor(j / 10) * 19];
+
+  function popFx(x, y, color) {
+    state.fx.push({ x, y, color, t: 0 });
+  }
+
+  /* ---------- Cykly ---------- */
+  const TEXT = {
+    charge: [
+      "Solární panely a větrná elektrárna mění světelnou energii Slunce a pohybovou energii větru na elektrickou energii.",
+      "Elektrická energie putuje kabelem k motoru jeřábu.",
+      "Motor mění elektrickou energii na pohybovou a zvedá blok. Polohová energie bloku roste.",
+      "",
+    ],
+    discharge: [
+      "",
+      "Blok klesá a roztáčí generátor. Generátor mění pohybovou energii na elektrickou – polohová energie bloku ubývá.",
+      "Elektrická energie putuje kabelem do města.",
+      "Ve městě se elektrická energie mění na světlo a teplo.",
+    ],
+  };
+
+  function stepText(c) {
+    const i = c.block;
+    const h = Math.round(heightM(blockPos(i).y));
+    const e = fmt((M * g * h) / 1e6);
+    let t = TEXT[c.dir][c.step - 1];
+    if (c.dir === "charge" && c.step === 4) t = `Blok je ve výšce ${h} m a má polohovou energii Eₚ = m · g · h = ${e} MJ.`;
+    if (c.dir === "discharge" && c.step === 1) t = `Blok ve výšce ${Math.round(heightM(G - pathLv(i)))} m má polohovou energii Eₚ = ${fmt((M * g * heightM(G - pathLv(i))) / 1e6)} MJ. Jeřáb ho přenese nad volné místo.`;
+    if (state.losses && ((c.dir === "charge" && c.step === 3) || (c.dir === "discharge" && c.step === 2))) t += " Část energie se přitom mění na teplo.";
+    return t;
+  }
+
+  function startCycle(dir) {
+    state.packets = state.packets.filter((p) => p.rise);
+    state.buffer = [];
+    // rozpracovaný blok (po přepnutí směru)
+    let i = -1;
+    for (let k = 0; k < N; k += 1) if (state.blocks[k].where === "carry") i = k;
+    if (i < 0) {
+      if (dir === "charge") { for (let k = 0; k < N; k += 1) if (state.blocks[k].where === "ground") { i = k; break; } }
+      else { for (let k = N - 1; k >= 0; k -= 1) if (state.blocks[k].where === "tower") { i = k; break; } }
+    }
+    if (i < 0) { state.cyc = null; return false; }
+    const b = state.blocks[i];
+    const lv = pathLv(i);
+    const c = { dir, block: i, step: 1, t: 0, waiting: false, hold: 0, n: 0, nHeat: 0, spawned: 0, sent: 0, arrived: 0, label: 0 };
+    if (dir === "charge") {
+      const dNow = b.where === "carry" ? b.d : 0;
+      const need = Math.max(0, M * g * (lv - Math.min(dNow, lv)) / PX_M);
+      c.n = Math.max(dNow >= lv ? 0 : 1, Math.round(need / E_PACK));
+      c.nHeat = state.losses ? Math.round(c.n * (1 / ETA - 1)) : 0;
+      if (dNow >= lv) c.step = 4;
+    } else {
+      const dNow = b.where === "carry" ? b.d : pathLen(i);
+      const have = M * g * Math.min(dNow, lv) / PX_M;
+      c.n = Math.max(1, Math.round(have / E_PACK));
+      c.nHeat = state.losses ? Math.round(c.n * (1 - ETA)) : 0;
+      if (b.where === "carry" && dNow <= lv) c.step = 2;
+    }
+    state.cyc = c;
+    showCaption();
+    return true;
+  }
+
+  function showCaption() {
+    const c = state.cyc;
+    if (!c) { capEl.hidden = true; return; }
+    capEl.hidden = false;
+    capStep.textContent = `Krok ${c.step} ze 4`;
+    capText.textContent = stepText(c);
+    capNext.hidden = !c.waiting;
+    capEl.dataset.dir = c.dir;
+    renderChain();
+  }
+
+  function nextStep() {
+    const c = state.cyc;
+    if (!c) return;
+    c.waiting = false;
+    c.hold = 0;
+    if (c.step >= 4) {
+      state.cyc = null;
+      if (state.mode !== "pause" && !startCycle(state.mode)) finish();
+      return;
+    }
+    c.step += 1;
+    c.t = 0;
+    c.sent = 0;
+    c.arrived = 0;
+    showCaption();
+  }
+
+  // konec kroku: plynule → krátká pauza, po krocích → čeká na tlačítko
+  function stepDone(dt, minT) {
+    const c = state.cyc;
+    if (c.t < minT) return;
+    if (state.stepMode) {
+      if (!c.waiting) { c.waiting = true; showCaption(); }
+      return;
+    }
+    c.hold += dt;
+    if (c.hold > 0.7) nextStep();
+  }
+
+  function finish() {
+    const msg = state.mode === "charge"
+      ? "Věž je nabitá – všech 10 bloků je nahoře."
+      : "Věž je vybitá – všechny bloky jsou dole.";
+    state.done = msg;
+    capEl.hidden = true;
+    hintEl.textContent = msg;
     hintEl.classList.remove("is-hidden");
     renderChain();
   }
 
-  /* ---------- Jeřáb ---------- */
   const approach = (v, t, s) => (Math.abs(t - v) <= s ? t : v + Math.sign(t - v) * s);
 
   function stackTopY() {
     let k = -1;
     for (let i = 0; i < N; i += 1) if (state.blocks[i].where === "tower") k = Math.max(k, i);
-    return G - LAYER * (k + 2) + (LAYER - BH);   // vršek nejvyššího bloku (nebo podstavce)
+    return G - LAYER * (k + 2) + (LAYER - BH);
   }
 
-  function nextTarget() {
-    if (state.mode === "charge") {
-      for (let i = 0; i < N; i += 1) if (state.blocks[i].where === "ground") return i;
-    } else if (state.mode === "discharge") {
-      for (let i = N - 1; i >= 0; i -= 1) if (state.blocks[i].where === "tower") return i;
-    }
-    return -1;
-  }
-
-  function stepCrane(dt) {
-    if (state.mode === "pause") return;
-    if (state.carrying >= 0) {
-      const i = state.carrying;
-      const b = state.blocks[i];
-      const dir = state.mode === "charge" ? 1 : -1;
-      b.d = Math.max(0, Math.min(pathLen(i), b.d + dir * CARRY_V * dt));
-      const p = blockPos(i);
-      state.trolleyX = p.x;
-      state.hookY = p.y - BH;
-      if (b.d >= pathLen(i) && dir > 0) { b.where = "tower"; state.carrying = -1; }
-      else if (b.d <= 0 && dir < 0) { b.where = "ground"; state.carrying = -1; }
-      return;
-    }
-    const i = nextTarget();
-    if (i < 0) {
-      const msg = state.mode === "charge"
-        ? "Věž je nabitá – všech 10 bloků je nahoře."
-        : "Věž je vybitá – všechny bloky jsou dole.";
-      if (state.done !== msg) {
-        state.done = msg;
-        hintEl.textContent = msg;
-        hintEl.classList.remove("is-hidden");
-      }
-      // hák vyjede nahoru z cesty
-      state.hookY = approach(state.hookY, Math.min(state.hookY, stackTopY() - 40), HOOK_V * dt);
-      return;
-    }
+  // prázdný hák dojede k bloku a zachytí ho; vrací true, když blok visí na háku
+  function seekBlock(i, dt) {
+    const b = state.blocks[i];
+    if (b.where === "carry") return true;
     const p = blockPos(i);
     const tx = p.x;
     const ty = p.y - BH;
@@ -156,11 +269,196 @@
       state.trolleyX = tx;
       state.hookY = approach(state.hookY, ty, HOOK_V * dt);
       if (Math.abs(state.hookY - ty) < 0.5) {
-        state.carrying = i;
-        state.blocks[i].d = state.blocks[i].where === "tower" ? pathLen(i) : 0;
-        state.blocks[i].where = "carry";
+        b.d = b.where === "tower" ? pathLen(i) : 0;
+        b.where = "carry";
+        return true;
       }
     }
+    return false;
+  }
+
+  function hookToBlock(i) {
+    const p = blockPos(i);
+    state.trolleyX = p.x;
+    state.hookY = p.y - BH;
+  }
+
+  function launch(kind, path, onArrive, delay = 0) {
+    state.packets.push({ kind, path, s: -delay * PACK_V, onArrive, born: state.time });
+  }
+
+  function stepCycle(dt) {
+    const c = state.cyc;
+    if (!c || c.waiting) return;
+    c.t += dt;
+    const i = c.block;
+    const b = state.blocks[i];
+    const lv = pathLv(i);
+
+    if (c.dir === "charge") {
+      if (c.step === 1) {
+        // zdroje vyrábějí balíčky: světelná/pohybová → elektrická
+        const total = c.n + c.nHeat;
+        while (c.spawned < total && c.t > 0.35 + c.spawned * (1.6 / Math.max(1, total))) {
+          const fromPanel = c.spawned % 2 === 1;
+          const [x, y] = srcPath(fromPanel)[0];
+          state.packets.push({ kind: "light", path: () => srcPath(fromPanel), s: 0, hold: true, born: state.time, morphAt: state.time + 0.7, px: x, py: y, slot: c.spawned });
+          c.spawned += 1;
+        }
+        const ready = seekBlock(i, dt);
+        const allEl = state.packets.every((p) => p.rise || p.kind === "el");
+        if (ready && c.spawned >= total && allEl) stepDone(dt, 2.6);
+      } else if (c.step === 2) {
+        if (c.sent === 0) {
+          state.packets = state.packets.filter((p) => !p.rise);
+          state.packets.forEach((p, k) => { p.hold = false; p.s = -k * 0.3 * PACK_V; p.onArrive = (q) => { state.buffer.push(q.kind); c.arrived += 1; }; });
+          c.sent = state.packets.length;
+        }
+        if (c.arrived >= c.sent) stepDone(dt, 0.4);
+      } else if (c.step === 3) {
+        // motor: elektrická → pohybová; přebytečné balíčky → teplo
+        if (c.sent === 0) {
+          for (let k = 0; k < c.nHeat && state.buffer.length; k += 1) {
+            state.buffer.pop();
+            const [x, y] = bufferPos(state.buffer.length);
+            state.packets.push({ kind: "heat", rise: true, x, y, born: state.time });
+          }
+          c.sent = -1;
+        }
+        b.d = Math.min(lv, b.d + LIFT_V * dt);
+        hookToBlock(i);
+        const frac = lv > 0 ? b.d / lv : 1;
+        const toSend = Math.min(c.n, Math.ceil(frac * c.n - 1e-9));
+        while (c.arrived + state.packets.filter((p) => p.kind === "kin").length < toSend && state.buffer.length) {
+          state.buffer.pop();
+          popFx(WINCH.x, WINCH.y, COL.kin);
+          launch("kin", ropePath, (q) => {
+            const [x, y] = polyAt(ropePath(), 1e9);
+            popFx(x, y + 12, COL.pot);
+            c.arrived += 1;
+          });
+        }
+        const flying = state.packets.some((p) => p.kind === "kin");
+        if (b.d >= lv && !flying) stepDone(dt, 1);
+      } else if (c.step === 4) {
+        if (b.where === "carry") {
+          b.d = Math.min(pathLen(i), b.d + MOVE_V * dt);
+          hookToBlock(i);
+          if (b.d >= pathLen(i)) { b.where = "tower"; c.label = 0; }
+        } else {
+          c.label += dt;
+          state.hookY = approach(state.hookY, stackTopY() - 30, HOOK_V * 0.4 * dt);
+          stepDone(dt, 2.4);
+        }
+      }
+    } else {
+      if (c.step === 1) {
+        if (!seekBlock(i, dt)) return;
+        b.d = Math.max(lv, b.d - MOVE_V * dt);
+        hookToBlock(i);
+        if (b.d <= lv) stepDone(dt, 2.6);
+      } else if (c.step === 2) {
+        // klesání: polohová → pohybová (lano) → elektrická (generátor)
+        b.d = Math.max(0, b.d - LIFT_V * dt);
+        hookToBlock(i);
+        const frac = lv > 0 ? 1 - b.d / lv : 1;
+        const toSend = Math.min(c.n, Math.floor(frac * c.n + 1e-9));
+        while (c.sent < toSend) {
+          const k = c.sent;
+          c.sent += 1;
+          const [hx, hy] = polyAt(ropePath(), 1e9);
+          popFx(hx, hy + 14, COL.pot);
+          const toHeat = k < c.nHeat;
+          state.packets.push({
+            kind: "pot",
+            morphTo: "kin",
+            morphAt: state.time + 0.35,
+            path: () => ropePath().slice().reverse(),
+            s: 0,
+            born: state.time,
+            onArrive: () => {
+              popFx(WINCH.x, WINCH.y, toHeat ? COL.heat : COL.el);
+              if (toHeat) {
+                state.packets.push({ kind: "heat", rise: true, x: WINCH.x - 30, y: WINCH.y, born: state.time });
+              } else state.buffer.push("el");
+              c.arrived += 1;
+            },
+          });
+        }
+        if (b.d <= 0 && c.arrived >= c.n) {
+          if (b.where === "carry") { b.where = "ground"; b.d = 0; }
+          state.hookY = approach(state.hookY, G - BH - 40, HOOK_V * 0.4 * dt);
+          stepDone(dt, 1);
+        }
+      } else if (c.step === 3) {
+        if (c.sent === 0) {
+          const nb = state.buffer.length;
+          state.buffer = [];
+          for (let k = 0; k < nb; k += 1) {
+            launch("el", cityPath, () => {
+              popFx(CITY_X, G - 40, COL.light);
+              state.packets.push({ kind: "light", rise: true, x: CITY_X + (Math.random() - 0.5) * 80, y: G - 60, born: state.time });
+              state.litHold = 6;
+              c.arrived += 1;
+            }, k * 0.3);
+          }
+          c.sent = Math.max(1, nb);
+          if (nb === 0) c.arrived = 1;
+        }
+        if (c.arrived >= c.sent) {
+          c.step = 4; c.t = 0; showCaption();
+        }
+      } else if (c.step === 4) {
+        stepDone(dt, 2.2);
+      }
+    }
+  }
+
+  function stepPackets(dt) {
+    for (const p of state.packets) {
+      if (p.rise) continue;
+      if (p.morphTo && state.time >= p.morphAt && p.kind !== p.morphTo) {
+        p.kind = p.morphTo;
+        const [x, y] = polyAt(p.path(), p.s);
+        popFx(x, y, COL[p.kind]);
+      }
+      if (p.morphAt && state.time >= p.morphAt && p.kind === "light") {
+        p.kind = "el";
+        popFx(p.px ?? polyAt(p.path(), 0)[0], p.py ?? polyAt(p.path(), 0)[1], COL.el);
+      }
+      if (p.hold) continue;
+      p.s += PACK_V * dt;
+      const pts = p.path();
+      if (p.s >= polyLen(pts)) { p.done = true; if (p.onArrive) p.onArrive(p); }
+    }
+    for (const p of state.packets) if (p.rise && state.time - p.born > 1.6) p.done = true;
+    state.packets = state.packets.filter((p) => !p.done);
+    for (const f of state.fx) f.t += dt;
+    state.fx = state.fx.filter((f) => f.t < 0.5);
+  }
+
+  function reset() {
+    state.blocks = Array.from({ length: N }, () => ({ where: "ground", d: 0 }));
+    state.trolleyX = 760;
+    state.hookY = G - 260;
+    state.cyc = null;
+    state.packets = [];
+    state.buffer = [];
+    state.fx = [];
+    state.epPrev = 0;
+    state.eIn = 0;
+    state.eOut = 0;
+    state.heat = 0;
+    state.night = 0;
+    state.lit = 0;
+    state.litHold = 0;
+    state.done = "";
+    setMode("pause");
+    state.lastDir = "charge";
+    capEl.hidden = true;
+    hintEl.textContent = "Přepni věž na „nabíjet“.";
+    hintEl.classList.remove("is-hidden");
+    renderChain();
   }
 
   /* ---------- Kreslení ---------- */
@@ -198,11 +496,12 @@
     ctx.closePath();
   }
 
+  const FONT = "'Fenomen Sans', system-ui, sans-serif";
+
   function drawSky() {
     const n = state.night;
     ctx.fillStyle = mixColor("#ffffe6", "#1e293b", n);
     ctx.fillRect(WORLD.x0, WORLD.y0, WORLD.x1 - WORLD.x0, WORLD.y1 - WORLD.y0);
-    // hvězdy
     if (n > 0.05) {
       ctx.fillStyle = `rgba(255,255,255,${0.8 * n})`;
       for (let s = 0; s < 60; s += 1) {
@@ -211,9 +510,8 @@
         ctx.beginPath(); ctx.arc(x, y, s % 3 === 0 ? 1.8 : 1.1, 0, Math.PI * 2); ctx.fill();
       }
     }
-    // Slunce a Měsíc
-    const sx = 170;
-    const sy = mix(120, G + 80, n);
+    const sx = 130;
+    const sy = mix(110, G + 80, n);
     if (n < 0.98) {
       ctx.save();
       ctx.translate(sx, sy);
@@ -224,11 +522,11 @@
       for (let r = 0; r < 12; r += 1) {
         const a = rot + (r * Math.PI) / 6;
         ctx.beginPath();
-        ctx.moveTo(Math.cos(a) * 50, Math.sin(a) * 50);
-        ctx.lineTo(Math.cos(a) * 64, Math.sin(a) * 64);
+        ctx.moveTo(Math.cos(a) * 46, Math.sin(a) * 46);
+        ctx.lineTo(Math.cos(a) * 58, Math.sin(a) * 58);
         ctx.stroke();
       }
-      ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(0, 0, 36, 0, Math.PI * 2);
       ctx.fillStyle = "#fbbf24"; ctx.fill();
       ctx.restore();
     }
@@ -250,14 +548,13 @@
     ctx.fillRect(WORLD.x0, G, WORLD.x1 - WORLD.x0, WORLD.y1 - G);
     ctx.fillStyle = mixColor("#9cbf7a", "#475569", n * 0.85);
     ctx.fillRect(WORLD.x0, G, WORLD.x1 - WORLD.x0, 6);
-    // kabel v zemi
     ctx.strokeStyle = mixColor("#64748b", "#94a3b8", n);
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.moveTo(TURB_X, G); ctx.lineTo(TURB_X, CABLE_Y); ctx.lineTo(MAST_X, CABLE_Y);
-    ctx.moveTo(PANEL_X, G - 20); ctx.lineTo(PANEL_X, CABLE_Y);
-    ctx.moveTo(CITY_X, G); ctx.lineTo(CITY_X, CABLE_Y);
+    ctx.moveTo(TURB_X, G - 20); ctx.lineTo(TURB_X, CABLE_Y); ctx.lineTo(MAST_X, CABLE_Y);
+    ctx.moveTo(PANEL_X, G - 30); ctx.lineTo(PANEL_X, CABLE_Y);
+    ctx.moveTo(CITY_X, G - 40); ctx.lineTo(CITY_X, CABLE_Y);
     ctx.moveTo(MAST_X, CABLE_Y); ctx.lineTo(MAST_X, G);
     ctx.stroke();
   }
@@ -265,6 +562,25 @@
   function drawTurbine() {
     const x = TURB_X;
     const hubY = G - 290;
+    // vítr (pohybová energie vzduchu)
+    if (state.mode === "charge" && state.night < 0.5) {
+      const c = state.cyc;
+      const strong = c && c.dir === "charge" && c.step === 1;
+      ctx.strokeStyle = `rgba(100, 116, 139, ${strong ? 0.6 : 0.3})`;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+      for (let k = 0; k < 4; k += 1) {
+        const y = hubY - 70 + k * 45;
+        const ph = ((state.time * 0.6 + k * 0.27) % 1);
+        const x0 = WORLD.x0 + 10 + ph * 120;
+        ctx.globalAlpha = Math.sin(ph * Math.PI);
+        ctx.beginPath();
+        ctx.moveTo(x0, y);
+        ctx.bezierCurveTo(x0 + 20, y - 8, x0 + 40, y + 8, x0 + 60, y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
     ctx.fillStyle = "#e2e8f0";
     ctx.strokeStyle = "#94a3b8";
     ctx.lineWidth = 2;
@@ -310,6 +626,18 @@
       }
       ctx.restore();
     }
+    // sluneční paprsky na panely při výrobě
+    const c = state.cyc;
+    if (c && c.dir === "charge" && c.step === 1 && state.night < 0.5) {
+      ctx.strokeStyle = "rgba(245, 158, 11, 0.55)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 9]);
+      ctx.lineDashOffset = -state.time * 40;
+      for (const [tx, ty] of [[176, G - 54], [238, G - 54]]) {
+        ctx.beginPath(); ctx.moveTo(130 + (tx - 130) * 0.2, 110 + (ty - 110) * 0.2); ctx.lineTo(tx, ty); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
   }
 
   function drawCity() {
@@ -325,31 +653,93 @@
         }
       }
     }
+    if (lit > 0.05) {
+      const gr = ctx.createRadialGradient(CITY_X, G - 60, 10, CITY_X, G - 60, 130);
+      gr.addColorStop(0, `rgba(253, 224, 71, ${0.35 * lit})`);
+      gr.addColorStop(1, "rgba(253, 224, 71, 0)");
+      ctx.fillStyle = gr;
+      ctx.fillRect(CITY_X - 140, G - 200, 280, 200);
+    }
   }
 
-  function drawBlock(x, yBottom, hl) {
-    const x0 = x - BW / 2;
-    const y0 = yBottom - BH;
-    ctx.fillStyle = hl ? "#e4e4e7" : "#d4d4d8";
+  function drawBlock(i) {
+    const p = blockPos(i);
+    const carried = state.blocks[i].where === "carry";
+    const x0 = p.x - BW / 2;
+    const y0 = p.y - BH;
+    ctx.fillStyle = "#d4d4d8";
     rr(x0, y0, BW, BH, 3); ctx.fill();
-    ctx.strokeStyle = hl ? "#ec4899" : "#a1a1aa";
-    ctx.lineWidth = hl ? 3 : 2;
+    // růžová výplň = polohová energie bloku (podle výšky)
+    const f = Math.max(0, Math.min(1, heightM(p.y) / 120));
+    if (f > 0.001) {
+      ctx.save();
+      rr(x0, y0, BW, BH, 3); ctx.clip();
+      ctx.fillStyle = "rgba(236, 72, 153, 0.45)";
+      ctx.fillRect(x0, y0 + BH * (1 - f), BW, BH * f);
+      ctx.restore();
+    }
+    rr(x0, y0, BW, BH, 3);
+    ctx.strokeStyle = carried ? "#ec4899" : "#a1a1aa";
+    ctx.lineWidth = carried ? 3 : 2;
     ctx.stroke();
-    ctx.fillStyle = "#71717a";
-    ctx.font = "600 13px 'Fenomen Sans', system-ui, sans-serif";
+    ctx.fillStyle = "#52525b";
+    ctx.font = `600 13px ${FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("35 t", x, y0 + BH / 2 + 1);
+    ctx.fillText("35 t", p.x, y0 + BH / 2 + 1);
+  }
+
+  function badge(x, y, title, parts, active, align = "left") {
+    ctx.save();
+    ctx.globalAlpha = active ? 1 : 0.5;
+    ctx.font = `600 14px ${FONT}`;
+    const tw = ctx.measureText(title).width;
+    ctx.font = `600 13px ${FONT}`;
+    let pw = 0;
+    for (const [t] of parts) pw += ctx.measureText(t).width;
+    const w = Math.max(tw, pw) + 22;
+    const h = 46;
+    const bx = align === "right" ? x - w : align === "center" ? x - w / 2 : x;
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    rr(bx, y, w, h, 10); ctx.fill();
+    ctx.lineWidth = active ? 3 : 1.5;
+    ctx.strokeStyle = active ? "#f59e0b" : "#cbd5e1";
+    ctx.stroke();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#1e293b";
+    ctx.font = `600 14px ${FONT}`;
+    ctx.fillText(title, bx + 11, y + 19);
+    ctx.font = `600 13px ${FONT}`;
+    let cx = bx + 11;
+    for (const [t, col] of parts) {
+      ctx.fillStyle = col;
+      ctx.fillText(t, cx, y + 37);
+      cx += ctx.measureText(t).width;
+    }
+    ctx.restore();
+  }
+
+  function drawStations() {
+    const c = state.cyc;
+    const ch = c && c.dir === "charge";
+    const dis = c && c.dir === "discharge";
+    const T = { light: "#ca8a04", el: "#2563eb", kin: "#16a34a", pot: "#db2777", gray: "#64748b", heat: "#ea580c" };
+    badge(160, G + 34, "Elektrárny", [["světelná", T.light], [" + ", T.gray], ["pohybová", T.kin], [" → ", T.gray], ["elektrická", T.el]], ch && c.step === 1, "center");
+    if (state.lastDir === "charge") {
+      badge(MAST_X - 22, JIB_Y + 62, "Motor", [["elektrická", T.el], [" → ", T.gray], ["pohybová", T.kin]], ch && c.step === 3, "right");
+    } else {
+      badge(MAST_X - 22, JIB_Y + 62, "Generátor", [["pohybová", T.kin], [" → ", T.gray], ["elektrická", T.el]], dis && c.step === 2, "right");
+    }
+    badge(CITY_X + 22, G + 34, "Město", [["elektrická", T.el], [" → ", T.gray], ["světelná, tepelná", T.light]], dis && c.step === 4, "center");
   }
 
   function drawTowerAndCrane() {
-    // podstavec věže (12 m)
     ctx.fillStyle = "#a1a1aa";
     ctx.fillRect(STACK_X - 34, G - LAYER, 68, LAYER);
     ctx.fillStyle = "#8b8b93";
     ctx.fillRect(STACK_X - 34, G - LAYER, 68, 5);
 
-    // stožár (příhradový)
     const mx0 = MAST_X - 11;
     const mx1 = MAST_X + 11;
     const top = JIB_Y - 6;
@@ -363,10 +753,14 @@
       ctx.moveTo(mx1, y - 22); ctx.lineTo(mx0, y - 22);
     }
     ctx.stroke();
-    // výškové značky na stožáru
+    // elektrické vedení ve stožáru
+    ctx.strokeStyle = mixColor("#64748b", "#94a3b8", state.night);
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(MAST_X, G); ctx.lineTo(MAST_X, WINCH.y + 12); ctx.stroke();
+
     ctx.fillStyle = mixColor("#64748b", "#cbd5e1", state.night);
     ctx.strokeStyle = mixColor("#64748b", "#cbd5e1", state.night);
-    ctx.font = "12px 'Fenomen Sans', system-ui, sans-serif";
+    ctx.font = `12px ${FONT}`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     ctx.lineWidth = 1.5;
@@ -376,7 +770,6 @@
       if (m % 24 === 0) ctx.fillText(`${m} m`, mx0 - 13, y);
     }
 
-    // vrchol s táhly
     const apexY = JIB_Y - 74;
     ctx.strokeStyle = "#f59e0b";
     ctx.lineWidth = 3;
@@ -385,7 +778,6 @@
     ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(JIB_X0 + 6, JIB_Y); ctx.lineTo(MAST_X, apexY); ctx.lineTo(JIB_X1 - 120, JIB_Y); ctx.stroke();
 
-    // výložník
     ctx.fillStyle = "#f59e0b";
     ctx.fillRect(JIB_X0, JIB_Y - 6, JIB_X1 - JIB_X0, 6);
     ctx.fillRect(JIB_X0, JIB_Y + 8, JIB_X1 - JIB_X0, 4);
@@ -394,53 +786,42 @@
     ctx.beginPath();
     for (let x = JIB_X0; x < JIB_X1 - 14; x += 14) { ctx.moveTo(x, JIB_Y + 8); ctx.lineTo(x + 7, JIB_Y); ctx.lineTo(x + 14, JIB_Y + 8); }
     ctx.stroke();
-    // protizávaží
     ctx.fillStyle = "#71717a";
     ctx.fillRect(JIB_X0 + 4, JIB_Y + 12, 46, 40);
 
-    // motor / generátor (naviják)
-    const wx = MAST_X - 26;
-    const wy = JIB_Y - 40;
-    const active = Math.abs(state.flow) > 0.05;
+    // motor / generátor
+    const c = state.cyc;
+    const active = c && ((c.dir === "charge" && c.step === 3) || (c.dir === "discharge" && c.step === 2));
+    const wx = WINCH.x - 26;
+    const wy = WINCH.y - 16;
     ctx.fillStyle = "#334155";
     rr(wx, wy, 52, 32, 6); ctx.fill();
-    ctx.beginPath(); ctx.arc(MAST_X, wy + 16, 10, 0, Math.PI * 2);
+    ctx.save();
+    ctx.translate(WINCH.x, WINCH.y);
+    ctx.rotate(active ? state.time * (c.dir === "charge" ? 6 : -6) : 0);
+    ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI * 2);
     ctx.fillStyle = active ? "#fbbf24" : "#64748b"; ctx.fill();
-    ctx.fillStyle = mixColor("#334155", "#f8fafc", state.night);
-    ctx.font = "600 14px 'Fenomen Sans', system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText(state.lastDir === "charge" ? "motor" : "generátor", MAST_X, wy - 10);
+    ctx.strokeStyle = "#334155"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-11, 0); ctx.lineTo(11, 0); ctx.moveTo(0, -11); ctx.lineTo(0, 11); ctx.stroke();
+    ctx.restore();
 
-    // teplo (ztráty)
     if (state.losses && active) {
-      const lvl = Math.min(1, Math.abs(state.flow) * 1.6);
-      ctx.strokeStyle = `rgba(249, 115, 22, ${0.35 + 0.5 * lvl})`;
+      ctx.strokeStyle = "rgba(249, 115, 22, 0.75)";
       ctx.lineWidth = 3;
       for (let k = 0; k < 3; k += 1) {
-        const x0 = wx + 62 + k * 14;
-        const ph = (state.time * 1.5 + k * 0.33) % 1;
+        const x0 = wx - 14 - k * 12;
         ctx.beginPath();
         for (let s = 0; s <= 1; s += 0.1) {
-          const yy = wy + 30 - s * 40 - ph * 6;
+          const yy = wy + 30 - s * 40;
           const xx = x0 + Math.sin(s * 9 + state.time * 6 + k) * 3;
           if (s === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
         }
         ctx.stroke();
       }
-      ctx.fillStyle = "#ea580c";
-      ctx.font = "600 13px 'Fenomen Sans', system-ui, sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillText("teplo", wx + 104, wy + 20);
     }
 
-    // bloky
-    for (let i = 0; i < N; i += 1) {
-      const p = blockPos(i);
-      drawBlock(p.x, p.y, state.blocks[i].where === "carry");
-    }
+    for (let i = 0; i < N; i += 1) drawBlock(i);
 
-    // kočka, lano, hák
     const tx = state.trolleyX;
     ctx.fillStyle = "#475569";
     rr(tx - 16, JIB_Y + 12, 32, 12, 3); ctx.fill();
@@ -455,68 +836,121 @@
     rr(tx - 10, state.hookY - 12, 20, 9, 2); ctx.fill();
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(tx, state.hookY - 3); ctx.lineTo(tx, state.hookY); ctx.stroke();
+  }
 
-    // výška zvedaného bloku
-    if (state.carrying >= 0) {
-      const p = blockPos(state.carrying);
-      const h = heightM(p.y);
-      if (h > 0.5) {
-        const lx = p.x + BW / 2 + 8;
-        ctx.strokeStyle = "#ec4899";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 5]);
-        ctx.beginPath(); ctx.moveTo(lx, p.y); ctx.lineTo(lx, G); ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.beginPath(); ctx.moveTo(lx - 6, p.y); ctx.lineTo(lx + 6, p.y); ctx.moveTo(lx - 6, G); ctx.lineTo(lx + 6, G); ctx.stroke();
-        const label = `h = ${Math.round(h)} m`;
-        ctx.font = "600 15px 'Fenomen Sans', system-ui, sans-serif";
-        const tw = ctx.measureText(label).width;
-        const ly = (p.y + G) / 2;
-        ctx.fillStyle = "rgba(255,255,255,0.92)";
-        rr(lx + 6, ly - 13, tw + 14, 26, 8); ctx.fill();
-        ctx.fillStyle = "#be185d";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "middle";
-        ctx.fillText(label, lx + 13, ly + 1);
+  // výška a polohová energie aktuálního bloku
+  function drawBlockInfo() {
+    const c = state.cyc;
+    if (!c) return;
+    const i = c.block;
+    const p = blockPos(i);
+    const h = heightM(p.y);
+    if (h < 0.5 && !(c.dir === "charge" && c.step <= 3)) return;
+    const lx = state.blocks[i].where === "tower" ? p.x + BW / 2 + 10 : p.x + BW / 2 + 8;
+    ctx.strokeStyle = "#ec4899";
+    ctx.lineWidth = 2;
+    if (h > 0.5) {
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(lx, p.y); ctx.lineTo(lx, G); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(lx - 6, p.y); ctx.lineTo(lx + 6, p.y); ctx.moveTo(lx - 6, G); ctx.lineTo(lx + 6, G); ctx.stroke();
+    }
+    const l1 = `h = ${Math.round(h)} m`;
+    const l2 = `Eₚ = ${fmt((M * g * Math.round(h)) / 1e6)} MJ`;
+    ctx.font = `600 15px ${FONT}`;
+    const tw = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width);
+    const ly = Math.min(G - 40, Math.max(p.y - BH / 2, (p.y + G) / 2));
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    rr(lx + 8, ly - 24, tw + 18, 48, 9); ctx.fill();
+    ctx.strokeStyle = "#f9a8d4"; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#475569";
+    ctx.fillText(l1, lx + 17, ly - 10);
+    ctx.fillStyle = "#be185d";
+    ctx.fillText(l2, lx + 17, ly + 11);
+  }
+
+  function drawPacket(x, y, kind, alpha = 1) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    if (kind === "light") {
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 2;
+      for (let r = 0; r < 8; r += 1) {
+        const a = (r * Math.PI) / 4 + state.time;
+        ctx.beginPath(); ctx.moveTo(Math.cos(a) * (PR + 2), Math.sin(a) * (PR + 2)); ctx.lineTo(Math.cos(a) * (PR + 6), Math.sin(a) * (PR + 6)); ctx.stroke();
       }
     }
-  }
-
-  // tečky energie podél vedení
-  function flowDots(points, offset, alpha) {
-    const segs = [];
-    let total = 0;
-    for (let k = 1; k < points.length; k += 1) {
-      const [x0, y0] = points[k - 1];
-      const [x1, y1] = points[k];
-      const len = Math.hypot(x1 - x0, y1 - y0);
-      segs.push({ x0, y0, x1, y1, len, start: total });
-      total += len;
-    }
-    const gap = 26;
-    ctx.fillStyle = `rgba(250, 204, 21, ${alpha})`;
-    ctx.strokeStyle = `rgba(161, 98, 7, ${alpha})`;
+    ctx.beginPath(); ctx.arc(0, 0, PR, 0, Math.PI * 2);
+    ctx.fillStyle = COL[kind];
+    ctx.fill();
     ctx.lineWidth = 1.5;
-    for (let s = ((offset % gap) + gap) % gap; s < total; s += gap) {
-      const seg = segs.find((q) => s >= q.start && s <= q.start + q.len);
-      if (!seg) continue;
-      const t = (s - seg.start) / seg.len;
+    ctx.strokeStyle = "rgba(15,23,42,0.35)";
+    ctx.stroke();
+    if (kind === "el") {
+      ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.arc(mix(seg.x0, seg.x1, t), mix(seg.y0, seg.y1, t), 5, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
+      ctx.moveTo(1.5, -6.5); ctx.lineTo(-4, 1); ctx.lineTo(-0.5, 1); ctx.lineTo(-1.5, 6.5); ctx.lineTo(4, -1); ctx.lineTo(0.5, -1); ctx.closePath();
+      ctx.fill();
     }
+    ctx.restore();
   }
 
-  function drawFlow() {
-    const lvl = Math.min(1, Math.abs(state.flow) * 1.6);
-    if (lvl < 0.05) return;
-    const up = JIB_Y - 24;
-    if (state.flow > 0) {
-      flowDots([[TURB_X, G], [TURB_X, CABLE_Y], [MAST_X, CABLE_Y], [MAST_X, up]], state.flowT, lvl);
-      flowDots([[PANEL_X, G - 20], [PANEL_X, CABLE_Y]], state.flowT, lvl);
-    } else {
-      flowDots([[MAST_X, up], [MAST_X, CABLE_Y], [CITY_X, CABLE_Y], [CITY_X, G]], state.flowT, lvl);
+  function drawPackets() {
+    // čekající u motoru / generátoru
+    state.buffer.forEach((k, j) => { const [x, y] = bufferPos(j); drawPacket(x, y, k); });
+    const c = state.cyc;
+    for (const p of state.packets) {
+      if (p.rise) {
+        const a = (state.time - p.born) / 1.6;
+        if (p.kind === "heat") {
+          drawPacket(p.x + Math.sin(a * 12) * 4, p.y - a * 70, "heat", 1 - a);
+        } else {
+          drawPacket(p.x, p.y - a * 90, "light", 1 - a);
+        }
+        continue;
+      }
+      if (p.hold) {
+        // vyrobené balíčky čekají u zdroje (vyskočí nahoru)
+        const [x0, y0] = p.path()[0];
+        const col = p.slot % 2;
+        const row = Math.floor(p.slot / 2);
+        const pop = Math.min(1, (state.time - p.born) / 0.3);
+        const x = x0 - 18 + (row % 3) * 18 + (col === 0 ? 30 : 0);
+        const y = y0 - 34 - Math.floor(row / 3) * 20 - pop * 6;
+        void col;
+        p.px = x; p.py = y;
+        drawPacket(x, y, p.kind, pop);
+        continue;
+      }
+      if (p.s < 0) {
+        if (p.px != null) drawPacket(p.px, p.py, p.kind);
+        continue;
+      }
+      const pts = p.path();
+      if (p.px != null && p.s < 40) {
+        // plynulý přechod z místa čekání do kabelu
+        const [x1, y1] = polyAt(pts, p.s);
+        const t = p.s / 40;
+        drawPacket(mix(p.px, x1, t), mix(p.py, y1, t), p.kind);
+        continue;
+      }
+      const [x, y] = polyAt(pts, p.s);
+      drawPacket(x, y, p.kind);
     }
+    for (const f of state.fx) {
+      const a = f.t / 0.5;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, PR + a * 22, 0, Math.PI * 2);
+      ctx.strokeStyle = f.color;
+      ctx.globalAlpha = 1 - a;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    void c;
   }
 
   function draw() {
@@ -530,7 +964,9 @@
     drawPanels();
     drawCity();
     drawTowerAndCrane();
-    drawFlow();
+    drawStations();
+    drawBlockInfo();
+    drawPackets();
   }
 
   /* ---------- Panel ---------- */
@@ -548,6 +984,8 @@
       ],
       arrows: ["elektrárny", "motor", "zvedání bloku"],
       heatAt: 1,
+      // krok → zvýrazněné prvky [kroky, šipky]
+      map: { 1: [[0, 1], [0]], 2: [[1], []], 3: [[2, 3], [1, 2]], 4: [[3], []] },
     },
     discharge: {
       label: "Přeměny při vybíjení",
@@ -559,33 +997,37 @@
       ],
       arrows: ["klesání bloku", "generátor", "spotřebiče"],
       heatAt: 1,
+      map: { 1: [[0], []], 2: [[0, 1, 2], [0, 1]], 3: [[2], []], 4: [[3], [2]] },
     },
   };
 
   function renderChain() {
     const c = CHAIN[state.lastDir];
     $("chainLabel").textContent = c.label;
+    const cur = state.cyc && state.cyc.dir === state.lastDir ? c.map[state.cyc.step] : [[], []];
     c.steps.forEach(([cls, title, sub], j) => {
       const el = $(`st${j + 1}`);
-      el.className = `pe-step ${cls}`;
+      el.className = `pe-step ${cls}${cur[0].includes(j) ? " is-current" : ""}`;
       el.innerHTML = `<b>${title}</b><small>${sub}</small>`;
     });
     c.arrows.forEach((t, j) => {
+      const el = $(`ar${j + 1}`);
+      el.className = `pe-arrow${cur[1].includes(j) ? " is-current" : ""}`;
       const heat = j === c.heatAt ? ` <span class="pe-heat"${state.losses ? "" : " hidden"}>+ teplo</span>` : "";
-      $(`ar${j + 1}`).innerHTML = `<span>${t}</span>${heat}`;
+      el.innerHTML = `<span>${t}</span>${heat}`;
     });
   }
 
   function updatePanel() {
-    $("chain").classList.toggle("is-active", Math.abs(state.flow) > 0.05);
     const nTop = state.blocks.filter((b) => b.where === "tower").length;
     $("nTop").textContent = `${nTop} z ${N}`;
     $("epTotal").textContent = MJ(epTotal());
     const f = $("formula");
-    if (state.carrying >= 0) {
-      const h = Math.round(heightM(blockPos(state.carrying).y));
+    const c = state.cyc;
+    if (c && state.blocks[c.block].where === "carry") {
+      const h = Math.round(heightM(blockPos(c.block).y));
       const e = M * g * h;
-      f.innerHTML = `zvedaný blok: <i class="qty">E</i><sub>p</sub> = <i class="qty">m</i> · <i class="qty">g</i> · <i class="qty">h</i> = 35 000 kg · 10 N/kg · ${h} m = <b>${MJ(e)}</b>`;
+      f.innerHTML = `blok na laně: <i class="qty">E</i><sub>p</sub> = <i class="qty">m</i> · <i class="qty">g</i> · <i class="qty">h</i> = 35 000 kg · 10 N/kg · ${h} m = <b>${MJ(e)}</b>`;
     } else {
       f.textContent = "Jeřáb teď nic nenese.";
     }
@@ -601,9 +1043,11 @@
   function frame(t) {
     const dt = last == null ? 1 / 60 : Math.min(1 / 30, (t - last) / 1000);
     last = t;
-    state.time += dt;
-
-    stepCrane(dt);
+    if (state.mode !== "pause") {
+      state.time += dt;
+      stepCycle(dt);
+      stepPackets(dt);
+    }
 
     const ep = epTotal();
     const dE = ep - state.epPrev;
@@ -616,19 +1060,12 @@
       state.eOut += -dE * eta;
       state.heat += -dE * (1 - eta);
     }
-    const pNow = dE / dt;
-    state.power += (pNow - state.power) * Math.min(1, dt / 0.15);
-    // tok energie v kabelu: rychle naběhne, pomalu doznívá (mezi bloky nebliká)
-    const fNow = Math.max(-1, Math.min(1, state.power / 1.2e6));
-    const tau = Math.abs(fNow) > Math.abs(state.flow) || Math.sign(fNow) !== Math.sign(state.flow) && fNow !== 0 ? 0.25 : 4;
-    state.flow += (fNow - state.flow) * Math.min(1, dt / tau);
-    if (state.mode === "pause") state.flow += (0 - state.flow) * Math.min(1, dt / 0.4);
-    state.flowT += dt * 140 * Math.sign(state.flow || 1);
 
     const nightTarget = state.mode === "discharge" ? 1 : state.mode === "charge" ? 0 : state.night;
     state.night += (nightTarget - state.night) * Math.min(1, dt / 0.8);
-    const litTarget = Math.max(0, Math.min(1, -state.flow * 2.5));
-    state.lit += (litTarget - state.lit) * Math.min(1, dt / 0.4);
+    if (state.mode !== "pause") state.litHold = Math.max(0, state.litHold - dt);
+    const litTarget = state.litHold > 0 ? 1 : 0;
+    state.lit += (litTarget - state.lit) * Math.min(1, dt / 0.5);
     const turbTarget = state.mode === "charge" ? 2.2 : 0;
     state.turbV += (turbTarget - state.turbV) * Math.min(1, dt / 1.2);
     state.turbA += state.turbV * dt;
@@ -642,18 +1079,24 @@
   /* ---------- Ovládání ---------- */
   const modeBtns = document.querySelectorAll("[data-mode]");
   function setMode(m) {
+    const prev = state.mode;
     state.mode = m;
-    if (m !== "pause") {
-      state.lastDir = m;
-      state.done = "";
-      hintEl.classList.add("is-hidden");
-      renderChain();
-    }
     modeBtns.forEach((b) => {
       const on = b.dataset.mode === m;
       b.classList.toggle("is-active", on);
       b.setAttribute("aria-pressed", String(on));
     });
+    if (m === "pause") return;
+    hintEl.classList.add("is-hidden");
+    const dirChanged = state.lastDir !== m;
+    state.lastDir = m;
+    if (!state.cyc || state.cyc.dir !== m) {
+      state.done = "";
+      if (!startCycle(m)) finish();
+    } else if (prev === "pause") {
+      showCaption();
+    }
+    if (dirChanged) renderChain();
   }
   modeBtns.forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
 
@@ -669,6 +1112,18 @@
     updatePanel();
   }));
 
+  const runBtns = document.querySelectorAll("[data-run]");
+  runBtns.forEach((b) => b.addEventListener("click", () => {
+    state.stepMode = b.dataset.run === "steps";
+    runBtns.forEach((o) => {
+      const on = o === b;
+      o.classList.toggle("is-active", on);
+      o.setAttribute("aria-pressed", String(on));
+    });
+    if (!state.stepMode && state.cyc && state.cyc.waiting) nextStep();
+  }));
+
+  capNext.addEventListener("click", () => nextStep());
   $("btnReset").addEventListener("click", reset);
 
   window.addEventListener("resize", resize);
@@ -677,5 +1132,5 @@
   updatePanel();
   requestAnimationFrame(frame);
 
-  window.__pe = { state, epTotal, setMode };
+  window.__pe = { state, epTotal, setMode, nextStep };
 })();
