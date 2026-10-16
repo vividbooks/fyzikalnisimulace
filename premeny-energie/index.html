@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Přeměny energie</title>
+  <link rel="stylesheet" href="style.css?v=2" />
+</head>
+<body>
+  <main class="scene" aria-label="Simulace přeměn energie – betonová věž na ukládání energie">
+    <aside class="setup-panel" aria-label="Ovládání simulace">
+      <div class="panel-copy">
+        <a href="../index.html" class="hub-back-to-sims">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zpět
+        </a>
+        <h1 class="panel-title">Přeměny energie</h1>
+      </div>
+
+      <section class="panel-section" aria-label="Věž">
+        <span class="panel-label">Betonová věž</span>
+        <div class="mode-switch mode-switch--3" role="group" aria-label="Režim věže">
+          <button class="mode-switch__btn" type="button" data-mode="charge" aria-pressed="false">nabíjet</button>
+          <button class="mode-switch__btn is-active" type="button" data-mode="pause" aria-pressed="true">stát</button>
+          <button class="mode-switch__btn" type="button" data-mode="discharge" aria-pressed="false">vybíjet</button>
+        </div>
+      </section>
+
+      <section class="panel-section" aria-label="Přeměny energie">
+        <span class="panel-label" id="chainLabel">Přeměny při nabíjení</span>
+        <div class="obj-card pe-chain" id="chain" aria-live="polite">
+          <div class="pe-step" id="st1"></div>
+          <div class="pe-arrow" id="ar1"></div>
+          <div class="pe-step" id="st2"></div>
+          <div class="pe-arrow" id="ar2"></div>
+          <div class="pe-step" id="st3"></div>
+          <div class="pe-arrow" id="ar3"></div>
+          <div class="pe-step" id="st4"></div>
+        </div>
+      </section>
+
+      <section class="panel-section" aria-label="Polohová energie">
+        <span class="panel-label">Polohová energie</span>
+        <div class="obj-card pe-card">
+          <div class="pe-row"><span>hmotnost bloku <i class="qty">m</i></span><span>35 t</span></div>
+          <div class="pe-row"><span>bloky ve věži</span><span id="nTop">0 z 10</span></div>
+          <p class="pe-formula" id="formula">Jeřáb teď nic nenese.</p>
+          <div class="pe-row pe-row--total"><span>celkem <i class="qty">E</i><sub>p</sub></span><span id="epTotal">0 MJ</span></div>
+        </div>
+      </section>
+
+      <section class="panel-section" aria-label="Energie">
+        <span class="panel-label">Ztráty v motoru a generátoru</span>
+        <div class="mode-switch mode-switch--2" role="group" aria-label="Ztráty teplem">
+          <button class="mode-switch__btn is-active" type="button" data-loss="off" aria-pressed="true">bez ztrát</button>
+          <button class="mode-switch__btn" type="button" data-loss="on" aria-pressed="false">se ztrátami</button>
+        </div>
+        <div class="obj-card pe-card">
+          <div class="pe-row"><span>ze Slunce a větru</span><span id="eIn">0 MJ</span></div>
+          <div class="pe-row"><span>do města</span><span id="eOut">0 MJ</span></div>
+          <div class="pe-row pe-row--heat" id="heatRow" hidden><span>teplo (ztráty)</span><span id="eHeat">0 MJ</span></div>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <button type="button" id="btnReset" class="action-btn action-btn--reset reset-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4.5 8A7.5 7.5 0 1 1 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4.5 3.5V8h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Znovu
+        </button>
+      </section>
+    </aside>
+
+    <div class="scene-workspace" id="workspace">
+      <p class="sim-empty-hint" id="hintEl">Přepni věž na „nabíjet“.</p>
+      <canvas class="pe-canvas" id="view" aria-label="Krajina se Sluncem, větrnou a solární elektrárnou, městem a betonovou věží s jeřábem"></canvas>
+    </div>
+  </main>
+
+  <script src="main.js?v=3"></script>
+  <script src="../shared/sim-qr.js"></script>
+</body>
+</html>
