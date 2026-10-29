@@ -1009,3 +1009,11 @@ body.is-manual #speaker { cursor: pointer; }
 .rev-dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .rev-btn--sm { min-height: 38px; padding: 6px 8px; font-size: 13px; gap: 6px; white-space: nowrap; }
 .rev-dl { margin-top: -4px; }
+.rev-play-row { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; }
+.rev-dl-btn {
+  appearance: none; width: 44px; min-height: 44px; border: 0; border-radius: var(--radius); padding: 0;
+  background: var(--idle-bg); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+.rev-dl-btn:hover:not(:disabled) { background: #3b4a63; }
+.rev-dl-btn:disabled { opacity: 0.45; cursor: default; }
+.rev-dl-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

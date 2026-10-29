@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Reverse</title>
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace Reverse – nahrávka a její přehrání pozpátku">
@@ -50,18 +50,19 @@
       <section class="panel-section" aria-label="Přehrávání">
         <span class="panel-label">Přehrávání</span>
         <div class="rev-stack">
-          <button type="button" id="btnFwd" class="action-btn action-btn--run" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path class="rev-ico" d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
-            <span class="rev-lbl">Přehrát normálně</span>
-          </button>
-          <button type="button" id="btnRev" class="action-btn rev-back" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path class="rev-ico" d="M16 5.14v13.72L5 12l11-6.86z"/></svg>
-            <span class="rev-lbl">Přehrát pozpátku</span>
-          </button>
-          <span class="rev-mic__label">Stáhnout zvuk (WAV)</span>
-          <div class="rev-dl">
-            <button type="button" id="btnDlFwd" class="action-btn rev-btn rev-btn--sm" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>normálně</button>
-            <button type="button" id="btnDlRev" class="action-btn rev-btn rev-btn--sm" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>pozpátku</button>
+          <div class="rev-play-row">
+            <button type="button" id="btnFwd" class="action-btn action-btn--run" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path class="rev-ico" d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
+              <span class="rev-lbl">Přehrát normálně</span>
+            </button>
+            <button type="button" id="btnDlFwd" class="rev-dl-btn" disabled aria-label="Stáhnout nahrávku (WAV)" title="Stáhnout nahrávku (WAV)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+          <div class="rev-play-row">
+            <button type="button" id="btnRev" class="action-btn rev-back" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path class="rev-ico" d="M16 5.14v13.72L5 12l11-6.86z"/></svg>
+              <span class="rev-lbl">Přehrát pozpátku</span>
+            </button>
+            <button type="button" id="btnDlRev" class="rev-dl-btn" disabled aria-label="Stáhnout nahrávku pozpátku (WAV)" title="Stáhnout nahrávku pozpátku (WAV)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
         </div>
       </section>
