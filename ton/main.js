@@ -95,21 +95,6 @@
     }
     return t;
   })();
-  // stejný tvar i pro zvuk: Fourierovy koeficienty tabulky → PeriodicWave
-  const VIOLIN_H = 48;
-  const VIOLIN_COEF = (() => {
-    const N = VIOLIN_TABLE.length;
-    const re = new Float32Array(VIOLIN_H + 1); const im = new Float32Array(VIOLIN_H + 1);
-    for (let h = 1; h <= VIOLIN_H; h += 1) {
-      let a = 0; let b = 0;
-      for (let i = 0; i < N; i += 1) {
-        const ph = (2 * Math.PI * h * i) / N;
-        a += VIOLIN_TABLE[i] * Math.cos(ph); b += VIOLIN_TABLE[i] * Math.sin(ph);
-      }
-      re[h] = (2 * a) / N; im[h] = (2 * b) / N;
-    }
-    return { re, im };
-  })();
   function violinVal(phase) {
     const N = VIOLIN_TABLE.length;
     const x = (((phase % 1) + 1) % 1) * N;
@@ -156,7 +141,7 @@
     mix.gain.value = 0.5;
     const oscs = [0, 6, -5].map((cents, k) => {
       const o = actx.createOscillator();
-      o.setPeriodicWave(actx.createPeriodicWave(VIOLIN_COEF.re, VIOLIN_COEF.im));
+      o.type = "sawtooth";
       o.frequency.value = freq;
       o.detune.value = cents;
       const g = actx.createGain();
