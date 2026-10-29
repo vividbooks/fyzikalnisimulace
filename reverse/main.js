@@ -265,9 +265,31 @@
       o.textContent = d.label || `mikrofon ${i + 1}`;
       micSelect.appendChild(o);
     });
+    // prohlížeč dokud mikrofon nepovolíš, neprozradí seznam zařízení → nabídnout jejich načtení
+    if (micSelect.options.length <= 1) {
+      const scan = document.createElement("option");
+      scan.value = "__scan"; scan.textContent = "najít další mikrofony…";
+      micSelect.appendChild(scan);
+    }
     micSelect.value = [...micSelect.options].some((o) => o.value === want) ? want : "";
   }
-  micSelect.addEventListener("change", () => { saveMic(micSelect.value); hideHint(); });
+  async function scanMics() {
+    hideHint();
+    try {
+      const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+      await refreshMics();
+      st.getTracks().forEach((t) => t.stop());
+      if (micSelect.options.length <= 2) showHint("Prohlížeč vidí jen jeden mikrofon. Další zkontroluj v nastavení systému (Soukromí → Mikrofon).");
+      else showHint("Mikrofony jsou načtené – vyber v nabídce ten, který chceš.");
+    } catch (_) {
+      showHint("Mikrofon není povolený. Povol ho v prohlížeči (ikona vedle adresy) a zkus to znovu.");
+      micSelect.value = loadMic() || "";
+    }
+  }
+  micSelect.addEventListener("change", () => {
+    if (micSelect.value === "__scan") { micSelect.value = ""; scanMics(); return; }
+    saveMic(micSelect.value); hideHint();
+  });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", refreshMics);
   refreshMics();
 
