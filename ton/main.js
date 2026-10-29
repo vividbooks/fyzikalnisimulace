@@ -65,24 +65,50 @@
   // sinus – f celých kmitů za sekundu; obdélník – f pohybů blány za sekundu (f/2 period)
   const rateOf = (f) => (state.wave === "square" ? f / 2 : f);
 
-  // housle: smyčcem rozechvěná struna kmitá zhruba jako „pila“ (Helmholtzův pohyb),
-  // ozvučnice zesílí některé vyšší harmonické – tón je složený z mnoha sinusovek
-  const VIOLIN_W = [1, 0.85, 1.0, 0.9, 0.75, 0.7, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.12, 0.1, 0.08, 0.06, 0.05];
-  const VIOLIN_B = VIOLIN_W.map((w, i) => w / (i + 1));
+  // housle: tvar jedné periody podle předlohy (osciloskop) – nepravidelné hroty nahoru a dolů,
+  // struna rozechvěná smyčcem + ozvučnice dávají složený signál z mnoha harmonických
+  // [x, y] – x roste zleva doprava (perioda 65,4), y dolů kladné, klidová čára ≈ 2,45
+  const VIOLIN_PTS = [
+    [-32.67, 2.45], [-30.91, 10.42], [-29.36, 10.45], [-27.49, 2.15], [-26.41, -5.6], [-24.65, -5.6],
+    [-23.51, 2.94], [-22.29, 31.63], [-20.37, 31.68], [-18.97, 2.47], [-16.66, -39.43], [-14.74, -39.23],
+    [-13.18, 2.83], [-12.28, 10.89], [-10.41, 10.38], [-9.94, 2.24], [-7.95, 2.83], [-6.5, 11.62],
+    [-4.79, 11.58], [-3.32, 1.99], [-1.68, -27.28], [0.23, -27.1], [1.38, 2.47], [2.31, 36.81],
+    [4.23, 37.1], [4.96, 23.86], [6.39, 2.47], [8.29, -24.83], [10.19, -24.74], [11.87, 2.77],
+    [13.31, 14.14], [15.12, 14.01], [16.44, 2.31], [18.15, -8.95], [19.93, -8.59], [21.15, 2.68],
+    [22.12, 17.65], [24.02, 17.65], [25.0, 2.47], [26.02, -12.46], [27.87, -12.93], [29.45, 0.42],
+    [30.35, 2.446], [32.71, 2.446],
+  ];
   const VIOLIN_TABLE = (() => {
     const N = 1024;
-    const raw = new Float32Array(N);
-    for (let i = 0; i < N; i += 1) {
-      let v = 0;
-      VIOLIN_B.forEach((b, h) => { v += b * Math.sin((2 * Math.PI * (h + 1) * i) / N); });
-      raw[i] = v;
-    }
-    let lo = Infinity; let hi = -Infinity; let iMin = 0;
-    raw.forEach((v, i) => { if (v < lo) { lo = v; iMin = i; } if (v > hi) hi = v; });
-    // posun, aby křivka začínala dole (jako ostatní tvary)
+    const x0 = VIOLIN_PTS[0][0];
+    const P = VIOLIN_PTS[VIOLIN_PTS.length - 1][0] - x0;
+    const ys = VIOLIN_PTS.map((p) => p[1]);
+    const lo = Math.min(...ys); const hi = Math.max(...ys);
     const t = new Float32Array(N);
-    for (let i = 0; i < N; i += 1) t[i] = (raw[(i + iMin) % N] - lo) / (hi - lo);
+    let k = 0;
+    for (let i = 0; i < N; i += 1) {
+      const x = x0 + (i / N) * P;
+      while (k < VIOLIN_PTS.length - 2 && VIOLIN_PTS[k + 1][0] < x) k += 1;
+      const [xa, ya] = VIOLIN_PTS[k]; const [xb, yb] = VIOLIN_PTS[k + 1];
+      const y = ya + ((yb - ya) * (x - xa)) / (xb - xa);
+      t[i] = (hi - y) / (hi - lo); // 1 = nahoře
+    }
     return t;
+  })();
+  // stejný tvar i pro zvuk: Fourierovy koeficienty tabulky → PeriodicWave
+  const VIOLIN_H = 48;
+  const VIOLIN_COEF = (() => {
+    const N = VIOLIN_TABLE.length;
+    const re = new Float32Array(VIOLIN_H + 1); const im = new Float32Array(VIOLIN_H + 1);
+    for (let h = 1; h <= VIOLIN_H; h += 1) {
+      let a = 0; let b = 0;
+      for (let i = 0; i < N; i += 1) {
+        const ph = (2 * Math.PI * h * i) / N;
+        a += VIOLIN_TABLE[i] * Math.cos(ph); b += VIOLIN_TABLE[i] * Math.sin(ph);
+      }
+      re[h] = (2 * a) / N; im[h] = (2 * b) / N;
+    }
+    return { re, im };
   })();
   function violinVal(phase) {
     const N = VIOLIN_TABLE.length;
@@ -130,7 +156,7 @@
     mix.gain.value = 0.5;
     const oscs = [0, 6, -5].map((cents, k) => {
       const o = actx.createOscillator();
-      o.type = "sawtooth";
+      o.setPeriodicWave(actx.createPeriodicWave(VIOLIN_COEF.re, VIOLIN_COEF.im));
       o.frequency.value = freq;
       o.detune.value = cents;
       const g = actx.createGain();
