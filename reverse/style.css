@@ -1006,3 +1006,6 @@ body.is-manual #speaker { cursor: pointer; }
   font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap;
 }
 .rev-text-out:empty::before { content: "…pozpátku"; color: #92400e; opacity: 0.6; font-weight: 400; }
+.rev-dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rev-btn--sm { min-height: 38px; padding: 6px 8px; font-size: 13px; gap: 6px; white-space: nowrap; }
+.rev-dl { margin-top: -4px; }

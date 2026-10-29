@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Reverse</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace Reverse – nahrávka a její přehrání pozpátku">
@@ -39,6 +39,14 @@
         </div>
       </section>
 
+      <section class="panel-section" aria-label="Text pozpátku">
+        <span class="panel-label">Text pozpátku</span>
+        <div class="rev-stack">
+          <input type="text" id="txtIn" class="rev-text" placeholder="Napiš text…" maxlength="200" autocomplete="off" spellcheck="false" />
+          <div class="rev-text-out" id="txtOut" aria-live="polite"></div>
+        </div>
+      </section>
+
       <section class="panel-section" aria-label="Přehrávání">
         <span class="panel-label">Přehrávání</span>
         <div class="rev-stack">
@@ -50,6 +58,11 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path class="rev-ico" d="M16 5.14v13.72L5 12l11-6.86z"/></svg>
             <span class="rev-lbl">Přehrát pozpátku</span>
           </button>
+          <span class="rev-mic__label">Stáhnout zvuk (WAV)</span>
+          <div class="rev-dl">
+            <button type="button" id="btnDlFwd" class="action-btn rev-btn rev-btn--sm" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>normálně</button>
+            <button type="button" id="btnDlRev" class="action-btn rev-btn rev-btn--sm" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>pozpátku</button>
+          </div>
         </div>
       </section>
 
@@ -62,14 +75,6 @@
           <button type="button" class="ton-preset rev-sample" data-sample="siren">siréna</button>
           <button type="button" class="ton-preset rev-sample" data-sample="drop">kapka</button>
           <button type="button" class="ton-preset rev-sample" data-sample="boom">bouchnutí</button>
-        </div>
-      </section>
-
-      <section class="panel-section" aria-label="Text pozpátku">
-        <span class="panel-label">Text pozpátku</span>
-        <div class="rev-stack">
-          <input type="text" id="txtIn" class="rev-text" placeholder="Napiš text…" maxlength="200" autocomplete="off" spellcheck="false" />
-          <div class="rev-text-out" id="txtOut" aria-live="polite"></div>
         </div>
       </section>
 
@@ -126,7 +131,7 @@
       </svg>
     </div>
   </main>
-  <script src="main.js?v=4"></script>
+  <script src="main.js?v=5"></script>
   <script src="../shared/sim-qr.js"></script>
 </body>
 </html>

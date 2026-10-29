@@ -133,6 +133,8 @@
     timeLabel.textContent = `délka: ${fmt(buf.duration)} s`;
     $("btnFwd").disabled = false;
     $("btnRev").disabled = false;
+    $("btnDlFwd").disabled = false;
+    $("btnDlRev").disabled = false;
     document.querySelectorAll(".rev-sample").forEach((b) => b.classList.toggle("is-active", b.dataset.sample === state.sampleId));
     setPlayed(0, 1);
     playhead.style.display = "none";
@@ -198,6 +200,40 @@
     setPlayed(0, 1);
     setPlayButtons();
   }
+  /* ---------- Stažení (WAV) ---------- */
+  function toWav(buf) {
+    const ch = buf.numberOfChannels; const n = buf.length; const sr = buf.sampleRate;
+    const dv = new DataView(new ArrayBuffer(44 + n * ch * 2));
+    const str = (o, t) => { for (let i = 0; i < t.length; i += 1) dv.setUint8(o + i, t.charCodeAt(i)); };
+    str(0, "RIFF"); dv.setUint32(4, 36 + n * ch * 2, true); str(8, "WAVE"); str(12, "fmt ");
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, ch, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * ch * 2, true); dv.setUint16(32, ch * 2, true); dv.setUint16(34, 16, true);
+    str(36, "data"); dv.setUint32(40, n * ch * 2, true);
+    const data = []; for (let c = 0; c < ch; c += 1) data.push(buf.getChannelData(c));
+    let o = 44;
+    for (let i = 0; i < n; i += 1) {
+      for (let c = 0; c < ch; c += 1) {
+        const v = Math.max(-1, Math.min(1, data[c][i]));
+        dv.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2;
+      }
+    }
+    return new Blob([dv], { type: "audio/wav" });
+  }
+  function download(dir) {
+    const buf = dir > 0 ? state.buffer : state.reversed;
+    if (!buf) return;
+    const base = (state.name || "nahravka").replace(/^ukázka: /, "").replace(/\.[a-z0-9]+$/i, "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "nahravka";
+    const url = URL.createObjectURL(toWav(buf));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${base}${dir > 0 ? "" : "-pozpatku"}.wav`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+  $("btnDlFwd").addEventListener("click", () => download(1));
+  $("btnDlRev").addEventListener("click", () => download(-1));
+
   $("btnFwd").addEventListener("click", () => play(1));
   $("btnRev").addEventListener("click", () => play(-1));
 
@@ -311,6 +347,7 @@
     state.peaks = null; state.buffer = null;
     waveBase.setAttribute("d", ""); wavePlayed.setAttribute("d", "");
     $("btnFwd").disabled = true; $("btnRev").disabled = true;
+    $("btnDlFwd").disabled = true; $("btnDlRev").disabled = true;
     const btn = $("btnRec");
     btn.classList.add("is-recording");
     btn.setAttribute("aria-pressed", "true");
