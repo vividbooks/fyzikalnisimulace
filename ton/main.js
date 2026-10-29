@@ -53,11 +53,9 @@
   const fromSlider = (v) => Math.max(F_MIN, Math.min(F_MAX, Math.round(10 ** ((v / 1000) * LOG_MAX))));
   const toSlider = (f) => Math.round((Math.log10(f) / LOG_MAX) * 1000);
   const stepOf = (f) => (f < 20 ? 1 : f < 200 ? 5 : 50);
-  function windowFor(f) {
-    let w = WINDOWS[0];
-    for (const c of WINDOWS) if (c >= 2.5 / f) w = c;
-    return w;
-  }
+  // šířka obrazovky je vždy 1 s
+  const windowFor = () => 1;
+  void WINDOWS;
 
   /* ---------- Zvuk (Web Audio) ---------- */
   let actx = null;
@@ -168,6 +166,7 @@
   }
 
   /* ---------- Obrazovka ---------- */
+  let lastD = "";
   function drawTrace() {
     const f = state.f;
     const Tw = windowFor(f);
@@ -197,19 +196,22 @@
       let lv = 0;
       d = `M${SX0} ${yOf(lv)}`;
       const half = W / (2 * n);
+      if (half < 1.5) {
+        // kmitů je tolik, že čáry splynou v plochu
+        d = `M${SX0} ${Y_LOW}L${SX0} ${Y_HIGH}L${SX1} ${Y_HIGH}L${SX1} ${Y_LOW}Z`;
+        if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "rgba(0, 229, 97, 0.55)"); lastD = d; }
+        return;
+      }
       let x = SX0;
-      let i = 0;
       while (x + half < SX1 + 0.01) {
         x += half;
         d += `L${x.toFixed(1)} ${yOf(lv)}`;
         lv = 1 - lv;
         if (x < SX1 - 0.01) d += `L${x.toFixed(1)} ${yOf(lv)}`;
-        i += 1;
-        if (i > 400) break;
       }
       if (x < SX1) d += `L${SX1} ${yOf(lv)}`;
     }
-    trace.setAttribute("d", d);
+    if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "none"); lastD = d; }
   }
 
   /* ---------- Smyčka ---------- */
