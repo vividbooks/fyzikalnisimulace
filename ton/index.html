@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tón</title>
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace tónu – generátor obdélníkového signálu a reproduktor">
@@ -46,7 +46,7 @@
       <section class="panel-section" aria-label="Frekvence">
         <span class="panel-label">Frekvence signálu</span>
         <div class="obj-card">
-          <div class="ton-freq"><i class="qty">f</i>&nbsp;=&nbsp;<span class="ton-freq__value" id="fVal">5</span><span class="ton-freq__unit">Hz</span></div>
+          <div class="ton-freq"><i class="qty">f</i>&nbsp;=&nbsp;<button type="button" class="ton-freq__value" id="fVal" aria-label="Zadat frekvenci z klávesnice">5</button><span class="ton-freq__unit">Hz</span></div>
           <p class="ton-freq__meaning" id="fMeaning">počet pohybů blány za sekundu</p>
           <input data-gen-only class="ton-slider" id="fSlider" type="range" min="0" max="1000" step="1" value="212" aria-label="Frekvence" />
           <div class="ton-scale" data-gen-only><span>0 Hz</span><span>10 Hz</span><span>100 Hz</span><span>2 000 Hz</span></div>
@@ -58,17 +58,23 @@
         </div>
       </section>
 
-      <section class="panel-section" aria-label="Rychlé volby" data-gen-only>
-        <span class="panel-label">Rychlé volby</span>
+      <section class="panel-section" aria-label="Tóny" data-gen-only>
+        <span class="panel-label">Tóny</span>
         <div class="ton-presets">
-          <button type="button" class="ton-preset" data-f="0">0 Hz</button>
-          <button type="button" class="ton-preset" data-f="1">1 Hz</button>
-          <button type="button" class="ton-preset" data-f="5">5 Hz</button>
-          <button type="button" class="ton-preset" data-f="20">20 Hz</button>
-          <button type="button" class="ton-preset" data-f="50">50 Hz</button>
-          <button type="button" class="ton-preset ton-preset--wide" data-f="440">440 Hz<small>komorní a</small></button>
-          <button type="button" class="ton-preset" data-f="1000">1&nbsp;000&nbsp;Hz</button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="262"><b>c¹</b><small>262 Hz</small></button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="294"><b>d¹</b><small>294 Hz</small></button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="330"><b>e¹</b><small>330 Hz</small></button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="349"><b>f¹</b><small>349 Hz</small></button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="392"><b>g¹</b><small>392 Hz</small></button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="440"><b>a¹</b><small>440 Hz</small></button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="494"><b>h¹</b><small>494 Hz</small></button>
+          <button type="button" class="ton-preset ton-note-btn" data-f="523"><b>c²</b><small>523 Hz</small></button>
+          <button type="button" class="ton-preset ton-preset--custom" id="fCustom">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.5 8h1M11.5 8h1M15.5 8h1M7.5 12h1M11.5 12h1M15.5 12h1M7.5 16h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            zadat vlastní frekvenci
+          </button>
         </div>
+        <p class="ton-note">Komorní a¹ = 440 Hz – podle něj se ladí hudební nástroje.</p>
       </section>
 
       <section class="panel-section" aria-label="Perioda" data-gen-only>
@@ -132,7 +138,45 @@
     </div>
   </main>
 
-  <script src="main.js?v=27"></script>
+  <div id="tableKeypadOverlay" class="table-keypad-overlay" hidden>
+    <div class="table-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="tableKeypadTitle">
+      <p id="tableKeypadTitle" class="table-keypad-panel__title">Frekvence (0 až 2 000 Hz)</p>
+      <div id="tableKeypadDisplay" class="table-keypad-panel__display" aria-live="polite">
+        <span id="tableKeypadDisplayValue" class="table-keypad-panel__value"></span>
+        <span id="tableKeypadDisplayUnit" class="table-keypad-panel__unit" aria-hidden="true">Hz</span>
+      </div>
+      <p id="tableKeypadError" class="table-keypad-panel__error" hidden></p>
+      <div class="table-math-keypad" id="tableMathKeypad" aria-label="Matematická klávesnice">
+        <div class="table-math-keypad__grid">
+          <button class="table-math-keypad__key" type="button" data-value="7">7</button>
+          <button class="table-math-keypad__key" type="button" data-value="8">8</button>
+          <button class="table-math-keypad__key" type="button" data-value="9">9</button>
+          <button class="table-math-keypad__key" type="button" data-value="4">4</button>
+          <button class="table-math-keypad__key" type="button" data-value="5">5</button>
+          <button class="table-math-keypad__key" type="button" data-value="6">6</button>
+          <button class="table-math-keypad__key" type="button" data-value="1">1</button>
+          <button class="table-math-keypad__key" type="button" data-value="2">2</button>
+          <button class="table-math-keypad__key" type="button" data-value="3">3</button>
+          <button class="table-math-keypad__key" type="button" data-value=",">,</button>
+          <button class="table-math-keypad__key" type="button" data-value="0">0</button>
+          <button class="table-math-keypad__key" type="button" data-action="clear" aria-label="Smazat vše">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="table-keypad-panel__actions">
+        <button type="button" id="tableKeypadCancel" class="table-keypad-panel__action table-keypad-panel__cancel" aria-label="Zavřít bez uložení">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" id="tableKeypadConfirm" class="table-keypad-panel__action table-keypad-panel__confirm" aria-label="Nastavit frekvenci">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l5 5L19 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <script src="main.js?v=28"></script>
   <script src="../shared/sim-qr.js"></script>
 </body>
 </html>

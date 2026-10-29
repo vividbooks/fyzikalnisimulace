@@ -271,7 +271,63 @@
   $("fSlider").addEventListener("input", (e) => { hideHint(); setF(fromSlider(Number(e.target.value)), true); });
   $("fMinus").addEventListener("click", () => { hideHint(); setF(state.f - stepOf(state.f - 1)); });
   $("fPlus").addEventListener("click", () => { hideHint(); setF(state.f + stepOf(state.f)); });
-  document.querySelectorAll(".ton-preset").forEach((b) => b.addEventListener("click", () => { hideHint(); setF(Number(b.dataset.f)); }));
+  document.querySelectorAll(".ton-preset[data-f]").forEach((b) => b.addEventListener("click", () => { hideHint(); setF(Number(b.dataset.f)); }));
+
+  /* ---------- Číselná klávesnice (vlastní frekvence) ---------- */
+  (function initKeypad() {
+    const overlay = $("tableKeypadOverlay");
+    const valueEl = $("tableKeypadDisplayValue");
+    const displayEl = $("tableKeypadDisplay");
+    const errorEl = $("tableKeypadError");
+    let draft = "";
+    const clearError = () => { errorEl.hidden = true; errorEl.textContent = ""; displayEl.classList.remove("is-invalid"); };
+    const showError = (msg) => { errorEl.hidden = false; errorEl.textContent = msg; displayEl.classList.add("is-invalid"); };
+    const render = () => { valueEl.textContent = draft; clearError(); };
+    function open() {
+      if (state.manual) return;
+      draft = "";
+      render();
+      overlay.hidden = false;
+    }
+    function close() { overlay.hidden = true; draft = ""; clearError(); }
+    function insert(v) {
+      if (v === "," && (draft.includes(",") || draft === "")) return;
+      if (draft.length >= 7) return;
+      if (draft === "0" && v !== ",") draft = "";
+      draft += v;
+      render();
+    }
+    function confirm() {
+      if (draft.trim() === "") { showError("Zadej číslo."); return; }
+      const n = Number(draft.replace(",", "."));
+      if (!Number.isFinite(n)) { showError("Zadej platné číslo."); return; }
+      if (!Number.isInteger(n)) { showError("Zadej celé číslo (bez desetinné čárky)."); return; }
+      if (n > F_MAX) { showError("Nejvyšší frekvence je 2 000 Hz."); return; }
+      hideHint();
+      setF(n);
+      close();
+    }
+    $("fVal").addEventListener("click", open);
+    $("fCustom").addEventListener("click", open);
+    $("tableKeypadConfirm").addEventListener("click", confirm);
+    $("tableKeypadCancel").addEventListener("click", close);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+    overlay.querySelectorAll(".table-math-keypad__key").forEach((k) => {
+      k.addEventListener("mousedown", (e) => e.preventDefault());
+      k.addEventListener("click", () => {
+        if (k.dataset.action === "clear") { draft = ""; render(); return; }
+        if (k.dataset.value) insert(k.dataset.value);
+      });
+    });
+    document.addEventListener("keydown", (e) => {
+      if (overlay.hidden) return;
+      if (e.key === "Escape") close();
+      else if (e.key === "Enter") { e.preventDefault(); confirm(); }
+      else if (/^[0-9]$/.test(e.key)) insert(e.key);
+      else if (e.key === "," || e.key === ".") insert(",");
+      else if (e.key === "Backspace") { draft = draft.slice(0, -1); render(); }
+    }, true);
+  })();
 
   const soundBtn = $("soundBtn");
   function toggleSound() {

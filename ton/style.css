@@ -954,3 +954,69 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 /* ruční ovládání blány */
 body.is-manual [data-gen-only] { display: none !important; }
 body.is-manual #speaker { cursor: pointer; }
+
+/* tóny */
+.ton-note-btn b { display: block; font-size: 16px; font-weight: 600; color: var(--text); }
+.ton-note-btn.is-active b { color: #fff; }
+.ton-preset--custom {
+  grid-column: 1 / -1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  white-space: normal;
+}
+.ton-presets + .ton-note { margin: 8px 0 0; }
+
+/* hodnota frekvence – klepnutím se otevře klávesnice */
+button.ton-freq__value {
+  appearance: none; font: inherit; font-size: 34px; font-weight: 600; line-height: 1;
+  color: #93c5fd; background: var(--readout-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 4px 10px; cursor: pointer; font-variant-numeric: tabular-nums;
+}
+button.ton-freq__value:hover { border-color: var(--accent); }
+body.is-manual button.ton-freq__value { background: none; border-color: transparent; padding: 4px 0; cursor: default; pointer-events: none; }
+
+/* číselná klávesnice (stejná jako v ostatních simulacích) */
+.table-keypad-overlay {
+  --panel-bg: var(--card-bg); --area-muted: #334155; --accent-soft: #1e3a5f;
+  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+}
+.table-keypad-overlay[hidden] { display: none !important; }
+.table-keypad-panel {
+  width: min(100%, 300px); padding: 16px; border-radius: 16px; background: var(--panel-bg);
+  border: 1px solid var(--border); box-shadow: 0 14px 42px rgba(15, 23, 42, 0.35); display: grid; gap: 12px;
+  font-family: var(--font-app);
+}
+.table-keypad-panel__title { margin: 0; font-size: 0.9rem; font-weight: 500; color: var(--muted); text-align: center; }
+.table-keypad-panel__display {
+  box-sizing: border-box; height: 64px; min-height: 64px; padding: 10px 14px; border: 2px solid var(--border);
+  border-radius: var(--radius); background: var(--readout-bg); font-size: 1.5rem; font-weight: 650; line-height: 1.2;
+  text-align: center; color: var(--text); display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+  overflow: hidden; white-space: nowrap;
+}
+.table-keypad-panel__unit { color: var(--muted); font-size: 1.1rem; font-weight: 600; }
+.table-keypad-panel__display.is-invalid { border-color: var(--danger); color: var(--danger); }
+.table-keypad-panel__error { margin: 0; font-size: 0.85rem; font-weight: 650; color: var(--danger); text-align: center; }
+.table-keypad-panel__error[hidden] { display: none !important; }
+.table-keypad-panel__actions { display: flex; justify-content: center; gap: 16px; }
+.table-keypad-panel__action {
+  appearance: none; -webkit-appearance: none; box-sizing: border-box; width: 56px; height: 56px; margin: 0; padding: 0;
+  border: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; line-height: 0;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.table-keypad-panel__action svg { display: block; flex-shrink: 0; }
+.table-keypad-panel__confirm { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35); }
+.table-keypad-panel__cancel {
+  background: var(--readout-bg); color: var(--muted); border: 1px solid var(--border); box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+.table-keypad-panel__action:hover { filter: brightness(1.05); }
+.table-keypad-panel__cancel:hover { color: var(--text); border-color: var(--accent); }
+.table-keypad-panel__action:active { transform: scale(0.97); }
+.table-math-keypad { width: 100%; }
+.table-math-keypad__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.table-math-keypad__key {
+  min-height: 44px; border: 1px solid transparent; border-radius: var(--radius); background: var(--readout-bg);
+  color: var(--text); font: inherit; font-size: 1.125rem; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.table-math-keypad__key svg { display: block; flex-shrink: 0; }
+.table-math-keypad__key:hover:not(:disabled) { background: var(--area-muted); color: var(--text); }
+.table-math-keypad__key:active:not(:disabled) { background: var(--accent-soft); }
