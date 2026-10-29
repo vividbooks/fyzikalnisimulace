@@ -72,7 +72,7 @@
     if (osc) return;
     osc = actx.createOscillator();
     osc.type = "square";
-    osc.frequency.value = state.f;
+    osc.frequency.value = state.f / 2;
     gain = actx.createGain();
     gain.gain.value = 0;
     gain.gain.setTargetAtTime(state.f > 0 ? 0.09 : 0, actx.currentTime, 0.02);
@@ -102,7 +102,7 @@
     $("fStepLabel").textContent = `po ${fmtF(stepOf(f))} Hz`;
     document.querySelectorAll(".ton-preset").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.f) === f));
     if (osc) {
-      if (f > 0) osc.frequency.setTargetAtTime(f, actx.currentTime, 0.005);
+      if (f > 0) osc.frequency.setTargetAtTime(f / 2, actx.currentTime, 0.005);
       gain.gain.setTargetAtTime(f > 0 ? 0.09 : 0, actx.currentTime, 0.01);
     }
     timeLabel.textContent = `šířka obrazovky: ${fmtTime(windowFor(f))}`;
@@ -200,12 +200,12 @@
       d += `L${SX1} ${yOf(lv)}`;
     } else {
       // křivka stojí (jako zastavený obraz na osciloskopu)
-      const n = Tw * f;              // počet period na obrazovce
+      const n = (Tw * f) / 2;        // na obrazovce je f pohybů blány
       // začátek i konec vlevo a vpravo jsou dole; uprostřed je přesně n celých kmitů
       // (dole čtvrt periody, pak střídavě půl periody nahoře a dole, nakonec čtvrt periody dole)
       let lv = 0;
       d = `M${SX0} ${Y_LOW}`;
-      const half = W / (2 * n);
+      const half = W / (2 * n);          // úsek mezi dvěma pohyby blány
       if (half < 1) {
         // kmitů je tolik, že čáry splynou v plochu
         d = `M${SX0} ${Y_LOW}L${SX0} ${Y_HIGH}L${SX1} ${Y_HIGH}L${SX1} ${Y_LOW}Z`;
@@ -223,7 +223,7 @@
       d += `L${SX1} ${yOf(lv)}`;
     }
     // od 70 Hz se čára ztenčuje, aby jednotlivé kmity zůstaly rozlišitelné
-    const sw = f <= 70 ? 3 : Math.max(0.35, Math.min((3 * 70) / f, (W / (2 * f)) * 0.45));
+    const sw = f <= 70 ? 3 : Math.max(0.35, Math.min((3 * 70) / f, (W / f) * 0.45));
     trace.setAttribute("stroke-width", sw.toFixed(2));
     if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "none"); lastD = d; }
   }
@@ -250,12 +250,12 @@
 
     // fáze signálu a změny úrovně (přesné časy hran)
     const p0 = state.phase;
-    const p1 = p0 + f * dt;
+    const p1 = p0 + (f / 2) * dt;          // f pohybů blány za sekundu = f/2 period obdélníku
     for (let k = Math.floor(p0 * 2) + 1; k <= Math.floor(p1 * 2); k += 1) {
-      const te = t0 + (k / 2 - p0) / f;
+      const te = t0 + (k / 2 - p0) / (f / 2);
       const lv = k % 2 === 0 ? 1 : 0;      // celé číslo fáze = náběžná hrana
       state.edges.push({ t: te, level: lv });
-      if (lv === 1 && f <= 6) spawnRing();
+      if (f <= 6) spawnRing();             // každý pohyb blány = jedna vlna
     }
     state.phase = p1 % 1000;
     if (state.edges.length > 400) state.edges.splice(0, state.edges.length - 400);
