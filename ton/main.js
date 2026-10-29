@@ -201,9 +201,10 @@
     } else {
       // křivka stojí (jako zastavený obraz na osciloskopu)
       const n = Tw * f;              // počet period na obrazovce
-      // každý kmit začíná náběžnou hranou: nahoru – nahoře – dolů – dole
-      let lv = n > 0 ? 1 : 0;
-      d = `M${SX0} ${yOf(lv)}`;
+      // začátek i konec vlevo a vpravo jsou dole; uprostřed je přesně n celých kmitů
+      // (dole čtvrt periody, pak střídavě půl periody nahoře a dole, nakonec čtvrt periody dole)
+      let lv = 0;
+      d = `M${SX0} ${Y_LOW}`;
       const half = W / (2 * n);
       if (half < 1) {
         // kmitů je tolik, že čáry splynou v plochu
@@ -212,14 +213,14 @@
         if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "rgba(0, 229, 97, 0.55)"); lastD = d; }
         return;
       }
-      let x = SX0;
-      while (x + half < SX1 + 0.01) {
-        x += half;
+      let x = SX0 + half / 2;
+      while (n > 0 && x < SX1 - 0.01) {
         d += `L${x.toFixed(1)} ${yOf(lv)}`;
         lv = 1 - lv;
-        if (x < SX1 - 0.01) d += `L${x.toFixed(1)} ${yOf(lv)}`;
+        d += `L${x.toFixed(1)} ${yOf(lv)}`;
+        x += half;
       }
-      if (x < SX1) d += `L${SX1} ${yOf(lv)}`;
+      d += `L${SX1} ${yOf(lv)}`;
     }
     // od 70 Hz se čára ztenčuje, aby jednotlivé kmity zůstaly rozlišitelné
     const sw = f <= 70 ? 3 : Math.max(0.35, Math.min((3 * 70) / f, (W / (2 * f)) * 0.45));
