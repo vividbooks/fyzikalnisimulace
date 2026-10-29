@@ -118,7 +118,6 @@
     soundBtn.classList.toggle("is-on", state.sound);
     soundBtn.setAttribute("aria-pressed", String(state.sound));
     soundBtn.setAttribute("aria-label", state.sound ? "Vypnout zvuk reproduktoru" : "Zapnout zvuk reproduktoru");
-    $("soundText").textContent = state.sound ? "zvuk zap." : "zvuk vyp.";
     $("soundWaves").style.display = state.sound ? "" : "none";
     $("soundMute").style.display = state.sound ? "none" : "";
     if (state.sound && state.running) soundOn(); else soundOff();
