@@ -98,18 +98,14 @@
   // sinus je při stejné amplitudě mnohem tišší než obdélník – dostane víc hlasitosti
   const volOf = (f) => (f > 0 ? ({ sine: 0.35, square: 0.09, organ: 0.13 })[state.wave] : 0);
 
-  // upozornění: sinus nízké frekvence ucho (a malé reproduktory) neslyší
+  // dříve zobrazené upozornění u zvuku (už se nepoužívá) – jen jistota, že zmizí
   function updateSoundNote() {
-    const show = state.sound && state.wave === "sine" && state.f > 0 && state.f < 60;
-    if (show) {
-      hintEl.textContent = "Sinus s tak nízkou frekvencí skoro neuslyšíš – zkus aspoň 200 Hz.";
-      hintEl.classList.remove("is-hidden");
-      hintEl.dataset.note = "1";
-    } else if (hintEl.dataset.note) {
+    if (hintEl.dataset.note) {
       hintEl.classList.add("is-hidden");
       delete hintEl.dataset.note;
     }
   }
+
 
   /* ---------- Zvuk (Web Audio) ---------- */
   let actx = null;
