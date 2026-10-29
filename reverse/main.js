@@ -41,6 +41,7 @@
     level: 0,
     lastRing: 0,
     rings: [],
+    micRings: [],
   };
 
   let actx = null;
@@ -365,6 +366,7 @@
       rec.proc = proc; rec.mute = mute;
     }
     state.rec = rec;
+    setMicMode(true);
     state.sampleId = null;
     state.peaks = null; state.buffer = null;
     waveBase.setAttribute("d", ""); wavePlayed.setAttribute("d", "");
@@ -382,6 +384,7 @@
     const r = state.rec;
     if (!r) return;
     state.rec = null;
+    setMicMode(false);
     const btn = $("btnRec");
     btn.classList.remove("is-recording");
     btn.setAttribute("aria-pressed", "false");
@@ -558,6 +561,42 @@
   $("txtIn").addEventListener("input", (e) => { $("txtOut").textContent = reverseText(e.target.value); });
 
   /* ---------- Vlny ---------- */
+  // při nahrávání je místo reproduktoru mikrofon; zvuk k němu přichází ve vlnách
+  const MIC_HEAD = { x: 283, y: 262 };
+  const micRingsG = $("micRings");
+  function setMicMode(on) {
+    $("mic").style.display = on ? "" : "none";
+    $("speaker").style.display = on ? "none" : "";
+    $("spkCable").style.display = on ? "none" : "";
+    ringsG.style.display = on ? "none" : "";
+    if (!on) { state.micRings.forEach((r) => r.el.remove()); state.micRings = []; }
+  }
+  function spawnMicRing() {
+    const el = document.createElementNS(NS, "ellipse");
+    el.setAttribute("cx", MIC_HEAD.x);
+    el.setAttribute("cy", MIC_HEAD.y);
+    el.setAttribute("fill", "none");
+    el.setAttribute("stroke", "#55a0ff");
+    micRingsG.appendChild(el);
+    state.micRings.push({ el, t: 0 });
+  }
+  function stepMicRings(dt) {
+    for (const r of state.micRings) {
+      r.t += dt;
+      const a = Math.min(1, r.t / RING_LIFE);
+      const k = 1 - a; // vlna se stahuje k mikrofonu
+      const op = a < 0.3 ? (a / 0.3) * 0.65 : 0.65 * (1 - (a - 0.3) / 0.7);
+      r.el.setAttribute("rx", (72 + 140 * k).toFixed(1));
+      r.el.setAttribute("ry", (72 + 70 * k).toFixed(1));
+      r.el.setAttribute("stroke-width", (6 + 6 * k).toFixed(1));
+      r.el.setAttribute("opacity", Math.max(0, op).toFixed(3));
+    }
+    state.micRings = state.micRings.filter((r) => {
+      if (r.t >= RING_LIFE) { r.el.remove(); return false; }
+      return true;
+    });
+  }
+
   function spawnRing() {
     const el = document.createElementNS(NS, "ellipse");
     el.setAttribute("cx", RIM.x);
@@ -607,6 +646,8 @@
         r.live[col] = prev ? [Math.min(prev[0], lo), Math.max(prev[1], hi)] : [lo, hi];
         for (let c2 = 0; c2 < col; c2 += 1) if (!r.live[c2]) r.live[c2] = [0, 0];
         waveBase.setAttribute("d", peaksPath(r.live, 1.6));
+        const lv = (hi - lo) / 2;
+        if (lv > 0.08 && t - state.lastRing > 0.18) { spawnMicRing(); state.lastRing = t; }
       }
       if (sec >= MAX_REC) stopRec();
     } else if (state.play && actx) {
@@ -641,6 +682,7 @@
     state.m += (target - state.m) * Math.min(1, dt * 30);
     dome.setAttribute("transform", `translate(0 ${(DOME_TRAVEL * (1 - state.m)).toFixed(2)})`);
     stepRings(dt);
+    stepMicRings(dt);
     requestAnimationFrame(frame);
   }
 
