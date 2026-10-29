@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Reverse</title>
-  <link rel="stylesheet" href="style.css?v=1" />
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace Reverse – nahrávka a její přehrání pozpátku">
@@ -31,6 +31,10 @@
             Nahrát soubor
           </button>
           <input type="file" id="fileInput" accept="audio/*" hidden />
+          <label class="rev-mic">
+            <span class="rev-mic__label">Mikrofon</span>
+            <select id="micSelect" aria-label="Vybrat mikrofon"><option value="">výchozí mikrofon</option></select>
+          </label>
           <div class="ton-row rev-info"><span id="srcName">zatím nic</span><span id="srcLen">–</span></div>
         </div>
       </section>
@@ -114,7 +118,7 @@
       </svg>
     </div>
   </main>
-  <script src="main.js?v=2"></script>
+  <script src="main.js?v=3"></script>
   <script src="../shared/sim-qr.js"></script>
 </body>
 </html>

@@ -208,6 +208,33 @@
     if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return "";
     return ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus", "audio/ogg"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
   }
+  // výběr mikrofonu (názvy zařízení prohlížeč prozradí až po povolení mikrofonu)
+  const micSelect = $("micSelect");
+  const MIC_KEY = "reverse-mic";
+  const loadMic = () => { try { return localStorage.getItem(MIC_KEY) || ""; } catch (_) { return ""; } };
+  const saveMic = (v) => { try { localStorage.setItem(MIC_KEY, v); } catch (_) { /* nevadí */ } };
+  async function refreshMics() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    let devs = [];
+    try { devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput"); } catch (_) { return; }
+    const want = loadMic();
+    micSelect.innerHTML = "";
+    const def = document.createElement("option");
+    def.value = ""; def.textContent = "výchozí mikrofon";
+    micSelect.appendChild(def);
+    devs.forEach((d, i) => {
+      if (!d.deviceId || d.deviceId === "default" || d.deviceId === "communications") return;
+      const o = document.createElement("option");
+      o.value = d.deviceId;
+      o.textContent = d.label || `mikrofon ${i + 1}`;
+      micSelect.appendChild(o);
+    });
+    micSelect.value = [...micSelect.options].some((o) => o.value === want) ? want : "";
+  }
+  micSelect.addEventListener("change", () => { saveMic(micSelect.value); hideHint(); });
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", refreshMics);
+  refreshMics();
+
   async function startRec() {
     stopPlay();
     hideHint();
@@ -221,7 +248,22 @@
     }
     let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const id = micSelect.value;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: id ? { deviceId: { exact: id } } : true });
+      } catch (e1) {
+        // vybraný mikrofon už není připojený → zkusit výchozí
+        if (id && (e1.name === "OverconstrainedError" || e1.name === "NotFoundError")) {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          micSelect.value = ""; saveMic("");
+        } else throw e1;
+      }
+      refreshMics().then(() => {
+        // ukázat, který mikrofon se opravdu použil
+        const tr = stream.getAudioTracks()[0];
+        const used = tr && tr.getSettings ? tr.getSettings().deviceId : "";
+        if (!micSelect.value && used && [...micSelect.options].some((o) => o.value === used)) micSelect.value = used;
+      });
     } catch (err) {
       const name = err && err.name;
       showHint(name === "NotFoundError" || name === "OverconstrainedError"
@@ -320,19 +362,24 @@
     }
     // oříznout ticho na začátku a na konci
     let pk = 0; for (let i = 0; i < all.length; i += 4) pk = Math.max(pk, Math.abs(all[i]));
-    const thr = Math.max(0.004, pk * 0.06);
+    const thr = pk * 0.06;
     let a = 0; while (a < all.length && Math.abs(all[a]) < thr) a += 1;
     let b = all.length - 1; while (b > a && Math.abs(all[b]) < thr) b -= 1;
     const margin = Math.floor(0.08 * sr);
     a = Math.max(0, a - margin); b = Math.min(all.length, b + margin);
-    if (all.length < sr * 0.15 || pk < 0.002) {
-      failRec("Nic se nenahrálo – mikrofon nic nezachytil. Zkontroluj, že je zapnutý a že prohlížeč používá ten správný.");
+    if (all.length < sr * 0.15 || pk < 0.0003) {
+      failRec("Nic se nenahrálo – mikrofon nic nezachytil. Zkus v nabídce „Mikrofon“ vybrat jiný.");
       return;
     }
     if (b - a < sr * 0.15) { a = 0; b = all.length; }
     const buf = ctx().createBuffer(1, b - a, sr);
-    buf.getChannelData(0).set(all.subarray(a, b));
+    const out = buf.getChannelData(0);
+    out.set(all.subarray(a, b));
+    // tichou nahrávku zesílit, aby bylo slyšet
+    if (pk < 0.5) { const g = 0.8 / pk; for (let i = 0; i < out.length; i += 1) out[i] *= g; }
+    const opt = micSelect.options[micSelect.selectedIndex];
     setBuffer(buf, "nahrávka z mikrofonu");
+    if (opt && opt.value) $("srcName").title = opt.textContent;
   }
   $("btnRec").addEventListener("click", () => {
     if (state.rec) { stopRec(); return; }

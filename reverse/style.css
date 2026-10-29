@@ -984,3 +984,14 @@ body.is-manual #speaker { cursor: pointer; }
 .rev-samples { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .rev-samples .ton-preset { white-space: nowrap; font-size: 14px; }
 .rev-screen-msg { font: 600 17px "Fenomen Sans", system-ui, sans-serif; fill: #8c8c8c; }
+.rev-mic { display: grid; gap: 4px; }
+.rev-mic__label { font-size: 12px; color: var(--muted); padding-left: 2px; }
+.rev-mic select {
+  appearance: none; -webkit-appearance: none; width: 100%; min-height: 40px; padding: 8px 34px 8px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius); background-color: var(--readout-bg); color: var(--text);
+  font: inherit; font-size: 14px; cursor: pointer; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.rev-mic select:hover { border-color: var(--accent); }
+.rev-mic select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
