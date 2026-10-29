@@ -111,17 +111,22 @@
   $("fPlus").addEventListener("click", () => { hideHint(); setF(state.f + stepOf(state.f)); });
   document.querySelectorAll(".ton-preset").forEach((b) => b.addEventListener("click", () => { hideHint(); setF(Number(b.dataset.f)); }));
 
-  const soundBtns = document.querySelectorAll("[data-sound]");
-  soundBtns.forEach((b) => b.addEventListener("click", () => {
+  const soundBtn = $("soundBtn");
+  function toggleSound() {
     hideHint();
-    state.sound = b.dataset.sound === "on";
-    soundBtns.forEach((o) => {
-      const on = o === b;
-      o.classList.toggle("is-active", on);
-      o.setAttribute("aria-pressed", String(on));
-    });
+    state.sound = !state.sound;
+    soundBtn.classList.toggle("is-on", state.sound);
+    soundBtn.setAttribute("aria-pressed", String(state.sound));
+    soundBtn.setAttribute("aria-label", state.sound ? "Vypnout zvuk reproduktoru" : "Zapnout zvuk reproduktoru");
+    $("soundText").textContent = state.sound ? "zvuk zap." : "zvuk vyp.";
+    $("soundWaves").style.display = state.sound ? "" : "none";
+    $("soundMute").style.display = state.sound ? "none" : "";
     if (state.sound && state.running) soundOn(); else soundOff();
-  }));
+  }
+  soundBtn.addEventListener("click", toggleSound);
+  soundBtn.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSound(); }
+  });
 
   /* ---------- Spustit / zastavit ---------- */
   const PLAY = "M8 5.14v13.72L19 12 8 5.14z";

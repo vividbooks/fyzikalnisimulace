@@ -922,3 +922,18 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 
 .action-btn--stop { background: #fbbf24; color: #422006; }
 .action-btn--stop:hover:not(:disabled) { background: #fcd34d; }
+
+/* vypínač zvuku u reproduktoru */
+.ton-sound { cursor: pointer; }
+.ton-sound__bg { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
+.ton-sound__icon { fill: #475569; }
+.ton-sound__waves, .ton-sound__mute { fill: none; stroke: #475569; stroke-width: 2.4; stroke-linecap: round; }
+.ton-sound__text { font: 600 15px "Fenomen Sans", system-ui, sans-serif; fill: #334155; }
+.ton-sound:hover .ton-sound__bg { stroke: #94a3b8; }
+.ton-sound:focus-visible { outline: none; }
+.ton-sound:focus-visible .ton-sound__bg { stroke: #3b82f6; stroke-width: 3; }
+.ton-sound.is-on .ton-sound__bg { fill: #3b82f6; stroke: #2563eb; }
+.ton-sound.is-on .ton-sound__icon { fill: #ffffff; }
+.ton-sound.is-on .ton-sound__waves { stroke: #ffffff; }
+.ton-sound.is-on .ton-sound__text { fill: #ffffff; }
+.ton-sound:focus { outline: none; }
