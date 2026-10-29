@@ -38,7 +38,7 @@
     m: 1,               // poloha membrány 0 (dovnitř) … 1 (ven)
     rings: [],
     ringClock: 0,
-    sound: false,
+    sound: true,
     running: false,
     manual: false,       // ruční ovládání blány
     manualLevel: 0,
