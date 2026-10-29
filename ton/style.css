@@ -915,7 +915,7 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 
 .ton-card { gap: 6px; }
 .ton-row { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
-.ton-row span:last-child { color: #93c5fd; white-space: nowrap; }
+.ton-row > span:last-child { color: #93c5fd; white-space: nowrap; }
 .ton-note { color: var(--muted); font-size: 13px; line-height: 1.35; }
 .ton-note[hidden] { display: none; }
 .ton-label--time { fill: #15803d; }
@@ -937,3 +937,9 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 .ton-sound.is-on .ton-sound__waves { stroke: #ffffff; }
 .ton-sound.is-on .ton-sound__text { fill: #ffffff; }
 .ton-sound:focus { outline: none; }
+
+.ton-row { align-items: center; }
+.ton-row__label { white-space: nowrap; }
+.ton-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.05; font-size: 0.9em; margin: 0 2px; }
+.ton-frac__num { padding: 0 4px 1px; border-bottom: 1.5px solid currentColor; }
+.ton-frac__den { padding-top: 1px; }
