@@ -152,61 +152,104 @@
     return buf;
   }
 
-  // housle: struna rozechvěná smyčcem (pila) s drobným kolísáním výšky → ozvučnice (rezonance)
-  // + šum smyčce v rytmu kmitů struny + vibrato + dozvuk
+  // housle: fyzikální model struny rozechvěné smyčcem (digitální vlnovod podle STK „Bowed“).
+  // Struna je modelovaná jako dvě zpožďovací linky (smyčec–kobylka a smyčec–prstoklad), ve kterých
+  // běhají vlny. Smyčec strunu střídavě „chytí“ a „pustí“ (tření) – vzniká Helmholtzův pohyb.
+  const BOWED_SRC = `
+  class BowedString extends AudioWorkletProcessor {
+    static get parameterDescriptors() {
+      return [{ name: "frequency", defaultValue: 440, minValue: 1, maxValue: 5000, automationRate: "k-rate" }];
+    }
+    constructor() {
+      super();
+      const L = Math.ceil(sampleRate) + 16;
+      this.neck = new Float32Array(L); this.bridge = new Float32Array(L);
+      this.L = L; this.w = 0;
+      this.neckOut = 0; this.bridgeOut = 0; this.sf = 0;
+      this.t = 0; this.alive = true; this.release = -1;
+      this.jv = 0; this.jp = 0; this.jf = 0;
+      this.port.onmessage = (e) => { if (e.data === "stop") this.release = this.t; };
+    }
+    read(buf, d) {
+      let p = this.w - d; while (p < 0) p += this.L;
+      const i = Math.floor(p); const fr = p - i;
+      return buf[i % this.L] * (1 - fr) + buf[(i + 1) % this.L] * fr;
+    }
+    process(inputs, outputs, params) {
+      const out = outputs[0][0];
+      const sr = sampleRate; const dt = 1 / sr;
+      const f = params.frequency[0];
+      const base = Math.max(4, sr / f - (1.5 - 0.00012 * f));
+      const beta = Math.max(0.18, 6 / base);
+      const pole = 0.75 - 0.2 * 22050 / sr;
+      for (let n = 0; n < out.length; n += 1) {
+        const t = this.t;
+        // smyčec: náběh, drobné kolísání rychlosti a přítlaku (ruka není stroj)
+        this.jv += 0.0004 * ((Math.random() * 2 - 1) - this.jv);
+        this.jp += 0.0003 * ((Math.random() * 2 - 1) - this.jp);
+        this.jf += 0.0002 * ((Math.random() * 2 - 1) - this.jf);
+        let env = Math.min(1, t / 0.09);
+        if (this.release >= 0) env *= Math.max(0, 1 - (t - this.release) / 0.08);
+        const bowV = (0.19 + 0.5 * this.jv) * env;
+        const pressure = 1.15 + 1.2 * this.jp + 0.25 * Math.max(0, 1 - t / 0.12);
+        const slope = 5 - 4 * pressure;
+        // vibrato začne chvíli po nasazení
+        const vd = 0.0055 * Math.min(1, Math.max(0, (t - 0.3) / 0.6));
+        const vib = vd * Math.sin(2 * Math.PI * 5.4 * t) + 0.25 * this.jf * 0.004;
+        const neckLen = base * (1 - beta) + base * vib;
+        const bridgeLen = base * beta;
+        // odraz na kobylce (s útlumem vyšších frekvencí) a na prstokladu
+        this.sf = 0.95 * ((1 - pole) * this.bridgeOut + pole * this.sf);
+        const bridgeRefl = -this.sf;
+        const nutRefl = -this.neckOut;
+        const stringV = bridgeRefl + nutRefl;
+        const dv = bowV - stringV;
+        let bt = Math.pow(Math.abs((dv + 0.001) * slope) + 0.75, -4);
+        bt = Math.min(1, Math.max(0.01, bt));
+        const nv = dv * bt;
+        this.neck[this.w] = bridgeRefl + nv;
+        this.bridge[this.w] = nutRefl + nv;
+        this.w = (this.w + 1) % this.L;
+        this.neckOut = this.read(this.neck, neckLen);
+        this.bridgeOut = this.read(this.bridge, bridgeLen);
+        out[n] = this.bridgeOut;
+        this.t += dt;
+      }
+      for (let c = 1; c < outputs[0].length; c += 1) outputs[0][c].set(out);
+      return !(this.release >= 0 && this.t - this.release > 0.2);
+    }
+  }
+  registerProcessor("bowed-string", BowedString);
+  `;
+  const workletReady = new WeakMap();
+  function ensureBowed(ctx) {
+    if (!workletReady.has(ctx)) {
+      const url = URL.createObjectURL(new Blob([BOWED_SRC], { type: "application/javascript" }));
+      workletReady.set(ctx, ctx.audioWorklet ? ctx.audioWorklet.addModule(url) : Promise.reject(new Error("no worklet")));
+    }
+    return workletReady.get(ctx);
+  }
+
+  // ozvučnice houslí – rezonance dřevěného těla
   const VIOLIN_BODY = [
     { type: "highpass", f: 190, Q: 0.7 },
-    { type: "peaking", f: 280, Q: 4, g: 7 },     // vzduchová rezonance (A0)
+    { type: "peaking", f: 280, Q: 4, g: 6 },     // vzduchová rezonance (A0)
     { type: "peaking", f: 460, Q: 3, g: 5 },     // tělo (B1−)
     { type: "peaking", f: 580, Q: 3, g: 3 },     // tělo (B1+)
     { type: "peaking", f: 1100, Q: 2, g: -3 },
     { type: "peaking", f: 1600, Q: 1.5, g: -4 }, // méně „nosový“ tón
-    { type: "peaking", f: 2600, Q: 1.4, g: 7 },  // „můstková“ oblast
-    { type: "peaking", f: 3500, Q: 2, g: 4 },
-    { type: "lowpass", f: 5500, Q: 0 },
+    { type: "peaking", f: 2600, Q: 1.4, g: 6 },  // „můstková“ oblast
+    { type: "peaking", f: 3500, Q: 2, g: 3 },
+    { type: "lowpass", f: 7000, Q: 0 },
   ];
   function buildViolin(out, freq, ctx = actx) {
     const t = ctx.currentTime;
     const nodes = [];
     const stopables = [];
-    const noise = getNoise(ctx);
-    const mix = ctx.createGain();
-    mix.gain.value = 0.6;
-    const oscs = [0, 4].map((cents, k) => {
-      const o = ctx.createOscillator();
-      o.type = "sawtooth";
-      o.frequency.value = freq;
-      // nasazení smyčce: tón začne nepatrně níž a hned se „dotáhne“
-      o.detune.setValueAtTime(cents - 22, t);
-      o.detune.setTargetAtTime(cents, t, 0.05);
-      const g = ctx.createGain();
-      g.gain.value = k === 0 ? 1 : 0.4;
-      o.connect(g).connect(mix);
-      nodes.push(o, g);
-      stopables.push(o);
-      return o;
-    });
-    // smyčec nikdy netáhne úplně rovnoměrně – pomalé náhodné kolísání výšky
-    const jit = ctx.createBufferSource(); jit.buffer = noise; jit.loop = true;
-    const jitLp = ctx.createBiquadFilter(); jitLp.type = "lowpass"; jitLp.frequency.value = 9;
-    const jitG = ctx.createGain(); jitG.gain.value = 45;
-    jit.connect(jitLp).connect(jitG);
-    oscs.forEach((o) => jitG.connect(o.detune));
-    jit.start();
-    nodes.push(jit, jitLp, jitG); stopables.push(jit);
-    // vibrato: začne až chvíli po nasazení a pozvolna se rozvine
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 5.5;
-    const lfoDepth = ctx.createGain();
-    lfoDepth.gain.setValueAtTime(0, t);
-    lfoDepth.gain.setValueAtTime(0, t + 0.3);
-    lfoDepth.gain.linearRampToValueAtTime(16, t + 0.9);
-    lfo.connect(lfoDepth);
-    oscs.forEach((o) => lfoDepth.connect(o.detune));
-    lfo.start();
-    nodes.push(lfo, lfoDepth); stopables.push(lfo);
-    // ozvučnice
-    let node = mix;
+    const input = ctx.createGain();
+    input.gain.value = 1.3;
+    let node = input;
+    nodes.push(input);
     VIOLIN_BODY.forEach((flt) => {
       const bq = ctx.createBiquadFilter();
       bq.type = flt.type; bq.frequency.value = flt.f; bq.Q.value = flt.Q;
@@ -216,27 +259,45 @@
     });
     const dry = ctx.createGain(); dry.gain.value = 1;
     node.connect(dry);
-    nodes.push(mix, dry);
-    // šum smyčce – pulzuje v rytmu kmitů struny, při nasazení je výraznější
-    const ns = ctx.createBufferSource(); ns.buffer = noise; ns.loop = true; ns.loopStart = 0.37;
-    const nbp = ctx.createBiquadFilter(); nbp.type = "bandpass"; nbp.frequency.value = 2600; nbp.Q.value = 0.7;
-    const nam = ctx.createGain(); nam.gain.value = 0.012;
-    const namDepth = ctx.createGain(); namDepth.gain.value = 0.01;
-    oscs[0].connect(namDepth).connect(nam.gain);
-    const nenv = ctx.createGain();
-    nenv.gain.setValueAtTime(4, t);
-    nenv.gain.setTargetAtTime(1, t, 0.06);
-    ns.connect(nbp).connect(nam).connect(nenv).connect(dry);
-    ns.start(t, 0.37);
-    nodes.push(ns, nbp, nam, namDepth, nenv); stopables.push(ns);
+    nodes.push(dry);
+    // jemný šum žíní smyčce
+    const ns = ctx.createBufferSource(); ns.buffer = getNoise(ctx); ns.loop = true;
+    const nbp = ctx.createBiquadFilter(); nbp.type = "bandpass"; nbp.frequency.value = 3000; nbp.Q.value = 0.7;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.03, t); ng.gain.setTargetAtTime(0.006, t, 0.08);
+    ns.connect(nbp).connect(ng).connect(dry);
+    ns.start();
+    nodes.push(ns, nbp, ng); stopables.push(ns);
     // dozvuk
     const rev = ctx.createConvolver(); rev.buffer = getReverb(ctx);
-    const wet = ctx.createGain(); wet.gain.value = 0.28;
+    const wet = ctx.createGain(); wet.gain.value = 0.25;
     dry.connect(out);
     dry.connect(rev).connect(wet).connect(out);
     nodes.push(rev, wet);
-    oscs.forEach((o) => o.start());
-    return { oscs, stopables, nodes };
+    // struna (fyzikální model) – modul se načítá asynchronně
+    let bowed = null; let stopped = false; let curF = freq;
+    const freqProxy = {
+      setTargetAtTime(v, when, tc) {
+        curF = v;
+        if (bowed) bowed.parameters.get("frequency").setTargetAtTime(v, when, tc);
+      },
+    };
+    ensureBowed(ctx).then(() => {
+      if (stopped) return;
+      bowed = new AudioWorkletNode(ctx, "bowed-string", { outputChannelCount: [1], parameterData: { frequency: curF } });
+      bowed.connect(input);
+      nodes.push(bowed);
+    }).catch(() => {
+      // záloha bez AudioWorkletu: pila
+      if (stopped) return;
+      const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = curF;
+      const g = ctx.createGain(); g.gain.value = 0.05;
+      o.connect(g).connect(input); o.start();
+      freqProxy.setTargetAtTime = (v, when, tc) => o.frequency.setTargetAtTime(v, when, tc);
+      nodes.push(o, g); stopables.push(o);
+    });
+    stopables.push({ stop() { stopped = true; if (bowed) bowed.port.postMessage("stop"); } });
+    return { oscs: [{ frequency: freqProxy }], stopables, nodes };
   }
 
   function buildSimple(out, freq) {
@@ -253,6 +314,7 @@
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       actx = new AC();
+      ensureBowed(actx).catch(() => {});
     }
     if (actx.state === "suspended") actx.resume();
     if (voice) return;
@@ -615,5 +677,5 @@
   setF(5);
   requestAnimationFrame(frame);
 
-  window.__ton = { state, setF, buildViolin };
+  window.__ton = { state, setF, buildViolin, ensureBowed };
 })();
