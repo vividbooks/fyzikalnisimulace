@@ -995,3 +995,14 @@ body.is-manual #speaker { cursor: pointer; }
 }
 .rev-mic select:hover { border-color: var(--accent); }
 .rev-mic select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rev-text {
+  width: 100%; box-sizing: border-box; min-height: 40px; padding: 8px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--readout-bg); color: var(--text); font: inherit; font-size: 15px;
+}
+.rev-text::placeholder { color: var(--muted); }
+.rev-text:focus { outline: none; border-color: var(--accent); }
+.rev-text-out {
+  min-height: 40px; padding: 8px 12px; border-radius: var(--radius); background: #fbbf24; color: #422006;
+  font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap;
+}
+.rev-text-out:empty::before { content: "…pozpátku"; color: #92400e; opacity: 0.6; font-weight: 400; }

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Reverse</title>
-  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace Reverse – nahrávka a její přehrání pozpátku">
@@ -65,6 +65,14 @@
         </div>
       </section>
 
+      <section class="panel-section" aria-label="Text pozpátku">
+        <span class="panel-label">Text pozpátku</span>
+        <div class="rev-stack">
+          <input type="text" id="txtIn" class="rev-text" placeholder="Napiš text…" maxlength="200" autocomplete="off" spellcheck="false" />
+          <div class="rev-text-out" id="txtOut" aria-live="polite"></div>
+        </div>
+      </section>
+
     </aside>
 
     <div class="scene-workspace" id="workspace">
@@ -118,7 +126,7 @@
       </svg>
     </div>
   </main>
-  <script src="main.js?v=3"></script>
+  <script src="main.js?v=4"></script>
   <script src="../shared/sim-qr.js"></script>
 </body>
 </html>

@@ -490,6 +490,14 @@
     setBuffer(synth(b.dataset.sample), `ukázka: ${SAMPLE_NAMES[b.dataset.sample]}`);
   }));
 
+  /* ---------- Text pozpátku ---------- */
+  const seg = window.Intl && Intl.Segmenter ? new Intl.Segmenter("cs", { granularity: "grapheme" }) : null;
+  function reverseText(t) {
+    const parts = seg ? Array.from(seg.segment(t), (x) => x.segment) : Array.from(t);
+    return parts.reverse().join("");
+  }
+  $("txtIn").addEventListener("input", (e) => { $("txtOut").textContent = reverseText(e.target.value); });
+
   /* ---------- Vlny ---------- */
   function spawnRing() {
     const el = document.createElementNS(NS, "ellipse");
