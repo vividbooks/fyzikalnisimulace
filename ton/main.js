@@ -122,65 +122,119 @@
   let actx = null;
   let voice = null;   // { oscs, gain, stopables, nodes }
 
-  let noiseBuf = null;
-  function getNoise() {
-    if (noiseBuf) return noiseBuf;
-    const len = actx.sampleRate * 2;
-    noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
-    const d = noiseBuf.getChannelData(0);
+  const noiseBufs = new WeakMap();
+  function getNoise(ctx) {
+    if (noiseBufs.has(ctx)) return noiseBufs.get(ctx);
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
     for (let i = 0; i < len; i += 1) d[i] = Math.random() * 2 - 1;
-    return noiseBuf;
+    noiseBufs.set(ctx, buf);
+    return buf;
+  }
+  // dozvuk místnosti – uměle vytvořená odezva (doznívající šum), housle pak nezní „nasucho“
+  const reverbBufs = new WeakMap();
+  function getReverb(ctx) {
+    if (reverbBufs.has(ctx)) return reverbBufs.get(ctx);
+    const sr = ctx.sampleRate;
+    const len = Math.floor(sr * 1.8);
+    const buf = ctx.createBuffer(2, len, sr);
+    for (let ch = 0; ch < 2; ch += 1) {
+      const d = buf.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < len; i += 1) {
+        const tt = i / sr;
+        lp += 0.35 * ((Math.random() * 2 - 1) - lp); // trochu ztlumené výšky
+        d[i] = lp * Math.exp(-tt / 0.38) * Math.min(1, tt / 0.012);
+      }
+    }
+    reverbBufs.set(ctx, buf);
+    return buf;
   }
 
-  // housle: struna rozechvěná smyčcem (pila) → ozvučnice (rezonance) + šum smyčce + vibrato
-  function buildViolin(out, freq) {
-    const t = actx.currentTime;
+  // housle: struna rozechvěná smyčcem (pila) s drobným kolísáním výšky → ozvučnice (rezonance)
+  // + šum smyčce v rytmu kmitů struny + vibrato + dozvuk
+  const VIOLIN_BODY = [
+    { type: "highpass", f: 190, Q: 0.7 },
+    { type: "peaking", f: 280, Q: 4, g: 7 },     // vzduchová rezonance (A0)
+    { type: "peaking", f: 460, Q: 3, g: 5 },     // tělo (B1−)
+    { type: "peaking", f: 580, Q: 3, g: 3 },     // tělo (B1+)
+    { type: "peaking", f: 1100, Q: 2, g: -3 },
+    { type: "peaking", f: 1600, Q: 1.5, g: -4 }, // méně „nosový“ tón
+    { type: "peaking", f: 2600, Q: 1.4, g: 7 },  // „můstková“ oblast
+    { type: "peaking", f: 3500, Q: 2, g: 4 },
+    { type: "lowpass", f: 5500, Q: 0 },
+  ];
+  function buildViolin(out, freq, ctx = actx) {
+    const t = ctx.currentTime;
     const nodes = [];
     const stopables = [];
-    const mix = actx.createGain();
-    mix.gain.value = 0.5;
-    const oscs = [0, 6, -5].map((cents, k) => {
-      const o = actx.createOscillator();
+    const noise = getNoise(ctx);
+    const mix = ctx.createGain();
+    mix.gain.value = 0.6;
+    const oscs = [0, 4].map((cents, k) => {
+      const o = ctx.createOscillator();
       o.type = "sawtooth";
       o.frequency.value = freq;
-      o.detune.value = cents;
-      const g = actx.createGain();
-      g.gain.value = k === 0 ? 1 : 0.35;
+      // nasazení smyčce: tón začne nepatrně níž a hned se „dotáhne“
+      o.detune.setValueAtTime(cents - 22, t);
+      o.detune.setTargetAtTime(cents, t, 0.05);
+      const g = ctx.createGain();
+      g.gain.value = k === 0 ? 1 : 0.4;
       o.connect(g).connect(mix);
       nodes.push(o, g);
       stopables.push(o);
       return o;
     });
-    // vibrato s pozvolným náběhem
-    const lfo = actx.createOscillator();
-    lfo.frequency.value = 5.6;
-    const lfoDepth = actx.createGain();
+    // smyčec nikdy netáhne úplně rovnoměrně – pomalé náhodné kolísání výšky
+    const jit = ctx.createBufferSource(); jit.buffer = noise; jit.loop = true;
+    const jitLp = ctx.createBiquadFilter(); jitLp.type = "lowpass"; jitLp.frequency.value = 9;
+    const jitG = ctx.createGain(); jitG.gain.value = 45;
+    jit.connect(jitLp).connect(jitG);
+    oscs.forEach((o) => jitG.connect(o.detune));
+    jit.start();
+    nodes.push(jit, jitLp, jitG); stopables.push(jit);
+    // vibrato: začne až chvíli po nasazení a pozvolna se rozvine
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 5.5;
+    const lfoDepth = ctx.createGain();
     lfoDepth.gain.setValueAtTime(0, t);
-    lfoDepth.gain.linearRampToValueAtTime(14, t + 0.6);
+    lfoDepth.gain.setValueAtTime(0, t + 0.3);
+    lfoDepth.gain.linearRampToValueAtTime(16, t + 0.9);
     lfo.connect(lfoDepth);
     oscs.forEach((o) => lfoDepth.connect(o.detune));
     lfo.start();
-    nodes.push(lfo, lfoDepth);
-    stopables.push(lfo);
-    // ozvučnice: pásmová propust a rezonance (vzduchová ~280 Hz, tělo ~450 Hz, „můstek“ ~2,8 kHz)
-    const hp = actx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 180; hp.Q.value = 0.7;
-    const air = actx.createBiquadFilter(); air.type = "peaking"; air.frequency.value = 280; air.Q.value = 3; air.gain.value = 6;
-    const body = actx.createBiquadFilter(); body.type = "peaking"; body.frequency.value = 460; body.Q.value = 2; body.gain.value = 4;
-    const nasal = actx.createBiquadFilter(); nasal.type = "peaking"; nasal.frequency.value = 1500; nasal.Q.value = 1.5; nasal.gain.value = -4;
-    const bridge = actx.createBiquadFilter(); bridge.type = "peaking"; bridge.frequency.value = 2800; bridge.Q.value = 1.1; bridge.gain.value = 8;
-    const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 6500; lp.Q.value = 0.5;
-    mix.connect(hp).connect(air).connect(body).connect(nasal).connect(bridge).connect(lp).connect(out);
-    nodes.push(mix, hp, air, body, nasal, bridge, lp);
-    // šum smyčce
-    const ns = actx.createBufferSource();
-    ns.buffer = getNoise();
-    ns.loop = true;
-    const nbp = actx.createBiquadFilter(); nbp.type = "bandpass"; nbp.frequency.value = 3200; nbp.Q.value = 0.9;
-    const ng = actx.createGain(); ng.gain.value = 0.025;
-    ns.connect(nbp).connect(ng).connect(out);
-    ns.start();
-    nodes.push(ns, nbp, ng);
-    stopables.push(ns);
+    nodes.push(lfo, lfoDepth); stopables.push(lfo);
+    // ozvučnice
+    let node = mix;
+    VIOLIN_BODY.forEach((flt) => {
+      const bq = ctx.createBiquadFilter();
+      bq.type = flt.type; bq.frequency.value = flt.f; bq.Q.value = flt.Q;
+      if (flt.g !== undefined) bq.gain.value = flt.g;
+      node = node.connect(bq);
+      nodes.push(bq);
+    });
+    const dry = ctx.createGain(); dry.gain.value = 1;
+    node.connect(dry);
+    nodes.push(mix, dry);
+    // šum smyčce – pulzuje v rytmu kmitů struny, při nasazení je výraznější
+    const ns = ctx.createBufferSource(); ns.buffer = noise; ns.loop = true; ns.loopStart = 0.37;
+    const nbp = ctx.createBiquadFilter(); nbp.type = "bandpass"; nbp.frequency.value = 2600; nbp.Q.value = 0.7;
+    const nam = ctx.createGain(); nam.gain.value = 0.012;
+    const namDepth = ctx.createGain(); namDepth.gain.value = 0.01;
+    oscs[0].connect(namDepth).connect(nam.gain);
+    const nenv = ctx.createGain();
+    nenv.gain.setValueAtTime(4, t);
+    nenv.gain.setTargetAtTime(1, t, 0.06);
+    ns.connect(nbp).connect(nam).connect(nenv).connect(dry);
+    ns.start(t, 0.37);
+    nodes.push(ns, nbp, nam, namDepth, nenv); stopables.push(ns);
+    // dozvuk
+    const rev = ctx.createConvolver(); rev.buffer = getReverb(ctx);
+    const wet = ctx.createGain(); wet.gain.value = 0.28;
+    dry.connect(out);
+    dry.connect(rev).connect(wet).connect(out);
+    nodes.push(rev, wet);
     oscs.forEach((o) => o.start());
     return { oscs, stopables, nodes };
   }
@@ -561,5 +615,5 @@
   setF(5);
   requestAnimationFrame(frame);
 
-  window.__ton = { state, setF };
+  window.__ton = { state, setF, buildViolin };
 })();
