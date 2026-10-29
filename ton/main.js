@@ -174,7 +174,7 @@
     const W = SX1 - SX0;
     const yOf = (lv) => (lv ? Y_HIGH : Y_LOW);
     let d = "";
-    if (Tw >= 0.5) {
+    if (false) { // dřívější „běžící“ zobrazení – křivka teď stojí vždy
       // běží v reálném čase: vpravo je „teď“
       const t1 = state.time;
       const t0 = t1 - Tw;
@@ -192,7 +192,7 @@
       }
       d += `L${SX1} ${yOf(lv)}`;
     } else {
-      // rychlý signál: zastavený obraz (jako na osciloskopu)
+      // křivka stojí (jako zastavený obraz na osciloskopu)
       const n = Tw * f;              // počet period na obrazovce
       let lv = 0;
       d = `M${SX0} ${yOf(lv)}`;
