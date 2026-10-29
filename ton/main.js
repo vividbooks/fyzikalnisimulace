@@ -65,55 +65,44 @@
   // sinus – f celých kmitů za sekundu; obdélník – f pohybů blány za sekundu (f/2 period)
   const rateOf = (f) => (state.wave === "square" ? f / 2 : f);
 
-  // flétna: tón je skoro sinusovka (základní kmit) + několik slabších vyšších harmonických.
-  // V hloubce je tón flétny bohatší (silnější 2. a 3. harmonická), ve výšce skoro čistá sinusovka.
-  // Stejné složení se použije pro zvuk i pro křivku na obrazovce – co vidíš, to slyšíš.
-  const FLUTE_LO = [1, 0.5, 0.28, 0.13, 0.08, 0.045, 0.025]; // kolem 260 Hz
-  const FLUTE_HI = [1, 0.12, 0.04, 0.012, 0.004, 0, 0];      // kolem 2 000 Hz
-  const FLUTE_PH = [0, 1.25, -0.46, 0.95, 0, 1.57, 0.3];     // fáze harmonických
-  function fluteHarm(freq) {
-    // k zaokrouhleno, aby se při posouvání frekvence tabulka a zvuk nepřepočítávaly zbytečně často
-    const k = Math.round(Math.min(1, Math.max(0, (freq - 260) / 1740)) * 20) / 20;
-    return FLUTE_LO.map((lo, h) => {
-      const amp = lo * (1 - k) + FLUTE_HI[h] * k;
-      return [amp * Math.cos(FLUTE_PH[h]), amp * Math.sin(FLUTE_PH[h])]; // [sin, cos]
-    });
-  }
-  const fluteTables = new Map();
-  function fluteTable(freq) {
-    const H = fluteHarm(freq);
-    const key = H.map((x) => x[0].toFixed(3)).join();
-    if (fluteTables.has(key)) return fluteTables.get(key);
+  // varhany: znějí najednou tři řady píšťal (rejstříky) – základní 8′, o oktávu výš 4′ a o dvě oktávy výš 2′.
+  // Každá píšťala má svůj základní tón a pár slabších vyšších harmonických.
+  // Ze stejného složení se počítá zvuk i křivka na obrazovce – co vidíš, to slyšíš.
+  const ORGAN_RANKS = [
+    { mult: 1, amps: [1, 0.35, 0.2, 0.1, 0.06, 0.04, 0.02, 0.015], cents: 0 },   // Principál 8′
+    { mult: 2, amps: [0.6, 0.18, 0.09, 0.04], cents: 1.3 },                       // Oktáva 4′
+    { mult: 4, amps: [0.35, 0.09, 0.035], cents: -0.9 },                          // Superoktáva 2′
+  ];
+  const ORGAN_PH = [0, 0.6, 1.9, 0.3, 2.4, 1.1, 2.9, 0.8, 1.6, 2.2, 0.4, 1.3, 2.7, 0.2, 1.8, 2.5]; // fáze harmonických
+  const ORGAN_TABLE = (() => {
     const N = 1024;
     const raw = new Float32Array(N);
-    for (let i = 0; i < N; i += 1) {
-      const ph = (2 * Math.PI * i) / N;
-      H.forEach(([sn, cs], h) => { raw[i] += sn * Math.sin((h + 1) * ph) + cs * Math.cos((h + 1) * ph); });
-    }
+    ORGAN_RANKS.forEach((r) => r.amps.forEach((a, k) => {
+      const h = r.mult * (k + 1);
+      for (let i = 0; i < N; i += 1) raw[i] += a * Math.sin((2 * Math.PI * h * i) / N + ORGAN_PH[h - 1]);
+    }));
     let lo = Infinity; let hi = -Infinity; let iMin = 0;
     raw.forEach((v, i) => { if (v < lo) { lo = v; iMin = i; } if (v > hi) hi = v; });
     // posun, aby křivka začínala dole (jako ostatní tvary)
     const t = new Float32Array(N);
     for (let i = 0; i < N; i += 1) t[i] = (raw[(i + iMin) % N] - lo) / (hi - lo);
-    fluteTables.set(key, t);
     return t;
-  }
-  function fluteVal(phase) {
-    const T = fluteTable(rateOf(state.f));
-    const N = T.length;
+  })();
+  function organVal(phase) {
+    const N = ORGAN_TABLE.length;
     const x = (((phase % 1) + 1) % 1) * N;
     const i = Math.floor(x);
     const fr = x - i;
-    return T[i % N] * (1 - fr) + T[(i + 1) % N] * fr;
+    return ORGAN_TABLE[i % N] * (1 - fr) + ORGAN_TABLE[(i + 1) % N] * fr;
   }
   // sinus je při stejné amplitudě mnohem tišší než obdélník – dostane víc hlasitosti
-  const volOf = (f) => (f > 0 ? ({ sine: 0.35, square: 0.09, flute: 0.3 })[state.wave] : 0);
+  const volOf = (f) => (f > 0 ? ({ sine: 0.35, square: 0.09, organ: 0.13 })[state.wave] : 0);
 
   // upozornění: sinus nízké frekvence ucho (a malé reproduktory) neslyší
   function updateSoundNote() {
-    const show = state.sound && state.wave !== "square" && state.f > 0 && state.f < 60;
+    const show = state.sound && state.wave === "sine" && state.f > 0 && state.f < 60;
     if (show) {
-      hintEl.textContent = `${state.wave === "sine" ? "Sinus" : "Flétnu"} s tak nízkou frekvencí skoro neuslyšíš – zkus aspoň 200 Hz.`;
+      hintEl.textContent = "Sinus s tak nízkou frekvencí skoro neuslyšíš – zkus aspoň 200 Hz.";
       hintEl.classList.remove("is-hidden");
       hintEl.dataset.note = "1";
     } else if (hintEl.dataset.note) {
@@ -136,115 +125,81 @@
     noiseBufs.set(ctx, buf);
     return buf;
   }
-  // dozvuk místnosti – uměle vytvořená odezva (doznívající šum), nástroj pak nezní „nasucho“
+  // dozvuk kostela – uměle vytvořená odezva (dlouho doznívající šum); varhany bez něj nezní jako varhany
   const reverbBufs = new WeakMap();
   function getReverb(ctx) {
     if (reverbBufs.has(ctx)) return reverbBufs.get(ctx);
     const sr = ctx.sampleRate;
-    const len = Math.floor(sr * 1.8);
+    const len = Math.floor(sr * 4.5);
+    const pre = 0.025;
     const buf = ctx.createBuffer(2, len, sr);
     for (let ch = 0; ch < 2; ch += 1) {
       const d = buf.getChannelData(ch);
       let lp = 0;
       for (let i = 0; i < len; i += 1) {
         const tt = i / sr;
-        lp += 0.35 * ((Math.random() * 2 - 1) - lp); // trochu ztlumené výšky
-        d[i] = lp * Math.exp(-tt / 0.38) * Math.min(1, tt / 0.012);
+        lp += (tt < 0.3 ? 0.45 : 0.22) * ((Math.random() * 2 - 1) - lp); // výšky doznívají rychleji
+        d[i] = tt < pre ? 0 : lp * Math.exp(-(tt - pre) / 0.62) * Math.min(1, (tt - pre) / 0.03);
       }
     }
     reverbBufs.set(ctx, buf);
     return buf;
   }
 
-  function fluteWave(ctx, freq) {
-    const H = fluteHarm(freq);
-    const real = new Float32Array(H.length + 1);
-    const imag = new Float32Array(H.length + 1);
-    H.forEach(([sn, cs], h) => { imag[h + 1] = sn; real[h + 1] = cs; });
-    return ctx.createPeriodicWave(real, imag);
-  }
-  // flétna: tón + dech (šum kolem tónu, syčení, nasazení jazykem) + kolísání dechu + vibrato + dozvuk
-  function buildFlute(out, freq, ctx = actx) {
+  // varhany: tři řady píšťal (každá trochu jinak naladěná – proto ten „živý“ zvuk) + nasazení píšťal + vítr + dozvuk
+  function buildOrgan(out, freq, ctx = actx) {
     const t = ctx.currentTime;
     const nodes = [];
     const stopables = [];
+    const mix = ctx.createGain(); mix.gain.value = 0.55;
+    const oscs = ORGAN_RANKS.map((r, idx) => {
+      const real = new Float32Array(r.amps.length + 1);
+      const imag = new Float32Array(r.amps.length + 1);
+      r.amps.forEach((a, k) => {
+        const ph = ORGAN_PH[r.mult * (k + 1) - 1];
+        imag[k + 1] = a * Math.cos(ph); real[k + 1] = a * Math.sin(ph);
+      });
+      const o = ctx.createOscillator();
+      // amplitudy necháme tak, jak jsou (bez normalizace), aby rejstříky měly správný poměr
+      o.setPeriodicWave(ctx.createPeriodicWave(real, imag, { disableNormalization: true }));
+      o.frequency.value = freq * r.mult;
+      o.detune.value = r.cents;
+      // vyšší (menší) píšťaly se rozezní dřív než velké
+      const g = ctx.createGain();
+      const att = [0.07, 0.04, 0.025][idx];
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(1.08, t + att);
+      g.gain.setTargetAtTime(1, t + att, 0.04);
+      o.connect(g).connect(mix);
+      o.start();
+      nodes.push(o, g); stopables.push(o);
+      o.__mult = r.mult;
+      return o;
+    });
+    // „chiff“ – krátké zasyčení vzduchu, než se píšťala rozezní
     const noise = getNoise(ctx);
-    const src = (offset) => {
-      const n = ctx.createBufferSource(); n.buffer = noise; n.loop = true; n.start(t, offset);
-      nodes.push(n); stopables.push(n);
-      return n;
-    };
-    const o = ctx.createOscillator();
-    o.setPeriodicWave(fluteWave(ctx, freq));
-    o.frequency.value = freq;
-    // nasazení: tón se „usadí“ zespodu a během ~0,1 s rozezní
-    o.detune.setValueAtTime(-18, t);
-    o.detune.setTargetAtTime(0, t, 0.03);
-    const tone = ctx.createGain();
-    tone.gain.setValueAtTime(0, t);
-    tone.gain.linearRampToValueAtTime(0.85, t + 0.03);
-    tone.gain.setTargetAtTime(0.75, t + 0.03, 0.05);
-    // při nasazení krátce „přefoukne“ – na chvilku zazní oktáva výš
-    const o2 = ctx.createOscillator(); o2.frequency.value = 2 * freq;
-    const o2g = ctx.createGain();
-    o2g.gain.setValueAtTime(0, t); o2g.gain.linearRampToValueAtTime(0.25, t + 0.012); o2g.gain.setTargetAtTime(0, t + 0.012, 0.025);
-    o2.connect(o2g);
-    // jas tónu kolísá spolu s vibratem
-    const bright = ctx.createBiquadFilter(); bright.type = "lowpass"; bright.Q.value = 0.3;
-    bright.frequency.value = Math.min(16000, freq * 5);
-    o.connect(tone).connect(bright);
-    o2g.connect(bright);
-    const body = ctx.createGain(); body.gain.value = 1;
-    bright.connect(body);
-    // vibrato: dvě mírně rozladěná LFO → nepravidelné, „lidské“ kolísání; začne až po chvíli
-    const vib = ctx.createGain();
-    vib.gain.setValueAtTime(0, t); vib.gain.setValueAtTime(0, t + 0.3); vib.gain.linearRampToValueAtTime(1, t + 0.9);
-    [4.9, 5.4].forEach((r) => { const l = ctx.createOscillator(); l.frequency.value = r; l.connect(vib); l.start(); nodes.push(l); stopables.push(l); });
-    const vAmp = ctx.createGain(); vAmp.gain.value = 0.05;   // síla tónu
-    const vPitch = ctx.createGain(); vPitch.gain.value = 4;  // výška (centy)
-    const vBright = ctx.createGain(); vBright.gain.value = freq * 0.6;
-    vib.connect(vAmp).connect(body.gain);
-    vib.connect(vPitch).connect(o.detune);
-    vib.connect(vBright).connect(bright.frequency);
-    // kolísání dechu – pomalé náhodné změny síly
-    const br = src(1.13);
-    const brLp = ctx.createBiquadFilter(); brLp.type = "lowpass"; brLp.frequency.value = 3;
-    const brG = ctx.createGain(); brG.gain.value = 6;
-    br.connect(brLp).connect(brG).connect(body.gain);
-    // dech: šum soustředěný kolem tónu a jeho oktávy (zní „vzdušně“)
-    const n1 = src(0.21);
-    const nb1 = ctx.createBiquadFilter(); nb1.type = "bandpass"; nb1.frequency.value = freq; nb1.Q.value = 9;
-    const nb2 = ctx.createBiquadFilter(); nb2.type = "bandpass"; nb2.frequency.value = 2 * freq; nb2.Q.value = 9;
-    const ng1 = ctx.createGain(); ng1.gain.value = 0.3;
-    const ng2 = ctx.createGain(); ng2.gain.value = 0.12;
-    n1.connect(nb1).connect(ng1).connect(body);
-    n1.connect(nb2).connect(ng2).connect(body);
-    // syčení vzduchu o hranu otvoru, při nasazení (jazyk „tu“) výraznější
-    const n2 = src(0.83);
-    const hs = ctx.createBiquadFilter(); hs.type = "bandpass"; hs.frequency.value = 4500; hs.Q.value = 0.4;
-    const hsg = ctx.createGain();
-    hsg.gain.setValueAtTime(0.18, t); hsg.gain.setTargetAtTime(0.012, t, 0.035);
-    n2.connect(hs).connect(hsg).connect(body);
-    // dozvuk
+    const ns = ctx.createBufferSource(); ns.buffer = noise; ns.loop = true; ns.start(t, 0.4);
+    const cb = ctx.createBiquadFilter(); cb.type = "bandpass"; cb.frequency.value = Math.min(9000, freq * 4); cb.Q.value = 2.5;
+    const cg = ctx.createGain(); cg.gain.setValueAtTime(0, t); cg.gain.linearRampToValueAtTime(0.5, t + 0.006); cg.gain.setTargetAtTime(0, t + 0.006, 0.02);
+    ns.connect(cb).connect(cg).connect(mix);
+    // tichý šum větru v píšťalách
+    const wb = ctx.createBiquadFilter(); wb.type = "bandpass"; wb.frequency.value = 1800; wb.Q.value = 0.5;
+    const wg = ctx.createGain(); wg.gain.value = 0.006;
+    ns.connect(wb).connect(wg).connect(mix);
+    nodes.push(ns, cb, cg, wb, wg, mix); stopables.push(ns);
+    // dozvuk kostela
     const rev = ctx.createConvolver(); rev.buffer = getReverb(ctx);
-    const wet = ctx.createGain(); wet.gain.value = 0.24;
-    body.connect(out);
-    body.connect(rev).connect(wet).connect(out);
-    o.start(); o2.start(); o2.stop(t + 0.4);
-    nodes.push(o, tone, o2, o2g, bright, body, vib, vAmp, vPitch, vBright, brLp, brG, nb1, nb2, ng1, ng2, hs, hsg, rev, wet);
-    stopables.push(o);
-    // při změně frekvence se přeladí i barva tónu, filtry dechu a jas
-    let lastKey = fluteHarm(freq).map((x) => x[0].toFixed(3)).join();
+    const wet = ctx.createGain(); wet.gain.value = 0.42;
+    mix.connect(out);
+    mix.connect(rev).connect(wet).connect(out);
+    nodes.push(rev, wet);
+    // při změně frekvence se přeladí všechny řady píšťal (každá na svůj násobek)
     const retune = (f) => {
       const now = ctx.currentTime;
-      nb1.frequency.setTargetAtTime(f, now, 0.005);
-      nb2.frequency.setTargetAtTime(2 * f, now, 0.005);
-      bright.frequency.setTargetAtTime(Math.min(16000, f * 5), now, 0.005);
-      vBright.gain.setTargetAtTime(f * 0.6, now, 0.005);
-      const key = fluteHarm(f).map((x) => x[0].toFixed(3)).join();
-      if (key !== lastKey) { lastKey = key; o.setPeriodicWave(fluteWave(ctx, f)); }
+      oscs.forEach((o) => o.frequency.setTargetAtTime(f * o.__mult, now, 0.005));
+      cb.frequency.setTargetAtTime(Math.min(9000, f * 4), now, 0.005);
     };
-    return { oscs: [o], stopables, nodes, retune };
+    return { oscs: [], stopables, nodes, retune };
   }
 
   function buildSimple(out, freq) {
@@ -266,11 +221,11 @@
     if (voice) return;
     const gain = actx.createGain();
     gain.gain.value = 0;
-    // u flétny pomalejší náběh (dech), jinak rychlý
-    gain.gain.setTargetAtTime(volOf(state.f), actx.currentTime, state.wave === "flute" ? 0.08 : 0.02);
+    // u varhan pomalejší náběh (píšťaly se rozeznívají), jinak rychlý
+    gain.gain.setTargetAtTime(volOf(state.f), actx.currentTime, state.wave === "organ" ? 0.08 : 0.02);
     gain.connect(actx.destination);
     const freq = Math.max(1, rateOf(state.f));
-    const v = state.wave === "flute" ? buildFlute(gain, freq) : buildSimple(gain, freq);
+    const v = state.wave === "organ" ? buildOrgan(gain, freq) : buildSimple(gain, freq);
     voice = { ...v, gain };
   }
   function soundOff() {
@@ -504,12 +459,12 @@
         if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "rgba(0, 229, 97, 0.55)"); lastD = d; }
         return;
       }
-      if (state.wave === "flute") {
+      if (state.wave === "organ") {
         const steps = Math.min(6000, Math.max(400, Math.ceil(n * 90)));
         d = "";
         for (let i = 0; i <= steps; i += 1) {
           const u = i / steps;
-          const y = Y_LOW - fluteVal(n * u) * (Y_LOW - Y_HIGH);
+          const y = Y_LOW - organVal(n * u) * (Y_LOW - Y_HIGH);
           d += `${i ? "L" : "M"}${(SX0 + u * W).toFixed(2)} ${y.toFixed(2)}`;
         }
       } else if (state.wave === "sine") {
@@ -603,7 +558,7 @@
     // membrána
     if (f <= 12) {
       if (state.wave === "sine") state.m = state.sineM;
-      else if (state.wave === "flute") state.m = fluteVal(p1);
+      else if (state.wave === "organ") state.m = organVal(p1);
       else state.m += (state.level - state.m) * Math.min(1, dt / 0.025);
       dome.setAttribute("transform", `translate(0 ${(DOME_TRAVEL * (1 - state.m)).toFixed(2)})`);
       dome.setAttribute("opacity", "1");
@@ -624,5 +579,5 @@
   setF(5);
   requestAnimationFrame(frame);
 
-  window.__ton = { state, setF, buildFlute };
+  window.__ton = { state, setF, buildOrgan };
 })();
