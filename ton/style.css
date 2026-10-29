@@ -946,3 +946,6 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 .ton-frac__den { padding-top: 1px; }
 .ton-preset { font-size: 13px; padding: 6px 2px; white-space: nowrap; }
 .ton-preset--wide { white-space: normal; }
+
+.mode-switch--3 { grid-template-columns: 1fr 1fr 1fr; }
+.mode-switch--3 .mode-switch__btn { font-size: 14px; padding-left: 2px; padding-right: 2px; }

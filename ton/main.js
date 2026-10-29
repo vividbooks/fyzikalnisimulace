@@ -61,9 +61,36 @@
 
   // skutečná frekvence periodického signálu:
   // sinus – f celých kmitů za sekundu; obdélník – f pohybů blány za sekundu (f/2 period)
-  const rateOf = (f) => (state.wave === "sine" ? f : f / 2);
+  const rateOf = (f) => (state.wave === "square" ? f / 2 : f);
+
+  // housle: smyčcem rozechvěná struna kmitá zhruba jako „pila“ (Helmholtzův pohyb),
+  // ozvučnice zesílí některé vyšší harmonické – tón je složený z mnoha sinusovek
+  const VIOLIN_W = [1, 0.85, 1.0, 0.9, 0.75, 0.7, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.12, 0.1, 0.08, 0.06, 0.05];
+  const VIOLIN_B = VIOLIN_W.map((w, i) => w / (i + 1));
+  const VIOLIN_TABLE = (() => {
+    const N = 1024;
+    const raw = new Float32Array(N);
+    for (let i = 0; i < N; i += 1) {
+      let v = 0;
+      VIOLIN_B.forEach((b, h) => { v += b * Math.sin((2 * Math.PI * (h + 1) * i) / N); });
+      raw[i] = v;
+    }
+    let lo = Infinity; let hi = -Infinity; let iMin = 0;
+    raw.forEach((v, i) => { if (v < lo) { lo = v; iMin = i; } if (v > hi) hi = v; });
+    // posun, aby křivka začínala dole (jako ostatní tvary)
+    const t = new Float32Array(N);
+    for (let i = 0; i < N; i += 1) t[i] = (raw[(i + iMin) % N] - lo) / (hi - lo);
+    return t;
+  })();
+  function violinVal(phase) {
+    const N = VIOLIN_TABLE.length;
+    const x = (((phase % 1) + 1) % 1) * N;
+    const i = Math.floor(x);
+    const fr = x - i;
+    return VIOLIN_TABLE[i % N] * (1 - fr) + VIOLIN_TABLE[(i + 1) % N] * fr;
+  }
   // sinus je při stejné amplitudě mnohem tišší než obdélník – dostane víc hlasitosti
-  const volOf = (f) => (f > 0 ? (state.wave === "sine" ? 0.35 : 0.09) : 0);
+  const volOf = (f) => (f > 0 ? ({ sine: 0.35, square: 0.09, violin: 0.16 })[state.wave] : 0);
 
   // upozornění: sinus nízké frekvence ucho (a malé reproduktory) neslyší
   function updateSoundNote() {
@@ -82,6 +109,20 @@
   let actx = null;
   let osc = null;
   let gain = null;
+  let lfo = null;
+  let lfoGain = null;
+  function applyWave() {
+    if (!osc) return;
+    if (state.wave === "violin") {
+      const real = new Float32Array(VIOLIN_B.length + 1);
+      const imag = new Float32Array(VIOLIN_B.length + 1);
+      VIOLIN_B.forEach((b, i) => { imag[i + 1] = b; });
+      osc.setPeriodicWave(actx.createPeriodicWave(real, imag));
+    } else {
+      osc.type = state.wave;
+    }
+    if (lfoGain) lfoGain.gain.setTargetAtTime(state.wave === "violin" ? 12 : 0, actx.currentTime, 0.05);
+  }
   function soundOn() {
     if (!actx) {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -91,7 +132,14 @@
     if (actx.state === "suspended") actx.resume();
     if (osc) return;
     osc = actx.createOscillator();
-    osc.type = state.wave;
+    applyWave();
+    // vibrato (u houslí)
+    lfo = actx.createOscillator();
+    lfo.frequency.value = 5.5;
+    lfoGain = actx.createGain();
+    lfoGain.gain.value = state.wave === "violin" ? 12 : 0;
+    lfo.connect(lfoGain).connect(osc.detune);
+    lfo.start();
     osc.frequency.value = rateOf(state.f);
     gain = actx.createGain();
     gain.gain.value = 0;
@@ -104,9 +152,11 @@
     const o = osc;
     const gn = gain;
     gn.gain.setTargetAtTime(0, actx.currentTime, 0.02);
-    setTimeout(() => { try { o.stop(); o.disconnect(); gn.disconnect(); } catch (_) { /* hotovo */ } }, 200);
+    const l = lfo;
+    setTimeout(() => { try { o.stop(); o.disconnect(); gn.disconnect(); l.stop(); l.disconnect(); } catch (_) { /* hotovo */ } }, 200);
     osc = null;
     gain = null;
+    lfo = null;
   }
 
   /* ---------- Nastavení frekvence ---------- */
@@ -164,7 +214,7 @@
       o.setAttribute("aria-pressed", String(on));
     });
     if (osc) {
-      osc.type = state.wave;
+      applyWave();
       if (state.f > 0) osc.frequency.setTargetAtTime(rateOf(state.f), actx.currentTime, 0.005);
       gain.gain.setTargetAtTime(volOf(state.f), actx.currentTime, 0.01);
     }
@@ -255,7 +305,15 @@
         if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "rgba(0, 229, 97, 0.55)"); lastD = d; }
         return;
       }
-      if (state.wave === "sine") {
+      if (state.wave === "violin") {
+        const steps = Math.min(6000, Math.max(400, Math.ceil(n * 90)));
+        d = "";
+        for (let i = 0; i <= steps; i += 1) {
+          const u = i / steps;
+          const y = Y_LOW - violinVal(n * u) * (Y_LOW - Y_HIGH);
+          d += `${i ? "L" : "M"}${(SX0 + u * W).toFixed(2)} ${y.toFixed(2)}`;
+        }
+      } else if (state.wave === "sine") {
         // sinusovka se stejnými průchody středem jako obdélník (začíná dole)
         const yMid = (Y_HIGH + Y_LOW) / 2;
         const A = (Y_LOW - Y_HIGH) / 2;
@@ -330,6 +388,7 @@
     // membrána
     if (f <= 12) {
       if (state.wave === "sine") state.m = state.sineM;
+      else if (state.wave === "violin") state.m = violinVal(p1);
       else state.m += (state.level - state.m) * Math.min(1, dt / 0.025);
       dome.setAttribute("transform", `translate(0 ${(DOME_TRAVEL * (1 - state.m)).toFixed(2)})`);
       dome.setAttribute("opacity", "1");
