@@ -196,9 +196,10 @@
       let lv = 0;
       d = `M${SX0} ${yOf(lv)}`;
       const half = W / (2 * n);
-      if (half < 1.5) {
+      if (half < 1) {
         // kmitů je tolik, že čáry splynou v plochu
         d = `M${SX0} ${Y_LOW}L${SX0} ${Y_HIGH}L${SX1} ${Y_HIGH}L${SX1} ${Y_LOW}Z`;
+        trace.setAttribute("stroke-width", "1");
         if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "rgba(0, 229, 97, 0.55)"); lastD = d; }
         return;
       }
@@ -211,6 +212,9 @@
       }
       if (x < SX1) d += `L${SX1} ${yOf(lv)}`;
     }
+    // od 70 Hz se čára ztenčuje, aby jednotlivé kmity zůstaly rozlišitelné
+    const sw = f <= 70 ? 3 : Math.max(0.35, Math.min((3 * 70) / f, (W / (2 * f)) * 0.45));
+    trace.setAttribute("stroke-width", sw.toFixed(2));
     if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "none"); lastD = d; }
   }
 
