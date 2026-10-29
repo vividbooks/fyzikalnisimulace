@@ -202,41 +202,72 @@
   $("btnRev").addEventListener("click", () => play(-1));
 
   /* ---------- Nahrávání z mikrofonu ---------- */
+  // Nahrává se přes MediaRecorder (funguje i když je zvukový kontext prohlížeče uspaný);
+  // průběžnou křivku kreslí analyzátor. Když MediaRecorder chybí, záloha přes ScriptProcessor.
+  function pickMime() {
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return "";
+    return ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus", "audio/ogg"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
+  }
   async function startRec() {
     stopPlay();
     hideHint();
+    // zvukový kontext je potřeba vytvořit/probudit hned při kliknutí (pak už to prohlížeč nemusí dovolit)
+    const c = ctx();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      showHint("Tento prohlížeč neumí nahrávat z mikrofonu. Vyber soubor nebo ukázku.");
+      showHint(window.isSecureContext === false
+        ? "Nahrávat z mikrofonu jde jen na zabezpečené stránce (https nebo localhost). Vyber soubor nebo ukázku."
+        : "Tento prohlížeč neumí nahrávat z mikrofonu. Vyber soubor nebo ukázku.");
       return;
     }
     let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } });
-    } catch (_) {
-      showHint("Mikrofon není povolený. Povol ho v prohlížeči, nebo vyber soubor či ukázku.");
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      const name = err && err.name;
+      showHint(name === "NotFoundError" || name === "OverconstrainedError"
+        ? "Nenašel jsem žádný mikrofon. Připoj ho, nebo vyber soubor či ukázku."
+        : name === "NotReadableError"
+          ? "Mikrofon používá jiná aplikace. Zavři ji a zkus to znovu."
+          : "Mikrofon není povolený. Povol ho v prohlížeči (ikona vedle adresy), nebo vyber soubor či ukázku.");
       return;
     }
-    const c = ctx();
-    const srcNode = c.createMediaStreamSource(stream);
-    const proc = c.createScriptProcessor(4096, 1, 1);
-    const mute = c.createGain(); mute.gain.value = 0;
-    const chunks = [];
-    let len = 0;
-    const maxLen = Math.floor(MAX_REC * c.sampleRate);
-    proc.onaudioprocess = (e) => {
-      if (!state.rec) return;
-      const d = e.inputBuffer.getChannelData(0);
-      chunks.push(new Float32Array(d));
-      len += d.length;
-      // průběžná úroveň pro blánu
-      let pk = 0; for (let i = 0; i < d.length; i += 8) pk = Math.max(pk, Math.abs(d[i]));
-      state.recLevel = pk;
-      if (len >= maxLen) stopRec();
-    };
-    srcNode.connect(proc).connect(mute).connect(c.destination);
-    state.rec = { stream, srcNode, proc, mute, chunks, get len() { return len; }, sr: c.sampleRate, t0: performance.now() };
+    if (c.state === "suspended") { try { await c.resume(); } catch (_) { /* nevadí */ } }
+    const rec = { stream, t0: performance.now(), live: [], chunks: [], pcm: [], pcmLen: 0, sr: c.sampleRate };
+    // průběžná křivka
+    try {
+      rec.srcNode = c.createMediaStreamSource(stream);
+      rec.an = c.createAnalyser();
+      rec.an.fftSize = 2048;
+      rec.buf = new Float32Array(rec.an.fftSize);
+      rec.srcNode.connect(rec.an);
+    } catch (_) { /* bez živé křivky */ }
+    const mime = pickMime();
+    if (window.MediaRecorder) {
+      try {
+        rec.mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      } catch (_) { rec.mr = null; }
+    }
+    if (rec.mr) {
+      rec.mr.ondataavailable = (e) => { if (e.data && e.data.size) rec.chunks.push(e.data); };
+      rec.mr.onstop = () => finishRec(rec);
+      rec.mr.start(250);
+    } else {
+      // záloha: syrové vzorky přes ScriptProcessor
+      const proc = c.createScriptProcessor(4096, 1, 1);
+      const mute = c.createGain(); mute.gain.value = 0;
+      proc.onaudioprocess = (e) => {
+        if (state.rec !== rec) return;
+        const d = e.inputBuffer.getChannelData(0);
+        rec.pcm.push(new Float32Array(d));
+        rec.pcmLen += d.length;
+      };
+      rec.srcNode.connect(proc).connect(mute).connect(c.destination);
+      rec.proc = proc; rec.mute = mute;
+    }
+    state.rec = rec;
     state.sampleId = null;
     state.peaks = null; state.buffer = null;
+    waveBase.setAttribute("d", ""); wavePlayed.setAttribute("d", "");
     $("btnFwd").disabled = true; $("btnRev").disabled = true;
     const btn = $("btnRec");
     btn.classList.add("is-recording");
@@ -244,37 +275,62 @@
     screenMsg.style.display = "none";
     $("srcName").textContent = "nahrávám…";
     $("srcLen").textContent = "–";
-    document.querySelectorAll(".rev-sample").forEach((b) => b.classList.remove("is-active"));
+    document.querySelectorAll(".rev-sample").forEach((x) => x.classList.remove("is-active"));
   }
   function stopRec() {
     const r = state.rec;
     if (!r) return;
     state.rec = null;
-    try { r.srcNode.disconnect(); r.proc.disconnect(); r.mute.disconnect(); } catch (_) { /* hotovo */ }
-    r.stream.getTracks().forEach((t) => t.stop());
     const btn = $("btnRec");
     btn.classList.remove("is-recording");
     btn.setAttribute("aria-pressed", "false");
     $("recText").textContent = "Nahrát z mikrofonu";
-    // spojit kousky a oříznout ticho na začátku a na konci
-    const all = new Float32Array(r.len);
-    let o = 0;
-    r.chunks.forEach((ch) => { all.set(ch, o); o += ch.length; });
-    let pk = 0; for (let i = 0; i < all.length; i += 4) pk = Math.max(pk, Math.abs(all[i]));
-    const thr = Math.max(0.01, pk * 0.06);
-    let a = 0; while (a < all.length && Math.abs(all[a]) < thr) a += 1;
-    let b = all.length - 1; while (b > a && Math.abs(all[b]) < thr) b -= 1;
-    const margin = Math.floor(0.08 * r.sr);
-    a = Math.max(0, a - margin); b = Math.min(all.length, b + margin);
-    if (b - a < r.sr * 0.15 || pk < 0.003) {
-      state.peaks = null; drawWave();
-      timeLabel.textContent = "";
-      showHint("Nic se nenahrálo – zkus mluvit hlasitěji nebo blíž k mikrofonu.");
-      if (state.prevBuffer) setBuffer(state.prevBuffer, state.prevName);
-      else { $("srcName").textContent = "zatím nic"; }
+    $("srcName").textContent = "zpracovávám…";
+    if (r.mr && r.mr.state !== "inactive") r.mr.stop(); // → finishRec
+    else finishRec(r);
+  }
+  function failRec(msg) {
+    state.peaks = null; drawWave();
+    timeLabel.textContent = "";
+    showHint(msg);
+    if (state.prevBuffer) setBuffer(state.prevBuffer, state.prevName);
+    else { $("srcName").textContent = "zatím nic"; $("srcLen").textContent = "–"; }
+  }
+  async function finishRec(r) {
+    try { if (r.srcNode) r.srcNode.disconnect(); if (r.proc) r.proc.disconnect(); if (r.mute) r.mute.disconnect(); } catch (_) { /* hotovo */ }
+    r.stream.getTracks().forEach((t) => t.stop());
+    let all; let sr;
+    try {
+      if (r.mr) {
+        const blob = new Blob(r.chunks, { type: r.mr.mimeType || "audio/webm" });
+        const arr = await blob.arrayBuffer();
+        const c = ctx();
+        const buf = await new Promise((res, rej) => {
+          const p = c.decodeAudioData(arr, res, rej);
+          if (p && p.then) p.then(res, rej);
+        });
+        all = buf.getChannelData(0); sr = buf.sampleRate;
+      } else {
+        all = new Float32Array(r.pcmLen); sr = r.sr;
+        let o = 0; r.pcm.forEach((ch) => { all.set(ch, o); o += ch.length; });
+      }
+    } catch (_) {
+      failRec("Nahrávku se nepodařilo zpracovat. Zkus to znovu, nebo vyber soubor či ukázku.");
       return;
     }
-    const buf = ctx().createBuffer(1, b - a, r.sr);
+    // oříznout ticho na začátku a na konci
+    let pk = 0; for (let i = 0; i < all.length; i += 4) pk = Math.max(pk, Math.abs(all[i]));
+    const thr = Math.max(0.004, pk * 0.06);
+    let a = 0; while (a < all.length && Math.abs(all[a]) < thr) a += 1;
+    let b = all.length - 1; while (b > a && Math.abs(all[b]) < thr) b -= 1;
+    const margin = Math.floor(0.08 * sr);
+    a = Math.max(0, a - margin); b = Math.min(all.length, b + margin);
+    if (all.length < sr * 0.15 || pk < 0.002) {
+      failRec("Nic se nenahrálo – mikrofon nic nezachytil. Zkontroluj, že je zapnutý a že prohlížeč používá ten správný.");
+      return;
+    }
+    if (b - a < sr * 0.15) { a = 0; b = all.length; }
+    const buf = ctx().createBuffer(1, b - a, sr);
     buf.getChannelData(0).set(all.subarray(a, b));
     setBuffer(buf, "nahrávka z mikrofonu");
   }
@@ -428,15 +484,17 @@
       const sec = (performance.now() - r.t0) / 1000;
       $("recText").textContent = `Zastavit (${fmt(Math.min(MAX_REC, sec))} s)`;
       timeLabel.textContent = `nahrávám… max. ${MAX_REC} s`;
-      // průběžná křivka na pevné ose 10 s
-      if (r.chunks.length) {
-        const all = new Float32Array(r.len);
-        let o = 0; r.chunks.forEach((ch) => { all.set(ch, o); o += ch.length; });
-        const pk = computePeaks(all, all.length, Math.floor(MAX_REC * r.sr));
-        waveBase.setAttribute("d", peaksPath(pk, 1.6));
-        wavePlayed.setAttribute("d", "");
+      if (r.an) {
+        r.an.getFloatTimeDomainData(r.buf);
+        let lo = 0; let hi = 0;
+        for (let i = 0; i < r.buf.length; i += 2) { const v = r.buf[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+        const col = Math.min(COLS - 1, Math.floor((sec / MAX_REC) * COLS));
+        const prev = r.live[col];
+        r.live[col] = prev ? [Math.min(prev[0], lo), Math.max(prev[1], hi)] : [lo, hi];
+        for (let c2 = 0; c2 < col; c2 += 1) if (!r.live[c2]) r.live[c2] = [0, 0];
+        waveBase.setAttribute("d", peaksPath(r.live, 1.6));
       }
-      // při nahrávání reproduktor mlčí – blána stojí
+      if (sec >= MAX_REC) stopRec();
     } else if (state.play && actx) {
       const p = state.play;
       const el = Math.max(0, actx.currentTime - p.t0);
