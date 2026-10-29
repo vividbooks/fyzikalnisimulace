@@ -62,6 +62,21 @@
   // skutečná frekvence periodického signálu:
   // sinus – f celých kmitů za sekundu; obdélník – f pohybů blány za sekundu (f/2 period)
   const rateOf = (f) => (state.wave === "sine" ? f : f / 2);
+  // sinus je při stejné amplitudě mnohem tišší než obdélník – dostane víc hlasitosti
+  const volOf = (f) => (f > 0 ? (state.wave === "sine" ? 0.35 : 0.09) : 0);
+
+  // upozornění: sinus nízké frekvence ucho (a malé reproduktory) neslyší
+  function updateSoundNote() {
+    const show = state.sound && state.wave === "sine" && state.f > 0 && state.f < 60;
+    if (show) {
+      hintEl.textContent = "Sinus s tak nízkou frekvencí skoro neuslyšíš – zkus aspoň 200 Hz.";
+      hintEl.classList.remove("is-hidden");
+      hintEl.dataset.note = "1";
+    } else if (hintEl.dataset.note) {
+      hintEl.classList.add("is-hidden");
+      delete hintEl.dataset.note;
+    }
+  }
 
   /* ---------- Zvuk (Web Audio) ---------- */
   let actx = null;
@@ -80,7 +95,7 @@
     osc.frequency.value = rateOf(state.f);
     gain = actx.createGain();
     gain.gain.value = 0;
-    gain.gain.setTargetAtTime(state.f > 0 ? 0.09 : 0, actx.currentTime, 0.02);
+    gain.gain.setTargetAtTime(volOf(state.f), actx.currentTime, 0.02);
     osc.connect(gain).connect(actx.destination);
     osc.start();
   }
@@ -108,9 +123,10 @@
     document.querySelectorAll(".ton-preset").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.f) === f));
     if (osc) {
       if (f > 0) osc.frequency.setTargetAtTime(rateOf(f), actx.currentTime, 0.005);
-      gain.gain.setTargetAtTime(f > 0 ? 0.09 : 0, actx.currentTime, 0.01);
+      gain.gain.setTargetAtTime(volOf(f), actx.currentTime, 0.01);
     }
     timeLabel.textContent = `šířka obrazovky: ${fmtTime(windowFor(f))}`;
+    updateSoundNote();
   }
 
   function hideHint() { hintEl.classList.add("is-hidden"); }
@@ -130,6 +146,7 @@
     $("soundWaves").style.display = state.sound ? "" : "none";
     $("soundMute").style.display = state.sound ? "none" : "";
     if (state.sound && state.running) soundOn(); else soundOff();
+    updateSoundNote();
   }
   soundBtn.addEventListener("click", toggleSound);
   soundBtn.addEventListener("keydown", (e) => {
@@ -146,7 +163,12 @@
       o.classList.toggle("is-active", on);
       o.setAttribute("aria-pressed", String(on));
     });
-    if (osc) { osc.type = state.wave; if (state.f > 0) osc.frequency.setTargetAtTime(rateOf(state.f), actx.currentTime, 0.005); }
+    if (osc) {
+      osc.type = state.wave;
+      if (state.f > 0) osc.frequency.setTargetAtTime(rateOf(state.f), actx.currentTime, 0.005);
+      gain.gain.setTargetAtTime(volOf(state.f), actx.currentTime, 0.01);
+    }
+    updateSoundNote();
     lastD = "";
     drawTrace();
   }));
