@@ -903,7 +903,8 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 .ton-step button:hover { background: #3b4a63; }
 .ton-step span { text-align: center; color: var(--muted); font-size: 13px; }
 
-.ton-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ton-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ton-preset--wide { grid-column: span 2; }
 .ton-preset {
   appearance: none; min-height: 40px; padding: 6px 4px; border: 0; border-radius: var(--radius);
   background: var(--idle-bg); color: var(--idle-text); font: inherit; font-size: 14px; line-height: 1.15; cursor: pointer;
@@ -943,3 +944,5 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 .ton-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.05; font-size: 0.9em; margin: 0 2px; }
 .ton-frac__num { padding: 0 4px 1px; border-bottom: 1.5px solid currentColor; }
 .ton-frac__den { padding-top: 1px; }
+.ton-preset { font-size: 13px; padding: 6px 2px; white-space: nowrap; }
+.ton-preset--wide { white-space: normal; }

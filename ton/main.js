@@ -5,7 +5,8 @@
   const $ = (id) => document.getElementById(id);
   const NS = "http://www.w3.org/2000/svg";
 
-  const F_MIN = 1;
+  const F_MIN = 0;
+  const ZERO_ZONE = 20; // začátek posuvníku = 0 Hz
   const F_MAX = 2000;
   const LOG_MAX = Math.log10(F_MAX);
 
@@ -50,8 +51,8 @@
     if (ms >= 10) return `${fmt(ms, ms % 1 ? 1 : 0)} ms`;
     return `${fmt(ms, ms < 1 ? 3 : 2).replace(/0+$/, "").replace(/,$/, "")} ms`;
   }
-  const fromSlider = (v) => Math.max(F_MIN, Math.min(F_MAX, Math.round(10 ** ((v / 1000) * LOG_MAX))));
-  const toSlider = (f) => Math.round((Math.log10(f) / LOG_MAX) * 1000);
+  const fromSlider = (v) => (v <= ZERO_ZONE ? 0 : Math.max(1, Math.min(F_MAX, Math.round(10 ** (((v - ZERO_ZONE) / (1000 - ZERO_ZONE)) * LOG_MAX)))));
+  const toSlider = (f) => (f <= 0 ? 0 : Math.round(ZERO_ZONE + (Math.log10(f) / LOG_MAX) * (1000 - ZERO_ZONE)));
   const stepOf = (f) => (f < 20 ? 1 : f < 200 ? 5 : 50);
   // šířka obrazovky je vždy 1 s
   const windowFor = () => 1;
@@ -74,7 +75,7 @@
     osc.frequency.value = state.f;
     gain = actx.createGain();
     gain.gain.value = 0;
-    gain.gain.setTargetAtTime(0.09, actx.currentTime, 0.02);
+    gain.gain.setTargetAtTime(state.f > 0 ? 0.09 : 0, actx.currentTime, 0.02);
     osc.connect(gain).connect(actx.destination);
     osc.start();
   }
@@ -97,10 +98,13 @@
     if (!fromSliderInput) $("fSlider").value = String(toSlider(f));
     $("fVal").textContent = fmtF(f);
     $("perSec").textContent = fmtF(f);
-    $("period").textContent = fmtTime(1 / f);
+    $("period").textContent = f > 0 ? fmtTime(1 / f) : "–";
     $("fStepLabel").textContent = `po ${fmtF(stepOf(f))} Hz`;
     document.querySelectorAll(".ton-preset").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.f) === f));
-    if (osc) osc.frequency.setTargetAtTime(f, actx.currentTime, 0.005);
+    if (osc) {
+      if (f > 0) osc.frequency.setTargetAtTime(f, actx.currentTime, 0.005);
+      gain.gain.setTargetAtTime(f > 0 ? 0.09 : 0, actx.currentTime, 0.01);
+    }
     timeLabel.textContent = `šířka obrazovky: ${fmtTime(windowFor(f))}`;
   }
 
@@ -253,7 +257,7 @@
     }
     state.phase = p1 % 1000;
     if (state.edges.length > 400) state.edges.splice(0, state.edges.length - 400);
-    state.level = (p1 % 1) < 0.5 ? 1 : 0;
+    state.level = f > 0 ? ((p1 % 1) < 0.5 ? 1 : 0) : 0;
 
     // vlny při vyšší frekvenci – nejvýš 6 za sekundu (skutečných je víc)
     if (f > 6) {
