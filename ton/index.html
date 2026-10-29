@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tón</title>
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace tónu – generátor obdélníkového signálu a reproduktor">
@@ -39,6 +39,7 @@
         <span class="panel-label">Frekvence signálu</span>
         <div class="obj-card">
           <div class="ton-freq"><i class="qty">f</i>&nbsp;=&nbsp;<span class="ton-freq__value" id="fVal">5</span><span class="ton-freq__unit">Hz</span></div>
+          <p class="ton-freq__meaning" id="fMeaning">počet pohybů blány za sekundu</p>
           <input class="ton-slider" id="fSlider" type="range" min="0" max="1000" step="1" value="212" aria-label="Frekvence" />
           <div class="ton-scale"><span>0 Hz</span><span>10 Hz</span><span>100 Hz</span><span>2 000 Hz</span></div>
           <div class="ton-step">
@@ -123,7 +124,7 @@
     </div>
   </main>
 
-  <script src="main.js?v=17"></script>
+  <script src="main.js?v=18"></script>
   <script src="../shared/sim-qr.js"></script>
 </body>
 </html>

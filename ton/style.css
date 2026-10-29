@@ -949,3 +949,4 @@ body[data-layout="flat"] .sim-empty-hint { top: 58%; }
 
 .mode-switch--3 { grid-template-columns: 1fr 1fr 1fr; }
 .mode-switch--3 .mode-switch__btn { font-size: 14px; padding-left: 2px; padding-right: 2px; }
+.ton-freq__meaning { margin: 6px 0 0; color: var(--muted); font-size: 13px; }

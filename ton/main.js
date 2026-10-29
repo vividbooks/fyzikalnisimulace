@@ -260,10 +260,14 @@
   });
 
   /* ---------- Tvar signálu ---------- */
+  function updateMeaning() {
+    $("fMeaning").textContent = state.wave === "square" ? "počet pohybů blány za sekundu" : "počet kmitů blány za sekundu";
+  }
   const waveBtns = document.querySelectorAll("[data-wave]");
   waveBtns.forEach((b) => b.addEventListener("click", () => {
     hideHint();
     state.wave = b.dataset.wave;
+    updateMeaning();
     waveBtns.forEach((o) => {
       const on = o === b;
       o.classList.toggle("is-active", on);
