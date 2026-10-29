@@ -1230,17 +1230,24 @@
             hash: "#/sim/potencialni_energie",
             previewColor: "#e8f5d8",
           },
-          {
-            id: "premeny_energie",
-            title: "Přeměny energie",
-            hash: "#/sim/premeny_energie",
-            previewColor: "#fff7e6",
-          },
+          // Přeměny energie – zatím skryté (simulace je v premeny-energie/)
           {
             id: "tepelna_kapacita_puvodni",
             title: "Tepelná kapacita",
             hash: "#/sim/tepelna_kapacita_puvodni",
             previewColor: "#fff3e6",
+          },
+        ],
+      },
+      {
+        id: "zvuk",
+        title: "Zvuk",
+        tiles: [
+          {
+            id: "ton",
+            title: "Tón",
+            hash: "#/sim/ton",
+            previewColor: "#fff4d6",
           },
         ],
       },
@@ -1280,6 +1287,7 @@
       kineticka_energie: "energie",
       potencialni_energie: "energie",
       premeny_energie: "energie",
+      ton: "zvuk",
       skutecny_obraz: "optika",
       cocky: "optika",
       videni: "optika",
@@ -2279,6 +2287,25 @@
       </svg>`;
     }
 
+    function TonCardIllustration() {
+      return html`<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="132"
+        height="88"
+        viewBox="0 0 132 88"
+        aria-hidden="true"
+      >
+        <image
+          href="ton/card-ton.svg?v=1"
+          x="4"
+          y="4"
+          width="124"
+          height="80"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>`;
+    }
+
     function PremenyEnergieCardIllustration() {
       return html`<svg
         xmlns="http://www.w3.org/2000/svg"
@@ -2450,6 +2477,7 @@
       if (tileId === "kineticka_energie") return html`<${KinetickaEnergieCardIllustration} />`;
       if (tileId === "potencialni_energie") return html`<${PotencialniEnergieCardIllustration} />`;
       if (tileId === "premeny_energie") return html`<${PremenyEnergieCardIllustration} />`;
+      if (tileId === "ton") return html`<${TonCardIllustration} />`;
       return null;
     }
 
@@ -2818,6 +2846,14 @@
           }
           return;
         }
+        if (simId === "ton") {
+          try {
+            window.location.replace(new URL("ton/", window.location.href).href);
+          } catch (_) {
+            window.location.replace("ton/");
+          }
+          return;
+        }
         if (simId === "premeny_energie") {
           try {
             window.location.replace(new URL("premeny-energie/", window.location.href).href);
@@ -3101,7 +3137,7 @@
           </div>
         `;
       }
-      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni" || simId === "plavani_potapeni" || simId === "decimalka" || simId === "pretlak_podtlak" || simId === "premeny_energie") {
+      if (simId === "pascaluv_zakon" || simId === "hydraulicke_zarizeni" || simId === "plavani_potapeni" || simId === "decimalka" || simId === "pretlak_podtlak" || simId === "premeny_energie" || simId === "ton") {
         return html`
           <div class="app">
             <div class="sim-fullnav-placeholder" aria-live="polite">Otevírám simulaci…</div>
