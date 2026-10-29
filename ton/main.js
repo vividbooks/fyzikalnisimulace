@@ -38,6 +38,7 @@
     rings: [],
     ringClock: 0,
     sound: false,
+    running: false,
   };
 
   /* ---------- Pomocné ---------- */
@@ -121,8 +122,23 @@
       o.classList.toggle("is-active", on);
       o.setAttribute("aria-pressed", String(on));
     });
-    if (state.sound) soundOn(); else soundOff();
+    if (state.sound && state.running) soundOn(); else soundOff();
   }));
+
+  /* ---------- Spustit / zastavit ---------- */
+  const PLAY = "M8 5.14v13.72L19 12 8 5.14z";
+  const STOP = "M6 6h12v12H6z";
+  function setRunning(on) {
+    state.running = on;
+    const btn = $("btnRun");
+    btn.classList.toggle("action-btn--run", !on);
+    btn.classList.toggle("action-btn--stop", on);
+    btn.setAttribute("aria-pressed", String(on));
+    $("runText").textContent = on ? "Zastavit" : "Spustit";
+    $("runIcon").setAttribute("d", on ? STOP : PLAY);
+    if (on && state.sound) soundOn(); else soundOff();
+  }
+  $("btnRun").addEventListener("click", () => { hideHint(); setRunning(!state.running); });
 
   /* ---------- Vlny ---------- */
   function spawnRing() {
@@ -202,6 +218,17 @@
     const dt = last == null ? 1 / 60 : Math.min(0.05, (t - last) / 1000);
     last = t;
     const f = state.f;
+    stepRings(dt);
+    if (!state.running) {
+      // generátor stojí: obraz na obrazovce zůstane, membrána se vrátí do klidu
+      state.m += (0 - state.m) * Math.min(1, dt / 0.05);
+      dome.setAttribute("transform", `translate(0 ${(DOME_TRAVEL * (1 - state.m)).toFixed(2)})`);
+      dome.setAttribute("opacity", "1");
+      domeGhost.setAttribute("opacity", "0");
+      drawTrace();
+      requestAnimationFrame(frame);
+      return;
+    }
     const t0 = state.time;
     state.time += dt;
 
@@ -223,7 +250,6 @@
       state.ringClock += dt;
       if (state.ringClock >= 1 / 6) { state.ringClock = 0; spawnRing(); }
     }
-    stepRings(dt);
 
     // membrána
     if (f <= 12) {

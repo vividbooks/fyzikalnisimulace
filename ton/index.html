@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tón</title>
-  <link rel="stylesheet" href="style.css?v=1" />
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace tónu – generátor obdélníkového signálu a reproduktor">
@@ -18,6 +18,13 @@
         </a>
         <h1 class="panel-title">Tón</h1>
       </div>
+
+      <section class="panel-section" aria-label="Generátor">
+        <button type="button" id="btnRun" class="action-btn action-btn--run" aria-pressed="false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="runIcon" d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
+          <span id="runText">Spustit</span>
+        </button>
+      </section>
 
       <section class="panel-section" aria-label="Frekvence">
         <span class="panel-label">Frekvence signálu</span>
@@ -65,7 +72,7 @@
     </aside>
 
     <div class="scene-workspace" id="workspace">
-      <p class="sim-empty-hint" id="hintEl">Zapni zvuk a změň frekvenci.</p>
+      <p class="sim-empty-hint" id="hintEl">Stiskni „Spustit“.</p>
       <svg class="ton-stage" id="stage" viewBox="0 -24 585 600" preserveAspectRatio="xMidYMid meet" aria-label="Generátor signálu s obrazovkou a reproduktor">
         <text x="22" y="10" class="ton-label">generátor signálu</text>
         <text x="20" y="560" class="ton-label">reproduktor</text>
@@ -107,7 +114,7 @@
     </div>
   </main>
 
-  <script src="main.js?v=1"></script>
+  <script src="main.js?v=2"></script>
   <script src="../shared/sim-qr.js"></script>
 </body>
 </html>
