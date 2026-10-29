@@ -201,8 +201,9 @@
     } else {
       // křivka stojí (jako zastavený obraz na osciloskopu)
       const n = Tw * f;              // počet period na obrazovce
-      let lv = 0;
-      d = `M${SX0} ${yOf(lv)}`;
+      // každý kmit začíná náběžnou hranou: nahoru – nahoře – dolů – dole
+      let lv = n > 0 ? 1 : 0;
+      d = n > 0 ? `M${SX0} ${Y_LOW}L${SX0} ${Y_HIGH}` : `M${SX0} ${Y_LOW}`;
       const half = W / (2 * n);
       if (half < 1) {
         // kmitů je tolik, že čáry splynou v plochu
