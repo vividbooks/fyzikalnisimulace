@@ -59,6 +59,10 @@
   const windowFor = () => 1;
   void WINDOWS;
 
+  // skutečná frekvence periodického signálu:
+  // sinus – f celých kmitů za sekundu; obdélník – f pohybů blány za sekundu (f/2 period)
+  const rateOf = (f) => (state.wave === "sine" ? f : f / 2);
+
   /* ---------- Zvuk (Web Audio) ---------- */
   let actx = null;
   let osc = null;
@@ -73,7 +77,7 @@
     if (osc) return;
     osc = actx.createOscillator();
     osc.type = state.wave;
-    osc.frequency.value = state.f / 2;
+    osc.frequency.value = rateOf(state.f);
     gain = actx.createGain();
     gain.gain.value = 0;
     gain.gain.setTargetAtTime(state.f > 0 ? 0.09 : 0, actx.currentTime, 0.02);
@@ -103,7 +107,7 @@
     $("fStepLabel").textContent = `po ${fmtF(stepOf(f))} Hz`;
     document.querySelectorAll(".ton-preset").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.f) === f));
     if (osc) {
-      if (f > 0) osc.frequency.setTargetAtTime(f / 2, actx.currentTime, 0.005);
+      if (f > 0) osc.frequency.setTargetAtTime(rateOf(f), actx.currentTime, 0.005);
       gain.gain.setTargetAtTime(f > 0 ? 0.09 : 0, actx.currentTime, 0.01);
     }
     timeLabel.textContent = `šířka obrazovky: ${fmtTime(windowFor(f))}`;
@@ -142,7 +146,7 @@
       o.classList.toggle("is-active", on);
       o.setAttribute("aria-pressed", String(on));
     });
-    if (osc) osc.type = state.wave;
+    if (osc) { osc.type = state.wave; if (state.f > 0) osc.frequency.setTargetAtTime(rateOf(state.f), actx.currentTime, 0.005); }
     lastD = "";
     drawTrace();
   }));
@@ -216,7 +220,7 @@
       d += `L${SX1} ${yOf(lv)}`;
     } else {
       // křivka stojí (jako zastavený obraz na osciloskopu)
-      const n = (Tw * f) / 2;        // na obrazovce je f pohybů blány
+      const n = Tw * rateOf(f);      // počet period na obrazovce
       // začátek i konec vlevo a vpravo jsou dole; uprostřed je přesně n celých kmitů
       // (dole čtvrt periody, pak střídavě půl periody nahoře a dole, nakonec čtvrt periody dole)
       let lv = 0;
@@ -279,13 +283,15 @@
 
     // fáze signálu a změny úrovně (přesné časy hran)
     const p0 = state.phase;
-    const p1 = p0 + (f / 2) * dt;          // f pohybů blány za sekundu = f/2 period obdélníku
+    const rate = rateOf(f);
+    const p1 = p0 + rate * dt;
     // hrany jsou ve fázi 0,25 + k/2 (stejně jako na obrazovce: začíná se dole)
     for (let k = Math.floor((p0 - 0.25) * 2) + 1; k <= Math.floor((p1 - 0.25) * 2); k += 1) {
-      const te = t0 + (0.25 + k / 2 - p0) / (f / 2);
+      const te = t0 + (0.25 + k / 2 - p0) / rate;
       const lv = k % 2 === 0 ? 1 : 0;      // sudé k = náběžná hrana
       state.edges.push({ t: te, level: lv });
-      if (f <= 6) spawnRing();             // každý pohyb blány = jedna vlna
+      // obdélník: vlna při každém pohybu blány; sinus: vlna při každém vyklenutí ven
+      if (f <= 6 && (state.wave === "square" || lv === 1)) spawnRing();
     }
     state.phase = p1 % 1000;
     if (state.edges.length > 400) state.edges.splice(0, state.edges.length - 400);
