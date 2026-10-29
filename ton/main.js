@@ -291,17 +291,14 @@
     }
     function close() { overlay.hidden = true; draft = ""; clearError(); }
     function insert(v) {
-      if (v === "," && (draft.includes(",") || draft === "")) return;
       if (draft.length >= 7) return;
-      if (draft === "0" && v !== ",") draft = "";
+      if (draft === "0") draft = "";
       draft += v;
       render();
     }
     function confirm() {
       if (draft.trim() === "") { showError("Zadej číslo."); return; }
-      const n = Number(draft.replace(",", "."));
-      if (!Number.isFinite(n)) { showError("Zadej platné číslo."); return; }
-      if (!Number.isInteger(n)) { showError("Zadej celé číslo (bez desetinné čárky)."); return; }
+      const n = Number(draft);
       if (n > F_MAX) { showError("Nejvyšší frekvence je 2 000 Hz."); return; }
       hideHint();
       setF(n);
@@ -324,7 +321,6 @@
       if (e.key === "Escape") close();
       else if (e.key === "Enter") { e.preventDefault(); confirm(); }
       else if (/^[0-9]$/.test(e.key)) insert(e.key);
-      else if (e.key === "," || e.key === ".") insert(",");
       else if (e.key === "Backspace") { draft = draft.slice(0, -1); render(); }
     }, true);
   })();

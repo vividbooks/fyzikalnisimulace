@@ -1020,3 +1020,4 @@ body.is-manual button.ton-freq__value { background: none; border-color: transpar
 .table-math-keypad__key svg { display: block; flex-shrink: 0; }
 .table-math-keypad__key:hover:not(:disabled) { background: var(--area-muted); color: var(--text); }
 .table-math-keypad__key:active:not(:disabled) { background: var(--accent-soft); }
+.table-math-keypad__key--zero { grid-column: span 2; }
