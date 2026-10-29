@@ -40,6 +40,7 @@
     ringClock: 0,
     sound: false,
     running: false,
+    wave: "square",     // square | sine
   };
 
   /* ---------- Pomocné ---------- */
@@ -71,7 +72,7 @@
     if (actx.state === "suspended") actx.resume();
     if (osc) return;
     osc = actx.createOscillator();
-    osc.type = "square";
+    osc.type = state.wave;
     osc.frequency.value = state.f / 2;
     gain = actx.createGain();
     gain.gain.value = 0;
@@ -130,6 +131,21 @@
   soundBtn.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSound(); }
   });
+
+  /* ---------- Tvar signálu ---------- */
+  const waveBtns = document.querySelectorAll("[data-wave]");
+  waveBtns.forEach((b) => b.addEventListener("click", () => {
+    hideHint();
+    state.wave = b.dataset.wave;
+    waveBtns.forEach((o) => {
+      const on = o === b;
+      o.classList.toggle("is-active", on);
+      o.setAttribute("aria-pressed", String(on));
+    });
+    if (osc) osc.type = state.wave;
+    lastD = "";
+    drawTrace();
+  }));
 
   /* ---------- Spustit / zastavit ---------- */
   const PLAY = "M8 5.14v13.72L19 12 8 5.14z";
@@ -213,6 +229,18 @@
         if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "rgba(0, 229, 97, 0.55)"); lastD = d; }
         return;
       }
+      if (state.wave === "sine") {
+        // sinusovka se stejnými průchody středem jako obdélník (začíná dole)
+        const yMid = (Y_HIGH + Y_LOW) / 2;
+        const A = (Y_LOW - Y_HIGH) / 2;
+        const steps = Math.min(4000, Math.max(200, Math.ceil(n * 40)));
+        d = "";
+        for (let i = 0; i <= steps; i += 1) {
+          const u = i / steps;
+          const y = yMid + A * Math.cos(2 * Math.PI * n * u);
+          d += `${i ? "L" : "M"}${(SX0 + u * W).toFixed(2)} ${y.toFixed(2)}`;
+        }
+      } else {
       let x = SX0 + half / 2;
       while (n > 0 && x < SX1 - 0.01) {
         d += `L${x.toFixed(1)} ${yOf(lv)}`;
@@ -221,6 +249,7 @@
         x += half;
       }
       d += `L${SX1} ${yOf(lv)}`;
+      }
     }
     // od 70 Hz se čára ztenčuje, aby jednotlivé kmity zůstaly rozlišitelné
     const sw = f <= 70 ? 3 : Math.max(0.35, Math.min((3 * 70) / f, (W / f) * 0.45));
@@ -251,15 +280,18 @@
     // fáze signálu a změny úrovně (přesné časy hran)
     const p0 = state.phase;
     const p1 = p0 + (f / 2) * dt;          // f pohybů blány za sekundu = f/2 period obdélníku
-    for (let k = Math.floor(p0 * 2) + 1; k <= Math.floor(p1 * 2); k += 1) {
-      const te = t0 + (k / 2 - p0) / (f / 2);
-      const lv = k % 2 === 0 ? 1 : 0;      // celé číslo fáze = náběžná hrana
+    // hrany jsou ve fázi 0,25 + k/2 (stejně jako na obrazovce: začíná se dole)
+    for (let k = Math.floor((p0 - 0.25) * 2) + 1; k <= Math.floor((p1 - 0.25) * 2); k += 1) {
+      const te = t0 + (0.25 + k / 2 - p0) / (f / 2);
+      const lv = k % 2 === 0 ? 1 : 0;      // sudé k = náběžná hrana
       state.edges.push({ t: te, level: lv });
       if (f <= 6) spawnRing();             // každý pohyb blány = jedna vlna
     }
     state.phase = p1 % 1000;
     if (state.edges.length > 400) state.edges.splice(0, state.edges.length - 400);
-    state.level = f > 0 ? ((p1 % 1) < 0.5 ? 1 : 0) : 0;
+    const q = (((p1 - 0.25) % 1) + 1) % 1;
+    state.level = f > 0 ? (q < 0.5 ? 1 : 0) : 0;
+    state.sineM = f > 0 ? 0.5 - 0.5 * Math.cos(2 * Math.PI * p1) : 0;
 
     // vlny při vyšší frekvenci – nejvýš 6 za sekundu (skutečných je víc)
     if (f > 6) {
@@ -269,7 +301,8 @@
 
     // membrána
     if (f <= 12) {
-      state.m += (state.level - state.m) * Math.min(1, dt / 0.025);
+      if (state.wave === "sine") state.m = state.sineM;
+      else state.m += (state.level - state.m) * Math.min(1, dt / 0.025);
       dome.setAttribute("transform", `translate(0 ${(DOME_TRAVEL * (1 - state.m)).toFixed(2)})`);
       dome.setAttribute("opacity", "1");
       domeGhost.setAttribute("opacity", "0");
