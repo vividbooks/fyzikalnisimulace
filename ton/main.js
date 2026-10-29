@@ -40,6 +40,8 @@
     ringClock: 0,
     sound: false,
     running: false,
+    manual: false,       // ruční ovládání blány
+    manualLevel: 0,
     wave: "square",     // square | sine
   };
 
@@ -251,7 +253,7 @@
     soundBtn.setAttribute("aria-label", state.sound ? "Vypnout zvuk reproduktoru" : "Zapnout zvuk reproduktoru");
     $("soundWaves").style.display = state.sound ? "" : "none";
     $("soundMute").style.display = state.sound ? "none" : "";
-    if (state.sound && state.running) soundOn(); else soundOff();
+    if (state.sound && state.running && !state.manual) soundOn(); else soundOff();
     updateSoundNote();
   }
   soundBtn.addEventListener("click", toggleSound);
@@ -291,9 +293,74 @@
     btn.setAttribute("aria-pressed", String(on));
     $("runText").textContent = on ? "Zastavit" : "Spustit";
     $("runIcon").setAttribute("d", on ? STOP : PLAY);
-    if (on && state.sound) soundOn(); else soundOff();
+    if (on && state.sound && !state.manual) soundOn(); else soundOff();
   }
   $("btnRun").addEventListener("click", () => { hideHint(); setRunning(!state.running); });
+
+  /* ---------- Ruční ovládání blány ---------- */
+  function playClick(dir) {
+    if (!state.sound) return;
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      actx = new AC();
+    }
+    if (actx.state === "suspended") actx.resume();
+    // krátké „cvaknutí“ – tlakový impulz od náhlého pohybu blány
+    const sr = actx.sampleRate;
+    const len = Math.floor(sr * 0.06);
+    const buf = actx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i += 1) {
+      const t = i / sr;
+      d[i] = dir * (Math.exp(-t / 0.002) * 0.9 + Math.exp(-t / 0.015) * 0.35 * Math.sin(2 * Math.PI * 140 * t));
+    }
+    const src = actx.createBufferSource();
+    src.buffer = buf;
+    const g = actx.createGain();
+    g.gain.value = 0.5;
+    src.connect(g).connect(actx.destination);
+    src.start();
+  }
+  function manualPush() {
+    if (!state.manual) return;
+    hideHint();
+    state.manualLevel = 1 - state.manualLevel;
+    state.edges.push({ t: state.time, level: state.manualLevel });
+    if (state.edges.length > 400) state.edges.splice(0, state.edges.length - 400);
+    spawnRing();
+    playClick(state.manualLevel ? 1 : -1);
+  }
+  $("speaker").addEventListener("pointerdown", (e) => { e.preventDefault(); manualPush(); });
+
+  function setManual(on) {
+    state.manual = on;
+    document.body.classList.toggle("is-manual", on);
+    document.querySelectorAll("[data-ctl]").forEach((b) => {
+      const act = (b.dataset.ctl === "manual") === on;
+      b.classList.toggle("is-active", act);
+      b.setAttribute("aria-pressed", String(act));
+    });
+    state.edges = [];
+    state.tStart = state.time;
+    state.manualLevel = 0;
+    state.manualCount = -1;
+    lastD = "";
+    if (on) {
+      soundOff();
+      timeLabel.textContent = `šířka obrazovky: ${fmtTime(MANUAL_WINDOW)}`;
+      $("fMeaning").textContent = "počet pohybů blány za poslední sekundu";
+      hintEl.textContent = "Klikej na reproduktor – blána se pohne ven a zpět.";
+      hintEl.classList.remove("is-hidden");
+      delete hintEl.dataset.note;
+    } else {
+      hintEl.classList.add("is-hidden");
+      updateMeaning();
+      setF(state.f);
+      if (state.running && state.sound) soundOn();
+    }
+  }
+  document.querySelectorAll("[data-ctl]").forEach((b) => b.addEventListener("click", () => setManual(b.dataset.ctl === "manual")));
 
   /* ---------- Vlny ---------- */
   function spawnRing() {
@@ -324,20 +391,21 @@
 
   /* ---------- Obrazovka ---------- */
   let lastD = "";
+  const MANUAL_WINDOW = 5;
   function drawTrace() {
     const f = state.f;
-    const Tw = windowFor(f);
+    const Tw = state.manual ? MANUAL_WINDOW : windowFor(f);
     const W = SX1 - SX0;
     const yOf = (lv) => (lv ? Y_HIGH : Y_LOW);
     let d = "";
-    if (false) { // dřívější „běžící“ zobrazení – křivka teď stojí vždy
+    if (state.manual) { // ruční režim: záznam pohybů blány běží zprava doleva
       // běží v reálném čase: vpravo je „teď“
       const t1 = state.time;
       const t0 = t1 - Tw;
       const xs = (t) => SX0 + ((t - t0) / Tw) * W;
       const inWin = state.edges.filter((e) => e.t > t0 && e.t <= t1);
       const before = state.edges.filter((e) => e.t <= t0);
-      let lv = before.length ? before[before.length - 1].level : (inWin.length ? 1 - inWin[0].level : state.level);
+      let lv = before.length ? before[before.length - 1].level : (inWin.length ? 1 - inWin[0].level : state.manualLevel);
       // na začátku se křivka teprve vykresluje (vlevo je obrazovka prázdná)
       const x = xs(Math.max(t0, state.tStart));
       d = `M${x.toFixed(1)} ${yOf(lv)}`;
@@ -393,7 +461,7 @@
       }
     }
     // od 70 Hz se čára ztenčuje, aby jednotlivé kmity zůstaly rozlišitelné
-    const sw = f <= 70 ? 3 : Math.max(0.35, Math.min((3 * 70) / f, (W / f) * 0.45));
+    const sw = state.manual || f <= 70 ? 3 : Math.max(0.35, Math.min((3 * 70) / f, (W / f) * 0.45));
     trace.setAttribute("stroke-width", sw.toFixed(2));
     if (d !== lastD) { trace.setAttribute("d", d); trace.setAttribute("fill", "none"); lastD = d; }
   }
@@ -405,6 +473,22 @@
     last = t;
     const f = state.f;
     stepRings(dt);
+    if (state.manual) {
+      state.time += dt;
+      state.m += (state.manualLevel - state.m) * Math.min(1, dt / 0.03);
+      dome.setAttribute("transform", `translate(0 ${(DOME_TRAVEL * (1 - state.m)).toFixed(2)})`);
+      dome.setAttribute("opacity", "1");
+      domeGhost.setAttribute("opacity", "0");
+      // kolikrát se blána pohnula za poslední sekundu
+      const cnt = state.edges.filter((e) => e.t > state.time - 1).length;
+      if (cnt !== state.manualCount) {
+        state.manualCount = cnt;
+        $("fVal").textContent = String(cnt);
+      }
+      drawTrace();
+      requestAnimationFrame(frame);
+      return;
+    }
     if (!state.running) {
       // generátor stojí: obraz na obrazovce zůstane, membrána se vrátí do klidu
       state.m += (0 - state.m) * Math.min(1, dt / 0.05);

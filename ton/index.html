@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tón</title>
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=9" />
 </head>
 <body>
   <main class="scene" aria-label="Simulace tónu – generátor obdélníkového signálu a reproduktor">
@@ -19,14 +19,22 @@
         <h1 class="panel-title">Tón</h1>
       </div>
 
-      <section class="panel-section" aria-label="Generátor">
+      <section class="panel-section" aria-label="Ovládání blány">
+        <span class="panel-label">Ovládání blány</span>
+        <div class="mode-switch mode-switch--2" role="group" aria-label="Ovládání blány">
+          <button class="mode-switch__btn is-active" type="button" data-ctl="generator" aria-pressed="true">generátor</button>
+          <button class="mode-switch__btn" type="button" data-ctl="manual" aria-pressed="false">ručně</button>
+        </div>
+      </section>
+
+      <section class="panel-section" aria-label="Generátor" data-gen-only>
         <button type="button" id="btnRun" class="action-btn action-btn--run" aria-pressed="false">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="runIcon" d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
           <span id="runText">Spustit</span>
         </button>
       </section>
 
-      <section class="panel-section" aria-label="Tvar signálu">
+      <section class="panel-section" aria-label="Tvar signálu" data-gen-only>
         <span class="panel-label">Tvar signálu</span>
         <div class="mode-switch mode-switch--3" role="group" aria-label="Tvar signálu">
           <button class="mode-switch__btn is-active" type="button" data-wave="square" aria-pressed="true">obdélník</button>
@@ -40,9 +48,9 @@
         <div class="obj-card">
           <div class="ton-freq"><i class="qty">f</i>&nbsp;=&nbsp;<span class="ton-freq__value" id="fVal">5</span><span class="ton-freq__unit">Hz</span></div>
           <p class="ton-freq__meaning" id="fMeaning">počet pohybů blány za sekundu</p>
-          <input class="ton-slider" id="fSlider" type="range" min="0" max="1000" step="1" value="212" aria-label="Frekvence" />
-          <div class="ton-scale"><span>0 Hz</span><span>10 Hz</span><span>100 Hz</span><span>2 000 Hz</span></div>
-          <div class="ton-step">
+          <input data-gen-only class="ton-slider" id="fSlider" type="range" min="0" max="1000" step="1" value="212" aria-label="Frekvence" />
+          <div class="ton-scale" data-gen-only><span>0 Hz</span><span>10 Hz</span><span>100 Hz</span><span>2 000 Hz</span></div>
+          <div class="ton-step" data-gen-only>
             <button type="button" id="fMinus" aria-label="Snížit frekvenci">−</button>
             <span id="fStepLabel">po 1 Hz</span>
             <button type="button" id="fPlus" aria-label="Zvýšit frekvenci">+</button>
@@ -50,7 +58,7 @@
         </div>
       </section>
 
-      <section class="panel-section" aria-label="Rychlé volby">
+      <section class="panel-section" aria-label="Rychlé volby" data-gen-only>
         <span class="panel-label">Rychlé volby</span>
         <div class="ton-presets">
           <button type="button" class="ton-preset" data-f="0">0 Hz</button>
@@ -63,7 +71,7 @@
         </div>
       </section>
 
-      <section class="panel-section" aria-label="Perioda">
+      <section class="panel-section" aria-label="Perioda" data-gen-only>
         <span class="panel-label">Perioda</span>
         <div class="obj-card ton-card">
           <div class="ton-row"><span>kmitů za 1 sekundu</span><span id="perSec">5</span></div>
@@ -124,7 +132,7 @@
     </div>
   </main>
 
-  <script src="main.js?v=18"></script>
+  <script src="main.js?v=19"></script>
   <script src="../shared/sim-qr.js"></script>
 </body>
 </html>
